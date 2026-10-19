@@ -5,6 +5,7 @@ local roblox = require("@lune/roblox")
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local FakeBus = require("../../../../roblox/tests/unit/experience/doubles/FakeBus")
 local FakeRemoteService = require("../../../../roblox/tests/unit/experience/doubles/FakeRemoteService")
+local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local DebugCommands = require("@game/ReplicatedStorage/Forge/Debug/DebugCommands")
@@ -730,23 +731,46 @@ describe("AnnouncerService (FL-0062)", function()
 		expect(kindsFor(p1)[4]).toBe("kingdomConquered")
 	end)
 
-	it("the proposed events are waited for on the real bus, never an error (FL-0130)", function()
-		local service = AnnouncerDef.create(
-			env,
-			Loader.load(env, {
-				{
-					name = "RemoteService",
-					new = function()
-						return remotes
-					end,
-				},
-			}),
-			nil
-		)
-		service:start()
-		expect(env.mock:hasLog("info", "waiting for bus events not declared yet")).toBe(true)
-		service:destroy()
-	end)
+	it(
+		"the war events are waited for on the real bus until it declares them, then connected (FL-0130, FL-0134)",
+		function()
+			-- holds before and after FORGE-05 declares WarChanged / SiegeChanged / RaidChanged (#204)
+			local undeclared = {}
+			for _, name in { "RaidChanged", "SiegeChanged", "WarChanged" } do -- Bus.connectAll's sorted order
+				if not table.find(GameEvents.EVENT_NAMES, name) then
+					table.insert(undeclared, name)
+				end
+			end
+			local service = AnnouncerDef.create(
+				env,
+				Loader.load(env, {
+					{
+						name = "RemoteService",
+						new = function()
+							return remotes
+						end,
+					},
+				}),
+				nil
+			)
+			service:start()
+			local waiting = nil
+			for _, entry in env.mock.logs do
+				if string.find(entry.message, "waiting for bus events not declared yet", 1, true) then
+					waiting = entry
+				end
+			end
+			if #undeclared == 0 then
+				expect(waiting).toBeNil() -- every handler connected
+				expect(#service._connections >= 3).toBe(true)
+			else
+				assert(waiting ~= nil, "the announcer waits for the undeclared events")
+				expect(waiting.level).toBe("info") -- never an error
+				expect(waiting.fields.events).toBe(table.concat(undeclared, ","))
+			end
+			service:destroy()
+		end
+	)
 
 	it("without KingdomService: phases still reach everyone, kingdom moments reach nobody", function()
 		boot(false)

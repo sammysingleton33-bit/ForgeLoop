@@ -29,7 +29,7 @@ local savedMode = MatchConfig.mode
 
 local function boot(options: any?)
 	local opts = options or {}
-	MatchConfig.mode = opts.mode or savedMode
+	MatchConfig.mode = opts.mode or "slice" -- the specs that do not say are the VS-1 slice ones; the shipped default is the full match (D-053)
 	local env = MockEnv.new({
 		seed = 11,
 		sharedModules = { Remotes = { Kingdom = KingdomRemotes, Match = MatchRemotes, Sim = SimRemotes } },

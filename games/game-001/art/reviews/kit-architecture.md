@@ -528,3 +528,42 @@ four kingdoms, nothing butts into the quarry or the farm building, no new defect
 (crimson at the right build rectangle's corner, gold at the cabbage bed's corner): the decor clearance of FL-0116 (PR #159, which this branch does not contain) moves them; the two PRs together are the whole fix;
 (b) the lumber-camp trees stand about one tree-width from the left build rectangle (the forest edge behind the camp, by design; the spec guarantees ≥ 8 studs); (c) the lumber camp "overlapping" that rectangle in
 the render is perspective: the starting buildings' footprints at both levels overlap no slot and no field (probe). Verdict by the reviewer: farms clean **no** (a, b); by the spec and the author's reading of the renders: the world nodes are out. Studio unverified.
+
+## FL-0127 part 1 — three neutral outposts (Operation Crownfall, D-053)
+
+`world/Layout.luau` gains `outpost_n` (40, −330), `outpost_s` (30, 315) and `outpost_w` (−430, 10) next to the watchtower: capture points of radius
+20, each with a neutral region, a nav node linked into the road network, and a dirt road spur (flagged `spur`). FORGE-01's FL-0126 gives them config rows and
+builds their neutral towers. Placement: north and south on the valley's north and south edges between the two kingdoms of each side, the west one on the
+west bank to balance the river the two western kingdoms must cross for the watchtower; every kingdom has a neutral objective 330–365 studs away. All clear
+of forest stands, hills, the river and plots (`Outposts.spec`). The world trim protects only 70 studs around an outpost and a 20-stud band around a spur
+(`TRIM.outpostRadius`, `TRIM.spurBand`): protecting each like the heartland (170) cost +631 parts; the trimmed world is 6,570 (was 6,569). Details and
+numbers in `production/handoffs/2026-10-18-forge-02-to-forge-01-fl0127-outposts.md`.
+
+Renders (Blender, not Studio; the world dump now places a neutral tower at every objective): `fl0127_world_top.jpg` (the whole valley, the top view is mirrored east-west by the
+preview's axes: the river is on the right) and `fl0127_outpost_{n,s,w}.jpg` (each outpost from the valley-centre side, 45 degrees, 170 studs). I looked at the top view and the
+west outpost: each outpost stands at the end of its spur on open meadow with the mountain ring behind, clear of forest stands. Honest: a lone tower on empty meadow is plain;
+outpost yard dressing (banners, crates, a fence, tied to the kingdom style table) belongs to FL-0127 part 2.
+
+## FL-0127 part 2A — per-kingdom architecture styles (Operation Crownfall)
+Author: FORGE-02. `Kit/KingdomStyle.luau` (one table per hue style, consulted by `Pieces` through `ctx.style` and applied to the
+neutral palette once at the end of `Kit.build`). Renders are Blender approximations of the part dumps (no Roblox material
+textures, no Future lighting), the camera of `RulerCameraController` for the overview views (170 studs, 50 deg down) and a
+30 deg gameplay view. In every image the kingdoms run left to right Sunspire (gold), Thornwood (emerald), Frostmere (azure),
+Emberhold (crimson). Part counts are printed on each row: BEFORE (main) and AFTER are identical for every model.
+
+Images (`img/`): `kit_fl0127_keeps.jpg` (the four keeps at gameplay and overview distance), `kit_fl0127_plots_aerial.jpg` (four
+small bases from the overview camera), `kit_fl0127_grid_aerial.jpg` (types x kingdoms from the overview camera),
+`kit_fl0127_rows_a.jpg` (house, farm, barracks) and `kit_fl0127_rows_b.jpg` (lumber camp, quarry, watchtower), each before / after.
+
+What changed (colour value, material, proportion; never a part): dark basalt stone and steep tight red roofs (Emberhold), pale
+cool stone and slate-blue roofs with a snow course and ridge (Frostmere), mossy stone, ochre daub, dark oak framing and
+moss-striped green roofs (Thornwood), sandstone, whitewash and low gold roofs with a terracotta ridge (Sunspire); per-kingdom
+thatch and crop colours, merlon proportions, banner tails (diamond / pennon wedge / half disc), plinth accent stones.
+The stone L* values are 41 / 82 / 54 / 71, so the value order also separates the kingdoms for colour-blind players, on top of
+the unchanged tower caps and emblems.
+
+D-019 status: self-review only. The fresh-context image-only review was not run (the worker has no subagent tool); the images above
+are the evidence for it. My own reading, not a score: keeps, barracks, houses, watchtowers and farms read as four places;
+the lumber camp changes least (a lean-to roof, wood tones; the storehouse and the VS-2 stand-ins were not rendered); Emberhold's
+dark stone lowers the contrast of the dark windows and slits; Frostmere's frosted thatch reads close to white. Studio materials (Slate, ClayRoofTiles, Grass for
+moss) are unchecked.

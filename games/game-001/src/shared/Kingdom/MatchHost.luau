@@ -34,11 +34,18 @@
 		                                              membership changes at once) and to each arriving player
 		Kingdom.Gather(nodeId) -> (true, ResourceId, amount) | (false, errorCode)
 		Kingdom.SetJobQuota(job, count) -> (boolean, errorCode?)
+		Kingdom.Diplomacy(action, target) -> (ok, tag?)   D-054 (Kingdom/Remotes.luau): declareWar/proposePeace/acceptPeace;
+		                                              Kingdom.State gains `diplomacy` (relations, proposals, cooldowns, seniors,
+		                                              asks, lockedUntil, graceEndsAt; server time) and the sender of an ask's
+		                                              senior gets Kingdom.WarAsk(requesterUserId, requesterName, target)
 		Match.GetState() -> (phase, endsAtServerTime?, startedAtServerTime)
 		Match.State(phase, endsAtServerTime?, startedAtServerTime) to everyone on every phase or countdown
 		                                              change, and to each arriving player
 		Match.Ended({ winner?, standings, durationSec }) to everyone when the match (or the slice) ends, and
 		                                              to each player who arrives while Results is on
+		Match.Spectate(spectating, info?) to a ruler whose kingdom has fallen, to a player who arrives as a
+		                                              spectator, and (false) when a spectator is seated again
+		                                              (Match/Remotes.luau; D-053 (3))
 		startedAtServerTime: server time Founding began (sim time 0); in the Lobby, when the Lobby opened.
 	GameEvents (CONTRACTS G9, framework bus), each exactly once:
 		MatchPhaseChanged(phase) · KingdomEliminated(kingdomId, by?) · MatchEnded({ winner?, standings,
@@ -64,6 +71,7 @@ local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local SocietyConfig = require("@game/ReplicatedStorage/Forge/Config/Society")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+local Authority = require("../Sim/Authority")
 local RulerGather = require("../Sim/RulerGather")
 local WorldView = require("../Sim/WorldView")
 local Layout = require("./Layout")
@@ -97,7 +105,9 @@ function MatchHost.new(env: any, remotes: any, options: { [string]: any }?)
 	self._positionOf = opts.positionOf or MatchHost.characterPosition
 	self._clock = 0 -- host time (the sum of the steps), the clamp's time base
 	self._accepted = {} :: { [number]: { x: number, z: number, t: number } } -- the last position the sim was given
+	self._touchedAt = {} :: { [number]: { x: number, z: number } } -- where a ruler last counted as moving
 	self._snap = {} :: { [number]: boolean } -- take the next sample as it is (server-side teleports)
+	self._spectating = {} :: { [number]: boolean } -- players told Match.Spectate(true) and not seated since
 	self._rulerMaxSpeed = opts.rulerMaxSpeed or MatchConfig.rulerMaxSpeed
 	self._startedAtServerTime = env.serverTimeNow()
 	self.preferredKingdom = nil :: ((player: any) -> string?)?
@@ -119,11 +129,15 @@ function MatchHost.new(env: any, remotes: any, options: { [string]: any }?)
 		if x == nil or z == nil then
 			return false, "no_character"
 		end
+		self.match.sim:touchRuler(player.UserId)
 		local ok, err, result = RulerGather.gather(self.match.sim, player.UserId, nodeId, x :: number, z :: number)
 		if not ok then
 			return false, err
 		end
 		return true, result.resource, result.amount
+	end)
+	remotes:handle("Kingdom.Diplomacy", function(player: any, action: string, target: string)
+		return self:_diplomacy(player, action, target)
 	end)
 	remotes:handle("Kingdom.GetState", function(player: any)
 		return self:kingdomsState(player)
@@ -176,10 +190,12 @@ end
 function MatchHost:assignTeam(player: any)
 	local kingdomId = self.match:kingdomOf(player.UserId)
 	local team = if kingdomId then self._teams[kingdomId] else nil
-	if player.Team ~= team then
+	if team ~= nil and player.Team ~= team then
 		player.Team = team
-		player.Neutral = team == nil
 	end
+	-- Neutral is what takes a player off every team (a spectator: eliminated, or no seat); Roblox leaves Player.Team
+	-- as it was while Neutral is true, so there is nothing to assign (and the engine takes no nil Team in a spec)
+	player.Neutral = team == nil
 end
 
 -- ---------------------------------------------------------------- players
@@ -205,6 +221,9 @@ function MatchHost:_onPlayerAdded(player: any)
 	local info = self:phaseInfo()
 	self._remotes:fire("Match.State", player, info.phase, info.endsAtServerTime, info.startedAtServerTime)
 	self._remotes:fire("Kingdom.State", player, self:kingdomsState(player))
+	if not ok then
+		self:_sendSpectate(player, result)
+	end
 	if self._ended then -- set by MatchEnded, cleared when Results ends
 		self._remotes:fire("Match.Ended", player, MatchHost.endedPayload(self._ended)) -- what a late joiner missed
 	end
@@ -212,6 +231,26 @@ end
 
 function MatchHost:_onPlayerRemoving(player: any)
 	self.match:leave(player.UserId)
+	self._spectating[player.UserId] = nil
+end
+
+-- Match.Spectate(true, info) to a player who watches instead of ruling; `reason` is "eliminated" or "match_full".
+function MatchHost:_sendSpectate(player: any, reason: string)
+	local fallen = self.match:spectatorOf(player.UserId)
+	local standing = {}
+	local sim = self.match.sim
+	for _, kid in sim.kingdomOrder do
+		if sim.kingdoms[kid].alive then
+			table.insert(standing, kid)
+		end
+	end
+	self._spectating[player.UserId] = true
+	self._remotes:fire("Match.Spectate", player, true, {
+		reason = reason,
+		kingdomId = if fallen then fallen.kingdomId else nil,
+		by = if fallen then fallen.by else nil,
+		standing = standing,
+	})
 end
 
 -- ---------------------------------------------------------------- kingdom views (G2)
@@ -248,12 +287,137 @@ function MatchHost:kingdomView(kingdomId: string): { [string]: any }?
 	}
 end
 
-function MatchHost:kingdomsState(player: any?): { kingdoms: { any }, mine: string? }
+local DIPLOMACY_COMMANDS = { declareWar = "DeclareWar", proposePeace = "ProposePeace", acceptPeace = "AcceptPeace" }
+
+-- Kingdom.Diplomacy (D-054): the action becomes a command; the answer is (ok, tag?).
+function MatchHost:_diplomacy(player: any, action: string, target: string): (boolean, string?)
+	local ok, err, result = self:command(player, DIPLOMACY_COMMANDS[action], target)
+	if not ok then
+		return false, err
+	end
+	if action == "declareWar" and type(result) == "table" then
+		return true, result.outcome
+	end
+	return true, nil
+end
+
+-- The diplomacy facts in simulation time, before any per-player or server-time conversion (nil when PvP is off).
+function MatchHost:_diplomacyRaw(): any?
+	local sim = self.match.sim
+	local state = sim.diplomacy
+	if state == nil then
+		return nil
+	end
+	local relations, proposals, cooldowns, seniors, asks, locks = {}, {}, {}, {}, {}, {}
+	for key, relation in sim.relations do
+		if relation == "War" then
+			local a, b = string.match(key, "^(.-)|(.+)$")
+			if a and b then
+				table.insert(relations, { a = a, b = b, relation = relation })
+			end
+		end
+	end
+	table.sort(relations, function(x, y)
+		return x.a .. x.b < y.a .. y.b
+	end)
+	for key, at in state.proposals do
+		local from, to = string.match(key, "^(.-)>(.+)$")
+		if from and to and sim.time - at <= state.proposalSeconds then
+			table.insert(proposals, { from = from, to = to, expiresAt = at + state.proposalSeconds })
+		end
+	end
+	table.sort(proposals, function(x, y)
+		return x.from .. x.to < y.from .. y.to
+	end)
+	for key, at in state.peaceAt do
+		local a, b = string.match(key, "^(.-)|(.+)$")
+		if a and b and sim.time - at < state.peaceCooldown then
+			table.insert(cooldowns, { a = a, b = b, untilAt = at + state.peaceCooldown })
+		end
+	end
+	table.sort(cooldowns, function(x, y)
+		return x.a .. x.b < y.a .. y.b
+	end)
+	for _, kid in sim.kingdomOrder do
+		local kingdom = sim.kingdoms[kid]
+		if #kingdom.rulers > 0 then
+			seniors[kid] = Authority.seniorOf(sim, kingdom)
+		end
+		for _, ask in Authority.asks(sim, kid) do
+			table.insert(asks, { kingdomId = kid, from = ask.from, target = ask.target, expiresAt = ask.expiresAt })
+		end
+		for _, userId in kingdom.rulers do
+			local untilAt = Authority.lockedUntil(sim, userId)
+			if untilAt then
+				locks[userId] = untilAt
+			end
+		end
+	end
+	return {
+		relations = relations,
+		proposals = proposals,
+		cooldowns = cooldowns,
+		seniors = seniors,
+		asks = asks,
+		locks = locks,
+		graceEndsAt = state.graceSeconds,
+	}
+end
+
+-- The Kingdom.State `diplomacy` table for one viewer, times in server time (the G3 endsAt scale).
+function MatchHost:_diplomacyFor(player: any?): any?
+	local raw = self:_diplomacyRaw()
+	if raw == nil then
+		return nil
+	end
+	local sim = self.match.sim
+	local offset = self._env.serverTimeNow() - sim.time
+	local mine = if player then self.match:kingdomOf(player.UserId) else nil
+	local out = {
+		relations = raw.relations,
+		proposals = {},
+		cooldowns = {},
+		graceEndsAt = raw.graceEndsAt + offset,
+		seniors = raw.seniors,
+		asks = {},
+		lockedUntil = nil :: number?,
+	}
+	for _, p in raw.proposals do
+		table.insert(out.proposals, { from = p.from, to = p.to, expiresAt = p.expiresAt + offset })
+	end
+	for _, c in raw.cooldowns do
+		table.insert(out.cooldowns, { a = c.a, b = c.b, untilAt = c.untilAt + offset })
+	end
+	if mine then
+		for _, ask in raw.asks do
+			if ask.kingdomId == mine then
+				local requester = self:_player(ask.from)
+				table.insert(out.asks, {
+					from = ask.from,
+					fromName = if requester then requester.DisplayName or requester.Name else "",
+					target = ask.target,
+					expiresAt = ask.expiresAt + offset,
+				})
+			end
+		end
+		local locked = raw.locks[player.UserId]
+		if locked then
+			out.lockedUntil = locked + offset
+		end
+	end
+	return out
+end
+
+function MatchHost:kingdomsState(player: any?): { kingdoms: { any }, mine: string?, diplomacy: any? }
 	local kingdoms = {}
 	for _, kid in self.match.sim.kingdomOrder do
 		table.insert(kingdoms, self:kingdomView(kid))
 	end
-	return { kingdoms = kingdoms, mine = if player then self.match:kingdomOf(player.UserId) else nil }
+	return {
+		kingdoms = kingdoms,
+		mine = if player then self.match:kingdomOf(player.UserId) else nil,
+		diplomacy = self:_diplomacyFor(player),
+	}
 end
 
 -- What clients can see of the views; Crown Points count in whole points so hold income does not
@@ -274,6 +438,33 @@ function MatchHost:_stateSignature(): string
 				","
 			)}:{whole(view.happiness)}:{whole(view.stability)}:{whole(view.morale)}`
 		)
+	end
+	local raw = self:_diplomacyRaw()
+	if raw then
+		for _, r in raw.relations do
+			table.insert(parts, `W:{r.a}:{r.b}`)
+		end
+		for _, p in raw.proposals do
+			table.insert(parts, `P:{p.from}:{p.to}`)
+		end
+		for _, c in raw.cooldowns do
+			table.insert(parts, `C:{c.a}:{c.b}`)
+		end
+		local seniors = {}
+		for kid, userId in raw.seniors do
+			table.insert(seniors, `{kid}={userId}`)
+		end
+		table.sort(seniors)
+		table.insert(parts, "S:" .. table.concat(seniors, ","))
+		for _, a in raw.asks do
+			table.insert(parts, `A:{a.kingdomId}:{a.from}:{a.target}`)
+		end
+		local locks = {}
+		for userId in raw.locks do
+			table.insert(locks, userId)
+		end
+		table.sort(locks)
+		table.insert(parts, "L:" .. table.concat(locks, ","))
 	end
 	return table.concat(parts, "|")
 end
@@ -419,6 +610,27 @@ function MatchHost:_handleEvent(event: any)
 		self._membershipChanged = true
 	elseif name == "CountdownChanged" then
 		self:_broadcastPhase()
+	elseif name == "WarAsked" then
+		local senior = self:_player(event.seniorId)
+		local requester = self:_player(event.requester)
+		if senior then
+			self._remotes:fire(
+				"Kingdom.WarAsk",
+				senior,
+				event.requester,
+				if requester then requester.DisplayName or requester.Name else "",
+				event.target
+			)
+		end
+		self._membershipChanged = true
+	elseif name == "RulerEliminated" then
+		-- the ruler's kingdom has fallen: no team, no commands; they spectate the rest of the match (D-053 (3))
+		local player = self:_player(event.userId)
+		if player then
+			self:assignTeam(player)
+			self:_sendSpectate(player, "eliminated")
+		end
+		self._membershipChanged = true
 	elseif name == "MatchEnded" then
 		self._ended = MatchHost.endedPayload(event) -- for players who arrive during Results
 		self._remotes:fireAll("Match.Ended", MatchHost.endedPayload(event))
@@ -430,12 +642,16 @@ function MatchHost:_handleEvent(event: any)
 		if event.phase ~= "Results" then
 			self._ended = nil
 		end
-		if event.previous == "Results" then
-			-- a fresh world was created for the next match: rebuild the view and re-team everyone
+		if event.previous == "Results" or event.newWorld then
+			-- a fresh world was created (the next match, or a restart): rebuild the view and re-team everyone
 			self:_destroyWorld()
 			self:_buildWorld()
 			for _, player in self._env.Players:GetPlayers() do
 				self:assignTeam(player)
+				if self._spectating[player.UserId] and self.match:kingdomOf(player.UserId) ~= nil then
+					self._spectating[player.UserId] = nil
+					self._remotes:fire("Match.Spectate", player, false)
+				end
 			end
 			self._membershipChanged = true
 		end
@@ -485,12 +701,26 @@ function MatchHost:_mirrorRulers()
 		else
 			self._accepted[userId] = nil
 		end
+		if x ~= nil and z ~= nil then
+			local last = self._touchedAt[userId]
+			if last == nil or (x - last.x) ^ 2 + (z - last.z) ^ 2 > 0.25 then
+				self._touchedAt[userId] = { x = x, z = z }
+				if last ~= nil then
+					sim:touchRuler(userId) -- moving counts as input (D-054 idle senior)
+				end
+			end
+		end
 		sim:setRulerPosition(userId, x, z)
 	end
 	for userId in self._accepted do
 		if sim.rulerOf[userId] == nil then
 			self._accepted[userId] = nil -- no longer a ruler (left the match)
 			self._snap[userId] = nil
+		end
+	end
+	for userId in self._touchedAt do
+		if sim.rulerOf[userId] == nil then
+			self._touchedAt[userId] = nil
 		end
 	end
 end
@@ -528,7 +758,12 @@ function MatchHost:step(dt: number)
 		table.remove(self._simMs, 1)
 	end
 	for _, event in self.match:drainEvents() do
-		self:_handleEvent(event)
+		-- one event's handler failing must not drop the rest of this tick's events (a MatchEnded behind it, say):
+		-- they are already drained, and the match would otherwise sit in Results with the clients never told
+		local ok, err = pcall(self._handleEvent, self, event)
+		if not ok then
+			self._env.log("error", "KingdomHost: event handler failed", { event = event.name, error = tostring(err) })
+		end
 	end
 	if self._view then
 		self._view:sync(self.match.sim)

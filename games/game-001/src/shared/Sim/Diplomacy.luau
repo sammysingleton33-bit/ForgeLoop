@@ -9,7 +9,9 @@
 		- DeclareWar takes effect immediately and is announced to everyone (WarDeclared event).
 		- Peace needs both sides: one proposes, the other accepts within proposalSeconds (60 s).
 		- After peace, the same pair cannot go back to war for peaceCooldown seconds (120 s).
-	Any ruler of a kingdom may use these commands (shared ownership; events record who did it).
+	Co-rulers (D-054, Sim/Authority): any ruler may ProposePeace; only the senior ruler's DeclareWar and AcceptPeace take
+	effect, a non-senior's DeclareWar is an ask to the senior, and a newcomer is locked out of both for a while.
+	Events record who did it; the AI (by == nil) is exempt.
 		- DeclareWar and AcceptPeace set kingdom.moveLockedUntil on both sides (Buildings.moveLockout seconds
 		  of sim time): the kingdoms' buildings can't be moved meanwhile (Simulation:_checkMove).
 
@@ -18,14 +20,17 @@
 		Diplomacy.relation(sim, a, b): "Peace" | "War"
 		Diplomacy.setRelation(sim, a, b, relation)   -- direct (tests, scenario setup); emits nothing
 	Commands
-		DeclareWar(kingdomId)    errors: invalid_args, unknown_kingdom, grace_period, already_at_war, peace_cooldown
+		DeclareWar(kingdomId)    errors: invalid_args, unknown_kingdom, grace_period, already_at_war, peace_cooldown,
+		                         newcomer_lock; result { targetId, outcome = "declared" | "asked" }
+		                         (state.checkDeclare(sim, kingdom, id) is the validation alone)
 		ProposePeace(kingdomId)  errors: invalid_args, unknown_kingdom, not_at_war
-		AcceptPeace(kingdomId)   errors: invalid_args, unknown_kingdom, no_proposal
+		AcceptPeace(kingdomId)   errors: invalid_args, unknown_kingdom, no_proposal, not_senior, newcomer_lock
 	Events
 		WarDeclared { kingdomId, targetId, by } · PeaceProposed { kingdomId, targetId, by }
 		PeaceMade { kingdomId, targetId, by }   (kingdomId accepted targetId's proposal)
 ]]
 
+local Authority = require("./Authority")
 local Commands = require("./Commands")
 
 local Diplomacy = {}
@@ -71,28 +76,40 @@ function Diplomacy.install(sim: any, options: { [string]: number }?)
 	}
 	sim.diplomacy = state
 
-	Commands.install(sim, "DeclareWar", function(s, kingdom, by, targetId)
+	-- the checks a declaration passes before it takes effect (also what an ask must pass): the target, or the code
+	local function checkDeclare(s: any, kingdom: any, targetId: any): (any?, string?)
 		local target, err = otherKingdom(s, kingdom, targetId)
 		if target == nil then
-			return false, err
+			return nil, err
 		end
 		if s.time < state.graceSeconds then
-			return false, "grace_period"
+			return nil, "grace_period"
 		end
 		local key = s:relationKey(kingdom.id, target.id)
 		if s.relations[key] == "War" then
-			return false, "already_at_war"
+			return nil, "already_at_war"
 		end
 		local madePeace = state.peaceAt[key]
 		if madePeace and s.time - madePeace < state.peaceCooldown then
-			return false, "peace_cooldown"
+			return nil, "peace_cooldown"
 		end
+		return target, nil
+	end
+	state.checkDeclare = checkDeclare
+
+	Commands.install(sim, "DeclareWar", function(s, kingdom, by, targetId)
+		local target, err = checkDeclare(s, kingdom, targetId)
+		if target == nil then
+			return false, err
+		end
+		local key = s:relationKey(kingdom.id, target.id)
+		Authority.clearAsks(s, kingdom.id, target.id)
 		s.relations[key] = "War"
 		state.proposals[kingdom.id .. ">" .. target.id] = nil
 		state.proposals[target.id .. ">" .. kingdom.id] = nil
 		lockMoves(s, kingdom, target)
 		s:emit("WarDeclared", { kingdomId = kingdom.id, targetId = target.id, by = by })
-		return true, nil, { targetId = target.id }
+		return true, nil, { targetId = target.id, outcome = "declared" }
 	end)
 
 	Commands.install(sim, "ProposePeace", function(s, kingdom, by, targetId)

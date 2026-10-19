@@ -40,10 +40,12 @@ python tools/check_ownership.py --base origin/main --title "<PR title>" --branch
 - [ ] Visual work: a render/screenshot was opened and reviewed (G5); otherwise "unverified".
 
 ## 5. Merge
+- [ ] **The PR's base is `main`** (`pull_request_read get` → `base.ref`). A stacked PR whose lower PR merged keeps its old base; merging it lands in that branch, not main (B20.1, #198/#201). Ask the author to retarget it to main first.
 - [ ] Merge commit (never squash/rebase; keeps the worker's evidence shas reachable), with `expectedHeadSha` = the sha checked above.
 - [ ] After the merge, `git ls-remote origin refs/heads/main` shows the new merge commit (the merge API also reports success for a merge into another base).
 
 ## 6. Bookkeeping (direct push to `main`, D-014)
+- [ ] **Before cutting a build:** for every PR the build claims, `git merge-base --is-ancestor <pr head> origin/main` succeeds (`git fetch origin '+refs/pull/N/head:refs/remotes/origin/pr/N'`). A build row lists only PRs that pass.
 - [ ] Task status at merge (D-038 (5)): write a Log line with `forge.py set-status`. Use ACCEPTED when every gate is met. Use **"REVIEW, only G6 pending"** when only the user's Studio run is left (or name the remaining non-Studio item). Use BUILDING when merged code still has work left. A merge alone never accepts a task, and an unticked completion box means nothing. Evidence = merge sha + check summary + CI link.
 - [ ] Line in `production/quality-gates/integration-log.md` (date · main sha · PR · tasks · checks · CI on main · artifact).
 - [ ] CI on the merge commit green; artifact `forgeloop-main-<short sha>` listed with the BuildInfo sha from the CI log.

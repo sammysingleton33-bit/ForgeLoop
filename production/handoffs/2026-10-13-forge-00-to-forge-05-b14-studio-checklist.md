@@ -156,3 +156,27 @@ FORGE-05's B19 asks in `production/quality-gates/studio-runs.md` and FORGE-04's 
 | K4 | With a request open, tap the 💬 Waiting button on the rail | it shows the count; a tap centres on the next citizen and opens their card; it hides while placing, moving, talking and in the walking view |
 | K5 | Studio device emulator at a phone size (667×375) | placards, toasts and the Waiting button fit and don't overlap |
 | K6 | `get_console_output` at the end | no red errors |
+
+## B20 additions (main `9b688ec`, BuildInfo `9b688ecb81c6…`): the real four-kingdom match
+B20 starts the **full match** by default. To run the older B14–B19 rows in the short slice, use the debug command `match.mode slice` first.
+
+| ID | Check | Pass |
+|---|---|---|
+| L1 | Start Play; read the phase bar | the phase bar shows Founding with a timer and names the next phase; the other three kingdoms are run by AI governors and build on their own |
+| L2 | Debug `match.phase Conflict`, then watch the rivals for a few minutes (Rivals tab, notices) | an AI kingdom declares war on someone; war notices appear; soldiers march and fight, with hit flashes and deaths (kneel and fade, no gore) |
+| L3 | Recruit until the cap | the 16th soldier is refused with an "army full" message (`army_cap`) |
+| L4 | Let an AI army attack your keep (or weaken it with debug), so your kingdom falls | you become a spectator: the spectate camera works. **Known:** the spectate screen arrives in B20.1 |
+| L5 | Let the match run out (or jump to Endgame and wait) | the match ends on Crown Points and Results shows. **Known:** the recap screen arrives in B20.1 |
+| L6 | Debug `match.mode slice` | the match restarts as the VS-1 slice; one B19 row still passes |
+| L7 | Output during an AI war, and Studio's Stats panel | no red errors; note FPS and anything that hitches |
+
+## B20.1 additions (main `2f6dc35`, BuildInfo `2f6dc35b36e1…`): you declare war and make peace
+**Known:** the war, siege and raid notices and the far-entity tiers are **not** in B20.1 (stacked-PR merge gap); they arrive in B20.2.
+
+| ID | Check | Pass |
+|---|---|---|
+| M1 | Debug `match.phase Conflict`, then open Kingdom, then Rivals, and press Declare war on one rival | after a confirm step, war is declared; the rival's row shows "at war"; their soldiers start fighting yours |
+| M2 | Propose peace; let the AI accept, or wait | the row shows the open proposal; once both agree, peace holds and the war stops |
+| M3 | 2-player Local Server, both in one kingdom | only the player who joined first can declare war or accept peace. The other sees "Ask <senior> to declare war"; pressing it gives the senior a notice |
+| M4 | Second player joins after Founding began | for 2 minutes they see "New ruler · m:ss" on war and Accept peace, and can't move buildings |
+| M5 | Let your kingdom fall (or force it) | the spectate screen shows who defeated you and a list of what to watch; Leave asks "Leave the match?" first |

@@ -243,6 +243,10 @@ def vocab():
         {"var": "citizen.memory.rulerVisited", "op": "=", "value": True},
         {"var": "citizen.chemistry", "op": ">", "value": -5}]),
     ("citizen.has_friend", [{"var": "citizen.has_friend", "op": "=", "value": True}]),
+    # FL-0134 / D-056 (3): the war, siege and objective-lost flags are conditions content can use
+    ("event.war_declared & event.siege & !event.objective_lost", [
+        {"var": "event.war_declared", "op": "=", "value": True}, {"var": "event.siege", "op": "=", "value": True},
+        {"var": "event.objective_lost", "op": "=", "value": False}]),
 ])
 def test_condition_parses_into_typed_clauses(text, expected):
     clauses, _ = content.parse_condition(text, vocab(), "citizen")
@@ -414,6 +418,16 @@ def test_lint_scores_answers_with_the_personality_reaction(lib, capsys):
             "citizens of 's_smith_tools'") in out
     # deterministic: the sample is seeded by the scenario id
     assert run(capsys, "lint", "--content", lib)[1] == out
+
+
+def test_lint_free_answer_rule_shares_ties(lib, capsys):
+    """D-056 (4): when every answer scores the same for a citizen, no answer "wins" that citizen (was: answer 1)."""
+    for col, value in (("cost", ""), ("rep_competence", "0"), ("speaker_loyalty", "0")):
+        set_cell(lib, "dialogue/decisions.csv", 5, col, value)  # d_buy_tools: free, nothing for the speaker
+    for col, value in (("rep_honor", "0"), ("speaker_loyalty", "0"), ("trait_overrides", "")):
+        set_cell(lib, "dialogue/decisions.csv", 6, col, value)  # d_promise_later: the same
+    code, out = run(capsys, "lint", "--content", lib)
+    assert "free answer" not in out, out
 
 
 def test_lint_contract_memory_cue_and_number_warnings(lib, capsys):
@@ -777,6 +791,8 @@ def test_question_variant_cond_memories_count_as_trigger_reads(lib, capsys):
     """A cond: selector reads memories like a trigger does (lint knows who reads them)."""
     code, out = run(capsys, "lint", "--content", lib)
     assert "memory 'fed_by_ruler' is set but no trigger reads it" in out
+    line = next(ln for ln in out.splitlines() if "memory 'fed_by_ruler' is set but" in ln)
+    assert "(row " in line, line  # D-056 (4): the warning names the setting row's key
     set_cell(lib, "dialogue/question_variants.csv", 2, "selector", "cond:citizen.memory.fed_by_ruler")
     code, out = run(capsys, "lint", "--content", lib)
     assert code == 0 and "memory 'fed_by_ruler' is set but" not in out, out

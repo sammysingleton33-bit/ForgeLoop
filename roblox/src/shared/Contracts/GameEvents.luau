@@ -34,6 +34,9 @@
 	| MatchEnded         | MatchService                   | ({ winner: string?, standings: { { kingdom: string, crownPoints: number } }, durationSec: number }) |
 	| CitizenAnswered    | ConversationService            | (player, kingdomId: string, citizenId: number, decisionId: string, secondsOpen: number?) — once per accepted Kingdom.Choose (D-044 (3)) |
 	| ConsequenceChanged | ConsequenceService (G13.3)     | (kingdomId: string, rule: "strike" | "shortage" | "riot" | "rebellion", on: boolean, info: { occupation: string?, buildingId: number?, instigator: number?, entityIds: { number }?, count: number }) — once per start and once per end (v0.4-g10c) |
+	| WarChanged         | MatchHost (FL-0134, D-054)     | (kingdomId: string, otherId: string, atWar: boolean, by: number?) — WarDeclared: kingdomId = declarer, otherId = target, atWar true; PeaceMade: kingdomId = acceptor, otherId = proposer, atWar false; by = ruler userId, nil for a governor; nothing for pairs broken by elimination |
+	| SiegeChanged       | Sim/WarWatch (FL-0134)         | (kingdomId: string, on: boolean, info: { byKingdomIds: { string }, buildingId: number }) — once per start (first enemy keep damage after a quiet spell) and once per end (20 s without keep damage) |
+	| RaidChanged        | Sim/WarWatch (FL-0134)         | (kingdomId: string, on: boolean, info: { byKingdomIds: { string }, count: number, position: Vector3 }) — once per start and once per end (10 s without threats); position = threats' centroid on the ground plane (Y = 0), at start, last seen at end. A fallen kingdom ends no siege or raid; listeners clear on MatchEnded |
 	Payload types (interfaces §4) are exported here too: GameEvents.RoundState, GameEvents.RoundResult,
 	GameEvents.RewardResult (defined once in Contracts/Types, re-exported).
 
@@ -84,6 +87,9 @@ export type GameEvents = {
 	MatchEnded: SignalT,
 	CitizenAnswered: SignalT,
 	ConsequenceChanged: SignalT,
+	WarChanged: SignalT,
+	SiegeChanged: SignalT,
+	RaidChanged: SignalT,
 	EVENT_NAMES: { string },
 	disconnectAll: () -> (),
 }
@@ -114,6 +120,9 @@ local EVENT_NAMES = table.freeze({
 	"MatchEnded",
 	"CitizenAnswered",
 	"ConsequenceChanged",
+	"WarChanged",
+	"SiegeChanged",
+	"RaidChanged",
 })
 
 local events: { [string]: any } = {}

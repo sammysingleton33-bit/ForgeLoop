@@ -190,6 +190,17 @@ tracker on the phone, the summary on the phone and on desktop.
 8. Report: whether the soldier count, the bars and the summary always matched what happened in the
    world (the client shows only what the server sends).
 
+## U23 — Results and "Your reign" (FL-0129; the full match's end, FL-0125)
+1. Play a match to the end (or the debug phase jump to Results): the Results summary shows the winner,
+   the standings and how long it lasted, with **Continue** and **Your reign** side by side (phone: Your
+   reign above Continue).
+2. Your reign: the six reputation values from the start of the match to its end with each change
+   (green up, red down, grey none), "Key decisions" (the three history lines that moved a value most,
+   each with the value and change) and "Citizens N → M" with how many more or fewer. Back to results
+   returns to the summary; Continue closes both.
+3. A second match: Your reign shows only that match's decisions and its own start values.
+4. Phone 667 × 375: the recap sits in the summary's own box (two columns), clear of the Roblox top bar.
+
 ## U15 — job panel (P2 + FORGE-01 `Kingdom.Population` / `GetPopulation`, FL-0065)
 1. Open **Kingdom** → **Jobs**. The top line reads "N citizens · homes for M · K free"; then the Free
    citizens row, Farmers, Woodcutters, Miners, Builders, each with a **number** and − / + (44 px on a
@@ -304,7 +315,9 @@ Before #140 the building panel shows no Move: expected.
    (grey) instead of Declare war; Confirm asks "Ask <senior> to declare war on <name>?", says "Asked
    your senior ruler for war on <name>" and sends a notice to the senior ruler; nothing changes until
    they declare; the senior ruler sees "<name> asks for war on <kingdom>". Their Accept peace is off with "<senior> decides". A ruler who joined mid-match sees
-   "New ruler · m:ss" under Declare war and Accept peace for 2 minutes. When the kingdom falls, or in
+   "New ruler · m:ss" under Declare war and Accept peace for 2 minutes. An ask stays on the rival's row ("<name> asks for
+   war · m:ss" for the senior ruler, with a "1" on the Kingdom button; "You asked for war · m:ss" for
+   the asker) until the senior declares or it runs out (60 s). When the kingdom falls, or in
    Results, every button is off ("Your kingdom has fallen" / "The match is over"). An offer that runs
    out takes the Kingdom bubble with it.
 7. Raid (needs FORGE-04's #183): when enemies enter our lands ("Enemies in your lands!"), a **Raid** button
@@ -317,6 +330,26 @@ Before #140 the building panel shows no Move: expected.
 
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).
+
+## U22 — spectating after a fall (FL-0129; needs FORGE-01's FL-0125 Match.Spectate and FORGE-04's #183 camera)
+1. Full match, lose your keep (or use the debug elimination): a card at the top says "Fallen",
+   "<your kingdom> has fallen", "<rival> took your keep" and how many kingdoms still stand, with
+   **Stay and watch** and **Leave**. Any open drawer closes and the camera switches to spectating.
+2. Stay: the card goes and a **Watching** panel on the left lists battles first ("Battle · <kingdom>",
+   "N fighting" in red), then the standing keeps. Tap a row: the camera goes there and the row is
+   framed in gold. Prev / Next (and FORGE-04's keys . , / R1 L1) move along the list; the frame follows.
+   New battles appear in the list within a second or two.
+3. Leave asks "Leave the match?" with Leave / Cancel; Cancel keeps watching; Leave disconnects you
+   with "You left the match. Thanks for playing AI Kingdoms!".
+4. A full server (all kingdoms full): the card says "This match is full" / "Watch now. You can rule in
+   the next match". The phase pill at the top shows the phase and time left with "You'll join the next
+   match" under it; there is no crest, resource row, Build/Kingdom rail or Rivals tab.
+5. Results and the Lobby: the card and panel step aside for the results summary; in the next match's
+   active phase they come back if you are still spectating, and go when you are seated again (the
+   normal HUD returns).
+   As a spectator the kingdom HUD (crest, pills, rail) is gone: the card and panel sit at the top left.
+6. Phone 667 × 375: the card first, then (after Stay) the panel, never both; the panel stays above the
+   construction chips and its list scrolls. Touch and gamepad (A on a focused button) both work.
 
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.
