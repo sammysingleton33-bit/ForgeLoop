@@ -43,4 +43,9 @@ M = [
  ("FL-0071S", AS, 'elseif next(self._held) ~= nil then\n\t\tself:_releaseAll()', 'elseif false then\n\t\tself:_releaseAll()', "sim/ArenaService", "fixes the champions' WalkSpeed"),
  ("FL-0071S", AS, 'if held == nil or held.character ~= character then', 'if held == nil then', "sim/ArenaService", "a champion who resets is placed on their mark again"),
  ("FL-0071S", AS, 'ring = { x = centre.X, z = centre.Z, radius = venue.duelRadius, height = from.Y },', 'ring = { x = centre.X, z = centre.Z, radius = 1000, height = from.Y },', "sim/ArenaService", "bounds a champion by the venue ring"),
+ # --- the real teleport (FORGE-07's low on #241)
+ ("FL-0071S", AS, 'local y = height or root.CFrame.Position.Y', 'local y = root.CFrame.Position.Y', "sim/ArenaService", "the real teleport puts each champion's character"),
+ ("FL-0071S", AS, '\t\t\tadapter.pivot(character, cframe)', '\t\t\tlocal _ = cframe', "sim/ArenaService", "the real teleport puts each champion's character"),
+ ("FL-0071S", AS, 'Vector3.new(towardX, y, towardZ))\n\t\t-- through', 'Vector3.new(x + 1, y, towardZ))\n\t\t-- through', "sim/ArenaService", "the real teleport puts each champion's character"),
+ ("FL-0071S", AS, 'Vector3.new(towardX, y, towardZ))\n\t\t-- through', 'Vector3.new(x - 1, y, towardZ))\n\t\t-- through', "sim/ArenaService", "the real teleport puts each champion's character"),
 ]

@@ -471,6 +471,39 @@ describe("ArenaService: the duel", function()
 		env.mock:advance(0.2)
 		expect(humanoid.WalkSpeed).toBe(40)
 	end)
+	it(
+		"the real teleport puts each champion's character on its venue mark, at the mark's height, facing the other",
+		function()
+			local world = boot({ 1, 2 })
+			local config = shortConfig()
+			config.site = nil
+			world.arena.config = config
+			world.arena.placeAt = nil -- the real ArenaService:_place, not the spec's stand-in
+			reachArena(world)
+			advanceTo(world, "intro")
+			local marks = WorldLayout.arena
+			local rootA = world.players[1].Character.HumanoidRootPart
+			local rootB = world.players[2].Character.HumanoidRootPart
+			local function near(a: number, b: number): boolean
+				return math.abs(a - b) < 1e-3
+			end
+			local at = rootA.CFrame.Position
+			expect(
+				near(at.X, marks.spawnA.Position.X)
+					and near(at.Y, marks.spawnA.Position.Y)
+					and near(at.Z, marks.spawnA.Position.Z)
+			).toBe(true)
+			at = rootB.CFrame.Position
+			expect(
+				near(at.X, marks.spawnB.Position.X)
+					and near(at.Y, marks.spawnB.Position.Y)
+					and near(at.Z, marks.spawnB.Position.Z)
+			).toBe(true)
+			-- each looks along the line to the other (the marks lie on the gate axis, A at -X)
+			expect(rootA.CFrame.LookVector.X > 0.99).toBe(true)
+			expect(rootB.CFrame.LookVector.X < -0.99).toBe(true)
+		end
+	)
 
 	it("takes the champions' support into the duel: the tier's blessing reaches the model", function()
 		local world = boot({ 1, 2 })
