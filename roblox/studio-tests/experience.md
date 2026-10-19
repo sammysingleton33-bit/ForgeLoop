@@ -728,15 +728,16 @@ Steps
    - a KO: down on both knees, slumped.
 
    Watch it from the aerial camera, then close up. Each action must be visible and different from the others. The arms and the upper body move, and nothing bends inside out or sinks into the ground. Screenshot **E21-1** (the heavy wind-up), **E21-2** (the guard) and **E21-3** (the KO).
-2. Run the preview again and walk with WASD while it plays. Your legs keep walking under the swings, the guard and the parry. The legs are posed only in a dodge, a flinch, the stagger and the KO. Run it with `"greatsword"`, `"spear"` and `"mace"` too: the greatsword uses both arms, and with a spear the arm thrusts straight forward.
-3. Settings → Reduced motion on, then run the preview again. Every pose still plays, but the stagger does not wobble and the ready stance does not breathe. Then run `""`: within a fraction of a second your character is back on its own animation, with no arm or leg left bent.
+2. Before each rerun, set `""` first, then the weapon name. A run keeps its duel state after its last step, so a second name, or the same one again, plays nothing until `""` stops it. Run the preview again and walk with WASD while it plays. Your legs keep walking under the swings, the guard and the parry. The legs are posed only in a dodge, a flinch, the stagger and the KO. Run it with `"greatsword"`, `"spear"` and `"mace"` too (each after `""`): the greatsword uses both arms, and with a spear the arm thrusts straight forward.
+3. Settings → Reduced motion on, then `""` and run the preview again. Every pose still plays, but the stagger does not wobble and the ready stance does not breathe. Then run `""`: within a fraction of a second your character is back on its own animation, with no arm or leg left bent.
 4. A real duel against an AI. From the arena camera and from the aerial view, each action of yours shows on your body:
    - light, heavy, block (hold the key), parry and dodge;
    - a flinch when the AI hits you;
    - at the end, the loser kneels and the winner raises the weapon.
 
-   Your own presses show on your body at once, with no wait for the server. A press the server refuses stops within half a second: try a heavy with an empty stamina bar. The guard stays up exactly while you hold the key. The opponent's light, block and dodge show up to about 0.2 s plus ping late, because they come from the duel's state every 0.2 s; their heavies, hits, parries and staggers come with their own events. With FL-0140, the AI's body moves too.
-5. Two players: each client sees both champions animate, and so does a watching third client. Join a client mid-duel (the route in E20 step 5): its champions animate from the next action.
+   Your own presses show on your body at once, with no wait for the server. A press with too little stamina never swings: press heavy with an empty stamina bar and your champion sags for half a second instead (out of breath: the weapon's tip drops and the head goes down). Mashing it does not restart the sag, and a block press still raises the guard at once. A press your client played but the server refused stops within half a second; that is rare (the last state was behind the server). The guard stays up exactly while you hold the key.
+   - **Called Warning** (the captain's perk, if you took it): the AI's first heavy wind-up after the duel's first 10 s, and the next one within 8 s, raises its arms visibly faster, in about 0.18 s instead of 0.3 s. The strike still lands when the hit does. Needs the AI's body (FL-0140); with two players (step 5) the champion with the perk sees it on the other one. Write whether you could tell the difference. The opponent's light, block and dodge show up to about 0.2 s plus ping late, because they come from the duel's state every 0.2 s; their heavies, hits, parries and staggers come with their own events. With FL-0140, the AI's body moves too.
+5. Two players: each client sees both champions animate, and so does a watching third client. Join a client mid-duel (the route in E20 step 5): its champions animate from the next action. A client that joins during the crowning poses nobody: no ready stance, each avatar keeps its own animation.
 6. On a phone (Device emulator, a phone, landscape) at the arena camera: every action reads. Note any that does not.
 7. Performance: open the Microprofiler during a fast exchange. There must be no spike when actions arrive: the work is a few joints per champion per frame.
 8. After the crowning and Results, both bodies are back to normal: nothing frozen, no one left kneeling.
@@ -745,3 +746,4 @@ Pass: steps 1–3 hold; 4–8 when a duel runs (4 with the AI body once FL-0140 
 
 History:
 - 2026-10-19 FORGE-04: written (FL-0141; G12.4 Arena.Events, G12.6).
+- 2026-10-19 FORGE-04: FL-0141 follow-up 2 (FORGE-00's CONTRACTS v0.4-g11n notes). Steps 2 and 3 set `""` before each rerun. Step 4: the empty-stamina heavy now shows the out-of-breath sag, and a Called Warning check. Step 5: a crowning late join poses nobody.

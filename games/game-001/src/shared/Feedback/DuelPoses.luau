@@ -10,7 +10,9 @@
 	each side's `snapshot` state, sent every 0.2 s):
 		snapshot state "windup"   light swing, unless a heavy is already winding up
 		snapshot state "recover"  the swing jumps to its strike (or starts at it: the windup was missed)
-		heavyWindup               heavy: wind-up held for data.impactIn, then the strike
+		heavyWindup               heavy: wind-up held for data.impactIn, then the strike; with the
+		                          defender's Called Warning (data.warned seconds) the arms reach the
+		                          held telegraph that much sooner (WARNED_RAISE), the strike as before
 		hit (side = the hitter)   the hitter's swing strikes now; the target flinches (heavy: a bigger
 		                          flinch, a step back), or its guard jolts when it is blocking
 		snapshot state "block"    the guard is held while the state says block; it eases out after
@@ -27,9 +29,11 @@
 	stamina would refuse (DuelModel.step's rules, config Duel's costs) does not play; the server's next state
 	or event confirms it (windup or recover for a swing, heavyWindup, a hit, block, parry, dodge); unconfirmed
 	after CONFIRM_SEC it stops. A predicted guard holds from the press to the release (blockEnd), and a stale
-	"block" state just after the release does not raise it again (RELEASE_GRACE).
+	"block" state just after the release does not raise it again (RELEASE_GRACE). A press the stamina
+	refuses plays "winded" instead (out of breath: the weapon sags, the head drops) when nothing else plays,
+	so a press with an empty bar is seen to be felt, never as a swing.
 	Priorities: the ending 4 > stagger 3 > an action (light, heavy, parry, dodge) 2 > a flinch or a guard
-	jolt 1 > the held guard 0. A new animation replaces the current one when its priority is at least as
+	jolt 1 > the held guard or winded 0. A new animation replaces the current one when its priority is at least as
 	high or the current one has finished. Every change crossfades over XFADE seconds.
 
 	Weapon styles (snapshot side.weapon): swordShield and mace "slash" (one-handed, shield on the left
@@ -58,7 +62,7 @@
 		track:sample(now, out, motion?) -> Out          out = { pose: { [joint]: CFrame }, weight, body }
 		    weight 0..1: how much the pose applies (0 = leave the rig alone); body 0..1: Root and legs
 		    motion = false freezes the periodic parts (reduced motion: no wobble, no pump, no breathing)
-		DuelPoses.keys(name, style?, windup?) -> { { t, pose } }?   the keyframes (specs, renders)
+		DuelPoses.keys(name, style?, windup?, dir?, warned?) -> { { t, pose } }?   the keyframes (specs, renders)
 		DuelPoses.pose(numbers, out?) -> { [joint]: CFrame }        numbers → CFrames
 		DuelPoses.JOINTS, LIMITS, STYLE, PRIORITY, FULL, LENGTH, XFADE, LIGHT_WINDUP, HEAVY_WINDUP
 ]]
@@ -96,6 +100,7 @@ DuelPoses.PRIORITY = table.freeze({
 	flinch = 1,
 	flinchHeavy = 1,
 	guardHit = 1,
+	winded = 0, -- never in the way: any press, even the guard, replaces it
 	block = 0,
 })
 DuelPoses.FULL =
@@ -106,6 +111,11 @@ DuelPoses.LIGHT_STRIKE = 0.12
 DuelPoses.LIGHT_RECOVER = 0.27
 DuelPoses.HEAVY_WINDUP = table.freeze({ default = 0.8, min = 0.25, max = 1.5 })
 DuelPoses.HEAVY_STRIKE = 0.16
+-- The heavy's telegraph (the arms raised, then held) is reached after `normal` seconds (at most half the
+-- wind-up). A Called Warning (heavyWindup.warned: 0.15 or 0.25 s, config Support) brings it that much
+-- sooner, but never sooner than `min`: a faster raise turns a joint more than 25° in one 60 Hz frame
+-- (spec). So either warning shows the raise 0.12 s sooner today.
+DuelPoses.WARNED_RAISE = table.freeze({ normal = 0.3, min = 0.18 })
 DuelPoses.HEAVY_RECOVER = 0.45
 DuelPoses.RECENT_STRIKE = 0.5 -- a recover state or a hit this soon after a strike is the same swing
 DuelPoses.CONFIRM_SEC = 0.5 -- a predicted press the server has not confirmed by then stops (ping + 0.2 s snapshots)
@@ -133,6 +143,7 @@ DuelPoses.LENGTH = table.freeze({
 	flinch = 0.35,
 	flinchHeavy = 0.55,
 	guardHit = 0.25,
+	winded = 0.5,
 	stagger = 1.0,
 	ko = 0.6,
 	yield = 0.6,
@@ -408,6 +419,15 @@ local VICTORY = with(LEGS_READY, {
 	Tool = { -60, 0, 0 },
 	LeftArm = { 40, 0, -35 },
 })
+-- out of breath (a press the stamina refuses, on your own client): the shoulders sag, the weapon's tip
+-- drops and the head goes down, then back to the stance
+local WINDED = with(LEGS_READY, {
+	Waist = { -14, -10, 0 },
+	Head = { -18, 10, 0 },
+	RightArm = { 15, 0, 10 },
+	Tool = { -35, 0, 0 },
+	LeftArm = { 20, 0, -8 },
+})
 
 local function styleOf(style: string?): string
 	return if style == "twoHand" or style == "thrust" then style else "slash"
@@ -419,7 +439,7 @@ local function heavyWindup(windup: number?): number
 end
 
 -- The keyframes of one animation: { { t, pose } }, t in seconds from its start. dir: the dodge's side.
-function DuelPoses.keys(name: string, style: string?, windup: number?, dir: number?): { Key }?
+function DuelPoses.keys(name: string, style: string?, windup: number?, dir: number?, warned: number?): { Key }?
 	local s = styleOf(style)
 	local ready = READY[s]
 	if name == "ready" then
@@ -440,9 +460,13 @@ function DuelPoses.keys(name: string, style: string?, windup: number?, dir: numb
 	elseif name == "heavy" then
 		local w = heavyWindup(windup)
 		local strike = w + DuelPoses.HEAVY_STRIKE
+		local raise = DuelPoses.WARNED_RAISE
+		local raised = math.min(raise.normal, w * 0.5)
+		local lead = if type(warned) == "number" and warned == warned then warned else 0
+		raised = math.min(raised, math.max(raise.min, raised - lead)) -- a Called Warning: sooner, never later
 		return {
 			{ t = 0, pose = ready },
-			{ t = math.min(0.3, w * 0.5), pose = HEAVY[s][1] }, -- raised fast, then held: the telegraph
+			{ t = raised, pose = HEAVY[s][1] }, -- raised fast, then held: the telegraph
 			{ t = w, pose = HEAVY[s][1] },
 			{ t = strike, pose = HEAVY[s][2] },
 			{ t = strike + DuelPoses.HEAVY_RECOVER, pose = ready },
@@ -488,6 +512,13 @@ function DuelPoses.keys(name: string, style: string?, windup: number?, dir: numb
 		return { { t = 0, pose = ready }, { t = DuelPoses.LENGTH.yield, pose = YIELD_DOWN } }
 	elseif name == "victory" then
 		return { { t = 0, pose = ready }, { t = DuelPoses.LENGTH.victory, pose = VICTORY } }
+	elseif name == "winded" then
+		return {
+			{ t = 0, pose = ready },
+			{ t = 0.12, pose = WINDED },
+			{ t = 0.3, pose = WINDED },
+			{ t = DuelPoses.LENGTH.winded, pose = ready },
+		}
 	end
 	return nil
 end
@@ -655,7 +686,7 @@ function Track:_current(now: number): any
 end
 
 -- Starts `name` when its priority allows. start: its start time (a jump into the middle sets it earlier).
-function Track:play(name: string, now: number, opts: { windup: number?, start: number? }?): boolean
+function Track:play(name: string, now: number, opts: { windup: number?, start: number?, warned: number? }?): boolean
 	if self.final and DuelPoses.PRIORITY[name] < 4 then
 		return false
 	end
@@ -669,7 +700,7 @@ function Track:play(name: string, now: number, opts: { windup: number?, start: n
 		self._dodges += 1
 		dir = if self._dodges % 2 == 1 then -1 else 1
 	end
-	local keys = DuelPoses.keys(name, self.style, options.windup, dir) :: { Key }
+	local keys = DuelPoses.keys(name, self.style, options.windup, dir, options.warned) :: { Key }
 	local windup = nil
 	if name == "light" then
 		windup = keys[2].t -- the windup the keys were built with
@@ -776,7 +807,11 @@ function Track:predict(action: string, now: number): boolean
 		return false -- the server would refuse it from this state
 	end
 	if type(self.stamina) == "number" and self.stamina < DuelPoses.cost(action, self.armour) then
-		return false -- not enough stamina
+		-- not enough stamina (the server refuses it too): out of breath, unless something else plays
+		if self:_current(now) == nil then
+			self:play("winded", now)
+		end
+		return false
 	end
 	local current = self:_current(now)
 	if current ~= nil and current.priority >= DuelPoses.PRIORITY.light then
@@ -924,11 +959,12 @@ function Duel:onEvent(event: any, now: number)
 		end
 	elseif kind == "heavyWindup" and track ~= nil then
 		local impactIn = if type(data) == "table" then data.impactIn else nil
+		local warned = if type(data) == "table" then data.warned else nil
 		local current = track:_attack(now)
 		if current ~= nil and current.name == "heavy" then
 			current.predicted = nil -- our own press, confirmed: the swing goes on, never restarted
 		else
-			track:play("heavy", now, { windup = impactIn })
+			track:play("heavy", now, { windup = impactIn, warned = warned })
 		end
 	elseif kind == "hit" and track ~= nil then
 		local heavy = type(data) == "table" and data.heavy == true
