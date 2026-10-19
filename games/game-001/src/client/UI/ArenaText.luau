@@ -24,8 +24,9 @@ local Support = require("@game/ReplicatedStorage/Forge/Config/Support")
 
 local ArenaText = {}
 
-local function row(id: string, name: string, short: string, icon: string, blurb: string)
-	return table.freeze({ id = id, name = name, short = short, icon = icon, blurb = blurb })
+-- `shortBlurb`: the phone tile's two lines (667x375 fit, FL-0138); the blurb otherwise.
+local function row(id: string, name: string, short: string, icon: string, blurb: string, shortBlurb: string?)
+	return table.freeze({ id = id, name = name, short = short, icon = icon, blurb = blurb, shortBlurb = shortBlurb })
 end
 
 -- Order: the default first (DuelModel's own defaults are swordShield and medium).
@@ -39,7 +40,14 @@ ArenaText.WEAPONS = table.freeze({
 	),
 	row("greatsword", "Greatsword", "Greatsword", "weapon_greatsword", "The heaviest blows, slower swings"),
 	row("spear", "Spear", "Spear", "weapon_spear", "The fastest light attack"),
-	row("mace", "Mace", "Mace", "weapon_mace", "Breaks guards: blocked hits cost more stamina"),
+	row(
+		"mace",
+		"Mace",
+		"Mace",
+		"weapon_mace",
+		"Breaks guards: blocked hits cost more stamina",
+		"Breaks guards by draining stamina"
+	),
 })
 
 ArenaText.ARMOUR = table.freeze({
