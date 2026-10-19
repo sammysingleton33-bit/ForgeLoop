@@ -27,6 +27,7 @@
 	                       direction to the opponent) for a swing to land
 	blockMaxSeconds        a block held longer than this is released by the server (a client that never sends blockEnd
 	                       cannot turtle for ever)
+	poseGraceSeconds       a human champion the server cannot locate pauses the duel for this long, then forfeits
 	rate                   Arena.Action token bucket per champion (G12.4): burst and actions per second
 ]]
 
@@ -46,5 +47,6 @@ return {
 	reach = 6.5,
 	facingMinDot = 0.5,
 	blockMaxSeconds = 2.5,
+	poseGraceSeconds = 8,
 	rate = { burst = 8, perSecond = 12 },
 }

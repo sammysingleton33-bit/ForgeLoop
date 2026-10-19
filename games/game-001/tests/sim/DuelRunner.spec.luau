@@ -215,6 +215,13 @@ describe("DuelRunner: geometry", function()
 		expect(lostOpponent).toBe(0) -- the opponent cannot be found either
 	end)
 
+	it("a facing vector shorter than a unit vector still faces; a zero one does not", function()
+		local pitched = swingOnce(poses({ x = 0, z = 0, fx = 0.4, fz = 0 }, { x = 4, z = 0, fx = -1, fz = 0 }))
+		expect(pitched).toBe(1)
+		local zero = swingOnce(poses({ x = 0, z = 0, fx = 0, fz = 0 }, { x = 4, z = 0, fx = -1, fz = 0 }))
+		expect(zero).toBe(0)
+	end)
+
 	it("a swing that misses is not relayed (miss and dodged stay inside)", function()
 		local runner = newRunner(
 			human(1),
@@ -371,6 +378,72 @@ describe("DuelRunner: time", function()
 		expect(snapshots[1].data.a.hpShare).toBe(1)
 		expect(snapshots[1].data.a.staminaShare).toBe(1)
 		expect(snapshots[1].data.triggers).toBeNil()
+		expect(snapshots[1].data.a.hp).toBeNil() -- shares only
+		expect(snapshots[1].data.a.stamina).toBeNil()
+		expect(snapshots[1].data.ended).toBeNil()
+	end)
+end)
+
+describe("DuelRunner: a champion the world cannot find", function()
+	local function located(lost: { [number]: boolean })
+		return function(userId: number)
+			if lost[userId] then
+				return nil
+			end
+			return { x = if userId == 1 then 0 else 4, z = 0, fx = if userId == 1 then 1 else -1, fz = 0 }
+		end
+	end
+
+	it("pauses the duel, and a pose that returns resumes it", function()
+		local lost: { [number]: boolean } = {}
+		local runner = newRunner(human(1), human(2), { pose = located(lost) })
+		local clock = { t = 0 }
+		runner:step(0)
+		run(runner, clock, 30)
+		local before = runner:snapshot().t
+		lost[1] = true
+		run(runner, clock, 30 * (ArenaConfig.poseGraceSeconds - 2))
+		expect(runner:snapshot().t).toBe(before)
+		expect(runner:finished()).toBe(false)
+		lost[1] = nil
+		run(runner, clock, 30)
+		expect(runner:snapshot().t > before).toBe(true)
+		-- the grace starts again after a pose came back
+		lost[1] = true
+		run(runner, clock, 30 * (ArenaConfig.poseGraceSeconds - 2))
+		expect(runner:finished()).toBe(false)
+	end)
+
+	it("forfeits that champion once the grace runs out, and still takes their Arena.Action", function()
+		local lost: { [number]: boolean } = { [1] = true }
+		local runner = newRunner(human(1), human(2), { pose = located(lost) })
+		local clock = { t = 0 }
+		runner:step(0)
+		local ok = runner:act(1, "light", 0)
+		expect(ok).toBe(true)
+		local events = run(runner, clock, 30 * (ArenaConfig.poseGraceSeconds + 1))
+		local side, reason = runner:result()
+		expect(side).toBe("b")
+		expect(reason).toBe("forfeit")
+		expect(#ofKind(events, "ended")).toBe(1)
+		expect(runner:snapshot().t).toBe(0) -- the duel itself never ran
+	end)
+
+	it("both champions lost together is a draw", function()
+		local runner = newRunner(human(1), human(2), { pose = located({ [1] = true, [2] = true }) })
+		local clock = { t = 0 }
+		runner:step(0)
+		run(runner, clock, 30 * (ArenaConfig.poseGraceSeconds + 1))
+		local side = runner:result()
+		expect(side).toBe("draw")
+	end)
+
+	it("an AI champion needs no pose and never pauses the duel", function()
+		local runner = newRunner(human(1), ai(DuelRunnerAI.b, 1), { pose = located({ [DuelRunnerAI.b] = true }) })
+		local clock = { t = 0 }
+		runner:step(0)
+		run(runner, clock, 30)
+		expect(runner:snapshot().t > 0.5).toBe(true)
 	end)
 end)
 
