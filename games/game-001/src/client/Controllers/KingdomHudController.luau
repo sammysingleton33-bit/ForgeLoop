@@ -1140,6 +1140,15 @@ function KingdomHudController:render()
 			onCancelWar = function()
 				self:cancelWar()
 			end,
+			-- "How to play" at the end of the Overview tab (FL-0138), when HowToPlayController is loaded
+			onHelp = if self._registry:find("HowToPlayController") ~= nil
+				then function()
+					local help = self._registry:find("HowToPlayController")
+					if help then
+						help:open()
+					end
+				end
+				else nil,
 		})
 	else
 		self.panel:destroy()
