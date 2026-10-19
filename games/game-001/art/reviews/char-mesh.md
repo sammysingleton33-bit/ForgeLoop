@@ -52,3 +52,94 @@ Consequences of the pick:
 - Fairness caveat for C: it is a one-pass automatic decimation prototype, not a hand-retopologised KayKit set; a hand-built KayKit
   kit at about 1,000 triangles would score better than round 1, but it would also need every missing job (hats, aprons, tools, packs)
   built by hand in the same style, which is what B already is.
+
+## The kit (2026-10-19): what was built, measured, and the D-019 re-score loop
+
+**Built (project-original, style B):** `blender/generators/char_kit.py` (+ `_charkit_*.py`) exports ONE FBX `games/game-001/art/char_kit/citizen_kit.fbx`
+(103 pieces named by piece id, vertex colours, one material, 1 Blender unit = 1 stud, Y up / -Z forward) and `rig.json` beside it; manifest row
+`char_kit_01`; preview `blender/previews/char_kit.jpg`. 6 faces, 10 hair styles (one is a hood) + beard, 6 torso cuts + smith / merchant / healer
+/ soldier / ruler torsos, bare / hand-only / gauntlet arms, 4 sleeve types, 3 leg types, 3 boots + plate, 11 hats (straw, beanie, miner helmet,
+builder cap, merchant beret + feather, healer coif, smith cap, helm, crown, hood, headband), 14 tools (hoe, axe, pick, mallet, hammer, scale,
+healer staff, hauler sack, spear + pennant, sword, bow, ruler staff), ruler cape + ermine collar + trim, four kingdom crests (crown, star, oak
+leaf, sun) + shields + a neutral crest and shield, quiver, aprons, satchels, and a kingdom-coloured shoulder mantle on every worker.
+13 assemblies (farmer, woodcutter, miner, builder, hauler, blacksmith, merchant, healer, idle, soldier, soldier_swordsman, soldier_archer,
+governor). `rig.json` passes `python3 games/game-001/art/char_kit/rig_to_luau.py --validate-only` (0 warnings; the converter is the runtime
+worker's file, copied verbatim); variants are resolved by `blender/lib/ckit_resolve.py`, a port of the runtime's `CharacterMesh.luau` rules, in
+every render, test and budget check.
+
+**Measured from the shipped files** (`~/forge-bpy/bin/python -I blender/scripts/charkit_budget.py`, which counts triangles from the FBX bytes
+(`blender/lib/fbxtris.py`) and again through the Blender importer, compares both with `tris` in rig.json, then sums every job x all 1,728 looks x
+4 kingdoms; `blender/lib/manifest.py check()` runs the same measurement in `bash blender/scripts/check.sh` and fails over budget or on any
+declared-vs-measured mismatch; mutants in `blender/tests/test_kit_budget.py`):
+
+FBX 483,788 bytes; 103 mesh objects, 6,804 triangles in all; largest mesh 188; materials ['M_charkit_vc']; colour layers ['Col']; looks checked per job: 1,728 x 4 kingdoms
+
+| job | default tris | min | max | cap | body max | tool max | pieces = draw calls (max) | texture memory | verdict |
+|---|---|---|---|---|---|---|---|---|---|
+| farmer | 864 | 824 | 910 | 1000 | 838 | 72 | 15 | 0 B | PASS |
+| woodcutter | 792 | 752 | 838 | 1000 | 798 | 40 | 14 | 0 B | PASS |
+| miner | 800 | 760 | 846 | 1000 | 778 | 68 | 13 | 0 B | PASS |
+| builder | 760 | 720 | 806 | 1000 | 750 | 56 | 13 | 0 B | PASS |
+| hauler | 814 | 774 | 952 | 1000 | 858 | 94 | 14 | 0 B | PASS |
+| blacksmith | 738 | 714 | 764 | 1000 | 720 | 44 | 13 | 0 B | PASS |
+| merchant | 916 | 892 | 942 | 1000 | 840 | 102 | 15 | 0 B | PASS |
+| healer | 928 | 904 | 954 | 1000 | 866 | 88 | 14 | 0 B | PASS |
+| idle | 676 | 636 | 814 | 1000 | 814 | 0 | 13 | 0 B | PASS |
+| soldier | 810 | 806 | 856 | 1500 | 770 | 86 | 14 | 0 B | PASS |
+| soldier_swordsman | 854 | 846 | 920 | 1500 | 862 | 58 | 14 | 0 B | PASS |
+| soldier_archer | 888 | 884 | 934 | 1500 | 850 | 84 | 14 | 0 B | PASS |
+| governor | 900 | 900 | 926 | 1500 | 834 | 92 | 16 | 0 B | PASS |
+
+Budget: citizen <= 1,000 in all (body <= 900, hand tool or sack <= 150), soldiers and governor <= 1,500, <= 16 pieces, every mesh <= 20,000, one
+material, texture memory 0. Draw calls = pieces (one MeshPart each); Studio draw-call cost is **unverified**.
+Pose clearance (`python blender/scripts/charkit_clearance.py`, hair / hats / crests / cape / pack / aprons / shields against the bodies over
+every Pose action and phase, Python port of Sim/Pose.luau): over tolerance 0; the only penetrations above 0.06 stud are thin soft shells (aprons,
+regal hem, sack strap, <= 0.33 stud) that a thigh crosses in the fast walk / flee frames.
+
+### Re-score loop (fresh image-only reviewers, rubric `blender/reviews/README.md`; two author rounds, then stop)
+Reviewer sessions saw only the sheets in `img/d057-kit-review-r1/` and `img/d057-kit-review-r2/`; replies are verbatim in each `review.json`.
+
+| Round | Kit | sil | var | read | prop | pal | detail | coh | cost | verdict |
+|---|---|---|---|---|---|---|---|---|---|---|
+| r1 (kit v1: kingdom-red torsos, 99 pieces) | Reference | 2 | 1 | 2 | 2 | 3 | 1 | 4 | 5 | |
+| r1 | Kit | 3 | 3 | 3 | 4 | 4 | 4 | 4 | 4 | NEEDS-WORK, ship: false |
+| r2 (kit v2: job colours + kingdom mantle, runtime contract, 103 pieces) | Reference | 2 | 2 | 2 | 3 | 3 | 1 | 4 | 5 | |
+| r2 | Kit | 3 | 4 | 3 | 3 | 3 | 4 | 4 | 4 | **NEEDS-WORK, ship: false** |
+
+r1 defects (summary): the non-farmer, non-soldier jobs blur into one red figure at 170 studs; every citizen wears the same red tunic so the kingdom colour
+does not separate jobs; the lower-body job silhouettes share one torso / head outline; same-job citizens are clones with different heads; faces are
+tiny dashes (dark skins). What I changed for r2 (author round 2): kingdom colour moved from the whole torso to a shoulder mantle (`mantle_kingdom`)
+and job identity into clothes and hats (baked colours: charcoal woodcutter beanie, cream builder cap, violet merchant beret + coat, white healer
+coif + smock, soot-black smith cap + shirt); 6 interchangeable torso cuts for every worker; neutral crest / shield; ruler cape darker and flared;
+coif, hood and bob no longer cover the eyes (found with a front-view headgear grid); mirrored-hull winding fixed (axe head had rendered black);
+budgets now measured; the kit data conforms to the runtime contract.
+r2 identities (reviewer, Kit; at 40 / at 170 studs): farmer yes / yes, soldier yes / yes, miner yes / partly, woodcutter yes / partly, governor
+yes / partly, merchant partly / partly, hauler partly / partly, blacksmith partly / no, healer partly / no, builder partly / no, idle no / no.
+r2 defects: (1) blacksmith, builder, healer, hauler, idle are not distinguishable at 170 studs, props are thin and small; (2) the kingdom colour is one
+small band on workers so it reads weakly from above; (3) silhouettes of the non-tool jobs are near-identical blobs; (4) same-job variation is mostly
+skin and hair colour (grid reads as clones at distance, though variation scored 4); (5) awkward proportions (large heads, stiff arms), faces and small
+cues vanish at 40+ studs.
+
+**Status: NEEDS-WORK after two rounds (silhouette 3, readability 3; proportions and palette dropped from 4 to 3 with the mantle change).** The
+author round limit is used, so this is a blocker report, not a pass. It is a real kit that is clearly better than the reference at portrait and 40
+studs (all three reviewers' sheets agree: faces, hair, hats, tools, variation, cohesion), and it passes the budgets and the runtime validator, but it
+does not yet make blacksmith, builder, healer, hauler and idle unmistakable at 170 studs. My read of why, from the renders: at 170 studs a citizen
+is about 10 px tall, so only the hat, the shoulders and a tool read; thin tools (scale, staff, pick) vanish, and the kingdom-vs-job colour budget has
+no good answer inside one torso colour. Options for the owner / coordinator (not done, each needs a decision): (a) an aerial LOD with oversized
+hat and prop silhouettes (about 1.3x) swapped in beyond ~100 studs; (b) one job-coloured torso family per job (about 54 torso meshes, +0.2 MB) with the
+kingdom colour on mantle plus sleeves; (c) the runtime reading rig.json's own cloth palettes (`tints.cloth_panels`) instead of `Character.clothColor`
+so the job colours of the first design (green farmer, rust woodcutter, slate miner) apply; (d) accept the 170-stud read of the seven identities
+as "partly" and rely on the 40-stud read. Studio will change several of these judgements (lighting, vertex-colour tint, real camera FOV).
+
+**What I looked at (all opened):** the portraits of all 11 identities (Cycles, neutral ground), the 11-identity lineup at ~35 studs, 36-look grid,
+four kingdoms from the front and back, a ruler and a hauler from four sides, silhouettes (front and turned 40 degrees, old vs new), the 30-citizen
+crowd at 40 and 170 studs (old vs new, same camera), the headgear x face grid, pose lineups of a farmer and a hauler. **What is weak:** see the r2
+defects; additionally the hauler's sack hangs 0.2 stud off the back (rest pose), faces are geometry only, ears are thin diamonds, the red mantle
+reads like a scarf, and Cycles renders add a green bounce on skin unless the ground is neutral (a render artefact, not Roblox).
+**Placeholder / unverified:** everything about Studio (importer axes and scale, MeshPart pivot and bounding box, vertex colours and
+`MeshPart.Color` multiplication in sRGB, draw-call cost at crowd sizes); no textures; unit-kind keys `soldier_swordsman` / `soldier_archer` are
+guesses; the cloth colours of workers follow the runtime's old job panels, not a new palette.
+
+Reproduce: `~/forge-bpy/bin/python blender/build.py --generator char_kit`, `blender/scripts/charkit_scenes.py` (scenes crowd170 / crowd40 / jobs /
+looks / kingdoms / turntable / poses / portraits, `--silhouette`, `--yaw`, `--old`), `blender/scripts/charkit_review_sheets.py`,
+`blender/scripts/charkit_clearance.py`, `blender/scripts/charkit_budget.py`.

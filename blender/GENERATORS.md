@@ -53,10 +53,15 @@ stones, trunks); keep small members (timbers, battens, frames) unbevelled. Lathe
 A generator that ships a whole kit instead of one mesh per variant sets `KIT = True` and provides `registry()` returning
 `(Registry, rig module, hand point)`; `build.py` hands over to `lib/ckit_kit.run_generator`, which writes ONE FBX
 (`exports/citizen_kit.fbx`, every piece its own mesh object named by its piece id, vertex colours, one material),
-`games/game-001/art/char_kit/rig.json` (joints, per-piece bbox/tris/tint/slot, assemblies, looks, tints, measured budgets) and a
-single manifest row (`char_kit_01`, `kit` summary, `license`). `char_kit` is the reference: pieces are authored in ROBLOX rig axes
+`games/game-001/art/char_kit/rig.json` (the runtime contract: joints, per-piece bbox/tris/tint/slot, assembly TEMPLATES such as
+`head_%look.face%` / `crest_%kingdom%`, plus tints and measured budgets; `games/game-001/art/char_kit/rig_to_luau.py --validate-only`
+must pass), a committed copy of the FBX next to it, and a single manifest row (`char_kit_01`, `kit` summary, `license`). `char_kit` is the reference: pieces are authored in ROBLOX rig axes
 (`lib/ckit.py`: lofts, tubes, prisms, hulls, panels; colours per face + a baked "sky" shading term), the rig definition lives in
 `generators/_charkit_rig.py`, and `lib/ckit_rigload.py` rebuilds any (job, look, kingdom) citizen from the SHIPPED FBX + rig.json only.
+Variants are numbered pieces (`head_01..06`, `hair_01..10`, `torso_01..06`, `boot_01..03_l/_r`, `acc_01..02`) resolved by
+`lib/ckit_resolve.py`, a port of `Kit/CharacterMesh.luau`; budgets are MEASURED, never declared: `lib/fbxtris.py` counts triangles from the FBX
+bytes, `manifest.check()` recomputes every piece and every assembly x look x kingdom (citizen 1,000 / body 900 / tool 150, soldier and governor
+1,500, 16 pieces, 20,000 per mesh) and fails on any mismatch; `blender/scripts/charkit_budget.py` prints the table (mutants: `tests/test_kit_budget.py`).
 Checks: `blender/scripts/charkit_clearance.py` (hair, hats, capes and packs vs every Pose action), `tests/test_charkit.py`,
 `build.py --verify` (canonical geometry hash + tri counts), FBX round-trip (import the exported FBX and compare bboxes with rig.json).
 Third-party (CC0) sources are never committed: a pinned fetch script fills a gitignored cache and the manifest row carries

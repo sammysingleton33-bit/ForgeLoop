@@ -7,10 +7,11 @@ status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 depends_on: []
 evidence:
   - branch forge/02-blender-fl0135-meshes
+  - bash blender/scripts/check.sh PASS; pytest blender/tests 55+ passed; charkit_budget.py PASS (max citizen 954/1000, soldiers/governor 934/1500); rig_to_luau.py --validate-only valid 0 warnings; renders games/game-001/art/reviews/img/d057-kit-review-r2/
 ---
 
 # Citizen and ruler visual upgrade with licensed prebuilt assets: faces, hair, clothing, job identities, rulers, variation (D-057)
@@ -51,3 +52,4 @@ In a playable build, citizens look professional and alive. Each has a face, hair
 ## Log
 - 2026-10-18 FORGE-00: created from the owner's visual-quality directive (D-057). It supersedes FL-0118.
 - 2026-10-18 forge-02: READY → BUILDING. FORGE-02 worker B: Blender mesh kit started (style comparison A smooth / B faceted / C KayKit-derived first, then the kit, rig.json, FBX, renders)
+- 2026-10-19 forge-02: BUILDING → BUILDING. mesh kit built and pushed (103 pieces, FBX + rig.json valid for rig_to_luau.py, budgets measured from the FBX in manifest.check); D-019 fresh re-score NEEDS-WORK twice (silhouette / readability 3, variation 4), author rounds used; handoff to the runtime worker written; Studio import and a decision on the 170-stud read are open
