@@ -7,7 +7,7 @@
 	stage == "vote", one entry per side with two or more candidates:
 		vote = { a = { kingdom, candidates: { userId }, voted: { userId } }, b = ... }
 	`voted` names who has voted, never for whom (the ballot is secret). Without the field nothing shows: the
-	panel is dark until the server sends it.
+	panel is dark until the server sends it (live on main since #275, FORGE-01).
 
 		ArenaVoteModel.entry(state, me) -> (side?, entry?)   the local player's own vote, when they are a candidate
 		ArenaVoteModel.view(state, lookup, me, now, pick?) -> View?
@@ -96,7 +96,7 @@ function ArenaVoteModel.view(state: any, lookup: any, me: number?, now: number, 
 	elseif pick.status == "pending" then
 		status, kind = "Sending your vote…", "pending"
 	elseif pick.status == "ok" then
-		status, kind = `You voted for {pickedName or "a ruler"}. You can change it until the time runs out.`, "ok"
+		status, kind = `You voted for {pickedName or "a ruler"}. You can change it until the vote closes.`, "ok"
 	else
 		status, kind = "Your vote was not counted. Try again.", "failed"
 	end

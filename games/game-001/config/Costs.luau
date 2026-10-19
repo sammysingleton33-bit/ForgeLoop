@@ -70,7 +70,7 @@ local BUILDINGS: { [string]: { BuildingCost } } = {
 		{ cost = { wood = 60, stone = 100 }, buildSeconds = 40 },
 	},
 	wall = {
-		{ cost = { stone = 20 }, buildSeconds = 15 },
+		{ cost = { wood = 20 }, buildSeconds = 15 }, -- L1 is a timber palisade (#260); L2 and L3 are stone
 		{ cost = { stone = 40 }, buildSeconds = 20 },
 		{ cost = { stone = 60, gold = 10 }, buildSeconds = 25 },
 	},

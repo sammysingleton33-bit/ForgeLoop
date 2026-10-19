@@ -75,6 +75,8 @@ ROWS = [
      "countdown ticks down"),
     ("destroy keeps listening", K, "\tself._destroyed = true\n\tself._running = false", "\tself._running = false",
      "destroy removes the panel"),
+    ("phone status box too short", V, "local statusHeight = if phone then 32 else 40",
+     "local statusHeight = if phone then 8 else 40", "phone status line holds its longest text"),
 ]
 bad = 0
 for name, path, old, new, expect in ROWS:
