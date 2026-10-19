@@ -154,3 +154,109 @@ python3 blender/scripts/envkit_sheets.py --renders /tmp/env/r1 --out games/game-
 ~/forge-bpy/bin/python -I blender/scripts/envkit_hue_diff.py        # team-colour share of the KayKit hue variants
 ~/forge-bpy/bin/python -m pytest -q blender/tests/test_envkit.py    # fit maths, wheat bounds, source pins
 ```
+
+
+---
+
+# Phase 2: nature and crops (FL-0136, D-057 (18) to (20)) — FORGE-02 worker P
+
+FORGE-00's amendment after the round above (D-057 (18) to (20)): buildings stay part-built; trees, bushes, rocks, boulders, flowers, resource nodes and crops get NEW project-original
+style-B meshes (the citizen kit's direction: faceted, flat-shaded, chunky, one vertex-colour material) through the existing `Kit.prop(assetId)` / `Forge.Assets` path with UNCHANGED ids.
+Worker K does the Luau import side; this section is the Blender side (kit, measurements, renders, D-019). Blender renders are not Studio renders.
+
+## 1. Inventory: what the world really places (measured, not read)
+Measured with `blender/scripts/lune/EnvInventory.spec.luau` (committed): it boots the real `WorldService` in the Lune mock at the shipped density and at density 1.0
+(`WorldPlan.FULL_DENSITY`) with `Kit.prop` wrapped, so every placement, resource node and stand-in part is counted by asset id. The same spec pins the known figure
+(`props 616`, `parts 8309` at density 1.0, WorldService.spec) and dumps every stand-in so Blender can rebuild it for the "before" renders.
+```
+FORGE_ENV_INVENTORY=/tmp/env_inventory.json lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs blender/scripts/lune EnvInventory
+python3 blender/scripts/envkit_standins.py /tmp/env_inventory.json --table      # writes blender/lib/envkit_standins.json, the table the kit is fitted against
+```
+Result: **shipped density 417 placements + 38 resource nodes = 6,553 parts; density 1.0 616 placements + 38 nodes = 8,309 parts** (crimson dressed, as `WorldService.DRESSED`).
+Where ids come from: `WorldPlan.plan` (forests: `tree_oak` 8 / `tree_pine` 6 / `tree_birch` 6 variants by `SPECIES_VARIANTS`; lone oaks and birches; `bush_01..08`; `rock_boulder_{s,m,l}_01..03`
+at the hill feet; `plant_flowers_01..06` near the plots; `farm_field_<crop>_<01 + field index % 3>` on every terrain field; the yard dressing) and `world/Layout.luau` resource nodes per plot:
+**wood nodes are TREES** (`tree_oak_01`, `tree_oak_03`, `tree_pine_02`, `tree_oak_05`), stone `resource_stone_01/02`, gold `resource_ore_03`, food `bush_03` twice, and in the heartland
+`resource_stone_03` and `resource_ore_04`. `resource_wood_*` and `rock_cliff_*` exist as stand-ins and in `KitProps.spec` but nothing places them today.
+
+How crops render today (read for this task): the world places ONE static, ripe field per terrain field for the whole match (12 fields: per plot wheat `_02`, cabbage `_03`, wheat `_01`); the
+NN only changes the sheaf jitter of the stand-in (`Props.cropField`). There is **no crop-growth state** anywhere in `src` (searched growth / ripe / sprout / crop). The only growth in the game is the
+farm BUILDING's construction stages (`Buildings.buildStage`: furrows 0.35, shoots 0.9, young wheat 1.8 high) and its own wheat rows (2.2 + ears 1.3) beside the field; the buildings stay part-built (D-057 (18)).
+So the field ids cannot be growth stages without a runtime change. Decision: `farm_field_wheat_01..03` are three RIPE plot variants (placed: 01, 02), `farm_field_cabbage_01..03` three cabbage variants (placed: 03),
+and the growth stages are two extra ids, `farm_field_wheat_stage1` (furrows with the first shoots) and `farm_field_wheat_stage2` (green wheat), that nothing places yet: K (or a later farm-visual task)
+decides whether a farm that grows a crop uses them.
+
+Stand-ins replaced (per id; reach = what `PlotClearance` measures, `WorldPlan.CLEAR.radius` is that rounded up: oak 13.5, pine 11.7, birch 8.5, bush 5.2, flowers 3.4, boulder S/M/L 5.8 / 7.5 / 13.3, haystack 4.4):
+
+| asset id | placed (density 1.0 / shipped) | where | stand-in bbox x, y, z | stand-in parts | reach |
+|---|---|---|---|---|---|
+| `bush_01` | 8 / 6 | bush 8 | 7.4, 5.2, 6.9 | 5 | 4.1 |
+| `bush_02` | 13 / 3 | bush 13 | 7.3, 5.1, 7.0 | 10 | 3.9 |
+| `bush_03` | 24 / 16 | bush 16, node | 6.1, 5.5, 6.7 | 10 | 3.6 |
+| `bush_04` | 19 / 6 | bush 19 | 6.7, 4.8, 6.8 | 5 | 4.0 |
+| `bush_05` | 17 / 13 | bush 17 | 7.0, 5.5, 7.0 | 10 | 4.0 |
+| `bush_06` | 11 / 5 | bush 11 | 6.7, 5.2, 6.5 | 10 | 3.8 |
+| `bush_07` | 14 / 8 | bush 14 | 7.0, 5.3, 7.6 | 5 | 4.2 |
+| `bush_08` | 12 / 6 | bush 12 | 6.9, 5.2, 6.5 | 10 | 3.8 |
+| `farm_fence_01` | 0 / 0 | not placed today (spare) | 16.5, 2.8, 0.5 | 7 | 8.3 |
+| `farm_fence_02` | 0 / 0 | not placed today (spare) | 16.5, 2.8, 0.5 | 8 | 8.3 |
+| `farm_field_cabbage_01` | 0 / 0 | not placed today (spare) | 38.0, 3.1, 28.0 | 65 | 29.0 |
+| `farm_field_cabbage_02` | 0 / 0 | not placed today (spare) | 38.0, 3.1, 28.0 | 65 | 29.0 |
+| `farm_field_cabbage_03` | 4 / 4 | crops 4 | 38.0, 3.1, 28.0 | 65 | 29.0 |
+| `farm_field_wheat_01` | 4 / 4 | crops 4 | 38.0, 2.4, 28.0 | 17 | 28.1 |
+| `farm_field_wheat_02` | 4 / 4 | crops 4 | 38.0, 2.4, 28.0 | 17 | 28.1 |
+| `farm_field_wheat_03` | 0 / 0 | not placed today (spare) | 38.0, 2.4, 28.0 | 17 | 28.1 |
+| `farm_haystack_01` | 1 / 1 | dressing 1 | 7.3, 6.2, 6.2 | 4 | 4.3 |
+| `plant_flowers_01` | 4 / 4 | flowers 4 | 4.1, 3.0, 3.0 | 9 | 2.3 |
+| `plant_flowers_02` | 5 / 5 | flowers 5 | 3.7, 3.0, 3.7 | 9 | 2.4 |
+| `plant_flowers_03` | 5 / 5 | flowers 5 | 4.2, 2.9, 3.5 | 9 | 2.3 |
+| `plant_flowers_04` | 6 / 6 | flowers 6 | 4.4, 3.0, 3.1 | 9 | 2.3 |
+| `plant_flowers_05` | 7 / 7 | flowers 7 | 3.4, 3.1, 3.0 | 9 | 2.3 |
+| `plant_flowers_06` | 4 / 4 | flowers 4 | 3.5, 3.0, 3.7 | 9 | 2.3 |
+| `resource_ore_01` | 0 / 0 | not placed today (spare) | 10.8, 8.1, 12.0 | 10 | 7.9 |
+| `resource_ore_02` | 0 / 0 | not placed today (spare) | 11.5, 8.1, 10.8 | 10 | 8.0 |
+| `resource_ore_03` | 4 / 4 | node | 11.4, 8.1, 9.9 | 10 | 8.0 |
+| `resource_ore_04` | 1 / 1 | node | 11.6, 8.1, 9.0 | 10 | 8.1 |
+| `resource_ore_05` | 0 / 0 | not placed today (spare) | 11.9, 8.1, 9.7 | 10 | 8.0 |
+| `resource_ore_06` | 0 / 0 | not placed today (spare) | 13.0, 8.1, 10.4 | 10 | 7.9 |
+| `resource_stone_01` | 4 / 4 | node | 16.8, 7.8, 10.7 | 8 | 10.0 |
+| `resource_stone_02` | 4 / 4 | node | 16.8, 7.8, 11.3 | 8 | 10.0 |
+| `resource_stone_03` | 1 / 1 | node | 16.7, 7.8, 10.5 | 8 | 10.0 |
+| `resource_wood_01` | 0 / 0 | not placed today (spare) | 9.1, 4.2, 8.0 | 14 | 7.0 |
+| `resource_wood_02` | 0 / 0 | not placed today (spare) | 9.1, 4.2, 7.9 | 14 | 7.0 |
+| `rock_boulder_l_01` | 23 / 10 | rocks 23 | 18.0, 9.1, 14.3 | 5 | 11.8 |
+| `rock_boulder_l_02` | 15 / 6 | rocks 15 | 18.8, 9.2, 15.9 | 5 | 11.8 |
+| `rock_boulder_l_03` | 23 / 15 | rocks 23 | 19.0, 9.5, 17.1 | 5 | 12.2 |
+| `rock_boulder_m_01` | 20 / 6 | rocks 20 | 6.2, 5.3, 8.9 | 4 | 6.5 |
+| `rock_boulder_m_02` | 20 / 9 | rocks 20 | 6.4, 6.0, 9.3 | 4 | 6.3 |
+| `rock_boulder_m_03` | 18 / 10 | rocks 18 | 7.3, 6.0, 9.7 | 4 | 6.2 |
+| `rock_boulder_s_01` | 18 / 9 | rocks 18 | 6.2, 3.8, 5.0 | 3 | 4.8 |
+| `rock_boulder_s_02` | 13 / 10 | rocks 13 | 6.4, 3.8, 5.3 | 3 | 4.7 |
+| `rock_boulder_s_03` | 20 / 10 | rocks 20 | 6.8, 3.7, 5.7 | 3 | 4.6 |
+| `rock_cliff_01` | 0 / 0 | not placed today (spare) | 13.6, 10.6, 15.4 | 4 | 10.3 |
+| `rock_cliff_02` | 0 / 0 | not placed today (spare) | 13.2, 10.4, 14.9 | 4 | 9.8 |
+| `tree_birch_01` | 11 / 11 | forest 8, lone_tree 3 | 10.1, 22.2, 8.1 | 9 | 7.0 |
+| `tree_birch_02` | 9 / 7 | forest 7, lone_tree 2 | 8.2, 20.8, 10.3 | 9 | 5.8 |
+| `tree_birch_03` | 9 / 8 | forest 4, lone_tree 5 | 8.8, 22.6, 10.0 | 9 | 6.8 |
+| `tree_birch_04` | 8 / 6 | forest 6, lone_tree 2 | 10.5, 21.2, 9.0 | 9 | 6.3 |
+| `tree_birch_05` | 11 / 8 | forest 9, lone_tree 2 | 8.6, 23.0, 9.4 | 9 | 6.0 |
+| `tree_birch_06` | 11 / 8 | forest 7, lone_tree 4 | 8.6, 21.6, 8.3 | 9 | 7.0 |
+| `tree_oak_01` | 13 / 13 | forest 8, lone_tree 1, node | 18.9, 25.5, 21.0 | 16 | 11.6 |
+| `tree_oak_02` | 22 / 12 | forest 15, lone_tree 7 | 16.3, 24.6, 16.9 | 16 | 9.1 |
+| `tree_oak_03` | 17 / 17 | forest 7, lone_tree 6, node | 20.8, 25.5, 22.7 | 16 | 12.6 |
+| `tree_oak_04` | 18 / 12 | forest 12, lone_tree 6 | 18.5, 24.5, 17.4 | 16 | 11.7 |
+| `tree_oak_05` | 21 / 16 | forest 11, lone_tree 6, node | 20.0, 25.2, 21.8 | 16 | 12.2 |
+| `tree_oak_06` | 19 / 16 | forest 14, lone_tree 5 | 21.3, 24.9, 18.6 | 16 | 12.4 |
+| `tree_oak_07` | 15 / 10 | forest 9, lone_tree 6 | 14.3, 25.9, 14.9 | 16 | 9.4 |
+| `tree_oak_08` | 12 / 9 | forest 7, lone_tree 5 | 22.4, 24.7, 20.4 | 16 | 12.7 |
+| `tree_pine_01` | 22 / 18 | forest 22 | 16.4, 29.6, 16.4 | 22 | 11.4 |
+| `tree_pine_02` | 19 / 15 | forest 15, node | 16.4, 32.3, 16.4 | 22 | 11.4 |
+| `tree_pine_03` | 16 / 13 | forest 16 | 16.1, 30.0, 16.1 | 22 | 11.5 |
+| `tree_pine_04` | 12 / 11 | forest 12 | 16.4, 32.6, 16.4 | 22 | 11.5 |
+| `tree_pine_05` | 17 / 16 | forest 17 | 16.4, 30.3, 16.4 | 22 | 11.5 |
+| `tree_pine_06` | 16 / 13 | forest 16 | 16.1, 28.0, 16.1 | 22 | 11.5 |
+
+Out of scope (untouched): bridges, banners, well, cart, goods (`prop_*`, `bridge_*`), buildings.
+
+Variants decided (every placed id exists, so a world never mixes a mesh with a stand-in of the same family): oak 8, pine 6, birch 6 (the full ranges `SPECIES_VARIANTS` draws from), bush 8, flowers 6,
+boulders S / M / L 3 each, stone nodes 3, ore nodes 6 (01-02 iron, 03-04 gold, 05-06 crystal as the stand-in's `variant` rule; 03 and 04 are the placed ones), wheat 3 + 2 growth stages, cabbage 3,
+haystack 1; spares that `KitProps.spec` knows but nothing places: cliff 2, wood nodes 2, fences 2. **67 meshes**.
