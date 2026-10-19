@@ -551,9 +551,11 @@ Steps
 7. Building damage (FL-0143, FORGE-02's FL-0128 war kit). In a siege, or an AI war from the air, a damaged keep, wall, gate or house shows its damage as its HP falls:
    - a quarter of its HP gone: cracks, soot and a bite out of the merlons or the roof;
    - half gone: more of both, and rubble at the foot;
-   - three quarters gone: the front-right corner collapses, and a gate keeps one broken leaf.
+   - three quarters gone: a corner collapses, and a gate keeps one broken leaf.
 
    Repaired or rebuilt, it looks as built again. Without a siege, in Play Solo, test it from the command bar (client): pick a building model under `Workspace.ForgeKingdoms.<kingdom>.Buildings` and set its `Hp` attribute to a tenth of its `MaxHp`. Within half a second its `Damage` attribute and the marks follow. Note that WorldView may set `Hp` back on its next update. Screenshot **E15-5**, damaged and whole side by side from the aerial camera.
+
+   Do it again on a building that faces another way, and on one you have just moved (edit mode's Move, G13.9). The marks and the collapse sit on the building's own walls, the same as on an unturned one. Nothing is left on the ground where a moved building stood. This needs FORGE-02's `Kit/Damage` fix for turned and moved buildings (FORGE-00's g11l notes).
 
 Pass: steps 1, 5 and 7 hold (2–4 and 6 when FL-0125 is on the build). Copy every red line from Output.
 
@@ -561,7 +563,7 @@ History:
 - 2026-10-18 FORGE-04: written (FL-0130 part 2).
 - 2026-10-18 FORGE-04: spectating never starts during Results or Lobby (FORGE-07's #189 M1); the two-keeps-in-one-batch limit noted (FORGE-07 on #183).
 - 2026-10-19 FORGE-04: the siege beacon on your keep, ahead of a raid (step 5; FORGE-00's FL-0130 close-out).
-- 2026-10-19 FORGE-04: building damage states (step 7; FL-0143).
+- 2026-10-19 FORGE-04: building damage states (step 7; FL-0143). A turned and a moved building are checked too, and "a corner" replaces the kit's stale "front-right corner" (FORGE-00's g11l notes).
 
 ## E16 — Duel controls: keyboard and mouse, gamepad, touch (FL-0075, game-001)
 
