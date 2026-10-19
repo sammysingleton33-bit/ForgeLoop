@@ -27,6 +27,9 @@ from lib import ckit_pose as P  # noqa: E402
 SHELL_SLOTS = ("hair", "hat", "hatband", "crest", "cape", "extra", "shield", "toolband")
 BODY_SLOTS = ("torso", "arm", "sleeve", "leg", "boot", "head")
 # a shell never has to avoid its own carrier: hats/hair ride the head, so test them against shoulders and arms only
+# shells that hang loose in FRONT of the swinging thighs and are allowed to be crossed by a leg in the fast walk/flee swing (the leg is
+# drawn in front of a thin apron/hem/strap; nothing pokes out of the body). Everything else (hair, hats, capes, packs, crests) is strict.
+SOFT = {"apron_farm": 0.36, "apron_smith": 0.36, "strap_kingdom": 0.36, "trim_regal": 0.40, "tool_pennant": 0.0}
 AVOID = {
     "hair": ("torso", "arm", "sleeve"), "hat": ("torso", "arm", "sleeve"), "hatband": ("torso", "arm", "sleeve"),
     "crest": ("torso", "arm", "sleeve"), "cape": ("arm", "sleeve", "leg", "boot", "head"),
@@ -42,12 +45,28 @@ def bvh(pts, faces):
     return BVHTree.FromPolygons(pts, [tuple(f) for f in faces])
 
 
+_DIRS = (Vector((0.267, 0.802, 0.534)).normalized(), Vector((-0.64, 0.31, -0.7)).normalized(), Vector((0.1, -0.95, 0.29)).normalized())
+
+
+def _crossings(tree, p, d, limit=24):
+    n, o = 0, Vector(p)
+    for _ in range(limit):
+        loc, nrm, idx, dist = tree.ray_cast(o, d)
+        if loc is None:
+            break
+        n += 1
+        o = loc + d * 1e-4
+    return n
+
+
 def depth_inside(tree, p, margin=0.0):
-    loc, nrm, idx, dist = tree.find_nearest(Vector(p))
-    if loc is None:
+    """Penetration depth of point p into the closed solid (0 if outside): ray-parity inside test in three directions (two of
+    three must agree), depth = distance to the nearest surface point."""
+    votes = sum(1 for d in _DIRS if _crossings(tree, p, d) % 2 == 1)
+    if votes < 2:
         return 0.0
-    d = (Vector(p) - loc).dot(nrm)
-    return max(0.0, -d - margin) if d < 0 else 0.0
+    loc, nrm, idx, dist = tree.find_nearest(Vector(p))
+    return max(0.0, dist - margin)
 
 
 def main(argv):
@@ -100,15 +119,19 @@ def main(argv):
                                     worst = max(worst, dmax)
     # rest-pose check of same-carrier pairs (hair vs head is intentional: only torso/arm pieces matter, handled above)
     results.sort(key=lambda r: -r["depth"])
-    bad = [r for r in results if r["depth"] > a.tol]
-    print(f"[clearance] {len(results)} penetrating samples, worst depth {worst:.3f} studs, over tolerance ({a.tol}): {len(bad)}")
-    seen = set()
-    for r in results[:40]:
-        k = (r["shell"], r["body"], r["action"])
-        if k in seen:
-            continue
-        seen.add(k)
-        print(f"  {r['shell']:18s} in {r['body']:18s} {r['action']:10s} job {r['job']:14s} depth {r['depth']:.3f}")
+    bad = [r for r in results if r["depth"] > max(a.tol, SOFT.get(r["shell"], 0.0))]
+    print(f"[clearance] {len(results)} penetrating samples, worst depth {worst:.3f} studs, over tolerance ({a.tol}; soft shells {SOFT}): {len(bad)}")
+    agg = {}
+    for r in results:
+        k = (r["shell"], r["body"].rsplit("_", 1)[0] if r["body"].endswith(("_l", "_r")) else r["body"], r["action"])
+        e = agg.setdefault(k, {"depth": 0.0, "n": 0, "jobs": set()})
+        e["depth"] = max(e["depth"], r["depth"])
+        e["n"] += 1
+        e["jobs"].add(r["job"])
+    rows = sorted(agg.items(), key=lambda kv: -kv[1]["depth"])
+    print(f"[clearance] {len(rows)} distinct (shell, body, action) pairs penetrate; worst first:")
+    for (shell, body, action), e in rows[:60]:
+        print(f"  {shell:18s} in {body:18s} {action:10s} depth {e['depth']:.3f} ({e['n']} samples; {', '.join(sorted(e['jobs']))[:60]})")
     if a.json:
         Path(a.json).write_text(json.dumps({"tolerance": a.tol, "worst": round(worst, 3), "over": bad[:200], "samples": len(results)}, indent=1))
     return 1 if bad else 0

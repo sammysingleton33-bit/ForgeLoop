@@ -2,7 +2,7 @@
  "schema_version": 1,
  "unit": "stud",
  "generator": "blender/generators/char_kit.py",
- "style": "A",
+ "style": "B",
  "root_height": 3.2,
  "frame": "Roblox rig axes: +X right, +Y up, -Z front, feet at y = 0, centred on x = 0, z = 0 (studs). Blender authoring: (bx, by, bz) = (x, -z, y); FBX exported Y up / -Z forward, 1 unit = 1 stud.",
  "joints": {
@@ -87,17 +87,17 @@
    "joint": "Head",
    "weld_to": null,
    "bbox_center": [
-    0.0076,
+    0.0,
     4.64,
-    -0.0302
+    -0.0224
    ],
    "size": [
-    1.7047,
+    1.6731,
     1.6,
-    1.525
+    1.4902
    ],
-   "tris": 202,
-   "verts": 119,
+   "tris": 164,
+   "verts": 100,
    "tint": "skin",
    "slot": "head",
    "tags": [
@@ -108,17 +108,17 @@
    "joint": "Head",
    "weld_to": null,
    "bbox_center": [
-    0.0076,
+    0.0,
     4.64,
-    -0.0429
+    -0.0285
    ],
    "size": [
-    1.7047,
+    1.6731,
     1.6,
-    1.5505
+    1.5024
    ],
-   "tris": 200,
-   "verts": 118,
+   "tris": 162,
+   "verts": 99,
    "tint": "skin",
    "slot": "head",
    "tags": [
@@ -129,17 +129,17 @@
    "joint": "Head",
    "weld_to": null,
    "bbox_center": [
-    0.0069,
+    0.0,
     4.64,
-    -0.0217
+    -0.0163
    ],
    "size": [
-    1.6902,
+    1.6618,
     1.6,
-    1.508
+    1.4781
    ],
-   "tris": 200,
-   "verts": 118,
+   "tris": 162,
+   "verts": 99,
    "tint": "skin",
    "slot": "head",
    "tags": [
@@ -150,17 +150,17 @@
    "joint": "Head",
    "weld_to": null,
    "bbox_center": [
-    0.0088,
+    0.0,
     4.64,
-    -0.0557
+    -0.0376
    ],
    "size": [
-    1.7264,
+    1.6901,
     1.6,
-    1.576
+    1.5206
    ],
-   "tris": 202,
-   "verts": 119,
+   "tris": 162,
+   "verts": 99,
    "tint": "skin",
    "slot": "head",
    "tags": [
@@ -171,17 +171,17 @@
    "joint": "Head",
    "weld_to": null,
    "bbox_center": [
-    0.0076,
+    0.0,
     4.64,
-    -0.0302
+    -0.0193
    ],
    "size": [
-    1.7047,
+    1.6731,
     1.6,
-    1.525
+    1.4842
    ],
-   "tris": 250,
-   "verts": 151,
+   "tris": 188,
+   "verts": 116,
    "tint": "skin",
    "slot": "head",
    "tags": [
@@ -192,17 +192,17 @@
    "joint": "Head",
    "weld_to": null,
    "bbox_center": [
-    0.008,
+    0.0,
     4.64,
-    -0.0387
+    -0.0254
    ],
    "size": [
-    1.712,
+    1.6788,
     1.6,
-    1.542
+    1.4963
    ],
-   "tris": 212,
-   "verts": 126,
+   "tris": 174,
+   "verts": 107,
    "tint": "skin",
    "slot": "head",
    "tags": [
@@ -213,17 +213,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
-    5.0126,
+    -0.0,
+    5.0211,
     0.0
    ],
    "size": [
-    1.676,
-    1.0547,
-    1.616
+    1.5731,
+    1.0379,
+    1.5168
    ],
-   "tris": 46,
-   "verts": 25,
+   "tris": 30,
+   "verts": 17,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -235,16 +235,16 @@
    "weld_to": "head",
    "bbox_center": [
     0.0,
-    4.9585,
+    4.9666,
     -0.0026
    ],
    "size": [
-    1.8189,
-    1.2031,
-    1.7589
+    1.7073,
+    1.1869,
+    1.651
    ],
-   "tris": 70,
-   "verts": 37,
+   "tris": 46,
+   "verts": 25,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -255,17 +255,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
+    -0.0,
     4.52,
-    0.1508
+    0.1716
    ],
    "size": [
-    1.7358,
+    1.6293,
     2.04,
-    1.9784
+    1.9172
    ],
-   "tris": 138,
-   "verts": 73,
+   "tris": 90,
+   "verts": 49,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -276,17 +276,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
-    4.7925,
-    -0.0005
+    -0.0,
+    4.7908,
+    -0.0071
    ],
    "size": [
-    1.7958,
-    1.5551,
-    1.7358
+    1.8239,
+    1.5583,
+    1.7676
    ],
-   "tris": 118,
-   "verts": 61,
+   "tris": 46,
+   "verts": 25,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -297,17 +297,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
+    0.0485,
     5.13,
-    0.1814
+    0.1616
    ],
    "size": [
-    1.8641,
+    1.8629,
     1.62,
-    1.7871
+    1.877
    ],
-   "tris": 176,
-   "verts": 98,
+   "tris": 122,
+   "verts": 71,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -318,17 +318,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
-    4.6495,
-    0.2356
+    -0.0,
+    4.6479,
+    0.2714
    ],
    "size": [
-    1.652,
-    1.781,
-    2.0632
+    1.5506,
+    1.7843,
+    2.0371
    ],
-   "tris": 90,
-   "verts": 49,
+   "tris": 58,
+   "verts": 33,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -340,16 +340,16 @@
    "weld_to": "head",
    "bbox_center": [
     0.0,
-    5.2137,
+    5.222,
     0.0
    ],
    "size": [
-    1.664,
-    1.4127,
-    1.604
+    1.5619,
+    1.3959,
+    1.5056
    ],
-   "tris": 94,
-   "verts": 51,
+   "tris": 54,
+   "verts": 31,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -367,10 +367,10 @@
    "size": [
     2.3999,
     1.581,
-    1.616
+    1.5168
    ],
-   "tris": 134,
-   "verts": 73,
+   "tris": 86,
+   "verts": 49,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -381,17 +381,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
-    4.02,
-    -0.1706
+    0.0366,
+    4.22,
+    -0.1513
    ],
    "size": [
-    1.4076,
-    1.0,
-    1.3389
+    1.4067,
+    0.68,
+    1.3506
    ],
-   "tris": 96,
-   "verts": 52,
+   "tris": 54,
+   "verts": 31,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -402,17 +402,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
+    -0.0,
     4.88,
     0.0
    ],
    "size": [
-    1.94,
-    0.3234,
-    1.88
+    1.7923,
+    0.34,
+    1.7369
    ],
-   "tris": 120,
-   "verts": 60,
+   "tris": 64,
+   "verts": 32,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -423,17 +423,17 @@
    "joint": "Torso",
    "weld_to": null,
    "bbox_center": [
-    0.0,
+    -0.0,
     2.94,
     0.0
    ],
    "size": [
-    1.96,
+    1.8397,
     1.88,
-    1.24
+    1.1639
    ],
-   "tris": 140,
-   "verts": 72,
+   "tris": 92,
+   "verts": 48,
    "tint": "kingdom",
    "slot": "torso",
    "tags": [
@@ -445,17 +445,17 @@
    "joint": "Torso",
    "weld_to": null,
    "bbox_center": [
-    0.0,
+    -0.0,
     2.96,
     0.0
    ],
    "size": [
-    2.12,
+    1.9899,
     1.84,
-    1.32
+    1.239
    ],
-   "tris": 140,
-   "verts": 72,
+   "tris": 92,
+   "verts": 48,
    "tint": "kingdom",
    "slot": "torso",
    "tags": [
@@ -467,17 +467,17 @@
    "joint": "Torso",
    "weld_to": null,
    "bbox_center": [
-    0.0,
+    -0.0,
     2.97,
     0.0
    ],
    "size": [
-    1.96,
+    1.8397,
     1.82,
-    1.24
+    1.1639
    ],
-   "tris": 116,
-   "verts": 60,
+   "tris": 76,
+   "verts": 40,
    "tint": "cloth",
    "slot": "torso",
    "tags": [
@@ -489,17 +489,17 @@
    "joint": "Torso",
    "weld_to": null,
    "bbox_center": [
-    0.0,
+    -0.0,
     2.94,
-    0.0
+    -0.0018
    ],
    "size": [
-    2.0,
+    1.8773,
     1.88,
-    1.26
+    1.1863
    ],
-   "tris": 152,
-   "verts": 84,
+   "tris": 112,
+   "verts": 64,
    "tint": "kingdom",
    "slot": "torso",
    "tags": [
@@ -511,17 +511,17 @@
    "joint": "Torso",
    "weld_to": null,
    "bbox_center": [
-    0.0,
+    -0.0,
     2.97,
     0.0
    ],
    "size": [
-    1.84,
+    1.7271,
     1.86,
-    1.16
+    1.0888
    ],
-   "tris": 140,
-   "verts": 72,
+   "tris": 92,
+   "verts": 48,
    "tint": "kingdom",
    "slot": "torso",
    "tags": [
@@ -533,17 +533,17 @@
    "joint": "Torso",
    "weld_to": null,
    "bbox_center": [
-    0.0,
+    -0.0,
     2.69,
     0.0
    ],
    "size": [
-    2.28,
+    2.1401,
     2.38,
-    1.6
+    1.5018
    ],
-   "tris": 164,
-   "verts": 84,
+   "tris": 108,
+   "verts": 56,
    "tint": "kingdom",
    "slot": "torso",
    "tags": [
@@ -555,17 +555,17 @@
    "joint": "Torso",
    "weld_to": null,
    "bbox_center": [
-    0.0,
+    -0.0,
     2.85,
-    0.0
+    -0.0065
    ],
    "size": [
-    2.12,
+    1.9899,
     2.06,
-    1.4
+    1.327
    ],
-   "tris": 184,
-   "verts": 96,
+   "tris": 104,
+   "verts": 56,
    "tint": "kingdom",
    "slot": "torso",
    "tags": [
@@ -577,17 +577,17 @@
    "joint": "Torso",
    "weld_to": null,
    "bbox_center": [
-    0.0,
+    -0.0,
     2.86,
     0.0
    ],
    "size": [
-    2.12,
+    1.9899,
     2.04,
-    1.32
+    1.239
    ],
-   "tris": 164,
-   "verts": 84,
+   "tris": 108,
+   "verts": 56,
    "tint": "kingdom",
    "slot": "torso",
    "tags": [
@@ -600,17 +600,17 @@
    "joint": "Torso",
    "weld_to": null,
    "bbox_center": [
-    0.0,
-    2.65,
+    -0.0,
+    2.77,
     0.0
    ],
    "size": [
-    2.44,
-    2.46,
-    1.72
+    2.2152,
+    2.22,
+    1.5393
    ],
-   "tris": 164,
-   "verts": 84,
+   "tris": 108,
+   "verts": 56,
    "tint": "kingdom",
    "slot": "torso",
    "tags": [
@@ -628,12 +628,12 @@
     0.0
    ],
    "size": [
-    2.16,
+    2.0274,
     1.82,
-    1.28
+    1.2014
    ],
-   "tris": 116,
-   "verts": 60,
+   "tris": 76,
+   "verts": 40,
    "tint": "cloth",
    "slot": "torso",
    "tags": [
@@ -645,17 +645,17 @@
    "joint": "RightArm",
    "weld_to": null,
    "bbox_center": [
-    1.4479,
+    1.4485,
     3.0882,
     -0.03
    ],
    "size": [
-    0.9519,
+    0.8669,
     1.757,
     0.82
    ],
-   "tris": 80,
-   "verts": 42,
+   "tris": 48,
+   "verts": 26,
    "tint": "skin",
    "slot": "arm",
    "tags": [
@@ -666,17 +666,17 @@
    "joint": "LeftArm",
    "weld_to": null,
    "bbox_center": [
-    -1.4479,
+    -1.4485,
     3.0882,
     -0.03
    ],
    "size": [
-    0.9519,
+    0.8669,
     1.757,
     0.82
    ],
-   "tris": 80,
-   "verts": 42,
+   "tris": 48,
+   "verts": 26,
    "tint": "skin",
    "slot": "arm",
    "tags": [
@@ -687,17 +687,17 @@
    "joint": "RightArm",
    "weld_to": null,
    "bbox_center": [
-    1.5965,
+    1.5932,
     2.4975,
     -0.055
    ],
    "size": [
-    0.6547,
+    0.5777,
     0.5757,
     0.77
    ],
-   "tris": 48,
-   "verts": 26,
+   "tris": 24,
+   "verts": 14,
    "tint": "skin",
    "slot": "arm",
    "tags": [
@@ -708,17 +708,17 @@
    "joint": "LeftArm",
    "weld_to": null,
    "bbox_center": [
-    -1.5965,
+    -1.5932,
     2.4975,
     -0.055
    ],
    "size": [
-    0.6547,
+    0.5777,
     0.5757,
     0.77
    ],
-   "tris": 48,
-   "verts": 26,
+   "tris": 24,
+   "verts": 14,
    "tint": "skin",
    "slot": "arm",
    "tags": [
@@ -729,17 +729,17 @@
    "joint": "RightArm",
    "weld_to": "arm",
    "bbox_center": [
-    1.4179,
-    3.5696,
+    1.4178,
+    3.6209,
     0.0
    ],
    "size": [
-    1.0011,
-    0.8383,
+    0.9028,
+    0.7332,
     0.87
    ],
-   "tris": 60,
-   "verts": 32,
+   "tris": 32,
+   "verts": 18,
    "tint": "cloth",
    "slot": "sleeve",
    "tags": [
@@ -750,17 +750,17 @@
    "joint": "LeftArm",
    "weld_to": "arm",
    "bbox_center": [
-    -1.4179,
-    3.5696,
+    -1.4178,
+    3.6209,
     0.0
    ],
    "size": [
-    1.0011,
-    0.8383,
+    0.9028,
+    0.7332,
     0.87
    ],
-   "tris": 60,
-   "verts": 32,
+   "tris": 32,
+   "verts": 18,
    "tint": "cloth",
    "slot": "sleeve",
    "tags": [
@@ -771,17 +771,17 @@
    "joint": "RightArm",
    "weld_to": "arm",
    "bbox_center": [
-    1.4209,
-    3.2662,
+    1.4295,
+    3.2773,
     0.0
    ],
    "size": [
-    1.0071,
-    1.4452,
+    0.9262,
+    1.4204,
     0.87
    ],
-   "tris": 76,
-   "verts": 40,
+   "tris": 44,
+   "verts": 24,
    "tint": "cloth",
    "slot": "sleeve",
    "tags": [
@@ -792,17 +792,17 @@
    "joint": "LeftArm",
    "weld_to": "arm",
    "bbox_center": [
-    -1.4209,
-    3.2662,
+    -1.4295,
+    3.2773,
     0.0
    ],
    "size": [
-    1.0071,
-    1.4452,
+    0.9262,
+    1.4204,
     0.87
    ],
-   "tris": 76,
-   "verts": 40,
+   "tris": 44,
+   "verts": 24,
    "tint": "cloth",
    "slot": "sleeve",
    "tags": [
@@ -813,18 +813,18 @@
    "joint": "RightArm",
    "weld_to": "arm",
    "bbox_center": [
-    1.5151,
-    3.2164,
+    1.5108,
+    3.2192,
     0.0
    ],
    "size": [
-    1.1658,
-    1.5447,
+    1.0622,
+    1.5365,
     1.0
    ],
-   "tris": 76,
-   "verts": 40,
-   "tint": "cloth",
+   "tris": 44,
+   "verts": 24,
+   "tint": "kingdom",
    "slot": "sleeve",
    "tags": [
     "robe"
@@ -834,64 +834,104 @@
    "joint": "LeftArm",
    "weld_to": "arm",
    "bbox_center": [
-    -1.5151,
-    3.2164,
+    -1.5108,
+    3.2192,
     0.0
    ],
    "size": [
-    1.1658,
-    1.5447,
+    1.0622,
+    1.5365,
     1.0
    ],
-   "tris": 76,
-   "verts": 40,
-   "tint": "cloth",
+   "tris": 44,
+   "verts": 24,
+   "tint": "kingdom",
    "slot": "sleeve",
    "tags": [
     "robe"
    ]
   },
-  "sleeve_mail_r": {
+  "sleeve_soldier_r": {
    "joint": "RightArm",
    "weld_to": "arm",
    "bbox_center": [
-    1.3986,
-    3.2662,
+    1.4153,
+    3.4245,
     0.0
    ],
    "size": [
-    1.0665,
-    1.4452,
+    0.992,
+    1.1259,
     0.92
    ],
-   "tris": 92,
-   "verts": 48,
-   "tint": "fixed",
+   "tris": 56,
+   "verts": 30,
+   "tint": "kingdom",
    "slot": "sleeve",
    "tags": [
-    "mail",
     "soldier"
    ]
   },
-  "sleeve_mail_l": {
+  "sleeve_soldier_l": {
    "joint": "LeftArm",
    "weld_to": "arm",
    "bbox_center": [
-    -1.3986,
-    3.2662,
+    -1.4153,
+    3.4245,
     0.0
    ],
    "size": [
-    1.0665,
-    1.4452,
+    0.992,
+    1.1259,
     0.92
    ],
-   "tris": 92,
-   "verts": 48,
-   "tint": "fixed",
+   "tris": 56,
+   "verts": 30,
+   "tint": "kingdom",
    "slot": "sleeve",
    "tags": [
-    "mail",
+    "soldier"
+   ]
+  },
+  "arm_gauntlet_r": {
+   "joint": "RightArm",
+   "weld_to": null,
+   "bbox_center": [
+    1.5616,
+    2.5819,
+    -0.04
+   ],
+   "size": [
+    0.6408,
+    0.7444,
+    0.8
+   ],
+   "tris": 36,
+   "verts": 20,
+   "tint": "fixed",
+   "slot": "arm",
+   "tags": [
+    "soldier"
+   ]
+  },
+  "arm_gauntlet_l": {
+   "joint": "LeftArm",
+   "weld_to": null,
+   "bbox_center": [
+    -1.5616,
+    2.5819,
+    -0.04
+   ],
+   "size": [
+    0.6408,
+    0.7444,
+    0.8
+   ],
+   "tris": 36,
+   "verts": 20,
+   "tint": "fixed",
+   "slot": "arm",
+   "tags": [
     "soldier"
    ]
   },
@@ -904,12 +944,12 @@
     0.0
    ],
    "size": [
-    0.9,
+    0.8022,
     1.85,
     0.94
    ],
-   "tris": 46,
-   "verts": 25,
+   "tris": 34,
+   "verts": 19,
    "tint": "cloth",
    "slot": "leg",
    "tags": [
@@ -925,12 +965,12 @@
     0.0
    ],
    "size": [
-    0.9,
+    0.8022,
     1.85,
     0.94
    ],
-   "tris": 46,
-   "verts": 25,
+   "tris": 34,
+   "verts": 19,
    "tint": "cloth",
    "slot": "leg",
    "tags": [
@@ -946,12 +986,12 @@
     0.0
    ],
    "size": [
-    1.0,
+    0.8913,
     1.85,
     1.06
    ],
-   "tris": 62,
-   "verts": 33,
+   "tris": 46,
+   "verts": 25,
    "tint": "cloth",
    "slot": "leg",
    "tags": [
@@ -967,12 +1007,12 @@
     0.0
    ],
    "size": [
-    1.0,
+    0.8913,
     1.85,
     1.06
    ],
-   "tris": 62,
-   "verts": 33,
+   "tris": 46,
+   "verts": 25,
    "tint": "cloth",
    "slot": "leg",
    "tags": [
@@ -988,12 +1028,12 @@
     0.0
    ],
    "size": [
-    0.9,
+    0.8022,
     1.85,
     0.94
    ],
-   "tris": 46,
-   "verts": 25,
+   "tris": 34,
+   "verts": 19,
    "tint": "fixed",
    "slot": "leg",
    "tags": [
@@ -1010,12 +1050,12 @@
     0.0
    ],
    "size": [
-    0.9,
+    0.8022,
     1.85,
     0.94
    ],
-   "tris": 46,
-   "verts": 25,
+   "tris": 34,
+   "verts": 19,
    "tint": "fixed",
    "slot": "leg",
    "tags": [
@@ -1028,16 +1068,16 @@
    "weld_to": "leg",
    "bbox_center": [
     0.5,
-    0.36,
+    0.35,
     -0.14
    ],
    "size": [
-    0.9,
-    0.72,
+    0.8022,
+    0.7,
     1.32
    ],
-   "tris": 60,
-   "verts": 32,
+   "tris": 32,
+   "verts": 18,
    "tint": "fixed",
    "slot": "boot",
    "tags": [
@@ -1049,16 +1089,16 @@
    "weld_to": "leg",
    "bbox_center": [
     -0.5,
-    0.36,
+    0.35,
     -0.14
    ],
    "size": [
-    0.9,
-    0.72,
+    0.8022,
+    0.7,
     1.32
    ],
-   "tris": 60,
-   "verts": 32,
+   "tris": 32,
+   "verts": 18,
    "tint": "fixed",
    "slot": "boot",
    "tags": [
@@ -1074,12 +1114,12 @@
     -0.14
    ],
    "size": [
-    0.98,
+    0.8735,
     1.3,
     1.36
    ],
-   "tris": 76,
-   "verts": 40,
+   "tris": 44,
+   "verts": 24,
    "tint": "fixed",
    "slot": "boot",
    "tags": [
@@ -1095,12 +1135,12 @@
     -0.14
    ],
    "size": [
-    0.98,
+    0.8735,
     1.3,
     1.36
    ],
-   "tris": 76,
-   "verts": 40,
+   "tris": 44,
+   "verts": 24,
    "tint": "fixed",
    "slot": "boot",
    "tags": [
@@ -1116,12 +1156,12 @@
     -0.14
    ],
    "size": [
-    0.96,
+    0.8556,
     0.84,
     1.4
    ],
-   "tris": 60,
-   "verts": 32,
+   "tris": 32,
+   "verts": 18,
    "tint": "fixed",
    "slot": "boot",
    "tags": [
@@ -1137,12 +1177,12 @@
     -0.14
    ],
    "size": [
-    0.96,
+    0.8556,
     0.84,
     1.4
    ],
-   "tris": 60,
-   "verts": 32,
+   "tris": 32,
+   "verts": 18,
    "tint": "fixed",
    "slot": "boot",
    "tags": [
@@ -1158,12 +1198,12 @@
     -0.18
    ],
    "size": [
-    0.9,
+    0.8022,
     0.92,
     1.4
    ],
-   "tris": 60,
-   "verts": 32,
+   "tris": 32,
+   "verts": 18,
    "tint": "fixed",
    "slot": "boot",
    "tags": [
@@ -1180,12 +1220,12 @@
     -0.18
    ],
    "size": [
-    0.9,
+    0.8022,
     0.92,
     1.4
    ],
-   "tris": 60,
-   "verts": 32,
+   "tris": 32,
+   "verts": 18,
    "tint": "fixed",
    "slot": "boot",
    "tags": [
@@ -1202,12 +1242,12 @@
     0.0
    ],
    "size": [
-    3.16,
+    2.9195,
     0.84,
-    3.16
+    2.9195
    ],
-   "tris": 102,
-   "verts": 55,
+   "tris": 74,
+   "verts": 41,
    "tint": "fixed",
    "slot": "hat",
    "tags": [
@@ -1219,17 +1259,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
+    -0.0,
     5.26,
     0.0
    ],
    "size": [
-    1.9,
+    1.7834,
     0.28,
-    1.769
+    1.7458
    ],
-   "tris": 36,
-   "verts": 20,
+   "tris": 28,
+   "verts": 16,
    "tint": "kingdom",
    "slot": "hatband",
    "tags": [
@@ -1241,17 +1281,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
+    -0.0,
     5.34,
     0.0
    ],
    "size": [
-    1.84,
+    1.7271,
     0.88,
-    1.6739
+    1.652
    ],
-   "tris": 78,
-   "verts": 41,
+   "tris": 62,
+   "verts": 33,
    "tint": "cloth",
    "slot": "hat",
    "tags": [
@@ -1263,17 +1303,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0149,
+    0.0248,
     5.84,
-    0.0
+    -0.0
    ],
    "size": [
-    0.5703,
+    0.47,
     0.6,
-    0.585
+    0.4942
    ],
-   "tris": 42,
-   "verts": 23,
+   "tris": 20,
+   "verts": 12,
    "tint": "kingdom",
    "slot": "hatband",
    "tags": [
@@ -1287,15 +1327,15 @@
    "bbox_center": [
     0.0,
     5.425,
-    -0.0809
+    -0.0875
    ],
    "size": [
-    2.16,
+    2.0274,
     0.87,
-    2.1781
+    2.1649
    ],
-   "tris": 154,
-   "verts": 83,
+   "tris": 86,
+   "verts": 49,
    "tint": "fixed",
    "slot": "hat",
    "tags": [
@@ -1307,17 +1347,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
+    -0.0,
     5.39,
-    -0.292
+    -0.2976
    ],
    "size": [
-    1.84,
+    1.7271,
     0.82,
-    2.296
+    2.2848
    ],
-   "tris": 102,
-   "verts": 55,
+   "tris": 58,
+   "verts": 33,
    "tint": "cloth",
    "slot": "hat",
    "tags": [
@@ -1329,17 +1369,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
-    4.715,
+    -0.0,
+    4.8377,
     -0.0005
    ],
    "size": [
-    1.8158,
-    1.63,
-    1.6699
+    1.7043,
+    1.3846,
+    1.648
    ],
-   "tris": 134,
-   "verts": 71,
+   "tris": 62,
+   "verts": 33,
    "tint": "kingdom",
    "slot": "hat",
    "tags": [
@@ -1351,17 +1391,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0902,
+    0.0475,
     5.3,
     0.0
    ],
    "size": [
-    2.0804,
+    1.8784,
     0.9903,
-    1.7728
+    1.7271
    ],
-   "tris": 116,
-   "verts": 62,
+   "tris": 60,
+   "verts": 34,
    "tint": "cloth",
    "slot": "hat",
    "tags": [
@@ -1373,14 +1413,14 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    1.7187,
-    5.6283,
-    -0.2889
+    1.4254,
+    5.5765,
+    -0.2858
    ],
    "size": [
-    1.5975,
-    0.5766,
-    0.1658
+    1.0507,
+    0.553,
+    0.1616
    ],
    "tris": 24,
    "verts": 14,
@@ -1395,17 +1435,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
+    -0.0,
     4.7162,
-    0.1946
+    0.1813
    ],
    "size": [
-    1.7358,
+    1.6293,
     1.5477,
-    1.984
+    2.0106
    ],
-   "tris": 138,
-   "verts": 75,
+   "tris": 110,
+   "verts": 65,
    "tint": "cloth",
    "slot": "hat",
    "tags": [
@@ -1417,17 +1457,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
+    -0.0,
     4.7327,
-    0.0873
+    0.1023
    ],
    "size": [
-    1.7,
+    1.7458,
     0.7347,
-    1.7154
+    1.8754
    ],
-   "tris": 72,
-   "verts": 44,
+   "tris": 60,
+   "verts": 38,
    "tint": "cloth",
    "slot": "hat",
    "tags": [
@@ -1441,15 +1481,15 @@
    "bbox_center": [
     1.9029,
     3.36,
-    -1.03
+    -1.0434
    ],
    "size": [
     1.6491,
     5.3059,
-    1.5
+    1.4732
    ],
-   "tris": 88,
-   "verts": 52,
+   "tris": 72,
+   "verts": 44,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1470,8 +1510,8 @@
     4.876,
     1.65
    ],
-   "tris": 48,
-   "verts": 30,
+   "tris": 40,
+   "verts": 26,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1483,17 +1523,17 @@
    "joint": "Tool",
    "weld_to": null,
    "bbox_center": [
-    1.9269,
+    1.9255,
     3.8136,
     -0.48
    ],
    "size": [
-    2.7857,
+    2.781,
     5.1495,
-    2.3621
+    2.36
    ],
-   "tris": 152,
-   "verts": 82,
+   "tris": 68,
+   "verts": 40,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1506,16 +1546,16 @@
    "weld_to": null,
    "bbox_center": [
     2.0144,
-    3.5331,
+    3.5378,
     -0.48
    ],
    "size": [
-    1.9139,
-    3.9935,
-    1.6394
+    2.1502,
+    3.9986,
+    1.8229
    ],
-   "tris": 160,
-   "verts": 88,
+   "tris": 56,
+   "verts": 36,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1528,16 +1568,16 @@
    "weld_to": null,
    "bbox_center": [
     2.1706,
-    3.3972,
-    -0.5518
+    3.409,
+    -0.5268
    ],
    "size": [
     1.8502,
-    3.733,
-    1.2297
+    3.7567,
+    1.2797
    ],
-   "tris": 84,
-   "verts": 48,
+   "tris": 44,
+   "verts": 28,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1550,16 +1590,16 @@
    "weld_to": null,
    "bbox_center": [
     1.7248,
-    3.3896,
+    3.3904,
     -0.48
    ],
    "size": [
     3.5206,
-    3.8891,
-    1.0462
+    3.8907,
+    0.9526
    ],
-   "tris": 198,
-   "verts": 117,
+   "tris": 102,
+   "verts": 65,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1571,17 +1611,17 @@
    "joint": "Tool",
    "weld_to": null,
    "bbox_center": [
-    1.8402,
-    3.8426,
-    -0.9286
+    1.8204,
+    3.7861,
+    -0.9045
    ],
    "size": [
-    1.1152,
-    6.3976,
-    1.1972
+    1.0756,
+    6.2846,
+    1.1121
    ],
-   "tris": 164,
-   "verts": 94,
+   "tris": 88,
+   "verts": 52,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1600,10 +1640,10 @@
    "size": [
     0.8404,
     11.1984,
-    0.42
+    0.3637
    ],
-   "tris": 86,
-   "verts": 49,
+   "tris": 70,
+   "verts": 41,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1637,17 +1677,17 @@
    "joint": "Tool",
    "weld_to": null,
    "bbox_center": [
-    1.7655,
+    1.7619,
     3.6386,
     -0.48
    ],
    "size": [
-    1.2436,
+    1.2508,
     4.0267,
-    0.225
+    0.2853
    ],
-   "tris": 104,
-   "verts": 60,
+   "tris": 58,
+   "verts": 37,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1661,15 +1701,15 @@
    "bbox_center": [
     1.5889,
     2.45,
-    -0.2891
+    -0.2845
    ],
    "size": [
     0.4,
-    3.8507,
-    0.7283
+    3.8562,
+    0.7373
    ],
-   "tris": 136,
-   "verts": 74,
+   "tris": 84,
+   "verts": 48,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1682,17 +1722,17 @@
    "joint": "Tool",
    "weld_to": null,
    "bbox_center": [
-    1.8534,
+    1.8342,
     4.817,
-    -0.5422
+    -0.6126
    ],
    "size": [
-    1.0454,
+    1.0071,
     7.7488,
-    1.0755
+    1.0152
    ],
-   "tris": 206,
-   "verts": 117,
+   "tris": 92,
+   "verts": 60,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1704,17 +1744,17 @@
    "joint": "TorsoTool",
    "weld_to": null,
    "bbox_center": [
-    0.1,
+    0.152,
     3.235,
-    1.95
+    1.9017
    ],
    "size": [
-    2.1,
+    1.996,
     3.03,
-    2.2459
+    2.1838
    ],
-   "tris": 188,
-   "verts": 100,
+   "tris": 94,
+   "verts": 53,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -1726,17 +1766,17 @@
    "joint": "Torso",
    "weld_to": "torso",
    "bbox_center": [
-    -0.0601,
-    3.1636,
+    -0.0564,
+    3.1626,
     -0.2602
    ],
    "size": [
-    1.6336,
-    1.7953,
+    1.641,
+    1.7973,
     0.8505
    ],
-   "tris": 68,
-   "verts": 36,
+   "tris": 44,
+   "verts": 24,
    "tint": "kingdom",
    "slot": "extra",
    "tags": [
@@ -1752,12 +1792,12 @@
     0.0
    ],
    "size": [
-    2.48,
+    2.2543,
     1.42,
-    2.3206
+    2.2173
    ],
-   "tris": 126,
-   "verts": 69,
+   "tris": 86,
+   "verts": 49,
    "tint": "fixed",
    "slot": "hat",
    "tags": [
@@ -1776,10 +1816,10 @@
    "size": [
     1.48,
     1.55,
-    0.5196
+    0.6
    ],
-   "tris": 60,
-   "verts": 34,
+   "tris": 52,
+   "verts": 30,
    "tint": "kingdom",
    "slot": "crest",
    "tags": [
@@ -1798,10 +1838,10 @@
    "size": [
     1.7119,
     1.73,
-    0.5196
+    0.6
    ],
-   "tris": 56,
-   "verts": 32,
+   "tris": 48,
+   "verts": 28,
    "tint": "kingdom",
    "slot": "crest",
    "tags": [
@@ -1820,10 +1860,10 @@
    "size": [
     1.4,
     1.67,
-    0.5196
+    0.6
    ],
-   "tris": 80,
-   "verts": 44,
+   "tris": 72,
+   "verts": 40,
    "tint": "kingdom",
    "slot": "crest",
    "tags": [
@@ -1842,10 +1882,10 @@
    "size": [
     1.76,
     1.83,
-    0.5196
+    0.6
    ],
-   "tris": 80,
-   "verts": 44,
+   "tris": 72,
+   "verts": 40,
    "tint": "kingdom",
    "slot": "crest",
    "tags": [
@@ -1857,17 +1897,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    -0.0,
+    0.0425,
     5.4,
-    -0.0748
+    -0.087
    ],
    "size": [
-    1.8997,
+    1.8147,
     0.8,
-    1.8235
+    1.826
    ],
-   "tris": 78,
-   "verts": 53,
+   "tris": 56,
+   "verts": 42,
    "tint": "fixed",
    "slot": "hat",
    "tags": [
@@ -1879,17 +1919,17 @@
    "joint": "Head",
    "weld_to": "head",
    "bbox_center": [
-    0.0,
+    -0.0,
     5.55,
     0.0
    ],
    "size": [
-    1.72,
+    1.6144,
     0.7,
-    1.5978
+    1.5769
    ],
-   "tris": 58,
-   "verts": 31,
+   "tris": 46,
+   "verts": 25,
    "tint": "kingdom",
    "slot": "hatband",
    "tags": [
@@ -1903,15 +1943,15 @@
    "bbox_center": [
     0.0,
     3.125,
-    0.6247
+    0.6127
    ],
    "size": [
     1.76,
     1.45,
-    1.0105
+    0.9865
    ],
-   "tris": 56,
-   "verts": 30,
+   "tris": 44,
+   "verts": 24,
    "tint": "kingdom",
    "slot": "cape",
    "tags": [
@@ -1922,17 +1962,17 @@
    "joint": "Torso",
    "weld_to": "torso",
    "bbox_center": [
-    0.0,
+    -0.0,
     3.76,
     0.0
    ],
    "size": [
-    2.2,
+    1.9711,
     0.52,
-    1.2934
+    1.239
    ],
-   "tris": 76,
-   "verts": 40,
+   "tris": 44,
+   "verts": 24,
    "tint": "fixed",
    "slot": "extra",
    "tags": [
@@ -1943,17 +1983,17 @@
    "joint": "Torso",
    "weld_to": "torso",
    "bbox_center": [
-    0.0,
-    2.61,
+    -0.0,
+    2.73,
     0.0
    ],
    "size": [
-    2.5,
-    2.38,
-    1.6929
+    2.2715,
+    2.14,
+    1.5957
    ],
-   "tris": 64,
-   "verts": 36,
+   "tris": 56,
+   "verts": 32,
    "tint": "fixed",
    "slot": "extra",
    "tags": [
@@ -1965,16 +2005,16 @@
    "weld_to": "torso",
    "bbox_center": [
     0.0,
-    2.75,
-    -0.5886
+    2.825,
+    -0.5937
    ],
    "size": [
     1.24,
-    1.6,
-    0.3727
+    1.45,
+    0.3625
    ],
-   "tris": 56,
-   "verts": 32,
+   "tris": 44,
+   "verts": 26,
    "tint": "fixed",
    "slot": "extra",
    "tags": [
@@ -1985,17 +2025,17 @@
    "joint": "Torso",
    "weld_to": "torso",
    "bbox_center": [
-    -0.0,
-    2.84,
-    -0.4732
+    0.0,
+    2.915,
+    -0.469
    ],
    "size": [
     1.4,
-    1.88,
-    0.5817
+    1.73,
+    0.5733
    ],
-   "tris": 44,
-   "verts": 24,
+   "tris": 32,
+   "verts": 18,
    "tint": "fixed",
    "slot": "extra",
    "tags": [
@@ -2006,17 +2046,17 @@
    "joint": "Torso",
    "weld_to": "torso",
    "bbox_center": [
-    0.283,
-    2.9972,
-    -0.1135
+    0.193,
+    3.0949,
+    0.2262
    ],
    "size": [
-    2.1741,
-    1.8444,
-    1.047
+    1.9941,
+    1.6497,
+    1.7276
    ],
-   "tris": 146,
-   "verts": 81,
+   "tris": 68,
+   "verts": 40,
    "tint": "fixed",
    "slot": "extra",
    "tags": [
@@ -2027,17 +2067,17 @@
    "joint": "Torso",
    "weld_to": "torso",
    "bbox_center": [
-    -0.2796,
-    3.0031,
-    -0.1101
+    -0.183,
+    3.0949,
+    0.2362
    ],
    "size": [
-    2.1409,
-    1.8262,
-    1.0802
+    1.9741,
+    1.6497,
+    1.7476
    ],
-   "tris": 150,
-   "verts": 85,
+   "tris": 96,
+   "verts": 56,
    "tint": "fixed",
    "slot": "extra",
    "tags": [
@@ -2048,17 +2088,17 @@
    "joint": "Torso",
    "weld_to": "torso",
    "bbox_center": [
-    -1.2581,
-    3.5302,
-    0.348
+    -0.4262,
+    3.6661,
+    0.8372
    ],
    "size": [
-    0.9132,
-    2.0218,
-    0.7693
+    0.8498,
+    2.0197,
+    0.6972
    ],
-   "tris": 104,
-   "verts": 64,
+   "tris": 80,
+   "verts": 52,
    "tint": "fixed",
    "slot": "extra",
    "tags": [
@@ -2153,11 +2193,32 @@
     "gold",
     "soldier"
    ]
+  },
+  "neck_scarf": {
+   "joint": "Torso",
+   "weld_to": "torso",
+   "bbox_center": [
+    0.0,
+    3.4854,
+    -0.0778
+   ],
+   "size": [
+    1.239,
+    1.0093,
+    1.2444
+   ],
+   "tris": 40,
+   "verts": 24,
+   "tint": "kingdom",
+   "slot": "extra",
+   "tags": [
+    "idle"
+   ]
   }
  },
  "assemblies": {
   "farmer": {
-   "torso": "torso_tunic",
+   "torso": "%torso%",
    "head": "%face%",
    "hat": "hat_straw",
    "hatband": "hat_ribbon",
@@ -2171,7 +2232,7 @@
    ]
   },
   "woodcutter": {
-   "torso": "torso_work",
+   "torso": "%torso%",
    "head": "%face%",
    "hat": "hat_beanie",
    "hatband": "hat_pompom",
@@ -2183,7 +2244,7 @@
    "extras": []
   },
   "miner": {
-   "torso": "torso_vest",
+   "torso": "%torso%",
    "head": "%face%",
    "hat": "hat_miner",
    "arm": "arm_bare",
@@ -2194,7 +2255,7 @@
    "extras": []
   },
   "builder": {
-   "torso": "torso_jerkin",
+   "torso": "%torso%",
    "head": "%face%",
    "hat": "hat_builder",
    "arm": "arm_hand",
@@ -2205,7 +2266,7 @@
    "extras": []
   },
   "hauler": {
-   "torso": "torso_work",
+   "torso": "%torso%",
    "head": "%face%",
    "hair": "%hair%",
    "arm": "arm_bare",
@@ -2218,7 +2279,7 @@
    ]
   },
   "blacksmith": {
-   "torso": "torso_smith",
+   "torso": "%torso%",
    "head": "%face%",
    "hair": "hair_beard",
    "arm": "arm_bare",
@@ -2230,7 +2291,7 @@
    ]
   },
   "merchant": {
-   "torso": "torso_vest",
+   "torso": "%torso%",
    "head": "%face%",
    "hat": "hat_merchant",
    "hatband": "hat_feather",
@@ -2244,7 +2305,7 @@
    ]
   },
   "healer": {
-   "torso": "torso_smock",
+   "torso": "%torso%",
    "head": "%face%",
    "hat": "hat_coif",
    "arm": "arm_hand",
@@ -2264,15 +2325,17 @@
    "sleeve": "sleeve_short",
    "leg": "leg_trousers",
    "boot": "boot_low",
-   "extras": []
+   "extras": [
+    "%accessory%"
+   ]
   },
   "soldier": {
    "torso": "torso_tabard",
    "head": "%face%",
    "hat": "hat_helm",
    "crest": "crest_%kingdom%",
-   "arm": "arm_hand",
-   "sleeve": "sleeve_mail",
+   "arm": "arm_gauntlet",
+   "sleeve": "sleeve_soldier",
    "leg": "leg_mail",
    "boot": "boot_plate",
    "tool": "tool_spear",
@@ -2284,8 +2347,8 @@
    "head": "%face%",
    "hat": "hat_helm",
    "crest": "crest_%kingdom%",
-   "arm": "arm_hand",
-   "sleeve": "sleeve_mail",
+   "arm": "arm_gauntlet",
+   "sleeve": "sleeve_soldier",
    "leg": "leg_mail",
    "boot": "boot_plate",
    "tool": "tool_sword",
@@ -2298,8 +2361,8 @@
    "head": "%face%",
    "hat": "hat_helm",
    "crest": "crest_%kingdom%",
-   "arm": "arm_hand",
-   "sleeve": "sleeve_mail",
+   "arm": "arm_gauntlet",
+   "sleeve": "sleeve_soldier",
    "leg": "leg_mail",
    "boot": "boot_plate",
    "tool": "tool_bow",
@@ -2333,6 +2396,7 @@
    "head_05",
    "head_06"
   ],
+  "face_rule": "faces[(look.hair + 2 * look.outfit + look.skin) % 6]",
   "hair_sets": [
    [
     "hair_crop",
@@ -2347,21 +2411,86 @@
     "hair_pigtails",
     "hair_bun",
     "hair_tonsure",
-    "hair_crop",
-    "hair_long"
+    "hat_hood",
+    "hair_crop"
    ]
   ],
-  "hair_set_rule": "set = hairColor <= 4 ? 1 : 2; piece = set[(look.hair - 1) % 6]; the hat of a job replaces the hair slot",
-  "face_rule": "faces[(look.hair + 2 * look.outfit + look.skin) % 6]",
-  "outfit_torsos": [
-   "torso_tunic",
-   "torso_sleeveless",
-   "torso_vest",
-   "torso_work",
-   "torso_robe",
-   "torso_jerkin"
-  ],
-  "outfit_rule": "idle citizens: torso = outfit_torsos[(look.outfit - 1) % 6]; working jobs keep their torso",
+  "hair_rule": "set = hairColor <= 4 ? hair_sets[0] : hair_sets[1]; piece = set[(look.hair - 1) % 6]; a job hat or fixed hair (blacksmith: beard) replaces the hair slot; 'hat_hood' is a hood worn instead of hair",
+  "torso_variants": {
+   "farmer": [
+    "torso_tunic",
+    "torso_vest",
+    "torso_jerkin",
+    "torso_work",
+    "torso_sleeveless",
+    "torso_tunic"
+   ],
+   "woodcutter": [
+    "torso_work",
+    "torso_jerkin",
+    "torso_vest",
+    "torso_work",
+    "torso_jerkin",
+    "torso_sleeveless"
+   ],
+   "miner": [
+    "torso_vest",
+    "torso_work",
+    "torso_jerkin",
+    "torso_vest",
+    "torso_work",
+    "torso_sleeveless"
+   ],
+   "builder": [
+    "torso_jerkin",
+    "torso_work",
+    "torso_tunic",
+    "torso_jerkin",
+    "torso_vest",
+    "torso_work"
+   ],
+   "hauler": [
+    "torso_work",
+    "torso_tunic",
+    "torso_jerkin",
+    "torso_sleeveless",
+    "torso_work",
+    "torso_vest"
+   ],
+   "blacksmith": [
+    "torso_smith",
+    "torso_work",
+    "torso_sleeveless",
+    "torso_smith",
+    "torso_jerkin",
+    "torso_work"
+   ],
+   "merchant": [
+    "torso_vest",
+    "torso_robe",
+    "torso_jerkin",
+    "torso_tunic",
+    "torso_vest",
+    "torso_robe"
+   ],
+   "healer": [
+    "torso_smock",
+    "torso_robe",
+    "torso_tunic",
+    "torso_smock",
+    "torso_robe",
+    "torso_vest"
+   ],
+   "idle": [
+    "torso_tunic",
+    "torso_sleeveless",
+    "torso_vest",
+    "torso_work",
+    "torso_robe",
+    "torso_jerkin"
+   ]
+  },
+  "torso_rule": "assembly torso '%torso%' = torso_variants[job][(look.outfit - 1) % 6]; soldiers and the governor keep theirs",
   "boots": {
    "idle": [
     "boot_low",
@@ -2376,13 +2505,34 @@
     "boot_work",
     "boot_low"
    ],
+   "healer": [
+    "boot_low",
+    "boot_high"
+   ],
+   "merchant": [
+    "boot_high",
+    "boot_low"
+   ],
+   "woodcutter": [
+    "boot_high",
+    "boot_work"
+   ],
    "default": [
     "boot_work",
     "boot_high",
     "boot_low"
    ]
   },
-  "boot_rule": "boots[job or default][(look.outfit + look.skin) % len]",
+  "boot_rule": "boots[job or 'default'][(look.outfit + look.skin) % len]",
+  "accessories": [
+   null,
+   "hat_headband",
+   "neck_scarf",
+   null,
+   "hat_headband",
+   "neck_scarf"
+  ],
+  "accessory_rule": "idle citizens: extras '%accessory%' = accessories[(look.outfit + 2 * look.hair + 3 * look.skin) % 6] (None = no piece)",
   "kingdoms": [
    "crimson",
    "azure",
@@ -2489,6 +2639,8 @@
    ]
   },
   "kit_tint": {
+   "sleeve_soldier": 0.85,
+   "sleeve_robe": 0.72,
    "torso_tunic": 0.8,
    "torso_work": 0.85,
    "torso_jerkin": 1.0,
@@ -2510,267 +2662,754 @@
    "shield_crimson": 0.9,
    "shield_azure": 0.9,
    "shield_emerald": 0.9,
-   "shield_gold": 0.9
+   "shield_gold": 0.9,
+   "neck_scarf": 0.8
   },
-  "cloth_by_job": {
-   "farmer": {
-    "sleeve": [
-     226,
-     214,
-     186
-    ],
-    "leg": [
-     98,
-     104,
-     58
-    ],
-    "torso": [
-     232,
-     222,
-     190
-    ],
-    "default": [
-     232,
-     222,
-     190
-    ]
-   },
-   "woodcutter": {
-    "sleeve": [
-     96,
-     66,
-     46
-    ],
-    "leg": [
-     58,
-     42,
-     32
-    ],
-    "hat": [
-     52,
-     58,
-     70
-    ],
-    "torso": [
-     96,
-     66,
-     46
-    ],
-    "default": [
-     96,
-     66,
-     46
-    ]
-   },
-   "miner": {
-    "sleeve": [
-     122,
-     126,
-     136
-    ],
-    "leg": [
-     70,
-     68,
-     72
-    ],
-    "torso": [
-     122,
-     126,
-     136
-    ],
-    "default": [
-     122,
-     126,
-     136
-    ]
-   },
-   "builder": {
-    "sleeve": [
-     196,
-     158,
-     104
-    ],
-    "leg": [
-     52,
-     62,
-     94
-    ],
-    "hat": [
-     240,
-     214,
-     160
-    ],
-    "torso": [
-     196,
-     158,
-     104
-    ],
-    "default": [
-     196,
-     158,
-     104
-    ]
-   },
-   "hauler": {
-    "sleeve": [
-     156,
-     118,
-     80
-    ],
-    "leg": [
-     112,
-     68,
-     42
-    ],
-    "torso": [
-     156,
-     118,
-     80
-    ],
-    "default": [
-     156,
-     118,
-     80
-    ]
-   },
-   "blacksmith": {
-    "sleeve": [
-     80,
-     72,
-     70
-    ],
-    "leg": [
-     60,
-     52,
-     48
-    ],
-    "torso": [
-     96,
-     84,
-     78
-    ],
-    "default": [
-     96,
-     84,
-     78
-    ]
-   },
-   "merchant": {
-    "sleeve": [
-     232,
-     224,
-     204
-    ],
-    "leg": [
-     84,
-     60,
-     52
-    ],
-    "torso": [
-     122,
-     40,
-     60
-    ],
-    "hat": [
-     46,
-     84,
-     96
-    ],
-    "default": [
-     122,
-     40,
-     60
-    ]
-   },
-   "healer": {
-    "sleeve": [
-     236,
-     232,
-     218
-    ],
-    "leg": [
-     150,
-     150,
-     140
-    ],
-    "torso": [
-     236,
-     232,
-     218
-    ],
-    "hat": [
-     240,
-     236,
-     224
-    ],
-    "default": [
-     236,
-     232,
-     218
-    ]
-   },
-   "idle": {
-    "sleeve": [
-     226,
-     214,
-     186
-    ],
-    "leg": [
-     110,
-     86,
-     60
-    ],
-    "torso": [
-     190,
-     160,
-     120
-    ],
-    "hat": [
-     170,
-     84,
-     52
-    ],
-    "default": [
-     190,
-     160,
-     120
-    ]
-   },
-   "soldier": {
-    "sleeve": [
-     84,
-     90,
-     100
-    ],
-    "leg": [
-     84,
-     90,
-     100
-    ],
-    "default": [
-     84,
-     90,
-     100
-    ]
-   },
-   "governor": {
-    "sleeve": [
-     242,
-     238,
-     228
-    ],
-    "leg": [
-     72,
-     52,
-     60
-    ],
-    "default": [
-     242,
-     238,
-     228
-    ]
-   }
-  }
+  "kit_tint_rule": "factor = kit_tint[piece name without the _l/_r suffix] (default 0.85); Color = shade(kingdomColor, factor)",
+  "cloth_variants": {
+   "farmer": [
+    {
+     "sleeve": [
+      226,
+      214,
+      186
+     ],
+     "leg": [
+      98,
+      104,
+      58
+     ],
+     "torso": [
+      232,
+      222,
+      190
+     ],
+     "default": [
+      232,
+      222,
+      190
+     ]
+    },
+    {
+     "sleeve": [
+      214,
+      224,
+      196
+     ],
+     "leg": [
+      86,
+      108,
+      66
+     ],
+     "torso": [
+      214,
+      224,
+      196
+     ],
+     "default": [
+      214,
+      224,
+      196
+     ]
+    },
+    {
+     "sleeve": [
+      236,
+      214,
+      176
+     ],
+     "leg": [
+      84,
+      100,
+      84
+     ],
+     "torso": [
+      236,
+      214,
+      176
+     ],
+     "default": [
+      236,
+      214,
+      176
+     ]
+    }
+   ],
+   "woodcutter": [
+    {
+     "sleeve": [
+      96,
+      66,
+      46
+     ],
+     "leg": [
+      58,
+      42,
+      32
+     ],
+     "hat": [
+      52,
+      58,
+      70
+     ],
+     "torso": [
+      96,
+      66,
+      46
+     ],
+     "default": [
+      96,
+      66,
+      46
+     ]
+    },
+    {
+     "sleeve": [
+      84,
+      70,
+      66
+     ],
+     "leg": [
+      50,
+      46,
+      48
+     ],
+     "hat": [
+      40,
+      52,
+      84
+     ],
+     "torso": [
+      84,
+      70,
+      66
+     ],
+     "default": [
+      84,
+      70,
+      66
+     ]
+    },
+    {
+     "sleeve": [
+      110,
+      66,
+      44
+     ],
+     "leg": [
+      70,
+      40,
+      36
+     ],
+     "hat": [
+      44,
+      64,
+      50
+     ],
+     "torso": [
+      110,
+      66,
+      44
+     ],
+     "default": [
+      110,
+      66,
+      44
+     ]
+    }
+   ],
+   "miner": [
+    {
+     "sleeve": [
+      122,
+      126,
+      136
+     ],
+     "leg": [
+      70,
+      68,
+      72
+     ],
+     "torso": [
+      122,
+      126,
+      136
+     ],
+     "default": [
+      122,
+      126,
+      136
+     ]
+    },
+    {
+     "sleeve": [
+      132,
+      124,
+      116
+     ],
+     "leg": [
+      62,
+      70,
+      84
+     ],
+     "torso": [
+      132,
+      124,
+      116
+     ],
+     "default": [
+      132,
+      124,
+      116
+     ]
+    },
+    {
+     "sleeve": [
+      110,
+      122,
+      140
+     ],
+     "leg": [
+      74,
+      76,
+      64
+     ],
+     "torso": [
+      110,
+      122,
+      140
+     ],
+     "default": [
+      110,
+      122,
+      140
+     ]
+    }
+   ],
+   "builder": [
+    {
+     "sleeve": [
+      196,
+      158,
+      104
+     ],
+     "leg": [
+      52,
+      62,
+      94
+     ],
+     "hat": [
+      240,
+      214,
+      160
+     ],
+     "torso": [
+      196,
+      158,
+      104
+     ],
+     "default": [
+      196,
+      158,
+      104
+     ]
+    },
+    {
+     "sleeve": [
+      186,
+      170,
+      120
+     ],
+     "leg": [
+      60,
+      58,
+      100
+     ],
+     "hat": [
+      246,
+      224,
+      140
+     ],
+     "torso": [
+      186,
+      170,
+      120
+     ],
+     "default": [
+      186,
+      170,
+      120
+     ]
+    },
+    {
+     "sleeve": [
+      206,
+      160,
+      90
+     ],
+     "leg": [
+      84,
+      84,
+      100
+     ],
+     "hat": [
+      244,
+      208,
+      170
+     ],
+     "torso": [
+      206,
+      160,
+      90
+     ],
+     "default": [
+      206,
+      160,
+      90
+     ]
+    }
+   ],
+   "hauler": [
+    {
+     "sleeve": [
+      156,
+      118,
+      80
+     ],
+     "leg": [
+      112,
+      68,
+      42
+     ],
+     "torso": [
+      156,
+      118,
+      80
+     ],
+     "default": [
+      156,
+      118,
+      80
+     ]
+    },
+    {
+     "sleeve": [
+      146,
+      122,
+      92
+     ],
+     "leg": [
+      96,
+      72,
+      52
+     ],
+     "torso": [
+      146,
+      122,
+      92
+     ],
+     "default": [
+      146,
+      122,
+      92
+     ]
+    },
+    {
+     "sleeve": [
+      164,
+      112,
+      76
+     ],
+     "leg": [
+      122,
+      76,
+      50
+     ],
+     "torso": [
+      164,
+      112,
+      76
+     ],
+     "default": [
+      164,
+      112,
+      76
+     ]
+    }
+   ],
+   "blacksmith": [
+    {
+     "sleeve": [
+      80,
+      72,
+      70
+     ],
+     "leg": [
+      60,
+      52,
+      48
+     ],
+     "torso": [
+      96,
+      84,
+      78
+     ],
+     "default": [
+      96,
+      84,
+      78
+     ]
+    },
+    {
+     "sleeve": [
+      74,
+      76,
+      82
+     ],
+     "leg": [
+      54,
+      54,
+      60
+     ],
+     "torso": [
+      88,
+      90,
+      96
+     ],
+     "default": [
+      88,
+      90,
+      96
+     ]
+    },
+    {
+     "sleeve": [
+      92,
+      70,
+      56
+     ],
+     "leg": [
+      66,
+      50,
+      42
+     ],
+     "torso": [
+      108,
+      82,
+      64
+     ],
+     "default": [
+      108,
+      82,
+      64
+     ]
+    }
+   ],
+   "merchant": [
+    {
+     "sleeve": [
+      232,
+      224,
+      204
+     ],
+     "leg": [
+      84,
+      60,
+      52
+     ],
+     "torso": [
+      122,
+      40,
+      60
+     ],
+     "hat": [
+      46,
+      84,
+      96
+     ],
+     "default": [
+      122,
+      40,
+      60
+     ]
+    },
+    {
+     "sleeve": [
+      226,
+      232,
+      214
+     ],
+     "leg": [
+      60,
+      70,
+      84
+     ],
+     "torso": [
+      44,
+      96,
+      80
+     ],
+     "hat": [
+      122,
+      40,
+      60
+     ],
+     "default": [
+      44,
+      96,
+      80
+     ]
+    },
+    {
+     "sleeve": [
+      236,
+      226,
+      206
+     ],
+     "leg": [
+      72,
+      60,
+      74
+     ],
+     "torso": [
+      156,
+      104,
+      40
+     ],
+     "hat": [
+      60,
+      70,
+      120
+     ],
+     "default": [
+      156,
+      104,
+      40
+     ]
+    }
+   ],
+   "healer": [
+    {
+     "sleeve": [
+      236,
+      232,
+      218
+     ],
+     "leg": [
+      150,
+      150,
+      140
+     ],
+     "torso": [
+      236,
+      232,
+      218
+     ],
+     "hat": [
+      240,
+      236,
+      224
+     ],
+     "default": [
+      236,
+      232,
+      218
+     ]
+    },
+    {
+     "sleeve": [
+      222,
+      236,
+      222
+     ],
+     "leg": [
+      140,
+      150,
+      140
+     ],
+     "torso": [
+      222,
+      236,
+      222
+     ],
+     "hat": [
+      228,
+      240,
+      228
+     ],
+     "default": [
+      222,
+      236,
+      222
+     ]
+    },
+    {
+     "sleeve": [
+      236,
+      224,
+      214
+     ],
+     "leg": [
+      150,
+      140,
+      132
+     ],
+     "torso": [
+      236,
+      224,
+      214
+     ],
+     "hat": [
+      242,
+      232,
+      222
+     ],
+     "default": [
+      236,
+      224,
+      214
+     ]
+    }
+   ],
+   "idle": [
+    {
+     "sleeve": [
+      226,
+      214,
+      186
+     ],
+     "leg": [
+      110,
+      86,
+      60
+     ],
+     "torso": [
+      190,
+      160,
+      120
+     ],
+     "hat": [
+      170,
+      84,
+      52
+     ],
+     "default": [
+      190,
+      160,
+      120
+     ]
+    },
+    {
+     "sleeve": [
+      214,
+      206,
+      186
+     ],
+     "leg": [
+      88,
+      90,
+      98
+     ],
+     "torso": [
+      172,
+      150,
+      120
+     ],
+     "hat": [
+      60,
+      72,
+      120
+     ],
+     "default": [
+      172,
+      150,
+      120
+     ]
+    },
+    {
+     "sleeve": [
+      232,
+      214,
+      176
+     ],
+     "leg": [
+      104,
+      70,
+      44
+     ],
+     "torso": [
+      160,
+      128,
+      92
+     ],
+     "hat": [
+      176,
+      84,
+      52
+     ],
+     "default": [
+      160,
+      128,
+      92
+     ]
+    }
+   ],
+   "soldier": [
+    {
+     "leg": [
+      84,
+      90,
+      100
+     ],
+     "default": [
+      84,
+      90,
+      100
+     ]
+    }
+   ],
+   "governor": [
+    {
+     "sleeve": [
+      242,
+      238,
+      228
+     ],
+     "leg": [
+      72,
+      52,
+      60
+     ],
+     "default": [
+      242,
+      238,
+      228
+     ]
+    }
+   ]
+  },
+  "cloth_rule": "colour = cloth_variants[job][(look.hairColor - 1) % len][piece slot or 'default'] x dye[look.hairColor - 1]",
+  "dye": [
+   1,
+   0.94,
+   1.06,
+   0.9,
+   1.1,
+   0.97,
+   1.03,
+   0.92
+  ],
+  "tint_shift": [
+   0,
+   -0.1,
+   0.08,
+   -0.16,
+   0.12,
+   -0.05,
+   0.05,
+   -0.12
+  ],
+  "tint_shift_rule": "torso and sleeve kingdom factors get + tint_shift[(look.hairColor + look.skin - 2) % 8], clamped to 0.5..1"
  },
  "budget": {
   "citizen_tris": 1000,
@@ -2784,71 +3423,71 @@
  "measured": {
   "farmer": {
    "pieces_default": 14,
-   "tris_default": 1164,
+   "tris_default": 790,
    "pieces_max": 14,
-   "tris_max": 1164,
-   "tool_tris": 88,
-   "body_tris": 1076,
+   "tris_max": 810,
+   "tool_tris": 72,
+   "body_tris": 738,
    "budget": 1000,
    "draw_calls_est": 14,
    "texture_bytes": 0,
-   "pass": false
+   "pass": true
   },
   "woodcutter": {
    "pieces_default": 13,
-   "tris_default": 1114,
+   "tris_default": 742,
    "pieces_max": 13,
-   "tris_max": 1114,
-   "tool_tris": 48,
-   "body_tris": 1066,
+   "tris_max": 762,
+   "tool_tris": 40,
+   "body_tris": 722,
    "budget": 1000,
    "draw_calls_est": 13,
    "texture_bytes": 0,
-   "pass": false
+   "pass": true
   },
   "miner": {
    "pieces_default": 12,
-   "tris_default": 1164,
+   "tris_default": 710,
    "pieces_max": 12,
-   "tris_max": 1164,
-   "tool_tris": 152,
-   "body_tris": 1012,
+   "tris_max": 746,
+   "tool_tris": 68,
+   "body_tris": 678,
    "budget": 1000,
    "draw_calls_est": 12,
    "texture_bytes": 0,
-   "pass": false
+   "pass": true
   },
   "builder": {
    "pieces_default": 12,
-   "tris_default": 1156,
+   "tris_default": 706,
    "pieces_max": 12,
-   "tris_max": 1156,
-   "tool_tris": 160,
-   "body_tris": 996,
+   "tris_max": 706,
+   "tool_tris": 56,
+   "body_tris": 650,
    "budget": 1000,
    "draw_calls_est": 12,
    "texture_bytes": 0,
-   "pass": false
+   "pass": true
   },
   "hauler": {
    "pieces_default": 13,
-   "tris_default": 1184,
+   "tris_default": 740,
    "pieces_max": 13,
-   "tris_max": 1314,
-   "tool_tris": 188,
-   "body_tris": 1126,
+   "tris_max": 852,
+   "tool_tris": 94,
+   "body_tris": 758,
    "budget": 1000,
    "draw_calls_est": 13,
    "texture_bytes": 0,
-   "pass": false
+   "pass": true
   },
   "blacksmith": {
    "pieces_default": 11,
-   "tris_default": 962,
+   "tris_default": 622,
    "pieces_max": 11,
-   "tris_max": 962,
-   "tool_tris": 84,
-   "body_tris": 878,
+   "tris_max": 658,
+   "tool_tris": 44,
+   "body_tris": 614,
    "budget": 1000,
    "draw_calls_est": 11,
    "texture_bytes": 0,
@@ -2856,47 +3495,47 @@
   },
   "merchant": {
    "pieces_default": 14,
-   "tris_default": 1374,
+   "tris_default": 834,
    "pieces_max": 14,
-   "tris_max": 1374,
-   "tool_tris": 198,
-   "body_tris": 1176,
+   "tris_max": 870,
+   "tool_tris": 102,
+   "body_tris": 768,
    "budget": 1000,
    "draw_calls_est": 14,
    "texture_bytes": 0,
-   "pass": false
+   "pass": true
   },
   "healer": {
    "pieces_default": 13,
-   "tris_default": 1346,
+   "tris_default": 854,
    "pieces_max": 13,
-   "tris_max": 1346,
-   "tool_tris": 164,
-   "body_tris": 1182,
+   "tris_max": 882,
+   "tool_tris": 88,
+   "body_tris": 794,
    "budget": 1000,
    "draw_calls_est": 13,
    "texture_bytes": 0,
-   "pass": false
+   "pass": true
   },
   "idle": {
    "pieces_default": 11,
-   "tris_default": 960,
+   "tris_default": 626,
    "pieces_max": 11,
-   "tris_max": 1090,
+   "tris_max": 780,
    "tool_tris": 0,
-   "body_tris": 1090,
+   "body_tris": 780,
    "budget": 1000,
-   "draw_calls_est": 11,
+   "draw_calls_est": 12,
    "texture_bytes": 0,
-   "pass": false
+   "pass": true
   },
   "soldier": {
    "pieces_default": 14,
-   "tris_default": 1194,
+   "tris_default": 836,
    "pieces_max": 14,
-   "tris_max": 1214,
-   "tool_tris": 102,
-   "body_tris": 1112,
+   "tris_max": 856,
+   "tool_tris": 86,
+   "body_tris": 770,
    "budget": 1500,
    "draw_calls_est": 14,
    "texture_bytes": 0,
@@ -2904,11 +3543,11 @@
   },
   "soldier_sword": {
    "pieces_default": 14,
-   "tris_default": 1268,
+   "tris_default": 880,
    "pieces_max": 14,
-   "tris_max": 1308,
-   "tool_tris": 196,
-   "body_tris": 1112,
+   "tris_max": 920,
+   "tool_tris": 150,
+   "body_tris": 770,
    "budget": 1500,
    "draw_calls_est": 14,
    "texture_bytes": 0,
@@ -2916,11 +3555,11 @@
   },
   "soldier_bow": {
    "pieces_default": 14,
-   "tris_default": 1332,
+   "tris_default": 914,
    "pieces_max": 14,
-   "tris_max": 1352,
-   "tool_tris": 136,
-   "body_tris": 1216,
+   "tris_max": 934,
+   "tool_tris": 84,
+   "body_tris": 850,
    "budget": 1500,
    "draw_calls_est": 14,
    "texture_bytes": 0,
@@ -2928,17 +3567,17 @@
   },
   "governor": {
    "pieces_default": 16,
-   "tris_default": 1444,
+   "tris_default": 926,
    "pieces_max": 16,
-   "tris_max": 1444,
-   "tool_tris": 206,
-   "body_tris": 1238,
+   "tris_max": 926,
+   "tool_tris": 92,
+   "body_tris": 834,
    "budget": 1500,
    "draw_calls_est": 16,
    "texture_bytes": 0,
    "pass": true
   }
  },
- "geometry_hash": "73b9d72242060934",
- "fbx_bytes": 498268
+ "geometry_hash": "1fd8f4c974c8f988",
+ "fbx_bytes": 464684
 }

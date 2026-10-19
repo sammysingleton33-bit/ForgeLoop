@@ -131,7 +131,7 @@ def build_hats(S, R):
     hat(R, "hat_builder", merge(hh, peak), tint="cloth", tags=("builder",))
 
     # ---- hood: kingdom cowl closed over the head, the face opening in front
-    hat(R, "hat_hood", _hood(S, 0.11, 4.2, -0.26, back=False), tint="kingdom", tags=("hood",))
+    hat(R, "hat_hood", _hood(S, 0.11, 4.55, -0.5, back=False), tint="kingdom", tags=("hood",))
 
     # ---- merchant's floppy beret with a feather
     beret = sphere(1.05, 0.5, 0.98, seg=S.seg(9, 8), rings=S.seg(4, 3), color=TINT, smooth=sm, tag="cloth", phase=p0)
@@ -140,19 +140,21 @@ def build_hats(S, R):
                  smooth=sm, tag="cloth")
     feather = loft([(0.0, 0.0, 0.0), (0.3, 0.07, 0.04), (1.0, 0.16, 0.04), (1.6, 0.05, 0.02), (1.7, 0.0, 0.0)], seg=4, n=1.6,
                    caps=(False, False), color=rgb(238, 232, 214), smooth=False, tag="feather")
-    feather = feather.rot(-70, "z").rot(-14, "x").move(0.92, 5.34, -0.22)
+    feather = feather.scale(1.0, 0.7, 1.0).rot(-62, "z").rot(-14, "x").move(0.9, 5.3, -0.22)
     hat(R, "hat_merchant", merge(beret, brimb), tint="cloth", tags=("merchant",))
     hat(R, "hat_feather", feather, slot="hatband", tint="fixed", tags=("merchant",))
 
     # ---- healer coif: a linen headscarf wrapped over the head, knotted at the back
-    coif = _hood(S, 0.07, 4.35, -0.2, back=False)
+    coif = _hood(S, 0.07, 4.55, -0.5, back=False)
     knot = sphere(0.26, 0.2, 0.2, seg=S.seg(6, 5), rings=2, color=TINT, smooth=sm, tag="cloth").move(0, 4.9, 0.9)
     tail = tube([(0, 4.82, 0.85), (0, 4.4, 1.05), (0, 3.95, 1.0)], [0.2, 0.16, 0.08], seg=S.seg(4, 3), color=TINT, smooth=sm, tag="cloth")
-    hat(R, "hat_coif", merge(coif, knot, tail), tint="cloth", tags=("healer",))
+    cross = merge(box(0.1, 0.3, 0.06, color=rgb(40, 120, 60), tag="cross"), box(0.3, 0.1, 0.06, color=rgb(40, 120, 60), tag="cross")).rot(
+        -22, "x").move(0, 5.16, -0.74)
+    hat(R, "hat_coif", merge(coif, knot, tail, cross), tint="cloth", tags=("healer",))
     # headband (idle accessory): a band with a knot and two tails
-    hb = loft([(4.9, 0.84, 0.8), (5.02, 0.85, 0.81)], seg=seg, n=n, caps=(True, True), phase=p0, color=TINT, smooth=sm, tag="cloth")
-    hbk = sphere(0.17, 0.14, 0.12, seg=S.seg(6, 4), rings=2, color=TINT, smooth=sm, tag="cloth").move(0.0, 4.96, 0.82)
-    hbt = [box(0.1, 0.5, 0.05, color=TINT, smooth=False, tag="cloth").rot(sx * 14, "z").move(sx * 0.1, 4.62, 0.92) for sx in (-1, 1)]
+    hb = loft([(4.88, 0.92, 0.88), (5.02, 0.93, 0.89)], seg=seg, n=n, caps=(True, True), phase=p0, color=TINT, smooth=sm, tag="cloth")
+    hbk = sphere(0.17, 0.14, 0.12, seg=S.seg(6, 4), rings=2, color=TINT, smooth=sm, tag="cloth").move(0.0, 4.96, 0.92)
+    hbt = [box(0.1, 0.5, 0.05, color=TINT, smooth=False, tag="cloth").rot(sx * 14, "z").move(sx * 0.1, 4.62, 1.0) for sx in (-1, 1)]
     hat(R, "hat_headband", merge(hb, hbk, *hbt), tint="cloth", tags=("idle",))
 
 
@@ -203,7 +205,7 @@ def build_tools(S, R):
     shaft = _shaft(S, -1.75, 3.55, 0.15, WOOD_LIGHT, 0.13)
     sock = _shaft(S, 3.05, 3.6, 0.2, STEEL_DARK, tag="metal")
     neck = box(0.22, 0.2, 0.7, color=STEEL_DARK, smooth=False, tag="metal").move(0, 3.4, -0.4)
-    blade = _side_prism([(0.2, 3.5), (0.85, 3.42), (1.25, 2.65), (1.3, 2.28), (0.7, 2.5), (0.2, 3.0)], 0.42, BLADE)
+    blade = _side_prism([(0.2, 3.5), (0.85, 3.42), (1.25, 2.65), (1.3, 2.28), (0.7, 2.5), (0.2, 3.0)], 0.42, rgb(140, 150, 166))
     tool(R, "tool_hoe", held(merge(shaft, sock, neck, blade), lean=12), tags=("farmer",))
 
     # ---- axe: haft + a heavy bearded head
@@ -316,7 +318,7 @@ def build_tools(S, R):
 
 def _swap_fy(m):
     """hull() points were given as (x, y, f); rotate so f (forward) maps to -z (the grip frame's forward)."""
-    return m.map(lambda p: (p[0], p[1], -p[2]))
+    return m.map(lambda p: (p[0], p[1], -p[2])).fix_winding()  # a mirror: restore outward winding
 
 
 def _leaf(w, l, color):
@@ -397,7 +399,7 @@ def build_regalia(S, R):
     cape.h = [1.0] * len(cape.v)
     R.add("cape", cape, "Torso", "cape", "kingdom", weld="torso", tags=("governor",))
     # ermine collar (white, black spots painted on a deterministic subset of faces)
-    col = loft([(3.5, 1.1, 0.68), (3.78, 1.06, 0.65), (4.02, 0.5, 0.4)], seg=seg, n=n, caps=(True, True), phase=p0,
+    col = loft([(3.5, 1.05, 0.66), (3.76, 1.02, 0.63), (4.02, 0.5, 0.4)], seg=seg, n=n, caps=(True, True), phase=p0,
                color=ERMINE, smooth=sm, tag="fur")
     for i in range(len(col.f)):
         if (i * 7 + 3) % 6 == 0:
@@ -406,8 +408,8 @@ def build_regalia(S, R):
     R.add("collar_ermine", col, "Torso", "extra", "fixed", weld="torso", tags=("governor",))
     # gold trim: a front stripe down the robe and a hem band
     rx2 = lambda y: torso_r(y)[0]
-    stripe = panel(rx2, rz_of, 1.5, 3.8, -0.2, 0.2, 0.06, front=True, nx=1, ny=3, off=0.025, color=GOLD, smooth=False, tag="metal")
-    hem = loft([(1.42, 1.25, 0.89), (1.62, 1.2, 0.85)], seg=seg, n=n, caps=(True, True), phase=p0, color=GOLD, smooth=sm, tag="metal")
+    stripe = panel(rx2, rz_of, 1.72, 3.8, -0.2, 0.2, 0.06, front=True, nx=1, ny=3, off=0.025, color=GOLD, smooth=False, tag="metal")
+    hem = loft([(1.66, 1.21, 0.85), (1.84, 1.17, 0.81)], seg=seg, n=n, caps=(True, True), phase=p0, color=GOLD, smooth=sm, tag="metal")
     trim = merge(stripe, hem)
     trim.h = [1.0] * len(trim.v)
     R.add("trim_regal", trim, "Torso", "extra", "fixed", weld="torso", tags=("governor",))
@@ -424,32 +426,32 @@ def build_extras(S, R):
     rz_of = lambda y: torso_r(y)[1]
     rx_of = lambda y: torso_r(y)[0]
     # farmer's canvas apron: a front panel from the chest to just below the hips, a patch pocket
-    ap = panel(rx_of, rz_of, 1.95, 3.55, -0.62, 0.62, 0.06, front=True, nx=S.seg(3, 2), ny=2, off=0.03, flare=0.04, color=CANVAS,
+    ap = panel(rx_of, rz_of, 2.1, 3.55, -0.62, 0.62, 0.06, front=True, nx=S.seg(3, 2), ny=2, off=0.03, flare=0.03, color=CANVAS,
                smooth=False, tag="canvas")
     pocket = box(0.6, 0.3, 0.07, color=mix(CANVAS, (0.8, 0.76, 0.66), 1.0), smooth=False, tag="canvas").move(0, 2.5, -0.74)
     _extra(R, "apron_farm", merge(ap, pocket), tags=("farmer",))
     # blacksmith's leather apron: bib to the neck, dark, with a chest strap
-    sa = panel(rx_of, rz_of, 1.9, 3.78, -0.7, 0.7, 0.07, front=True, nx=S.seg(3, 2), ny=2, off=0.03, flare=0.04, color=LEATHER_DARK,
+    sa = panel(rx_of, rz_of, 2.05, 3.78, -0.7, 0.7, 0.07, front=True, nx=S.seg(3, 2), ny=2, off=0.03, flare=0.03, color=LEATHER_DARK,
                smooth=False, tag="leather")
     sa.paint(mix(LEATHER_DARK, LEATHER, 0.5), where=lambda x, y, z: y > 3.3)
     _extra(R, "apron_smith", sa, tags=("blacksmith",))
     # merchant's satchel: a cross strap and a bag on the back hip
-    strap = tube([(-0.7, 3.88, 0.1), (-0.72, 3.5, -0.4), (0.0, 3.0, -0.58), (0.7, 2.6, -0.5), (0.95, 2.45, -0.1)], [0.1] * 5, seg=S.seg(4, 4),
+    strap = tube([(-0.7, 3.88, 0.1), (-0.72, 3.5, -0.4), (0.0, 3.0, -0.58), (0.7, 2.7, -0.4), (0.9, 2.62, 0.2), (0.78, 2.6, 0.75)], [0.1] * 6, seg=S.seg(4, 4),
                  n=2.0, color=LEATHER, smooth=sm, tag="leather", rz_scale=0.5)
-    bag = merge(box(0.9, 0.75, 0.42, color=LEATHER, smooth=False, tag="leather").move(0.9, 2.45, 0.18),
-                box(0.94, 0.28, 0.46, color=LEATHER_DARK, smooth=False, tag="leather").move(0.9, 2.72, 0.18))
+    bag = merge(box(0.9, 0.7, 0.42, color=LEATHER, smooth=False, tag="leather").move(0.72, 2.62, 0.86),
+                box(0.94, 0.26, 0.46, color=LEATHER_DARK, smooth=False, tag="leather").move(0.72, 2.86, 0.86))
     _extra(R, "satchel_merchant", merge(strap, bag), tags=("merchant",))
     # healer's herb satchel: a strap and a cloth bag with green herbs sticking out
-    strap2 = tube([(0.7, 3.88, 0.1), (0.72, 3.5, -0.4), (0.0, 3.0, -0.58), (-0.7, 2.6, -0.5), (-0.95, 2.45, -0.1)], [0.1] * 5, seg=S.seg(4, 4),
+    strap2 = tube([(0.7, 3.88, 0.1), (0.72, 3.5, -0.4), (0.0, 3.0, -0.58), (-0.7, 2.7, -0.4), (-0.9, 2.62, 0.2), (-0.78, 2.6, 0.75)], [0.1] * 6, seg=S.seg(4, 4),
                   n=2.0, color=LEATHER, smooth=sm, tag="leather", rz_scale=0.5)
-    bag2 = merge(box(0.9, 0.72, 0.46, color=mix(CANVAS, (0.86, 0.8, 0.66), 1.0), smooth=False, tag="cloth").move(-0.9, 2.45, 0.2),
-                 *[_leaf(0.18, 0.7, rgb(86, 150, 62)).rot(a, "z").move(-0.9 + dx, 2.78, 0.2) for a, dx in ((-20, -0.15), (20, 0.15))])
+    bag2 = merge(box(0.9, 0.7, 0.46, color=mix(CANVAS, (0.86, 0.8, 0.66), 1.0), smooth=False, tag="cloth").move(-0.72, 2.62, 0.88),
+                 *[_leaf(0.18, 0.7, rgb(86, 150, 62)).rot(a, "z").move(-0.72 + dx, 2.92, 0.88) for a, dx in ((-20, -0.15), (20, 0.15))])
     _extra(R, "satchel_herb", merge(strap2, bag2), tags=("healer",))
     # archer's quiver on the back with three arrows
     qv = loft([(2.7, 0.28, 0.28), (3.85, 0.34, 0.34)], seg=seg, n=2.0, caps=(True, True), color=LEATHER, smooth=sm, tag="leather")
     arrows = [cyl(0.05, 0.05, 0.9, seg=4, y0=3.78, color=ASH, smooth=False, tag="arrow").move(dx, 0, dz) for dx, dz in ((-0.1, 0.0), (0.1, 0.06), (0.0, -0.08))]
     fl = [box(0.14, 0.34, 0.03, color=rgb(230, 224, 206), smooth=False, tag="feather").move(dx, 4.5, dz) for dx, dz in ((-0.1, 0.0), (0.1, 0.06))]
-    q = merge(qv, *arrows, *fl).rot(14, "z").rot(-8, "x").move(-0.42, 0.0, 0.82)
+    q = merge(qv, *arrows, *fl).rot(12, "z", pivot=(0, 3.3, 0)).rot(-8, "x", pivot=(0, 3.3, 0)).move(-0.4, 0.0, 0.86)
     _extra(R, "quiver", q, tags=("soldier", "archer"))
     # kite shields (left arm), one per kingdom: kingdom-tinted face, dark rim, a raised emblem
     heater = [(-0.7, 0.95), (0.7, 0.95), (0.72, 0.2), (0.0, -0.95), (-0.72, 0.2)]
@@ -492,9 +494,21 @@ def _em_sun():
     return [(-p[0], p[1]) for p in reversed(pts)]
 
 
+def build_scarf(S, R):
+    """Idle accessory: a kingdom neck scarf (ring at the collar + a hanging tail)."""
+    seg = S.seg(8, 8)
+    ring = loft([(3.78, 0.62, 0.56), (3.99, 0.66, 0.58)], seg=seg, n=S.n if S.A else 2.5, caps=(True, True), phase=ph(S, seg), color=TINT,
+                smooth=S.smooth, tag="cloth")
+    tail = box(0.34, 0.9, 0.08, color=mix(TINT, (0.8, 0.8, 0.8), 1.0), smooth=False, tag="cloth").rot(8, "z").move(0.25, 3.45, -0.66)
+    m = merge(ring, tail)
+    m.h = [1.0] * len(m.v)
+    R.add("neck_scarf", m, "Torso", "extra", "kingdom", weld="torso", tags=("idle",))
+
+
 def build_gear(S, R):
     build_hats(S, R)
     build_tools(S, R)
     build_armour(S, R)
     build_regalia(S, R)
     build_extras(S, R)
+    build_scarf(S, R)

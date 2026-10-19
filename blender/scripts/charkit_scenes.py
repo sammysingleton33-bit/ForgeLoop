@@ -22,8 +22,8 @@ import bpy  # noqa: E402
 from lib import ckit_rigload, ckit_scene, ckit_view, kitparts, rig  # noqa: E402
 
 OLD = REPO / "games/game-001/art/char_kit/old_rigs.json"
-JOBS = ["farmer", "woodcutter", "miner", "builder", "hauler", "blacksmith", "merchant", "healer", "idle", "soldier", "governor"]
-KINGDOMS = ["crimson", "azure", "emerald", "gold"]
+JOBS = ckit_rigload.JOBS
+KINGDOMS = ckit_rigload.KINGDOMS
 
 
 def parse(argv):
@@ -40,6 +40,7 @@ def parse(argv):
     ap.add_argument("--target", default="")
     ap.add_argument("--dist", type=float, default=0.0)
     ap.add_argument("--pitch", type=float, default=0.0)
+    ap.add_argument("--ground", default="", help="r,g,b 0-255 ground colour (default grass); a neutral grey stops the green bounce tinting skin in close-ups")
     ap.add_argument("--building", default="")
     ap.add_argument("--building-scale", type=float, default=25.0)
     return ap.parse_args(argv)
@@ -58,11 +59,9 @@ def main(argv):
     w, h = (int(v) for v in a.size.split("x")) if a.size else (1280, 720)
     old = json.loads(OLD.read_text())
     kit = None
-    if not a.old:
-        sc = ckit_view.stage(w, h, a.samples or (24 if not quick else 6), quick=quick)
-        kit = ckit_rigload.Kit(a.fbx, a.rig)
-    else:
-        sc = ckit_view.stage(w, h, a.samples or (24 if not quick else 6), quick=quick)
+    ground = tuple(float(v) for v in a.ground.split(",")) if a.ground else ckit_view.GRASS
+    sc = ckit_view.stage(w, h, a.samples or (24 if not quick else 6), ground=ground, quick=quick)
+    kit = ckit_rigload.Kit(a.fbx, a.rig) if not a.old else None
     cam = rig.add_camera(sc, 70)
     scene = a.scene
     if scene in ("crowd170", "crowd40"):
@@ -89,8 +88,7 @@ def main(argv):
                 m = _old_job(old, job)
                 kitparts.build_model(m, sc.collection, transform=ckit_scene.roblox_matrix(x, 0, 0, 0))
             else:
-                look = {"skin": 1 + (i * 2) % 6, "hair": 1 + (i * 5) % 6, "hairColor": 1 + (i * 3) % 8, "outfit": 1 + (i * 7) % 6}
-                kit.spawn(job, look, "crimson", x, 0, 0, tag=f"{job}_")
+                kit.spawn(job, ckit_rigload.job_look(i), "crimson", x, 0, 0, tag=f"{job}_")
         ckit_scene.gameplay(cam, (0, 2.8, 0), a.dist or 46.0, a.pitch or 12.0, fov=70)
     elif scene == "looks":
         grid = look_grid()
@@ -112,8 +110,40 @@ def main(argv):
             kit.spawn(job, None, "crimson", (3 - i) * 7.5, 0, 0, action=act, phase=0.25, speed=sp, tag=f"{act}_")
         ckit_scene.gameplay(cam, (0, 2.8, 0), a.dist or 46.0, a.pitch or 12.0, fov=60)
     elif scene == "portraits":
-        # head and shoulders of every job, a strip of square tiles
-        raise SystemExit("use charkit_compare.py for portraits")
+        # head and shoulders of every job (Kit.portrait framing), composed into one contact sheet
+        from PIL import Image, ImageDraw
+
+        px = w if a.size else 360
+        sc.render.resolution_x = sc.render.resolution_y = px
+        tiles = []
+        jobs = a.target.split(",") if a.target else JOBS
+        for i, job in enumerate(jobs):
+            look = ckit_rigload.job_look(JOBS.index(job) if job in JOBS else i)
+            names = kit.names_for(job, look, "crimson")
+            objs = kit.spawn(job, look, "crimson", 0, 0, 0, tag=f"{job}_", names=names)
+            top, half = 0.0, 1.5
+            for n in names:
+                p = kit.doc["pieces"][n]
+                if p["joint"] == "Head":
+                    top = max(top, p["bbox_center"][1] + p["size"][1] / 2)
+                    half = max(half, (abs(p["bbox_center"][0]) + p["size"][0] / 2) * 1.15)
+            ckit_scene.portrait(cam, top, half)
+            path = Path(a.out).with_name(f"portrait_{job}.png")
+            rig.render(sc, path)
+            tiles.append((job, path))
+            for o in objs:
+                bpy.data.objects.remove(o)
+        cols = 4
+        rows = (len(tiles) + cols - 1) // cols
+        sheet = Image.new("RGB", (cols * px, rows * (px + 22)), (28, 30, 34))
+        d = ImageDraw.Draw(sheet)
+        for i, (job, path) in enumerate(tiles):
+            r, c = divmod(i, cols)
+            sheet.paste(Image.open(path).convert("RGB"), (c * px, r * (px + 22) + 22))
+            d.text((c * px + 6, r * (px + 22) + 4), job, fill=(235, 235, 235))
+        sheet.save(a.out, quality=88)
+        print(f"[scenes] portraits -> {a.out}", flush=True)
+        return
     else:
         raise SystemExit(f"unknown scene {scene}")
     rig.render(sc, a.out)

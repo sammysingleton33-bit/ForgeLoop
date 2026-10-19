@@ -47,18 +47,18 @@ def head_radius_at(y):
 # face variants: eye (w, h, spacing, y), brow (len, thick, y, tilt deg) or None, nose (w, h, out), mouth (w, y, kind),
 # jaw width multiplier, ear size, extras
 FACES = {
-    "head_01": dict(eye=(0.11, 0.13, 0.31, 4.62), brow=(0.26, 0.05, 4.84, 6), nose=(0.09, 0.1, 0.09), mouth=(0.2, 4.28, "smile"),
+    "head_01": dict(eye=(0.13, 0.15, 0.31, 4.62), brow=(0.3, 0.06, 4.86, 6), nose=(0.1, 0.11, 0.1), mouth=(0.24, 4.27, "smile"),
                     jaw=1.0, ear=1.0),
-    "head_02": dict(eye=(0.125, 0.09, 0.31, 4.62), brow=(0.34, 0.07, 4.82, -9), nose=(0.13, 0.14, 0.12),
-                    mouth=(0.22, 4.27, "flat"), jaw=1.08, ear=1.0),
-    "head_03": dict(eye=(0.12, 0.16, 0.29, 4.60), brow=(0.2, 0.04, 4.9, 10), nose=(0.07, 0.08, 0.07),
-                    mouth=(0.10, 4.28, "o"), jaw=0.93, ear=0.9),
-    "head_04": dict(eye=(0.09, 0.09, 0.30, 4.62), brow=(0.36, 0.09, 4.8, -14), nose=(0.11, 0.18, 0.15),
-                    mouth=(0.2, 4.26, "frown"), jaw=1.04, ear=1.15, stubble=True),
-    "head_05": dict(eye=(0.14, 0.07, 0.30, 4.66), brow=(0.26, 0.05, 4.86, 14), nose=(0.10, 0.11, 0.09),
-                    mouth=(0.26, 4.29, "grin"), jaw=0.98, ear=1.0, freckles=True),
-    "head_06": dict(eye=(0.11, 0.11, 0.30, 4.63), brow=(0.3, 0.07, 4.83, -4), nose=(0.12, 0.13, 0.11),
-                    mouth=(0.17, 4.28, "flat"), jaw=1.1, ear=1.05, stubble=True, scar=True),
+    "head_02": dict(eye=(0.14, 0.11, 0.31, 4.62), brow=(0.36, 0.07, 4.84, -7), nose=(0.13, 0.14, 0.12),
+                    mouth=(0.24, 4.27, "flat"), jaw=1.08, ear=1.0),
+    "head_03": dict(eye=(0.13, 0.17, 0.29, 4.60), brow=(0.24, 0.05, 4.92, 10), nose=(0.08, 0.09, 0.08),
+                    mouth=(0.12, 4.28, "o"), jaw=0.93, ear=0.9),
+    "head_04": dict(eye=(0.12, 0.12, 0.30, 4.62), brow=(0.36, 0.08, 4.83, -8), nose=(0.11, 0.18, 0.15),
+                    mouth=(0.24, 4.26, "flat"), jaw=1.04, ear=1.15, stubble=True),
+    "head_05": dict(eye=(0.15, 0.1, 0.30, 4.66), brow=(0.28, 0.06, 4.88, 12), nose=(0.10, 0.11, 0.09),
+                    mouth=(0.3, 4.29, "grin"), jaw=0.98, ear=1.0, freckles=True),
+    "head_06": dict(eye=(0.13, 0.13, 0.30, 4.63), brow=(0.32, 0.07, 4.85, -4), nose=(0.12, 0.13, 0.11),
+                    mouth=(0.2, 4.28, "flat"), jaw=1.1, ear=1.05, stubble=True, scar=True),
 }
 
 
@@ -166,7 +166,7 @@ def build_hair(S, R):
     curtain = loft([(3.5, 0.55, 0.16, 0.0, 0.98), (4.0, 0.76, 0.22, 0.0, 0.9), (4.5, 0.86, 0.28, 0.0, 0.64), (5.0, 0.8, 0.2, 0.0, 0.64)],
                    seg=seg, n=n, caps=(True, True), phase=ph(S, seg), color=TINT, smooth=sm, tag="hair")
     reg("hair_long", merge(_cap(S, 0.07, 4.7, -0.3, thick=0.1), curtain))
-    reg("hair_bob", _cap(S, 0.1, 4.16, -0.18, rim_flare=0.1, thick=0.13))
+    reg("hair_bob", _cap(S, 0.1, 4.45, -0.5, rim_flare=0.1, thick=0.13))
     puff = [sphere(0.98, 0.7, 0.92, seg=S.seg(10, 7), rings=S.seg(5, 4), color=TINT, smooth=sm, tag="hair").move(0, 5.02, 0.12)]
     for (x, y, z, r) in ((-0.66, 4.74, 0.28, 0.3), (0.66, 4.74, 0.28, 0.3), (0.0, 5.64, 0.1, 0.3), (0.0, 4.7, 0.82, 0.34)):
         puff.append(sphere(r, seg=S.seg(6, 5), rings=3, color=TINT, smooth=sm, tag="hair").move(x, y, z))
@@ -179,7 +179,7 @@ def build_hair(S, R):
     tails = [tube([(sx * 0.7, 4.72, 0.12), (sx * 0.98, 4.5, 0.12), (sx * 1.04, 4.2, 0.1), (sx * 0.98, 3.98, 0.1)],
                   [0.2, 0.19, 0.16, 0.08], seg=S.seg(6, 4), n=2.0, color=TINT, smooth=sm, tag="hair") for sx in (-1, 1)]
     reg("hair_pigtails", merge(_cap(S, 0.05, 4.76, -0.3, thick=0.1), *tails))
-    chin = sphere(0.74, 0.5, 0.64, seg=S.seg(10, 7), rings=S.seg(5, 4), color=TINT, smooth=sm, tag="hair").move(0, 4.02, -0.08)
+    chin = sphere(0.74, 0.34, 0.64, seg=S.seg(10, 7), rings=S.seg(5, 4), color=TINT, smooth=sm, tag="hair").move(0, 4.22, -0.1)
     must = sphere(0.3, 0.09, 0.1, seg=S.seg(8, 6), rings=2, color=TINT, smooth=sm, tag="hair").move(0, 4.34, -0.74)
     reg("hair_beard", merge(chin, must))
     band = torus(0.8, 0.17, seg=seg, tseg=S.seg(5, 4), y=4.88, rz=0.77, color=TINT, smooth=sm, tag="hair", phase=ph(S, seg))
@@ -237,7 +237,7 @@ def build_torsos(S, R):
                                    (3.62, 1.06, 0.58), (3.88, 0.59, 0.41)],
                                bands=[(2.5, 2.84, BELT), (3.8, 4.0, DARK)]), width=2.2, tags=("tabard", "soldier"))
     # regal: the ruler's long robe, high collar
-    reg("torso_regal", _torso(S, [(1.42, 1.22, 0.86), (2.1, 1.02, 0.7), (2.56, 0.9, 0.58), (2.8, 0.9, 0.58), (3.22, 1.02, 0.6),
+    reg("torso_regal", _torso(S, [(1.66, 1.18, 0.82), (2.1, 1.02, 0.7), (2.56, 0.9, 0.58), (2.8, 0.9, 0.58), (3.22, 1.02, 0.6),
                                   (3.64, 1.1, 0.6), (3.88, 0.61, 0.43)],
                               bands=[(2.5, 2.84, DARK), (3.8, 4.0, (0.7, 0.7, 0.7))]), width=2.3, tags=("regal", "governor"))
     # smith: bare-chested harness look (cloth tint), very broad
@@ -278,11 +278,11 @@ def build_arms(S, R):
                 seg=seg, n=n, caps=(False, False), phase=ph0, color=TINT, smooth=S.smooth, tag="skin")
     R.add_sided("arm_hand", place_arm(hand), "arm", "skin", None, tags=("hand",))
 
-    def sleeve(prof, name, dark_y=None, tags=()):
-        m = loft(prof, seg=seg, n=n, caps=(True, True), phase=ph0, color=TINT, smooth=S.smooth, tag="cloth")
+    def sleeve(prof, name, dark_y=None, tags=(), tint="cloth", band=DARK, base=TINT):
+        m = loft(prof, seg=seg, n=n, caps=(True, True), phase=ph0, color=base, smooth=S.smooth, tag="cloth")
         if dark_y is not None:
-            m.paint(DARK, where=lambda x, y, z: y < dark_y)
-        R.add_sided(name, place_arm(m), "sleeve", "cloth", "arm", tags=tags)
+            m.paint(band, where=lambda x, y, z: y < dark_y)
+        R.add_sided(name, place_arm(m), "sleeve", tint, "arm", tags=tags)
 
     g = 0.055
     sleeve([(3.99, 0.1, 0.1, -0.08, 0.0), (3.84, 0.4 + g, 0.38 + g, -0.05, 0.0), (3.3, 0.38 + g, 0.38 + g, 0.0, 0.0)], "sleeve_short",
@@ -290,13 +290,14 @@ def build_arms(S, R):
     sleeve([(3.99, 0.1, 0.1, -0.08, 0.0), (3.84, 0.4 + g, 0.38 + g, -0.05, 0.0), (3.1, 0.37 + g, 0.37 + g, 0.0, 0.0),
             (2.6, 0.31 + g, 0.34 + g, 0.0, 0.0)], "sleeve_long", dark_y=2.78, tags=("long",))
     sleeve([(3.99, 0.1, 0.1, -0.08, 0.0), (3.84, 0.44, 0.42, -0.05, 0.0), (3.1, 0.46, 0.46, 0.0, 0.0), (2.5, 0.52, 0.5, 0.0, 0.0)],
-           "sleeve_robe", dark_y=2.75, tags=("robe",))
-    # soldier: fixed steel sleeve with a shoulder plate
-    m = loft([(3.99, 0.1, 0.1, -0.08, 0.0), (3.9, 0.5, 0.46, -0.05, 0.0), (3.62, 0.5, 0.46, 0.0, 0.0), (3.4, 0.4 + g, 0.4 + g, 0.0, 0.0),
-              (2.6, 0.3 + g, 0.34 + g, 0.0, 0.0)], seg=seg, n=n, caps=(True, True), phase=ph0,
-             color=STEEL_DARK, smooth=S.smooth, tag="mail")
-    m.paint(STEEL, where=lambda x, y, z: y > 3.62)
-    R.add_sided("sleeve_mail", place_arm(m), "sleeve", "fixed", "arm", tags=("mail", "soldier"))
+           "sleeve_robe", dark_y=2.75, tags=("robe",), tint="kingdom", band=(0.97, 0.97, 0.97))
+    # soldier: the sleeve is kingdom cloth with a lighter shoulder cap (the colour reads from above); steel gauntlets are the arm piece
+    sleeve([(3.99, 0.1, 0.1, -0.08, 0.0), (3.9, 0.5, 0.46, -0.05, 0.0), (3.62, 0.5, 0.46, 0.0, 0.0), (3.1, 0.4 + g, 0.4 + g, 0.0, 0.0),
+            (2.9, 0.34 + g, 0.36 + g, 0.0, 0.0)], "sleeve_soldier", dark_y=3.0, tags=("soldier",), tint="kingdom", band=(0.55, 0.55, 0.55))
+    gaunt = loft([(2.95, 0.0, 0.0, 0.0, 0.0), (2.9, 0.33, 0.36, 0.0, 0.0), (2.6, 0.31, 0.34, 0.0, 0.0), (2.36, 0.32, 0.38, 0.0, -0.06),
+                  (2.2, 0.0, 0.0, 0.0, -0.05)], seg=seg, n=n, caps=(False, False), phase=ph0, color=STEEL, smooth=S.smooth, tag="mail")
+    gaunt.paint(STEEL_DARK, where=lambda x, y, z: y > 2.8)
+    R.add_sided("arm_gauntlet", place_arm(gaunt), "arm", "fixed", None, tags=("soldier",))
 
 
 LEG_PROFILE = [  # y, rx, rz  (the right leg, centred on x = 0): hip -> ankle

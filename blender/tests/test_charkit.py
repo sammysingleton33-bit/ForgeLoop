@@ -151,3 +151,93 @@ def test_committed_rig_json_matches_a_rebuild():
     for j in ("Torso", "Head", "LeftArm", "RightArm", "LeftLeg", "RightLeg", "Tool", "TorsoTool"):
         assert j in doc["joints"]
     assert doc["joints"]["Torso"]["pos"] == [0.0, 2.2, 0.0] and doc["joints"]["Head"]["pos"] == [0.0, 3.9, 0.0]
+
+
+@needs_bpy
+def test_rig_json_rules_reproduce_the_generator_assemblies():
+    """lib/ckit_rigload.names_from_doc reads rig.json only; it must agree with the generator's own look rules for every look."""
+    from lib import ckit_kit, ckit_rigload
+
+    R, rig, hand = _registry()
+    doc = ckit_kit.rig_json(R, rig, "B", hand)
+    n = 0
+    for job in rig.ASSEMBLIES:
+        for kd in rig.KINGDOMS:
+            for skin in (1, 4):
+                for hair in range(1, 7):
+                    for hc in (1, 6):
+                        for outfit in range(1, 7):
+                            look = {"skin": skin, "hair": hair, "hairColor": hc, "outfit": outfit}
+                            a = rig.names_for(job, look, kd)
+                            b = ckit_rigload.names_from_doc(doc, job, look, kd)
+                            assert a == b, (job, look, kd, a, b)
+                            assert len(a) <= ckit_kit.MAX_PIECES
+                            for name in a:
+                                assert name in doc["pieces"]
+                                c = ckit_rigload.tint_from_doc(doc, name, job, look, kd)
+                                assert all(0.0 <= v <= 1.0 for v in c)
+                            n += 1
+    assert n > 1000
+
+
+@needs_bpy
+def test_looks_make_visibly_different_citizens():
+    """>= 4 faces, >= 8 hair styles and >= 3 torsos per working job are reachable from the six look fields."""
+    R, rig, hand = _registry()
+    faces, hairs = set(), set()
+    torsos = {j: set() for j in rig.TORSO_VARIANTS}
+    for skin in range(1, 7):
+        for hair in range(1, 7):
+            for hc in (1, 5):
+                for outfit in range(1, 7):
+                    look = {"skin": skin, "hair": hair, "hairColor": hc, "outfit": outfit}
+                    faces.add(rig.face_for(look))
+                    hairs.add(rig.hair_for(look))
+                    for j in torsos:
+                        torsos[j].add(rig.torso_for(j, look))
+    assert len(faces) >= 4 and len(hairs) >= 8, (faces, hairs)
+    for j, t in torsos.items():
+        assert len(t) >= 3, (j, t)
+
+
+@needs_bpy
+def test_hair_and_capes_never_poke_through_the_body_in_any_pose():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("charkit_clearance", BLENDER / "scripts" / "charkit_clearance.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.main(["--quick"]) == 0
+
+
+FBX_COMMITTED = REPO / "games/game-001/art/char_kit/citizen_kit.fbx"
+MANIFEST = BLENDER / "manifest.json"
+
+
+@needs_bpy
+def test_committed_fbx_matches_rig_json_and_the_manifest_row():
+    """The shipped FBX re-imports to exactly the pieces and triangle counts rig.json lists, and one manifest row owns it (FORGE-07 A2)."""
+    from lib import ckit_kit
+
+    if not FBX_COMMITTED.exists():
+        pytest.skip("citizen_kit.fbx not committed yet")
+    doc = json.loads(RIG_JSON.read_text())
+    rt = ckit_kit.roundtrip_fbx(FBX_COMMITTED, doc)
+    assert rt["pass"], rt
+    rows = [a for a in json.loads(MANIFEST.read_text())["assets"] if a.get("files", {}).get("mesh_committed")]
+    assert [a["id"] for a in rows] == ["char_kit_01"]
+    assert rows[0]["files"]["mesh_committed"] == FBX_COMMITTED.relative_to(REPO).as_posix()
+    assert rows[0]["geometry_hash"] == doc["geometry_hash"]
+
+
+def test_committed_fbx_has_no_personal_paths():
+    """FORGE-07 A6: nothing in the shipped FBX / rig.json / manifest row names a home directory, user or machine."""
+    if not FBX_COMMITTED.exists():
+        pytest.skip("citizen_kit.fbx not committed yet")
+    blob = FBX_COMMITTED.read_bytes()
+    for needle in (b"/home/", b"/root", b"/tmp", b"C:\\Users", b"sammy", b"outlook", b"claude"):
+        assert needle not in blob, needle
+    for f in (RIG_JSON, MANIFEST):
+        text = f.read_text()
+        for needle in ("/home/", "/root", "/tmp/", "C:\\Users", "sammy", "outlook"):
+            assert needle not in text, (f.name, needle)

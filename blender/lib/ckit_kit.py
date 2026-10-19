@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import re
+import shutil
 from pathlib import Path
 
 from . import ckit
@@ -147,16 +148,19 @@ def validate_objects(objs):
         loose = sum(1 for v in bm.verts if not v.link_faces)
         open_edges = sum(1 for e in bm.edges if len(e.link_faces) != 2)
         nonman = sum(1 for e in bm.edges if len(e.link_faces) > 2)
+        volume = bm.calc_volume(signed=True)
         bm.free()
         dims = [abs(o.dimensions[i]) for i in range(3)]
         row = {
             "tris": tris, "ngons": ngons, "degenerate": degenerate, "loose": loose, "open_edges": open_edges,
             "colour_layers": len(me.color_attributes), "materials": len(me.materials), "size": [round(d, 3) for d in dims],
-            "name_ok": bool(NAME_RE.match(o.name)),
+            "name_ok": bool(NAME_RE.match(o.name)), "volume": round(volume, 4),
         }
         row["pass"] = (tris <= ROBLOX_MAX_TRIS and ngons == 0 and degenerate == 0 and loose == 0 and row["colour_layers"] == 1
                        and row["materials"] == 1 and row["name_ok"] and max(dims) <= 2048 and min(dims) > 0.01)
         row["watertight"] = open_edges == 0 and nonman == 0
+        if row["watertight"] and volume <= 0:  # inside-out shell: Roblox would cull the whole piece
+            row["pass"] = False
         rows[o.name] = row
         ok = ok and row["pass"]
     return rows, ok
@@ -192,13 +196,16 @@ def rig_json(R, rig, style_name, hand, extra=None):
         "assemblies": assemblies,
         "looks": {
             "faces": rig.FACES,
-            "hair_sets": rig.HAIR_SETS,
-            "hair_set_rule": "set = hairColor <= 4 ? 1 : 2; piece = set[(look.hair - 1) % 6]; the hat of a job replaces the hair slot",
             "face_rule": "faces[(look.hair + 2 * look.outfit + look.skin) % 6]",
-            "outfit_torsos": rig.OUTFIT_TORSOS,
-            "outfit_rule": "idle citizens: torso = outfit_torsos[(look.outfit - 1) % 6]; working jobs keep their torso",
+            "hair_sets": rig.HAIR_SETS,
+            "hair_rule": "set = hairColor <= 4 ? hair_sets[0] : hair_sets[1]; piece = set[(look.hair - 1) % 6]; a job hat or fixed hair "
+                         "(blacksmith: beard) replaces the hair slot; 'hat_hood' is a hood worn instead of hair",
+            "torso_variants": rig.TORSO_VARIANTS,
+            "torso_rule": "assembly torso '%torso%' = torso_variants[job][(look.outfit - 1) % 6]; soldiers and the governor keep theirs",
             "boots": rig.BOOTS,
-            "boot_rule": "boots[job or default][(look.outfit + look.skin) % len]",
+            "boot_rule": "boots[job or 'default'][(look.outfit + look.skin) % len]",
+            "accessories": rig.ACCESSORIES,
+            "accessory_rule": "idle citizens: extras '%accessory%' = accessories[(look.outfit + 2 * look.hair + 3 * look.skin) % 6] (None = no piece)",
             "kingdoms": list(rig.KINGDOMS),
         },
         "tints": {
@@ -209,7 +216,12 @@ def rig_json(R, rig, style_name, hand, extra=None):
                      [242, 224, 166]],
             "kingdom": {"crimson": [190, 40, 50], "azure": [40, 110, 210], "gold": [235, 185, 16], "emerald": [35, 128, 95]},
             "kit_tint": rig.KIT_TINT,
-            "cloth_by_job": rig.CLOTH,
+            "kit_tint_rule": "factor = kit_tint[piece name without the _l/_r suffix] (default 0.85); Color = shade(kingdomColor, factor)",
+            "cloth_variants": rig.CLOTH_VARIANTS,
+            "cloth_rule": "colour = cloth_variants[job][(look.hairColor - 1) % len][piece slot or 'default'] x dye[look.hairColor - 1]",
+            "dye": rig.DYE,
+            "tint_shift": rig.TINT_SHIFT,
+            "tint_shift_rule": "torso and sleeve kingdom factors get + tint_shift[(look.hairColor + look.skin - 2) % 8], clamped to 0.5..1",
         },
     }
     if extra:
@@ -258,6 +270,31 @@ def roundtrip_fbx(fbx_path, doc, tol=0.02):
 
 # ------------------------------------------------------------------ generator driver (build.py KIT branch)
 
+def render_preview(fbx, rig_path, out_jpg, samples=16, size=(1600, 440)):
+    """Manifest preview: every identity side by side, assembled from the SHIPPED fbx + rig.json (Cycles, <= 250 KB JPEG)."""
+    from PIL import Image
+
+    from . import ckit_rigload, ckit_scene, ckit_view
+    from . import rig as scene_rig
+
+    sc = ckit_view.stage(size[0], size[1], samples)
+    kit = ckit_rigload.Kit(fbx, rig_path)
+    n = len(ckit_rigload.JOBS)
+    for i, job in enumerate(ckit_rigload.JOBS):
+        kit.spawn(job, ckit_rigload.job_look(i), "crimson", ((n - 1) / 2 - i) * 6.2, 0, 0, tag=f"{job}_")
+    cam = scene_rig.add_camera(sc, 70)
+    ckit_scene.gameplay(cam, (0, 3.3, 0), 15.0, 6.0, fov=70)
+    tmp = Path(out_jpg).with_suffix(".png")
+    scene_rig.render(sc, tmp)
+    im = Image.open(tmp).convert("RGB")
+    for q in (88, 80, 72, 64, 56, 48):
+        im.save(out_jpg, quality=q, optimize=True)
+        if Path(out_jpg).stat().st_size <= 250 * 1024:
+            break
+    tmp.unlink()
+    return Path(out_jpg).stat().st_size
+
+
 def run_generator(gen, args, expect=None):
     """Build the kit with generator module `gen` (provides NAME, VERSION, STYLE, registry()), validate, export, write rig.json
     and the manifest fragment. With `expect` (a committed fragment): rebuild only and compare hashes (check.sh --verify)."""
@@ -300,7 +337,7 @@ def run_generator(gen, args, expect=None):
         "material": "M_charkit_vc", "texture": "none (vertex colours, 0 bytes of texture memory)",
         "collision": {"fidelity": "Box", "boxes": []}, "double_sided": False, "render_fidelity": "Automatic",
         "files": {"mesh": "exports/citizen_kit.fbx", "validation": "exports/char_kit.validation.json",
-                  "rig": "games/game-001/art/char_kit/rig.json"},
+                  "rig": "games/game-001/art/char_kit/rig.json", "mesh_committed": "games/game-001/art/char_kit/citizen_kit.fbx"},
         "preview": "previews/char_kit.jpg",
         "sockets": {k: v["pos"] for k, v in doc["joints"].items()},
         "validation_pass": bool(ok), "geometry_hash": ghash,
@@ -336,9 +373,14 @@ def run_generator(gen, args, expect=None):
     rig_path = Path(__file__).resolve().parents[2] / "games/game-001/art/char_kit/rig.json"
     write_json(doc, rig_path)
     write_json(doc, out / "rig.json")
+    shipped = rig_path.parent / "citizen_kit.fbx"  # the import-ready FBX is small (~0.5 MB); committed next to rig.json for worker K
+    shutil.copyfile(export_fbx, shipped)
     write_json({"asset_id": entry_id, "pieces": rows, "measured": table, "roundtrip": rt, "pass": bool(ok)}, out / "char_kit.validation.json")
     if not args.no_manifest:
         manifest.write_fragment(gen.NAME, [entry], {"min_pair_diff": None, "pass": True}, {"seed": args.seed, "variants": 1})
         manifest.merge()
+    if not args.no_render:
+        size = render_preview(shipped, rig_path, Path(__file__).resolve().parents[1] / "previews" / "char_kit.jpg")
+        print(f"[{gen.NAME}] preview previews/char_kit.jpg {size} bytes", flush=True)
     print(f"[{gen.NAME}] done in {time.time() - t0:.0f}s", flush=True)
     return ok

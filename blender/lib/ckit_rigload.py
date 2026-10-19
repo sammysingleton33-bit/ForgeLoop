@@ -22,6 +22,15 @@ CI = C.inverted()
 RZ180 = Matrix.Rotation(math.pi, 4, "Z")  # authoring -> house preview convention
 
 
+JOBS = ["farmer", "woodcutter", "miner", "builder", "hauler", "blacksmith", "merchant", "healer", "idle", "soldier", "governor"]
+KINGDOMS = ["crimson", "azure", "emerald", "gold"]
+
+
+def job_look(i):
+    """The look of the i-th citizen of a lineup (skins, hair styles, hair colours and outfits all differ between neighbours)."""
+    return {"skin": 1 + (i * 2) % 6, "hair": 1 + (i * 5) % 6, "hairColor": 1 + (i * 3) % 8, "outfit": 1 + (i * 7) % 6}
+
+
 def c01(c):
     return tuple(v / 255.0 for v in c)
 
@@ -41,51 +50,12 @@ class Kit:
         if missing:
             raise ValueError(f"FBX lacks pieces named in rig.json: {missing}")
 
-    # ---------------------------------------------------------------- rules (mirror of rig.json "looks"; K ports these)
+    # ---------------------------------------------------------------- rules (module functions below; the Kit ports these)
     def names_for(self, job, look=None, kingdom="crimson"):
-        d = self.doc
-        lk = look or {"skin": 1, "hair": 1, "hairColor": 1, "outfit": 1}
-        L = d["looks"]
-        face = L["faces"][(lk["hair"] + 2 * lk["outfit"] + lk["skin"]) % len(L["faces"])]
-        hs = L["hair_sets"][0 if lk["hairColor"] <= 4 else 1]
-        hair = hs[(lk["hair"] - 1) % len(hs)]
-        torso_id = L["outfit_torsos"][(lk["outfit"] - 1) % len(L["outfit_torsos"])]
-        out = []
-        for slot, val in d["assemblies"][job].items():
-            if slot == "extras":
-                out += [v.replace("%kingdom%", kingdom) for v in val]
-                continue
-            if val is None:
-                continue
-            val = val.replace("%face%", face).replace("%kingdom%", kingdom).replace("%hair%", hair).replace("%torso%", torso_id)
-            if slot == "boot" and job in L["boots"]:
-                lst = L["boots"][job]
-                val = lst[(lk["outfit"] + lk["skin"]) % len(lst)]
-            if slot in d["sided_slots"]:
-                out += [val + "_l", val + "_r"]
-            else:
-                out.append(val)
-        return out
+        return names_from_doc(self.doc, job, look, kingdom)
 
     def tint_for(self, name, job, look, kingdom):
-        d = self.doc
-        p = d["pieces"][name]
-        t = p["tint"]
-        T = d["tints"]
-        lk = look or {"skin": 1, "hair": 1, "hairColor": 1, "outfit": 1}
-        if t in (None, "fixed"):
-            return (1.0, 1.0, 1.0)
-        if t == "skin":
-            return c01(T["skin"][(lk["skin"] - 1) % len(T["skin"])])
-        if t == "hair":
-            return c01(T["hair"][(lk["hairColor"] - 1) % len(T["hair"])])
-        if t == "kingdom":
-            f = T["kit_tint"].get(name, p.get("kit_tint", 0.85))
-            return tuple(min(1.0, v * f) for v in c01(T["kingdom"][kingdom]))
-        if t == "cloth":
-            pal = T["cloth_by_job"].get(job, {})
-            return c01(pal.get(p["slot"]) or pal.get("default") or (200, 200, 200))
-        return (1.0, 1.0, 1.0)
+        return tint_from_doc(self.doc, name, job, look, kingdom)
 
     # ---------------------------------------------------------------- placement
     def spawn(self, job, look=None, kingdom="crimson", x=0.0, z=0.0, yaw=0.0, action=None, phase=0.0, speed=0.0, tag="", names=None):
@@ -122,3 +92,61 @@ class Kit:
 
 def _carrier(joint):
     return joint if joint in ckit_pose.PARENT else "Torso"
+
+
+def names_from_doc(d, job, look=None, kingdom="crimson"):
+    """Piece names of one citizen from rig.json alone (assemblies + look rules)."""
+    lk = look or {"skin": 1, "hair": 1, "hairColor": 1, "outfit": 1}
+    L = d["looks"]
+    face = L["faces"][(lk["hair"] + 2 * lk["outfit"] + lk["skin"]) % len(L["faces"])]
+    hs = L["hair_sets"][0 if lk["hairColor"] <= 4 else 1]
+    hair = hs[(lk["hair"] - 1) % len(hs)]
+    tv = L["torso_variants"].get(job)
+    torso_id = tv[(lk["outfit"] - 1) % len(tv)] if tv else ""
+    acc = L["accessories"][(lk["outfit"] + 2 * lk["hair"] + 3 * lk["skin"]) % len(L["accessories"])] or ""
+    out = []
+    for slot, val in d["assemblies"][job].items():
+        if slot == "extras":
+            for v in val:
+                v = v.replace("%kingdom%", kingdom).replace("%accessory%", acc)
+                if v:
+                    out.append(v)
+            continue
+        if val is None:
+            continue
+        val = val.replace("%face%", face).replace("%kingdom%", kingdom).replace("%hair%", hair).replace("%torso%", torso_id)
+        if slot == "boot" and job in L["boots"]:
+            lst = L["boots"][job]
+            val = lst[(lk["outfit"] + lk["skin"]) % len(lst)]
+        if slot in d["sided_slots"]:
+            out += [val + "_l", val + "_r"]
+        else:
+            out.append(val)
+    return out
+
+
+def tint_from_doc(d, name, job, look, kingdom):
+    """MeshPart.Color the Kit sets for piece `name` (sRGB 0..1), from rig.json alone."""
+    p = d["pieces"][name]
+    t = p["tint"]
+    T = d["tints"]
+    lk = look or {"skin": 1, "hair": 1, "hairColor": 1, "outfit": 1}
+    if t in (None, "fixed"):
+        return (1.0, 1.0, 1.0)
+    if t == "skin":
+        return c01(T["skin"][(lk["skin"] - 1) % len(T["skin"])])
+    if t == "hair":
+        return c01(T["hair"][(lk["hairColor"] - 1) % len(T["hair"])])
+    if t == "kingdom":
+        base = name[:-2] if name.endswith(("_l", "_r")) else name
+        f = T["kit_tint"].get(base, p.get("kit_tint", 0.85))
+        if p["slot"] in ("torso", "sleeve"):
+            f = min(1.0, max(0.5, f + T["tint_shift"][(lk["hairColor"] + lk["skin"] - 2) % len(T["tint_shift"])]))
+        return tuple(min(1.0, v * f) for v in c01(T["kingdom"][kingdom]))
+    if t == "cloth":
+        variants = T["cloth_variants"].get(job) or T["cloth_variants"]["idle"]
+        pal = variants[(lk["hairColor"] - 1) % len(variants)]
+        c = pal.get(p["slot"]) or pal.get("default") or (200, 200, 200)
+        dye = T["dye"][(lk["hairColor"] - 1) % len(T["dye"])]
+        return tuple(min(1.0, v * dye) for v in c01(c))
+    return (1.0, 1.0, 1.0)
