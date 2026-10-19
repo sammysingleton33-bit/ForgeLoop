@@ -23,7 +23,7 @@
 	Building damage (FL-0143; FORGE-00's ruling: this controller is the one writer of `Damage`, on the
 	client): on the same read, each building Model's `Damage` attribute follows its `Hp` and `MaxHp` (set by
 	WorldView) through Kit.damageFromHp, written only when the value changes, and Kit.applyDamage (FORGE-02's
-	FL-0128 war kit: cracks, soot, missing merlons, a collapsed corner) runs only when the damage state
+	FL-0128 war kit: breaches, cracks and chips, missing merlons, a collapsed corner) runs only when the damage state
 	(Kit.damageState: 0..4) changes. A repaired building (Hp back up) gets its parts back the same way; a
 	rebuilt one is a new model that starts undamaged. A damaged building the server moves in place (G13.9,
 	WorldView's placeModel) would leave behind the damage parts made here, which the server does not know;

@@ -549,8 +549,8 @@ Steps
 5. Still in Play Solo: run `fx.announce raid`, then `fx.announce siege`. Two beacons: the map centre and 40 studs from it (the stand-in keep). G goes to the keep's. `fx.announce raidOver`: the centre beacon goes, the keep's stays, G still goes to the keep. `fx.announce siegeLifted`: no beacon left. (Needs FL-0125 for a real one: in an AI war, when an enemy first hits your keep, the beacon rises over your keep.) Screenshot **E15-4**.
 6. (Needs FL-0125; two players, or let an AI conquer you.) When your keep falls: "Your keep has fallen", then the camera moves to a battle or a standing keep. Cycle with `.` and `,` (R1 / L1). At Results the camera is yours again.
 7. Building damage (FL-0143, FORGE-02's FL-0128 war kit). In a siege, or an AI war from the air, a damaged keep, wall, gate or house shows its damage as its HP falls:
-   - a quarter of its HP gone: cracks, soot and a bite out of the merlons or the roof;
-   - half gone: more of both, and rubble at the foot;
+   - a quarter of its HP gone: a breach, a crack and chipped stone, and a bite out of the merlons or the roof;
+   - half gone: more of them, and rubble at the foot;
    - three quarters gone: a corner collapses, and a gate keeps one broken leaf.
 
    Repaired or rebuilt, it looks as built again. Without a siege, in Play Solo, test it from the command bar (client): pick a building model under `Workspace.ForgeKingdoms.<kingdom>.Buildings` and set its `Hp` attribute to a tenth of its `MaxHp`. Within half a second its `Damage` attribute and the marks follow. Note that WorldView may set `Hp` back on its next update. Screenshot **E15-5**, damaged and whole side by side from the aerial camera.
