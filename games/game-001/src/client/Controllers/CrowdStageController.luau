@@ -164,10 +164,10 @@ function Controller:destroy()
 	end
 	for _, connection in self._connections do
 		pcall(function()
-			if connection.disconnect then
+			if type(connection) == "table" and connection.disconnect ~= nil then
 				connection:disconnect() -- a Forge Signal (DuelController.stateChanged)
 			else
-				connection:Disconnect()
+				connection:Disconnect() -- an engine connection (the preview attribute)
 			end
 		end)
 	end
