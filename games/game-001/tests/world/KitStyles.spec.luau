@@ -35,7 +35,7 @@ end
 local shade = Parts.shade
 local KINGDOMS = KingdomStyle.KINGDOM_STYLES -- { "crimson", "azure", "emerald", "gold" }
 local KINDS = { crimson = "crown", azure = "star", emerald = "oak", gold = "sun" }
-local MAX_LEVEL = { keep = 3, barracks = 4 }
+local MAX_LEVEL = { keep = 3, barracks = 4, wall = 3, gate = 3 } -- FL-0128: the sim has three wall and gate levels
 
 local function parts(model: Instance): { BasePart }
 	local out = {}
