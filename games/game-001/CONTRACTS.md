@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g11b, 2026-10-19; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g11c, 2026-10-19; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -276,6 +276,7 @@ ObjectiveService.captured: Signal<(objectiveId: string, KingdomId)>
 | `Army.Command` | event | `(unitIds: array(integer, 50), kind: enum, targetPos: optional(vector3), targetId: optional(string(1,32)))` |
 | `Army.Objectives` / `Army.GetObjectives` | serverEvent / function | `ObjectiveService:list()` |
 | `Sim.Snapshot`, `Sim.Events`, `Sim.GetEntities` | see G4 | |
+| `Sim.Focus` (v0.4-g11c, D-055 (5)) | event (client → server) | `(focus: Vector3)`. Y is ignored and X/Z are clamped to the map; burst 8, 5/s. Used **only** for interest selection, never for authority. A focus older than `Match.interest.focusStaleSeconds` (3 s) falls back to the character. In the full match each player's `Sim.Snapshot` is interest-selected: entities within `nearRadius` (200) go out every snapshot, the rest every `farEvery`th (5) tick, and the player's own soldiers always. The slice still broadcasts everything |
 | `Sim.Inspect` | function | `(entityId: integer)` → `CitizenService:inspect` result, own kingdom only |
 | `Treasury.Changed` (FORGE-03) | serverEvent to members | `(totals, deltas)` |
 | `Treasury.Get` / `Treasury.GetCosts` (FORGE-03) | function | the caller's kingdom `ResourceBag` / the cost catalogue |
@@ -297,6 +298,9 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
 | `KingdomEliminated` | FORGE-01 | (KingdomId, by: KingdomId?) |
 | `CitizenAnswered` (declared in `Contracts/GameEvents` by #109; fired from FL-0107; D-044 (3)) | FORGE-01 (ConversationService) | (player, KingdomId, citizenId: number, decisionId: string, secondsOpen: number?), once per accepted `Kingdom.Choose`. **Attribution:** the answering ruler only. The citizen id stays out of analytics and onboarding info (D-050 (5), #124). |
 | `ConsequenceChanged` (v0.4-g10c; declared in `Contracts/GameEvents` by FORGE-05, fired by FORGE-01; D-052 (5), #125) | FORGE-01 (ConsequenceService) | (kingdomId: KingdomId, rule: "strike" \| "shortage" \| "riot" \| "rebellion", on: boolean, info: { occupation: string?, buildingId: number?, instigator: number?, entityIds: { number }?, count: number }). Exactly once per start and once per end, with the same values as `ConsequenceService.changed`, except that a `rebellion` fires only its start (one-shot with a cooldown, gated off in VS-1). A rule still running when its kingdom is eliminated, or when a new world resets the service, never fires its end, so listeners treat a start without an end as possible and clear their notices on elimination or reset; `count` is the number of citizens, or 1 for a building. Listener: FORGE-04's notices, one per start and end to that kingdom's rulers (texts are FORGE-04's). Server bus only. |
+| `WarChanged` (v0.4-g11c, FL-0134) | FORGE-01 (MatchHost) | (kingdomId, otherId, atWar: boolean, by: userId?). WarDeclared: kingdomId = declarer, otherId = target, atWar true. PeaceMade: kingdomId = acceptor, otherId = proposer, atWar false. `by` is the ruler, nil for a governor. Nothing fires for pairs broken by elimination |
+| `SiegeChanged` (v0.4-g11c) | FORGE-01 (Sim/WarWatch) | (kingdomId, on: boolean, { byKingdomIds, buildingId }). Once per start (first enemy keep damage after a quiet spell) and once per end (20 s without keep damage) |
+| `RaidChanged` (v0.4-g11c) | FORGE-01 (Sim/WarWatch) | (kingdomId, on: boolean, { byKingdomIds, count, position: Vector3 }). Once per start and once per end (10 s without threats). `position` is the threats' centroid on the ground plane. A fallen kingdom ends no siege or raid; listeners clear on MatchEnded |
 | `MatchEnded` | FORGE-01 | ({ winner: KingdomId?, standings: { { kingdom: KingdomId, crownPoints: number } }, durationSec: number }) |
 
 - Producers fire each event exactly once, per framework rules.
@@ -649,6 +653,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g11c (2026-10-19) FORGE-00: G9 `WarChanged`, `SiegeChanged`, `RaidChanged` (FL-0134) and G8 `Sim.Focus` with the full-match interest tiers (`Match.interest`, D-055 (2), (5)). Additive. Re-landed on main by #213 (#198 + #201).
 - v0.4-g11b (2026-10-19) FORGE-00: G8 `Kingdom.Diplomacy` and `Kingdom.WarAsk` (D-054 player war and peace, senior ruler, newcomer lock), plus `Kingdom.State.diplomacy`. Additive. Rows from #195 as merged.
 - v0.4-g11a (2026-10-19) FORGE-00: G12.6 key-citizen crowd figures (with a `role`) may have up to 8 parts, so the six key props (satchel, plume, staff, basket, scales, banner) read. That is 12 figures, about +48 parts in the arena-phase budget; other crowd figures stay at 4 (FORGE-02 FL-0072 D-019 finding). Additive.
 - v0.4-g11 (2026-10-18) FORGE-00: G3 full match by default (match mode, PvP, governors, elimination, the D-055 caps, `match.mode` debug), Crown Arena hooks (`registerArena`/`arenaEnded`, `Match.arena.maxSeconds`), `MatchEnded.reason`, the `Match.waiting` seat queue. G8 `Match.Spectate` and `Army.Recruit` `army_cap`. Additive. Rows from FORGE-01's FL-0125 handoff (#187).

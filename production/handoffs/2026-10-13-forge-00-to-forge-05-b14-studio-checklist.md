@@ -180,3 +180,14 @@ B20 starts the **full match** by default. To run the older B14–B19 rows in the
 | M3 | 2-player Local Server, both in one kingdom | only the player who joined first can declare war or accept peace. The other sees "Ask <senior> to declare war"; pressing it gives the senior a notice |
 | M4 | Second player joins after Founding began | for 2 minutes they see "New ruler · m:ss" on war and Accept peace, and can't move buildings |
 | M5 | Let your kingdom fall (or force it) | the spectate screen shows who defeated you and a list of what to watch; Leave asks "Leave the match?" first |
+
+## B20.2 additions (main `d03fd70`, BuildInfo `d03fd70f6f1a…`): war notices and far-entity tiers
+Run the B20.1 rows (M1–M5) on B20.2, then:
+
+| ID | Check | Pass |
+|---|---|---|
+| N1 | Declare war, or let an AI declare on you | one "war declared" notice per declaration; the declaring senior ruler gets none, their co-rulers and the target do |
+| N2 | Let an enemy army hit your keep | a siege notice when it starts; an "ended" notice about 20 s after the last hit |
+| N3 | Enemy soldiers enter your territory | a raid notice and a "Go to the raid" button (phone too); it ends about 10 s after they leave |
+| N4 | Pan the camera far from your kingdom during an AI war | units under the camera move smoothly; far-off citizens step at about 2 Hz; your own soldiers never freeze |
+| N5 | MicroProfiler during Endgame | note server and client frame time (also gates #200's paint cost) |
