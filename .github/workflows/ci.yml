@@ -11,6 +11,8 @@
 #            the places are stamped (BuildInfo) and uploaded as artifacts forgeloop-main-<short sha>
 #            (framework sandbox, forgeloop-main-<short sha>.rbxl) and forgeloop-game001-<short sha>
 #            (AI Kingdoms, forgeloop-game001-<short sha>.rbxl — the place for Studio playtests).
+#   fairness-full — pushes to main that touch the duel, support or the fairness gate: the full Crown Arena
+#            sweep (FORGE_FAIRNESS_FULL=1), report uploaded as forgeloop-fairness-full-<sha> (FL-0076).
 name: CI
 
 on:
@@ -150,4 +152,61 @@ jobs:
           name: forgeloop-game001-${{ steps.place.outputs.short }}
           path: roblox/build/forgeloop-game001-${{ steps.place.outputs.short }}.rbxl
           if-no-files-found: error
+          retention-days: 30
+      - name: Upload Crown Arena fairness report (FL-0076)
+        if: steps.changes.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v6
+        with:
+          name: forgeloop-fairness-${{ steps.place.outputs.short }}
+          path: roblox/build/fairness/report.md
+          if-no-files-found: warn
+          retention-days: 30
+
+  fairness-full:
+    # FL-0076 (FORGE-00): the full Crown Arena sweep (2000 duels on every cell, every weapon/armour loadout; 152+
+    # bounds, about 16 min) on pushes to main that touch the duel, support or the gate. PRs run the default gate in
+    # check.sh (roblox job); this catches a loadout regression the default gate's cells do not cover.
+    name: fairness (full sweep, main)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Arena-related changes?
+        id: changes
+        env:
+          BASE: ${{ github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: |
+          pattern='^games/game-001/(config/(Duel|Support)\.luau$|src/shared/Arena/|tests/fairness/)|^\.github/workflows/ci\.yml$'
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] \
+            || ! files="$(git diff --name-only "$BASE..$HEAD")"; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          elif printf '%s\n' "$files" | grep -E "$pattern" >/dev/null; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "change filter: no arena file changed; full sweep SKIPPED"
+          fi
+      - name: Install pinned tools
+        if: steps.changes.outputs.run == 'true'
+        run: |
+          bash roblox/scripts/ci_install_tools.sh "$RUNNER_TEMP/forge-bin"
+          echo "$RUNNER_TEMP/forge-bin" >> "$GITHUB_PATH"
+      - name: Full fairness sweep
+        if: steps.changes.outputs.run == 'true'
+        env:
+          FORGE_FAIRNESS_FULL: "1"
+        run: >-
+          lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json
+          --specs games/game-001/tests/fairness FairnessGate
+      - name: Upload the full fairness report
+        if: always() && steps.changes.outputs.run == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: forgeloop-fairness-full-${{ github.sha }}
+          path: roblox/build/fairness/report.md
+          if-no-files-found: warn
           retention-days: 30
