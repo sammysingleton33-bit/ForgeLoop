@@ -88,14 +88,14 @@ describe("FeedbackKitController (FORGE-02's FL-0135 handoff: the client's asset 
 		local env = client()
 		local _, assets = assetsIn(env)
 		local mesh = roblox.Instance.new("Model")
-		mesh.Name = "tree_oak_01"
+		mesh.Name = "prop_goods_01"
 		roblox.Instance.new("Part").Parent = mesh
 		mesh.Parent = assets
 		KitDef.new(env, nil)
-		local prop = Kit.prop("tree_oak_01")
+		local prop = Kit.prop("prop_goods_01")
 		Kit.setAssetSource(nil) -- the Kit is shared by every spec: put the default back
 		expect(prop:GetAttribute("KitStandIn")).toBeNil()
-		expect(prop.Name).toBe("tree_oak_01")
-		expect(Kit.prop("tree_oak_01"):GetAttribute("KitStandIn")).toBe(true)
+		expect(prop.Name).toBe("prop_goods_01")
+		expect(Kit.prop("prop_goods_01"):GetAttribute("KitStandIn")).toBe(true)
 	end)
 end)
