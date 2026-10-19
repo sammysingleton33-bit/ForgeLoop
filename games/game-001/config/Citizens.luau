@@ -18,6 +18,9 @@ return {
 	mealsChargeTreasury = true,
 	starveDeathHunger = 3,
 	birthInterval = 30,
+	-- D-055 (1): the entity budget (BRIEF §14: 300 per server, 4 x 75) holds in the full match. At most this many
+	-- citizens per kingdom: births stop at it (housing still limits below it). Raised only on measured evidence.
+	maxPerKingdom = 60,
 	-- a birth's food from the treasury: the meal double only. With the upkeep (CitizenService), a birth
 	-- costs no food and needs fedRatio >= Society.food.wellFedAtLeast and a free bed (D-045, PROVISIONAL)
 	birthFood = 25,
