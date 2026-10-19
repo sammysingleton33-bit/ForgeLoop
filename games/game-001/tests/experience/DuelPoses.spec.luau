@@ -702,15 +702,27 @@ describe("DuelRig: the same pose on a Kit rig, an R15 avatar (Motor6D or Animati
 			local rig = DuelRig.scan(model) :: any
 			local shoulder = find(model, "RightShoulder")
 			local hip = find(model, "LeftHip")
+			local rootJoint = find(model, "Root")
 			local animated = CFrame.Angles(math.rad(30), 0, 0) -- the Animator's value this frame
 			shoulder.Transform = animated
 			hip.Transform = animated
-			local swing = poseWith({ RightArm = { 90, 0, 0 }, LeftLeg = { 40, 0, 0 } })
+			rootJoint.Transform = animated
+			local swing = poseWith({ Root = { -20, 0, 0 }, RightArm = { 90, 0, 0 }, LeftLeg = { 40, 0, 0 } })
 			swing.body = 0
 			DuelRig.apply(rig, swing)
 			local _, full = shoulder.Transform:ToAxisAngle()
 			expect(math.abs(math.deg(full) - 90) < 1e-3).toBe(true)
 			expect(DuelRig.same(hip.Transform, animated)).toBe(true) -- an upper-body swing leaves the walk on the legs
+			expect(DuelRig.same(rootJoint.Transform, animated)).toBe(true) -- ... and the hips (Root) to the Animator
+			-- R6 too (no waist): the torso and the legs stay the Animator's
+			local old6 = r6()
+			local rig6 = DuelRig.scan(old6) :: any
+			local torso6, hip6 = find(old6, "RootJoint"), find(old6, "Left Hip")
+			torso6.Transform = animated
+			hip6.Transform = animated
+			DuelRig.apply(rig6, swing)
+			expect(DuelRig.same(torso6.Transform, animated)).toBe(true)
+			expect(DuelRig.same(hip6.Transform, animated)).toBe(true)
 			shoulder.Transform = animated -- the Animator writes again next frame
 			swing.weight = 0.5
 			DuelRig.apply(rig, swing)
@@ -732,7 +744,6 @@ describe("DuelRig: the same pose on a Kit rig, an R15 avatar (Motor6D or Animati
 			swing.weight = 0
 			DuelRig.apply(rig, swing)
 			expect(DuelRig.same(shoulder.Transform, ours)).toBe(true)
-			swing.weight = 1
 			-- release: a joint still holding our write goes back to rest; one the Animator wrote is left alone
 			swing.weight = 1
 			DuelRig.apply(rig, swing)

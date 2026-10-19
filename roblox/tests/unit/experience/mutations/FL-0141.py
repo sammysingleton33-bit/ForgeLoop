@@ -87,4 +87,10 @@ M = [
  ("FL-0141", A, 'input.sent:connect(function(action)', 'input.sent:connect(function(_action)', FD, "your own sent press animates", "game"),
  ("FL-0141", I, 'if result == true then\n\t\tself.sent:fire(action)', 'if true then\n\t\tself.sent:fire(action)', "DuelInput", "sent fires once for each action", "game"),
  ("FL-0141", I, '\t\tself.sent:fire(action)\n', '', "DuelInput", "sent fires once for each action", "game"),
+ # FORGE-07 #269 L1 to L3
+ ("FL-0141", R, 'write(joints.Root, root, weight * body, false, io)', 'write(joints.Root, root, weight, false, io)', DP, "over an avatar's Animator", "game"),
+ ("FL-0141", R, 'write(joints.Torso, torso, weight * body, false, io)', 'write(joints.Torso, torso, weight, false, io)', DP, "over an avatar's Animator", "game"),
+ ("FL-0141", R, 'write(joints.Torso, torso, weight * body, false, io)\n\t\twrite(joints.LeftLeg, undo * pose.LeftLeg, weight * body, false, io)', 'write(joints.Torso, torso, weight * body, false, io)\n\t\twrite(joints.LeftLeg, undo * pose.LeftLeg, weight, false, io)', DP, "over an avatar's Animator", "game"),
+ ("FL-0141", A, 'local fading = self._stoppedAt ~= nil and t - self._stoppedAt <= DuelPoses.XFADE + 0.05', 'local fading = false', FD, "depends on DuelController and follows", "game"),
+ ("FL-0141", A, 'duellist.userId == me and duellist.isAI ~= true then', 'duellist.userId == me then', FD, "your own sent press animates", "game"),
 ]
