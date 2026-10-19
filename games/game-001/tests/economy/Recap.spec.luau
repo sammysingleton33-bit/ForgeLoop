@@ -253,5 +253,6 @@ describe("Results: Your reign (FL-0129)", function()
 		-- the summary's own phone box: clear of the Roblox top bar
 		local panel = recap:FindFirstChild("Panel")
 		expect(panel.Size.Y.Offset).toBe(262)
+		expect(find(recap, "Back").Size.Y.Offset >= 44).toBe(true) -- a phone touch target (L7 audit)
 	end)
 end)

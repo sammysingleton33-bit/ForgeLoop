@@ -48,6 +48,10 @@ function ToastStack:place(position: UDim2, anchor: Vector2, width: number, limit
 	self.instance.AnchorPoint = anchor
 	self.instance.Size = UDim2.fromOffset(width, 0)
 	self._width = width
+	-- toasts already showing follow (a phone drawer opening narrows the band; their insides scale)
+	for _, toast in self._items do
+		toast.instance.Size = UDim2.fromOffset(width, 0)
+	end
 	self._limit = math.clamp(limit or ToastStack.MAX, 1, ToastStack.MAX)
 	self:_trim()
 end

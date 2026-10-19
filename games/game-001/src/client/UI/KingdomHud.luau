@@ -256,14 +256,29 @@ function KingdomHud:_build(metrics: any, banner: any)
 		self._plate.Parent = container
 	end
 
+	-- one row; a narrow phone (Layout: pills.columns 2) wraps them into a 2 × 2 grid
+	local wrapped = h.pills.columns ~= nil and h.pills.columns < #Resources.ids
 	local pillRow = Create("Frame", {
 		Name = "Pills",
 		BackgroundTransparency = 1,
 		Position = UDim2.fromOffset(h.pills.x, h.pills.y),
-		AutomaticSize = Enum.AutomaticSize.X,
-		Size = UDim2.fromOffset(0, Layout.PILL_HEIGHT),
+		AutomaticSize = if wrapped then Enum.AutomaticSize.None else Enum.AutomaticSize.X,
+		Size = if wrapped
+			then UDim2.fromOffset(
+				h.pills.columns * Layout.PHONE_PILL + (h.pills.columns - 1) * Layout.PHONE_PILL_GAP,
+				h.pills.height
+			)
+			else UDim2.fromOffset(0, Layout.PILL_HEIGHT),
 		Parent = container,
-	}, { List = Style.list("x", 6, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center) })
+	}, {
+		List = if wrapped
+			then Create("UIGridLayout", {
+				CellSize = UDim2.fromOffset(Layout.PHONE_PILL, Layout.PILL_HEIGHT),
+				CellPadding = UDim2.fromOffset(Layout.PHONE_PILL_GAP, Layout.PHONE_PILL_GAP),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			})
+			else Style.list("x", 6, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center),
+	})
 	pillRow:SetAttribute("OnboardingTarget", "HUD.Resources")
 	for i, id in Resources.ids do
 		local pill = CurrencyPill.new({
