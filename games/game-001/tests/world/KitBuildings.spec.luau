@@ -61,7 +61,7 @@ local EXPECTED_FOOTPRINTS = {
 }
 local NEW_TYPES = { "mine", "blacksmith", "market", "infirmary", "granary", "shrine" }
 -- levels with a distinct look (G13.5); other types build L1–L2
-local MAX_LEVEL = { keep = 3, barracks = 4 }
+local MAX_LEVEL = { keep = 3, barracks = 4, wall = 3, gate = 3 } -- FL-0128: the sim has three wall and gate levels
 
 local function parts(model: Instance): { BasePart }
 	local out = {}
@@ -138,8 +138,10 @@ describe("Kit architecture budgets (FL-0054)", function()
 					for _, color in COLORS do
 						local n = Kit.partCount(Buildings.build(bt, level, "complete", color, v))
 						lo, hi = math.min(lo, n), math.max(hi, n)
-						if n > budget then
-							table.insert(over, `{bt} L{level} v{v}: {n} > {budget}`)
+						-- wall and gate carry a budget per level (FL-0128: 30 / 45 / 60 and 90 / 120 / 150)
+						local levelBudget = (Buildings.PART_BUDGET_BY_LEVEL[bt] or {})[level] or budget
+						if n > levelBudget then
+							table.insert(over, `{bt} L{level} v{v}: {n} > {levelBudget}`)
 						end
 					end
 				end
