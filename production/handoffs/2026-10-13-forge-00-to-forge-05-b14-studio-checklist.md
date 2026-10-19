@@ -240,8 +240,8 @@ Run R1–R6 on B22 first, then these. FORGE-05's B22 asks in `production/quality
 
 | ID | Check | Pass |
 |---|---|---|
-| S1 | Reach the arena: the two kingdoms with the most Crown Points qualify | the vote, then the loadout (weapon, armour, up to 2 support triggers), the intro, the duel, the crowning; no step hangs |
-| S2 | Duel against the AI champion (play solo) | light, heavy, block, parry and dodge all respond; the AI fights back and can win or lose; the result matches the HP bars |
+| S1 | Reach the arena: the two kingdoms with the most Crown Points qualify | the vote (no vote panel yet: it waits about 10 s, then leadership picks; FL-0142), then the loadout (weapon, armour, up to 2 support triggers), the intro, the duel, the crowning; no step hangs. Known in B22: the picked weapon and armour are not shown on the champions, and the venue stays neutral (FL-0140); champions do not animate their actions (FL-0141) |
+| S2 | Duel against the AI champion (play solo) | **Known in B22: the AI champion has no body yet, so you fight an invisible opponent that is always in reach (FL-0140).** Check that light, heavy, block, parry and dodge register in the arena HUD, that the AI's attacks register too, that either side can win, and that the result matches the HP bars |
 | S3 | Start the intro while sitting on your throne (the default overview camera) | you stand up on your mark at the intro, not on the throne and not at the ring edge |
 | S4 | During the duel, walk or run away from the other champion | you stop at the ring edge (radius about 21 studs) and face the centre; running away cannot run out the clock |
 | S5 | Two clients in a duel, one holds sprint (E16 step 8) | both champions move at the same speed; sprint works again after the crowning |
@@ -252,5 +252,5 @@ Run R1–R6 on B22 first, then these. FORGE-05's B22 asks in `production/quality
 | S10 | Kingdom menu → How to play → the Crown Arena card | it describes the arena as it now plays |
 | S11 | Phone emulator (667×375): duel buttons and the arena HUD | buttons sit around the jump button without covering it; the HUD and subtitles fit |
 | S12 | Optional: import `env_kit.fbx` (art/IMPORT_ENVIRONMENT.md) after the citizen kit, then Play (F5) | server Output has **no** `Kit.prop: the imported … is not used` line; `envMeshStatus()` shows `rejected` empty and `accepted` > 0 (not 56; the doc is corrected in B22.1); trees and rocks look like one world with the buildings (aerial and 82-stud screenshots); Render Stats on a phone |
-| S13 | Mesh citizens in Play (after the citizen kit import) | no `Kit.character` fallback in the server Output; `characterMeshStatus()` shows mesh builds and no lastFallback (the B21.x builds would have fallen back in Play; B22 fixes that) |
+| S13 | Mesh citizens in Play (after the citizen kit import; Bulk Import `citizen_kit.fbx` again before running the B22 import script, so every piece gets Box) | in Explorer during Play, the citizens under `Workspace.KingdomEntities` are MeshParts, not blocks. Rigs are built on the client, so check in the client view, not the server Output (a rig fallback is not logged) |
 | S14 | Output through a full match ending in the arena | copy every red line |
