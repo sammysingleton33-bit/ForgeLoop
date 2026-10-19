@@ -5,6 +5,7 @@
 ]]
 local ArenaDoubles = require("../../../tests/economy/doubles/ArenaDoubles")
 local ArenaHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ArenaHudController")
+local DuelDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/DuelController")
 local ArenaIntroDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ArenaIntroController")
 local LoadoutDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/LoadoutController")
 local scene = require("./_world")
@@ -29,7 +30,7 @@ local inputDef = {
 
 return function(ctx, stage)
 	return scene(ctx, {
-		clientDefinitions = { ArenaHudDef, LoadoutDef, ArenaIntroDef, inputDef },
+		clientDefinitions = { DuelDef, ArenaHudDef, LoadoutDef, ArenaIntroDef, inputDef },
 		remotes = ArenaDoubles.REMOTES,
 		services = { ArenaDoubles.service },
 	}, function(world, _hud)

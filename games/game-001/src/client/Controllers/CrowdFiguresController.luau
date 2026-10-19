@@ -11,6 +11,11 @@
 		- Without FORGE-02's CrownArena model (tag CrownArena) on this client, nothing is built yet: the
 		  place streams (Workspace.StreamingEnabled), so the arena may arrive after the director; every
 		  step retries until it is there (FORGE-07 #237 M1), then the stands fill once.
+		- The stands are built Def.BUILD_PER_STEP figures a step, both stands in turn, front rows first
+		  (FORGE-00's B22 note: never 480 parts in one frame); a full arena takes 5 steps.
+		- Each side's citizens come from FORGE-01's DuelController (a dependency; stateChanged and
+		  getState: it asks Arena.GetState once, so a client that joins or reloads mid-duel still
+		  gets them). This controller never asks itself.
 	Who sits
 		- Stand A holds side a's kingdom, stand B side b's (Kit.arena: Stand A at -Z, as the dress and
 		  the intro camera). Figures: CrowdDirector.stands(citizensA, citizensB) (one per two citizens,
@@ -18,9 +23,11 @@
 		  fill: a hostile crowd leaves half its seats empty). Citizens come from Arena.State's duellist
 		  `citizens` field when the server sends it; until then a stand counts as full (60 figures).
 		- Seats fill from the centre outwards, the front row first (Def.order), so a thin crowd still
-		  sits where the camera looks. Figure i is Kit.crowdFigure(kingdom colour, nil, variant) with
-		  FORGE-02's variant formula (row * 5 + seat * 3) % Kit.CROWD_VARIANTS + 1, placed on its
-		  attachment StandX_Row<r>_Seat<s> (feet on the plank, facing the ring) with WorldView.placeModel.
+		  sits where the camera looks. The grid is FORGE-02's (Kit.ARENA.SEAT_ROWS, SEATS_PER_STAND);
+		  a seat attachment the model lacks stays empty, with one warning. Figure i is
+		  Kit.crowdFigure(kingdom colour, nil, variant) with FORGE-02's variant formula
+		  (row * 5 + seat * 3) % Kit.CROWD_VARIANTS + 1, placed on its attachment StandX_Row<r>_Seat<s>
+		  (feet on the plank, facing the ring) with WorldView.placeModel.
 		- Figures are parented to Workspace.ForgeCrowdFigures (client-made, not under the arena model).
 		- Low-end clients: with the effectsQuality setting "reduced" (FL-0103) each stand seats
 		  Def.REDUCED_SHARE of its figures, rounded down (at most 60 in the arena, 240 parts), read when
@@ -49,18 +56,18 @@ local Crowd = require("@game/ReplicatedStorage/Forge/Config/Crowd")
 local CrowdDirector = require("@game/ReplicatedStorage/Game/Feedback/CrowdDirector")
 local Kingdoms = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
-local RemoteLink = require("@game/ReplicatedStorage/Forge/Experience/RemoteLink")
 local WorldView = require("@game/ReplicatedStorage/Game/Sim/WorldView")
 
 local Controller = {}
 Controller.__index = Controller
 
-local Def = { name = "CrowdFiguresController", dependencies = { "FeedbackCrowdController" } }
+local Def = { name = "CrowdFiguresController", dependencies = { "FeedbackCrowdController", "DuelController" } }
 
 Def.TAG = "CrownArena"
 Def.FOLDER = "ForgeCrowdFigures"
-Def.ROWS = 4
-Def.SEATS = 18
+Def.ROWS = Kit.ARENA.SEAT_ROWS -- FORGE-02's seat grid (G12.6), never a copy of it
+Def.SEATS = math.floor(Kit.ARENA.SEATS_PER_STAND / Kit.ARENA.SEAT_ROWS) -- 18 a row: the royal gap skipped
+Def.BUILD_PER_STEP = 24 -- figures built per step: 120 figures over 5 steps (a third of a second at 15 Hz)
 Def.STEP_SEC = 1 / 15
 Def.HOP_STUDS = 0.7
 Def.HOP_HZ = 2.5
@@ -156,10 +163,11 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_registry = registry,
 		_opts = options,
 		_kit = options.kit or Kit,
-		_links = {},
 		_connections = {},
 		_director = nil :: any,
-		_pending = false, -- a director waits for the arena model (streaming)
+		_pending = false, -- a director waits for the arena model (streaming) or is still being built
+		_plan = nil :: { any }?, -- the seats left to build for this director, in build order
+		_warnedSeats = false,
 		_citizens = {} :: { a: number?, b: number? },
 		_motions = {} :: { [string]: any },
 		_folder = nil :: any,
@@ -171,14 +179,31 @@ function Def.new(env: any, registry: any)
 	return Def.create(env, registry, nil)
 end
 
-function Controller:start()
-	local env = self._env
+-- The arena state comes from FORGE-01's DuelController, the client's one door to the arena (G12.6;
+-- FORGE-00's ruling on FORGE-07's #256 M1): it asks Arena.GetState once and fires stateChanged for
+-- the reply and every push, so this controller never asks itself (the remote answers 3 asks a second).
+-- getState() at start seeds a client that joins or reloads mid-duel.
+function Controller:_followDuel()
+	local duel = self._registry:find("DuelController")
+	if duel == nil or type(duel.getState) ~= "function" or type(duel.stateChanged) ~= "table" then
+		self._env.log("warn", `{Def.name}: no DuelController; the arena crowd stays idle`)
+		return
+	end
 	table.insert(
-		self._links,
-		RemoteLink.on(env, "Arena.State", function(state)
+		self._connections,
+		duel.stateChanged:connect(function(state)
 			self:onArenaState(state)
 		end)
 	)
+	local ok, state = pcall(duel.getState, duel)
+	if ok and state ~= nil then
+		self:onArenaState(state)
+	end
+end
+
+function Controller:start()
+	local env = self._env
+	self:_followDuel()
 	local crowd = self._registry:find("FeedbackCrowdController")
 	if crowd ~= nil and crowd.reacted ~= nil then
 		table.insert(
@@ -201,12 +226,6 @@ end
 
 function Controller:destroy()
 	self._running = false
-	for _, link in self._links do
-		pcall(function()
-			link:disconnect()
-		end)
-	end
-	table.clear(self._links)
 	for _, connection in self._connections do
 		pcall(function()
 			if connection.disconnect then
@@ -292,13 +311,43 @@ function Controller:refresh()
 	end
 end
 
--- Fills both stands; false when the arena (or its Root) has not streamed in yet, so refresh retries.
+-- Builds the stands Def.BUILD_PER_STEP figures at a time (FORGE-00: never 480 parts in one frame);
+-- false while the arena (or its Root) has not streamed in or figures are left, so refresh goes on.
 function Controller:_seat(director: any): boolean
+	if self._plan == nil then
+		self._plan = self:_planSeats(director)
+		if self._plan == nil then
+			return false
+		end
+	end
+	local plan = self._plan :: { any }
+	local built = 0
+	while #plan > 0 and built < Def.BUILD_PER_STEP do
+		local spot = table.remove(plan, 1)
+		built += 1
+		local ok, figure = pcall(self._kit.crowdFigure, spot.color, nil, Def.variant(spot.row, spot.seatIndex))
+		if ok and figure ~= nil then
+			WorldView.placeModel(figure, spot.seat)
+			figure.Name = `Stand{Def.STANDS[spot.side]}_{spot.index}`
+			figure.Parent = self._folder
+			table.insert(
+				self.figures[spot.side],
+				{ model = figure, seat = spot.seat, row = spot.row, seatIndex = spot.seatIndex }
+			)
+		end
+	end
+	return #plan == 0
+end
+
+-- The seats to fill, in build order: both stands alternate, each from its front row's centre out.
+-- nil while the arena has not streamed in. A seat attachment the model lacks is skipped with one
+-- warning per controller (Kit drift, not a silent gap).
+function Controller:_planSeats(director: any): { any }?
 	local model = self:_arena()
 	local root = model and model:FindFirstChild("Root")
 	local parent = self:_workspace()
 	if root == nil or parent == nil then
-		return false
+		return nil
 	end
 	local sides = { a = director:side("a"), b = director:side("b") }
 	local counts = Def.counts(self._citizens, { a = sides.a.tier, b = sides.b.tier })
@@ -311,33 +360,53 @@ function Controller:_seat(director: any): boolean
 	folder.Parent = parent
 	self._folder = folder
 	local order = Def.order()
+	local perSide = { a = {}, b = {} }
 	for _, side in { "a", "b" } do
 		local color = COLORS[sides[side].kingdom or ""]
 		if color == nil then
 			continue -- a kingdom the config lacks: an empty stand, never a wrong colour
 		end
-		local list = {}
 		for index = 1, math.min(counts[side], #order) do
 			local spot = order[index]
-			local attachment = root:FindFirstChild(`Stand{Def.STANDS[side]}_Row{spot.row}_Seat{spot.seat}`)
-			if attachment ~= nil then
-				local seat = root.CFrame * attachment.CFrame
-				local ok, figure = pcall(self._kit.crowdFigure, color, nil, Def.variant(spot.row, spot.seat))
-				if ok and figure ~= nil then
-					WorldView.placeModel(figure, seat)
-					figure.Name = `Stand{Def.STANDS[side]}_{index}`
-					figure.Parent = folder
-					table.insert(list, { model = figure, seat = seat, row = spot.row, seatIndex = spot.seat })
+			local name = `Stand{Def.STANDS[side]}_Row{spot.row}_Seat{spot.seat}`
+			local attachment = root:FindFirstChild(name)
+			if attachment == nil then
+				if not self._warnedSeats then
+					self._warnedSeats = true
+					self._env.log(
+						"warn",
+						"CrowdFiguresController: a seat attachment is missing; that seat stays empty",
+						{
+							seat = name,
+						}
+					)
 				end
+				continue
+			end
+			table.insert(perSide[side], {
+				side = side,
+				index = index,
+				row = spot.row,
+				seatIndex = spot.seat,
+				seat = root.CFrame * attachment.CFrame,
+				color = color,
+			})
+		end
+	end
+	local plan = {}
+	for i = 1, math.max(#perSide.a, #perSide.b) do
+		for _, side in { "a", "b" } do
+			if perSide[side][i] ~= nil then
+				table.insert(plan, perSide[side][i])
 			end
 		end
-		self.figures[side] = list
 	end
-	return true
+	return plan
 end
 
 function Controller:_clear()
 	self._pending = false
+	self._plan = nil
 	table.clear(self._motions)
 	self.figures = { a = {}, b = {} }
 	if self._folder ~= nil then

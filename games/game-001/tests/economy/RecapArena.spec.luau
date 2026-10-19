@@ -7,6 +7,7 @@ local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, 
 
 local ArenaDoubles = require("./doubles/ArenaDoubles")
 local ArenaHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ArenaHudController")
+local DuelDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/DuelController")
 local ArenaRecapModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaRecapModel")
 local ArmyDoubles = require("./doubles/ArmyDoubles")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
@@ -69,6 +70,7 @@ local function newWorld(opts)
 	local remotes = ArmyDoubles.remotes(Rep.REMOTES, if o.noArena then {} else ArenaDoubles.REMOTES)
 	local defs = { KingdomHudDef, ReputationDef, SummaryDef, RecapDef }
 	if not o.noArena then
+		table.insert(defs, DuelDef)
 		table.insert(defs, ArenaHudDef)
 	end
 	local services = { PopulationDoubles.service, Rep.service(START), ArmyDoubles.service }

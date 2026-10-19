@@ -27,7 +27,11 @@
 		  held sends blockEnd, so a champion is never left blocking.
 		- Bound through ContextActionService at High priority only while in arena mode, so the keys
 		  are free at every other time (Q / E rotate the overview, B is "back").
-		- No client-side rate limit: the server's Arena.Action limit (burst 8, 12/s) is the authority.
+		- Rate limit: FORGE-01's DuelController keeps the client's copy of the server's Arena.Action
+		  bucket (burst 8, 12/s) and refuses a press over it (act() returns false). A refused
+		  blockEnd is retried every Def.RETRY_SEC until it is sent, block is pressed again or the duel
+		  stage ends, so a block never outlives its release (a token comes back within about 0.09 s;
+		  otherwise the server would hold it until DuelRunner's blockMaxSeconds).
 	Touch
 		- On a touch device (UserInputService.TouchEnabled), a ScreenGui ForgeDuelInput under PlayerGui
 		  while in arena mode: five round buttons around Roblox's jump button, each at least
@@ -48,7 +52,7 @@
 		controller:onArenaState(state)                -- Arena.State
 		controller:onPhase(phase)                     -- Match.State
 		controller:press(action, down, source?) -> boolean   -- every key, pad and touch button calls it;
-		                                              -- true when DuelController:act was called
+		                                              -- true when DuelController:act sent it
 		controller:controls() -> { { action, keyboard, gamepad, touch } }
 		controller:touchArea() -> { left, top }?    -- while the touch buttons show: how far they reach
 		                                            -- from the bottom-right corner (px), so other UI
@@ -68,6 +72,7 @@ local Def = { name = "InputModeArenaController", dependencies = { "InputModeCont
 Def.MODE = "arena"
 Def.ACTIONS = table.freeze({ "light", "heavy", "block", "parry", "dodge" })
 Def.HELD = table.freeze({ block = "blockEnd" }) -- held actions and what their release sends
+Def.RETRY_SEC = 1 / 30 -- a refused release is tried again about every frame (DuelController refills 12 a second)
 Def.END_PHASES = table.freeze({ Results = true, Lobby = true })
 Def.MIN_TOUCH_PX = 44
 Def.GUI_NAME = "ForgeDuelInput"
@@ -169,6 +174,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_connections = {},
 		_guiConnections = {},
 		_holding = {} :: { [string]: { [string]: boolean } },
+		_retrying = {} :: { [string]: boolean }, -- releases refused by DuelController's bucket, retried
 		_warned = {},
 		_ours = false,
 		_preview = false,
@@ -255,6 +261,7 @@ end
 
 function Controller:destroy()
 	self._ours = false
+	table.clear(self._retrying)
 	self:_bind(false)
 	for _, link in self._links do
 		pcall(function()
@@ -351,26 +358,51 @@ function Controller:_warnOnce(key: string, level: string, message: string, data:
 	end
 end
 
-function Controller:_send(action: string): boolean
+-- (sent, refused): sent = DuelController:act() sent it; refused = act() said no (its bucket).
+function Controller:_send(action: string): (boolean, boolean)
 	if self._preview and not self._ours then
 		self._env.log("info", `InputModeArenaController preview: {action}`)
-		return true
+		return true, false
 	end
 	local duel = self._registry:find("DuelController")
 	if duel == nil or duel.act == nil then
 		self:_warnOnce("missing", "info", "InputModeArenaController: no DuelController yet; duel input sends nothing")
-		return false
+		return false, false
 	end
-	local ok, err = pcall(duel.act, duel, action)
+	local ok, result = pcall(duel.act, duel, action)
 	if not ok then
 		self:_warnOnce(
 			`act:{action}`,
 			"warn",
 			`InputModeArenaController: DuelController:act('{action}') failed`,
-			{ error = tostring(err) }
+			{ error = tostring(result) }
 		)
+		return false, false
 	end
-	return ok
+	return result == true, result ~= true
+end
+
+-- A release DuelController refused (its bucket was empty): retried every RETRY_SEC until it is
+-- sent, the action is held again, or the duel is no longer ours (FORGE-00, #249 verification).
+function Controller:_release(release: string): boolean
+	local sent, refused = self:_send(release)
+	if sent or not refused or self._retrying[release] then
+		return sent
+	end
+	self._retrying[release] = true
+	self._env.spawn(function()
+		while self._retrying[release] do
+			self._env.wait(Def.RETRY_SEC)
+			if not self._retrying[release] or not self._ours then -- held again (press clears it) or the duel is over
+				break
+			end
+			if self:_send(release) then
+				break
+			end
+		end
+		self._retrying[release] = nil
+	end)
+	return false
 end
 
 function Controller:press(action: any, down: any, source: any): boolean
@@ -380,27 +412,28 @@ function Controller:press(action: any, down: any, source: any): boolean
 	local key = if type(source) == "string" then source else "api"
 	local release = Def.HELD[action]
 	if release == nil then
-		return down == true and self:_send(action)
+		return down == true and (self:_send(action))
 	end
 	local held = self._holding[action] or {}
 	self._holding[action] = held
 	local wasHeld = next(held) ~= nil
 	if down == true then
 		held[key] = true
-		return not wasHeld and self:_send(action)
+		self._retrying[release] = nil -- held again: a pending release must not end the new block
+		return not wasHeld and (self:_send(action))
 	end
 	if not held[key] then
 		return false
 	end
 	held[key] = nil
-	return next(held) == nil and self:_send(release)
+	return next(held) == nil and self:_release(release)
 end
 
 function Controller:_releaseAll()
 	for action, held in self._holding do
 		if next(held) ~= nil then
 			table.clear(held)
-			self:_send(Def.HELD[action])
+			self:_release(Def.HELD[action])
 		end
 	end
 end

@@ -7,6 +7,7 @@ local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, 
 local ArenaDoubles = require("./doubles/ArenaDoubles")
 local ArenaHud = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaHud")
 local ArenaHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ArenaHudController")
+local DuelDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/DuelController")
 local ArenaIntroDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ArenaIntroController")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
@@ -58,7 +59,7 @@ local inputDef = {
 
 local function newWorld(opts)
 	local o = opts or {}
-	local defs = { KingdomHudDef, ArenaHudDef, LoadoutDef, ArenaIntroDef }
+	local defs = { KingdomHudDef, DuelDef, ArenaHudDef, LoadoutDef, ArenaIntroDef }
 	if o.input then
 		table.insert(defs, inputDef)
 	end
@@ -95,6 +96,51 @@ local function loadout(world, tier, seconds)
 	})
 	world:advance(0.3)
 end
+
+describe("Crown Arena: DuelController is the HUD's one arena door (G12.6)", function()
+	local world, previous
+	beforeEach(function()
+		previous = Create.useTestConnector()
+	end)
+	afterEach(function()
+		if world then
+			world:destroy()
+			world = nil
+		end
+		Create.setConnector(previous)
+	end)
+
+	it("Arena.GetState is asked once (by DuelController), and the HUD follows DuelController's state", function()
+		world = newWorld()
+		expect(world.arenaServer.getStateCalls).toBe(1)
+		local duel = world.client:get("DuelController")
+		expect(world.arena.state).toBe(duel:getState())
+		duel:setState({
+			stage = "intro",
+			endsAt = world.env.serverTimeNow() + 10,
+			a = ArenaDoubles.duellist(1, "crimson", "adoring"),
+			b = ArenaDoubles.duellist(7, "azure", "divided"),
+		})
+		expect(world.arena.state.stage).toBe("intro")
+		world.arenaServer:setState({ stage = "crowning", endsAt = world.env.serverTimeNow() + 10, winner = "crimson" })
+		world:advance(0.3)
+		expect(world.arena.state.stage).toBe("crowning")
+		expect(world.arenaServer.getStateCalls).toBe(1)
+	end)
+
+	it("duel events reach the HUD through DuelController", function()
+		world = newWorld()
+		local seen = 0
+		local onEvents = world.arena.onEvents
+		world.arena.onEvents = function(self, batch)
+			seen += #batch
+			return onEvents(self, batch)
+		end
+		world.arenaServer:events({ { t = 1, kind = "hit", side = "a" }, { t = 2, kind = "block", side = "b" } })
+		world:advance(0.3)
+		expect(seen).toBe(2)
+	end)
+end)
 
 describe("Crown Arena: loadout and perk picker (FL-0073)", function()
 	local world, previous
@@ -406,7 +452,8 @@ describe("Crown Arena: intro card and duel HUD (FL-0073)", function()
 	end)
 
 	it("without the Arena remotes nothing shows and nothing breaks", function()
-		world = KingdomWorld.new({ clientDefinitions = { KingdomHudDef, ArenaHudDef, LoadoutDef, ArenaIntroDef } })
+		world =
+			KingdomWorld.new({ clientDefinitions = { KingdomHudDef, DuelDef, ArenaHudDef, LoadoutDef, ArenaIntroDef } })
 		world.hud = world.client:get("KingdomHudController")
 		world.hud:setViewport(1920, 1022)
 		world:advance(0.5)

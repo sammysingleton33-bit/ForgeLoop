@@ -74,7 +74,7 @@ local function boot(opts)
 	})
 	table.insert(defs, {
 		name = "FeedbackCrowdController",
-		dependencies = {},
+		dependencies = CrowdDef.dependencies, -- DuelController
 		new = function(e, r)
 			return CrowdDef.create(e, r, {
 				playerGui = gui,
@@ -83,6 +83,21 @@ local function boot(opts)
 			})
 		end,
 	})
+	-- FORGE-01's DuelController (a double): getState() and stateChanged, the crowd's only source
+	local duel = { stateChanged = Signal.new(), state = opts.duelState }
+	function duel.getState(self)
+		return self.state
+	end
+	table.insert(defs, {
+		name = "DuelController",
+		dependencies = {},
+		new = function()
+			return duel
+		end,
+	})
+	if opts.beforeStart then
+		opts.beforeStart(env) -- remotes that exist before the controller starts (a client joining late)
+	end
 	local registry = Loader.load(env, defs)
 	return {
 		env = env,
@@ -90,7 +105,25 @@ local function boot(opts)
 		plays = plays,
 		crowd = registry:get("FeedbackCrowdController"),
 		announcer = registry:get("AnnouncerController"),
+		duel = duel,
 	}
+end
+
+-- ForgeRemotes/Arena.GetState, counting the asks (the crowd must never ask: FORGE-07 #256 M1).
+local function arenaRemotes(env, asks)
+	local root = env.newInstance("Folder")
+	root.Name = "ForgeRemotes"
+	root.Parent = env.ReplicatedStorage
+	local area = env.newInstance("Folder")
+	area.Name = "Arena"
+	area.Parent = root
+	local get = env.newInstance("RemoteFunction")
+	get.Name = "GetState"
+	get.Parent = area
+	get.OnServerInvoke = function()
+		asks.n += 1
+		return nil
+	end
 end
 
 local function ids(plays)
@@ -122,6 +155,33 @@ describe("FeedbackCrowdController: the duel's director (FL-0074 part 2a)", funct
 		t.crowd:onArenaState(state("duel", { a = "nobody" }))
 		expect(t.crowd.director).toBeNil()
 	end)
+
+	it(
+		"a late joiner seeds its director from DuelController and follows it; never asks Arena.GetState (#256 M1)",
+		function()
+			expect(table.find(CrowdDef.dependencies, "DuelController") ~= nil).toBe(true) -- FORGE-00's ruling
+			local asks = { n = 0 }
+			local t = boot({
+				duelState = state("duel"), -- the client joins mid-duel: DuelController already has the state
+				beforeStart = function(env)
+					arenaRemotes(env, asks)
+				end,
+			})
+			t.env.mock:advance(1)
+			expect(asks.n).toBe(0) -- one asker on the client: DuelController
+			assert(t.crowd.director ~= nil, "a director from DuelController:getState()")
+			expect(t.crowd.director:side("a").kingdom).toBe("crimson")
+			local other = state("duel")
+			other.b = duellist(7600, "loyal", "gold")
+			t.duel.stateChanged:fire(other) -- a push, through DuelController
+			expect(t.crowd.director:side("b").kingdom).toBe("gold")
+			t.duel.stateChanged:fire(state("done"))
+			expect(t.crowd.director).toBeNil()
+			t.crowd:destroy() -- after destroy, a state makes nothing
+			t.duel.stateChanged:fire(state("duel"))
+			expect(t.crowd.director).toBeNil()
+		end
+	)
 
 	it("Results and Lobby drop the director and clear the subtitles; events before a director are dropped", function()
 		local t = boot()
