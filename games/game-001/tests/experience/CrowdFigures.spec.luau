@@ -88,11 +88,22 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 	local function boot(opts)
 		opts = opts or {}
 		crowd = { director = nil, reacted = Signal.new() }
+		local values = opts.settings or {}
 		controller = Loader.load(env, {
 			{
 				name = "FeedbackCrowdController",
 				new = function()
 					return crowd
+				end,
+			},
+			{
+				name = "SettingsController",
+				new = function()
+					return {
+						get = function(_, key)
+							return values[key]
+						end,
+					}
 				end,
 			},
 			{
@@ -173,6 +184,24 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 		controller:step(0)
 		expect(#controller.figures.a).toBe(0)
 		expect(#controller.figures.b).toBe(60)
+	end)
+
+	it("low-end clients: reduced effects seat half of each stand; reduced motion skips the hops only", function()
+		boot({ model = arena, settings = { effectsQuality = "reduced", reducedMotion = true } })
+		crowd.director = director("loyal", "crimson", "hostile", "azure")
+		controller:step(0)
+		expect(#controller.figures.a).toBe(30) -- 60 * 0.5
+		expect(#controller.figures.b).toBe(15) -- 30 * 0.5
+		local t0 = env.clock()
+		crowd.reacted:fire({ stand = "a", kind = "roar" }, "crimson")
+		controller:step(t0 + 0.2)
+		for _, figure in controller.figures.a do
+			expect(near(pivotOf(figure.model).Position, figure.seat.Position)).toBe(true)
+		end
+		crowd.reacted:fire({ stand = "b", kind = "turnBack" }, "azure")
+		controller:step(t0 + 0.3)
+		local first = controller.figures.b[1]
+		expect(pivotOf(first.model).LookVector:Dot(first.seat.LookVector) < -0.9).toBe(true)
 	end)
 
 	it("a roar hops the reacting stand only, and every figure lands back on its seat", function()

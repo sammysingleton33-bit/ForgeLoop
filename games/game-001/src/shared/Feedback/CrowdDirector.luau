@@ -279,7 +279,10 @@ function Director:onEvent(event: any, now: number): { Reaction }
 		return {
 			self:_reaction(side, if trigger == "crowdRally" then "rally" else "perk", true, true, {
 				trigger = config.triggerNames[trigger] or "their pledge",
-				citizen = if type(data.citizenName) == "string" then data.citizenName else "A citizen",
+				-- an empty or blank name reads as no name, as chant does for rulerName (FORGE-00 2026-10-19)
+				citizen = if type(data.citizenName) == "string" and string.find(data.citizenName, "%S")
+					then data.citizenName
+					else "A citizen",
 			}),
 		}
 	elseif kind == "hype" then

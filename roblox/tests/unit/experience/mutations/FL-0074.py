@@ -99,4 +99,8 @@ M = [
  ("FL-0074", C2+"CrowdFiguresController.luau", 'for index, figure in self.figures[side] or {} do', 'for index, figure in self.figures.a or {} do', "CrowdFigures", "turnBack turns the backs", "game"),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'turnBack = table.freeze({ motion = "turn", share = 1, sec = 3 }),', 'turnBack = table.freeze({ motion = "slump", share = 1, sec = 3 }),', "CrowdFigures", "every reaction kind the director can play", "game"),
  ("FL-0074", F+"CrowdDirector.luau", 'return { tier = side.tier, kingdom = side.kingdom }', 'return { tier = "divided", kingdom = side.kingdom }', "CrowdFigures", "a duel fills both stands", "game"),
+ ("FL-0074", D, 'if type(data.citizenName) == "string" and string.find(data.citizenName, "%S")', 'if type(data.citizenName) == "string"', "CrowdDirector", "a triggerFired names its perk", "game"),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'if self:_setting("effectsQuality") == "reduced" then', 'if false then', "CrowdFigures", "low-end clients", "game"),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'if spec == nil or (spec.motion == "hop" and self:_setting("reducedMotion") == true) then', 'if spec == nil then', "CrowdFigures", "low-end clients", "game"),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'counts.b = math.floor(counts.b * Def.REDUCED_SHARE)', 'counts.b = counts.b', "CrowdFigures", "low-end clients", "game"),
 ]

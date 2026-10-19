@@ -136,6 +136,9 @@ describe("CrowdDirector: reactions follow the tier and the duel (design §3, §7
 		expect(caption({ source = "crowdRally" }).kind).toBe("rally") -- no trigger: the source says it
 		expect(caption({ source = "perk:somethingNew" }).caption).toBe("A citizen steps up: their pledge!")
 		expect(caption({ citizenName = 7 }).caption).toBe("A citizen steps up: their pledge!")
+		-- an empty or blank name is no name (FORGE-00: it captioned " steps up: Reforge!")
+		expect(caption({ trigger = "reforge", citizenName = "" }).caption).toBe("A citizen steps up: Reforge!")
+		expect(caption({ trigger = "reforge", citizenName = "   " }).caption).toBe("A citizen steps up: Reforge!")
 		-- every TriggerId of CONTRACTS G12.1 has a name
 		for _, id in
 			{ "reforge", "fieldRemedy", "calledWarning", "heartyRations", "rallyingHymn", "fineWares", "crowdRally" }

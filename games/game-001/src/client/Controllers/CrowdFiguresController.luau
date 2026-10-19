@@ -20,12 +20,16 @@
 		  FORGE-02's variant formula (row * 5 + seat * 3) % Kit.CROWD_VARIANTS + 1, placed on its
 		  attachment StandX_Row<r>_Seat<s> (feet on the plank, facing the ring) with WorldView.placeModel.
 		- Figures are parented to Workspace.ForgeCrowdFigures (client-made, not under the arena model).
+		- Low-end clients: with the effectsQuality setting "reduced" (FL-0103) each stand seats
+		  Def.REDUCED_SHARE of its figures (at most 60 in the arena, 240 parts), read when the stands fill.
 	How they move (FeedbackCrowdController.reacted)
 		Def.MOTIONS maps each reaction kind to a motion of that reaction's stand for its seconds:
 			hop    a share of the stand bobs up and down (roar, cheer, chant, rally, perk, flood ...)
 			slump  the stand sinks a little (gasp, mutter, boo)
 			turn   the stand turns its backs on the ring (turnBack: the strongest negative)
-		Kinds with no motion (murmur, quiet, silence, calledOff, ...) leave the stand still. Which figures
+		Kinds with no motion (murmur, quiet, silence, calledOff, ...) leave the stand still. With the
+		reducedMotion setting on, a hop is skipped (the stand stays still); a slump or a turn is one step,
+		not an animation, so it still shows. Which figures
 		hop is a pure function of the figure's index and the share, so a third of a stand is always the
 		same third. Every motion ends with each figure back on its seat.
 	API
@@ -59,6 +63,7 @@ Def.HOP_STUDS = 0.7
 Def.HOP_HZ = 2.5
 Def.SLUMP_STUDS = 0.35
 Def.STANDS = table.freeze({ a = "A", b = "B" })
+Def.REDUCED_SHARE = 0.5 -- the share of each stand seated with effectsQuality = "reduced"
 
 -- reaction kind -> motion of that reaction's stand (Crowd.tiers' idle/good/bad words, the perk and
 -- rally moments, the chant, and the four endings)
@@ -239,6 +244,16 @@ function Controller:_arena(): any
 	return if ok and type(tagged) == "table" then tagged[1] else nil
 end
 
+-- A client setting (SettingsController, optional): nil without one.
+function Controller:_setting(key: string): any
+	local settings = self._registry:find("SettingsController")
+	if settings == nil or type(settings.get) ~= "function" then
+		return nil
+	end
+	local ok, value = pcall(settings.get, settings, key)
+	return if ok then value else nil
+end
+
 function Controller:_workspace(): any
 	return self._opts.workspace or self._env.Workspace
 end
@@ -266,6 +281,10 @@ function Controller:_seat(director: any)
 	end
 	local sides = { a = director:side("a"), b = director:side("b") }
 	local counts = Def.counts(self._citizens, { a = sides.a.tier, b = sides.b.tier })
+	if self:_setting("effectsQuality") == "reduced" then
+		counts.a = math.floor(counts.a * Def.REDUCED_SHARE)
+		counts.b = math.floor(counts.b * Def.REDUCED_SHARE)
+	end
 	local folder = self._env.newInstance("Folder")
 	folder.Name = Def.FOLDER
 	folder.Parent = parent
@@ -314,7 +333,7 @@ function Controller:onReaction(reaction: any, _kingdom: any?)
 	end
 	self:refresh() -- the director may be new since the last step
 	local spec = Def.MOTIONS[reaction.kind]
-	if spec == nil then
+	if spec == nil or (spec.motion == "hop" and self:_setting("reducedMotion") == true) then
 		return
 	end
 	if self._motions[reaction.stand] ~= nil then
