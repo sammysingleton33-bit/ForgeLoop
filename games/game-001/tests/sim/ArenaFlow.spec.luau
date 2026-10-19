@@ -231,6 +231,15 @@ describe("ArenaFlow: the loadout", function()
 		expect((huge:choose(1, "mace", "light", { "reforge", "fieldRemedy", "calledWarning" }))).toBe(true)
 	end)
 
+	it("an AI champion's id never chooses", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1 }, azure = {} }), 0)
+		expect(flow:stage()).toBe("loadout")
+		local ok, reason = flow:choose(-2, "mace", "light", {})
+		expect(ok).toBe(false)
+		expect(reason).toBe("not_champion")
+		expect(flow:state().b.weapon).toBe(ArenaConfig.ai.weapon)
+	end)
+
 	it("only the champion chooses, only for themselves, and only in the loadout stage", function()
 		local flow = ArenaFlow.new(setup({ crimson = { 1, 3 }, azure = { 2 } }), 0)
 		local ok, reason = flow:choose(3, "mace", "light", {})
@@ -298,6 +307,7 @@ describe("ArenaFlow: time and the end", function()
 		expect(state.winner).toBe(2)
 		expect(state.endsAt).toBe(70 + ArenaConfig.crowningSeconds)
 		expect(flow:winnerKingdom()).toBe("azure")
+		expect(flow:state().coronation).toBeNil() -- a coronation is only for the last keep standing
 		expect(flow:result().kind).toBe("duel")
 		expect(flow:endDuel("a", 71)).toBe(false) -- only once
 		flow:step(70 + ArenaConfig.crowningSeconds)
@@ -310,6 +320,15 @@ describe("ArenaFlow: time and the end", function()
 		flow:step(ArenaConfig.loadoutSeconds + ArenaConfig.introSeconds)
 		flow:endDuel("draw", 80)
 		expect(flow:stage()).toBe("crowning")
+		expect(flow:state().winner).toBeNil()
+		expect(flow:winnerKingdom()).toBeNil()
+		expect(flow:result().kind).toBe("draw")
+	end)
+
+	it("an unknown duel result is a draw, never a winner", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1 }, azure = { 2 } }), 0)
+		flow:step(ArenaConfig.loadoutSeconds + ArenaConfig.introSeconds)
+		expect(flow:endDuel("x", 5)).toBe(true)
 		expect(flow:state().winner).toBeNil()
 		expect(flow:winnerKingdom()).toBeNil()
 		expect(flow:result().kind).toBe("draw")
@@ -415,6 +434,32 @@ describe("ArenaFlow: leavers and cancels", function()
 		expect(flow:result().reason).toBe("match_over")
 		expect(flow:cancel("again")).toBe(false)
 		expect(flow:step(10000)).toBe(false)
+	end)
+
+	it("a cancel during the crowning takes the winner back: the match falls back to Crown Points", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1 }, azure = { 2 } }), 0)
+		flow:step(ArenaConfig.loadoutSeconds + ArenaConfig.introSeconds)
+		flow:endDuel("a", 50)
+		expect(flow:winnerKingdom()).toBe("crimson")
+		expect(flow:cancel("match_over")).toBe(true)
+		expect(flow:winnerKingdom()).toBeNil()
+		expect(flow:state().winner).toBeNil()
+		expect(flow:state().coronation).toBeNil()
+		local last = ArenaFlow.new({
+			qualifiers = { "gold" },
+			rulersOf = function()
+				return {}
+			end,
+			leadership = function()
+				return 0
+			end,
+			support = function()
+				error("unused")
+			end,
+		}, 0)
+		last:cancel("match_over")
+		expect(last:state().coronation).toBeNil()
+		expect(last:winnerKingdom()).toBeNil()
 	end)
 
 	it("the revision moves with every visible change, and only then", function()

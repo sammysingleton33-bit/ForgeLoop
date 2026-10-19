@@ -101,8 +101,13 @@ describe("DuelAI: behaviour", function()
 			local action = ai:decide(snapshot)
 			expect(action ~= "light" and action ~= "heavy").toBe(true)
 		end
-		snapshot.ended = true
-		expect(ai:decide(snapshot)).toBeNil()
+		local fresh = DuelAI.new("a", 0.5, 9)
+		local live = DuelModel.snapshot(state)
+		live.t = 5
+		expect(fresh:decide(live)).never.toBeNil() -- a live duel: it acts
+		local over = DuelAI.new("a", 0.5, 9)
+		live.ended = true
+		expect(over:decide(live)).toBeNil() -- the same moment, but the duel is over
 	end)
 
 	it("answers a telegraphed heavy: a defence goes out before the impact", function()

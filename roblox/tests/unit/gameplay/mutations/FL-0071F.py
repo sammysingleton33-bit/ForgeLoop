@@ -6,10 +6,9 @@ AF = G + "src/shared/Arena/ArenaFlow.luau"
 AI = G + "src/shared/Arena/DuelAI.luau"
 M = [
  # --- champions
- ("FL-0071F", AF, 'local better = best == nil', 'local better = best ~= nil', "sim/ArenaFlow", "co-rulers vote"),
- ("FL-0071F", AF, 'better = votes > bestVotes', 'better = votes < bestVotes', "sim/ArenaFlow", "co-rulers vote"),
- ("FL-0071F", AF, 'better = self._setup.leadership(candidate, kingdom)\n\t\t\t\t\t\t> self._setup.leadership(best :: number, kingdom)', 'better = self._setup.leadership(candidate, kingdom)\n\t\t\t\t\t\t< self._setup.leadership(best :: number, kingdom)', "sim/ArenaFlow", "a tied or empty vote goes to the higher leadership"),
- ("FL-0071F", AF, 'if contains(candidates, voter) and contains(candidates, candidate) then', 'if true then', "sim/ArenaFlow", "a ruler who leaves during the vote drops out"),
+ ("FL-0071F", AF, 'local better = best == nil', 'local better = best ~= nil', "sim/ArenaFlow", "ArenaFlow: champions"),
+ ("FL-0071F", AF, 'better = votes > bestVotes', 'better = votes < bestVotes', "sim/ArenaFlow", "ArenaFlow: champions"),
+ ("FL-0071F", AF, 'better = self._setup.leadership(candidate, kingdom)\n\t\t\t\t\t\t\t> self._setup.leadership(best :: number, kingdom)', 'better = self._setup.leadership(candidate, kingdom)\n\t\t\t\t\t\t\t< self._setup.leadership(best :: number, kingdom)', "sim/ArenaFlow", "a tied or empty vote goes to the higher leadership"),
  ("FL-0071F", AF, 'userId = if userId then userId else (if side == "a" then -1 else -2),', 'userId = if userId then userId else 0,', "sim/ArenaFlow", "an AI champion with a negative id"),
  ("FL-0071F", AF, 'if #candidates > 1 then -- a kingdom with one ruler has nothing to vote on', 'if true then', "sim/ArenaFlow", "closes the vote early"),
  ("FL-0071F", AF, 'if self._kingdoms[side] and #self._candidates[side] > 1 then', 'if self._kingdoms[side] and #self._candidates[side] > 0 then', "sim/ArenaFlow", "needs no vote"),
@@ -38,7 +37,7 @@ M = [
  ("FL-0071F", AF, 'self._winnerSide, self._winnerKingdom, self._winnerUser, self._coronation = nil, nil, nil, nil', 'self._winnerSide = nil', "sim/ArenaFlow", "cancel ends the arena with no winner"),
  ("FL-0071F", AF, 'if self._stage == "crowning" or self._stage == "done" then\n\t\treturn false', 'if self._stage == "done" then\n\t\treturn false', "sim/ArenaFlow", "forfeits"),
  ("FL-0071F", AF, 'if other ~= nil and not other.gone then', 'if other ~= nil then', "sim/ArenaFlow", "both champions gone is a draw"),
- ("FL-0071F", AF, 'self._votes[voter] = nil', 'self._votes[voter] = voter', "sim/ArenaFlow", "votes for a ruler who left do not count"),
+ ("FL-0071F", AF, 'self._votes[voter] = nil', 'self._votes[voter] = voter', "sim/ArenaFlow", "a ruler who leaves during the vote drops out"),
  # --- the AI champion
  ("FL-0071F", AI, 'if event.kind == "heavyWindup" and event.side == self._other and event.data then', 'if event.kind == "heavyWindup" and event.data then', "sim/DuelAI", "is not answered"),
  ("FL-0071F", AI, 'if me.stamina < rules.lightCost + 6 then', 'if false then', "sim/DuelAI", "does not send a swing it cannot pay for"),
