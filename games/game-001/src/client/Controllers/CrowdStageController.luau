@@ -2,7 +2,7 @@
 --[[
 	CrowdStageController (game-001, FORGE-04, FL-0074 part 2b; CONTRACTS G12.4 / G12.6; design crown-arena.md §7
 	"Intro"): the Crown Arena's staging for everyone in the match, the champions and the watching rulers.
-		- Intro: when Arena.State reaches "intro", the herald's horn (arena.horn) sounds and the overview camera
+		- Intro: when the arena state reaches "intro", the herald's horn (arena.horn) sounds and the overview camera
 		  passes over both stands, then settles on the ring (RulerCameraController:playShots): the other
 		  kingdom's stand first, then your own, then the ring seen from your own stand, so each side sees its
 		  own crowd's mood. A ruler of neither kingdom sees stand A, stand B, then the ring from A's side.
@@ -12,6 +12,10 @@
 		  FORGE-03's versus card (ArenaIntroController) sits on top of it.
 		- Duel: a ruler who missed the intro (a late joiner) gets the ring shot alone. The champions' camera
 		  follows them in the arena input mode (FL-0075), which ends any pass.
+		- The state comes from FORGE-01's DuelController (a dependency: stateChanged and getState). The
+		  server pushes no Arena.State during the duel, so a client that joins or reloads mid-duel learns
+		  the stage only from the one Arena.GetState answer DuelController asks for: it then gets the
+		  music and the ring shot (FORGE-00's g11k note). This controller never asks itself.
 		- Music: the scene "arena" (MusicController:setScene, music.arena) from the intro to the end of the
 		  crowning; any other stage, Results and Lobby end it.
 		- Crowning: the fanfare (arena.fanfare) once, when ArenaState.winner names a champion (a duel or a
@@ -46,7 +50,7 @@ local RemoteLink = require("@game/ReplicatedStorage/Forge/Experience/RemoteLink"
 local Controller = {}
 Controller.__index = Controller
 
-local Def = { name = "CrowdStageController", dependencies = {} }
+local Def = { name = "CrowdStageController", dependencies = { "DuelController" } }
 
 Def.TAG = "CrownArena"
 Def.STAND_STUDS = 30 -- the Layout fallback: a stand's centre from the ring's centre, along the arena's Z axis
@@ -115,6 +119,23 @@ function Def.new(env: any, registry: any)
 	return Def.create(env, registry, nil)
 end
 
+-- The arena state comes from FORGE-01's DuelController, the client's one door to the arena (G12.6):
+-- stateChanged fires for its Arena.GetState answer and every Arena.State push; getState() at start seeds
+-- a client whose answer is already in. The Loader errors at load without the dependency.
+function Controller:_followDuel()
+	local duel = self._registry:find("DuelController")
+	table.insert(
+		self._connections,
+		duel.stateChanged:connect(function(state)
+			self:onArenaState(state)
+		end)
+	)
+	local ok, state = pcall(duel.getState, duel)
+	if ok and state ~= nil then
+		self:onArenaState(state)
+	end
+end
+
 function Controller:start()
 	local env = self._env
 	local registry = self._registry
@@ -123,9 +144,6 @@ function Controller:start()
 	self._audio = registry:find("AudioController")
 	for _, link in
 		{
-			RemoteLink.on(env, "Arena.State", function(state)
-				self:onArenaState(state)
-			end),
 			RemoteLink.on(env, "Kingdom.State", function(state)
 				self:onKingdomState(state)
 			end),
@@ -136,6 +154,7 @@ function Controller:start()
 	do
 		table.insert(self._links, link)
 	end
+	self:_followDuel()
 	self:_watchPreview()
 end
 
@@ -145,7 +164,11 @@ function Controller:destroy()
 	end
 	for _, connection in self._connections do
 		pcall(function()
-			connection:Disconnect()
+			if connection.disconnect then
+				connection:disconnect() -- a Forge Signal (DuelController.stateChanged)
+			else
+				connection:Disconnect()
+			end
 		end)
 	end
 	table.clear(self._links)

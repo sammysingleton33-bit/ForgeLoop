@@ -54,4 +54,8 @@ M = [
  ("FL-0075", A, '\t\t\tif self:_send(release) then\n\t\t\t\tbreak', '\t\t\tif false then\n\t\t\t\tbreak', "DuelInput", "a blockEnd the real DuelController's empty bucket refuses", "game"),
  ("FL-0075", A, 'self._retrying[release] = nil -- held again', '-- held again', "DuelInput", "a blockEnd the real DuelController's empty bucket refuses", "game"),
  ("FL-0075", A, 'return next(held) == nil and self:_release(release)', 'return next(held) == nil and (self:_send(release))', "DuelInput", "a blockEnd the real DuelController's empty bucket refuses", "game"),
+ # FORGE-07 #259 L1: the retry's duel-over exit, its interval, and a throwing act on the release
+ ("FL-0075", A, 'if not self._retrying[release] or not self._ours then', 'if not self._retrying[release] then', "DuelInput", "the refused blockEnd: sent within 0.1 s", "game"),
+ ("FL-0075", A, 'Def.RETRY_SEC = 1 / 30', 'Def.RETRY_SEC = 1 / 4', "DuelInput", "the refused blockEnd: sent within 0.1 s", "game"),
+ ("FL-0075", A, '{ error = tostring(result) }\n\t\t)\n\t\treturn false, false', '{ error = tostring(result) }\n\t\t)\n\t\treturn false, true', "DuelInput", "an act() that throws on the release", "game"),
 ]
