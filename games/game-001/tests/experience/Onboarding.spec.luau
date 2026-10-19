@@ -609,6 +609,10 @@ describe("game-001 VS-1 onboarding with the framework services (no DataService, 
 			expect(subjects.WarChanged({ nil, "crimson", true }, ctx)).toEqual({})
 			expect(subjects.WarChanged({ "azure", 7, true }, ctx)).toEqual({})
 			expect(subjects.RaidChanged({ 7, true, {} }, ctx)).toEqual({})
+			-- `on` is always a boolean in info (a missing one reads as an end, never as a start)
+			expect(roles(subjects.RaidChanged({ "crimson", nil, {} }, ctx))).toEqual({
+				"1101:defender:false:crimson>nil",
+			})
 		end
 	)
 

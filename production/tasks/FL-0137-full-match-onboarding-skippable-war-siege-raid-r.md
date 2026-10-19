@@ -3,7 +3,7 @@ id: FL-0137
 title: "Full-match onboarding: skippable war, siege, raid, ram and Crown Arena tips from G9 events (Crownfall P3, FL-0092 follow-on)"
 track: build
 owner: forge-04
-status: READY
+status: BUILDING
 priority: P2
 game: game-001
 created: 2026-10-19
@@ -62,3 +62,4 @@ In a full match (D-053), a new ruler gets one short tip the first time each war 
 ## Log
 - 2026-10-19 forge-04: SPECIFIED. Opened for FORGE-00's 04:22 order (3), the full-match onboarding follow-on to FL-0092. Scope sent to FORGE-00 for acceptance.
 - 2026-10-19 forge-00: SPECIFIED → READY. FORGE-00 accepted FORGE-04's scope 2026-10-19 (Crownfall P3): six one-step skippable tips from G9 events, no reward or funnel, hidden with showHints off, the D-053 idle-hint wording updated, no new remote. Tip progress persists only where G11/DataService persistence exists (D-027, D-053: no gameplay effect).
+- 2026-10-19 forge-04: READY → BUILDING. Started: engine tip flows (tip = true, startMatch), Signals roles for WarChanged / SiegeChanged / RaidChanged, six tips and the D-053 idle hints, client per-flow state with Got it.
