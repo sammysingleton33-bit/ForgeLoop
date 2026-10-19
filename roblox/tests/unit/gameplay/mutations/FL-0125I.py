@@ -9,4 +9,5 @@ M = [
  ("FL-0125I", ES, 'farEvery = MatchConfig.interest.farEvery,', 'farEvery = 1,', "sim/EntityService", "sends the entities near each player's focus"),
  ("FL-0125I", ES, 'nearRadius = MatchConfig.interest.nearRadius,', 'nearRadius = 1e9,', "sim/EntityService", "sends the entities near each player's focus"),
  ("FL-0125I", ES, '			at = self._env.clock(),\n', '			at = 0,\n', "sim/EntityService", "a stale focus falls back"),
+ ("FL-0125I", ES, '				self._focus[userId] = nil -- a player who left', '				local _ = nil -- a player who left', "sim/EntityService", "drops a player's focus when they leave"),
 ]

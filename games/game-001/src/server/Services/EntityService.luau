@@ -559,6 +559,15 @@ function EntityService:_encodeTick(frame: any): { any }
 			end
 			always[kid] = own
 		end
+		local present = {}
+		for _, player in self._env.Players:GetPlayers() do
+			present[player.UserId] = true
+		end
+		for userId in self._focus do
+			if not present[userId] then
+				self._focus[userId] = nil -- a player who left takes their focus with them (FORGE-07 L1)
+			end
+		end
 		for _, player in self._env.Players:GetPlayers() do
 			for _, chunk in self:_interestChunks(player, records, always) do
 				table.insert(outgoing, { "Sim.Snapshot", chunk, nil, player })
