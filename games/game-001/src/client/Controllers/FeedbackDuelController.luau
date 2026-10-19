@@ -262,8 +262,8 @@ end
 
 -- The local champion's own press, sent: it plays at once on this client (DuelPoses predict).
 function Controller:onPress(action: any)
-	if not self._running or self._preview ~= nil or type(action) ~= "string" then
-		return
+	if self._preview ~= nil or type(action) ~= "string" then
+		return -- outside a duel the track is not active, so its predict refuses the press
 	end
 	local side = self:_localSide()
 	if side ~= nil then

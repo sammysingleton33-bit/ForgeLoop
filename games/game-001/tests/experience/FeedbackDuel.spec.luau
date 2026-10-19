@@ -209,7 +209,11 @@ describe("FeedbackDuelController: the champions move with the duel (FL-0141)", f
 		frames(t, 0.5)
 		expect(t.anim.poses.b.name).toBe("ko")
 		t.duel:setState({ stage = "done" })
-		frames(t, DuelPoses.XFADE + 0.2)
+		frames(t, 0.05) -- halfway through the fade: still posed and easing out, no pop
+		expect(t.anim:rig("b") ~= nil).toBe(true)
+		local easing = joint(ai, "Torso").Transform.Position.Y
+		expect(easing < -0.2 and easing > torso.Position.Y + 0.1).toBe(true)
+		frames(t, DuelPoses.XFADE + 0.15)
 		expect(t.anim:rig("a")).toBeNil()
 		expect(DuelRig.same(joint(ai, "Torso").Transform, CFrame.new())).toBe(true) -- the Kit rig at rest
 		local writes = t.counts.sets
@@ -256,6 +260,10 @@ describe("FeedbackDuelController: the champions move with the duel (FL-0141)", f
 		sent:fire("light")
 		expect(t.anim.poses.a.name).toBeNil()
 		expect(t.anim.poses.b.name).toBeNil()
+		-- an AI champion with our id (Studio's negative test ids) is not us
+		t.duel:setState({ stage = "duel", a = duellist(ME, true), b = duellist(RIVAL) })
+		sent:fire("light")
+		expect(t.anim.poses.a.name).toBeNil()
 	end)
 
 	it("a late joiner starts from DuelController's state and animates from the next event", function()
