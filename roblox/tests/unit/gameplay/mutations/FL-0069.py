@@ -53,4 +53,14 @@ M = [
  ("FL-0069", LS, '\tfor _, userId in k.rulers do\n\t\tself:record(kingdom, userId, act, 1)\n\tend', '\tself:record(kingdom, k.rulers[1], act, 1)', "sim/LeadershipService", "every seated ruler"),
  ("FL-0069", LS, 'if #k.rulers == 0 then\n\t\tself:record(kingdom, nil, act, 1)', 'if false then\n\t\tself:record(kingdom, nil, act, 1)', "sim/LeadershipService", "no-ruler series"),
  ("FL-0069", LS, 'self:_watchKingdom(kingdom, k, now)', 'local _ = 0', "sim/LeadershipService", "starvation once an episode after"),
+ # --- who earns an act, and the last phase
+ ("FL-0069", LS, 'if (seated[userId] or math.huge) <= since then', 'if true then', "sim/LeadershipService", "only to rulers who were seated"),
+ ("FL-0069", LS, 'if (seated[userId] or math.huge) <= since then', 'if (seated[userId] or math.huge) < since then', "sim/LeadershipService", "records for every seated ruler"),
+ ("FL-0069", LS, 'seated[userId] = seated[userId] or now', 'seated[userId] = now', "sim/LeadershipService", "only to rulers who were seated"),
+ ("FL-0069", LS, 'seated[userId] = nil -- a ruler who left and comes back starts again', 'seated[userId] = seated[userId]', "sim/LeadershipService", "only to rulers who were seated"),
+ ("FL-0069", LS, 'self:_recordRulers(kingdom, k, "starvation", w.lowSince)', 'self:_recordRulers(kingdom, k, "starvation", now)', "sim/LeadershipService", "only to rulers who were seated"),
+ ("FL-0069", LS, 'self:_recordRulers(kingdom, k, "fedRatioKept", w.phaseSince)\n\t\tend\n\t\tw.phase = phase', 'self:_recordRulers(kingdom, k, "fedRatioKept", now)\n\t\tend\n\t\tw.phase = phase', "sim/LeadershipService", "only to rulers who were seated"),
+ ("FL-0069", LS, 'if closing and not w.credited and', 'if false and not w.credited and', "sim/LeadershipService", "closeOut credits the phase"),
+ ("FL-0069", LS, '\t\tw.credited = true\n', '\t\tw.credited = false\n', "sim/LeadershipService", "closeOut credits the phase"),
+ ("FL-0069", LS, 'if not closing and now - self._lastSampleAt', 'if now - self._lastSampleAt', "sim/LeadershipService", "takes a last sample"),
 ]
