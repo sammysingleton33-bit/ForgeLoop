@@ -241,3 +241,15 @@ def test_committed_fbx_has_no_personal_paths():
         text = f.read_text()
         for needle in ("/home/", "/root", "/tmp/", "C:\\Users", "sammy", "outlook"):
             assert needle not in text, (f.name, needle)
+
+
+@needs_bpy
+def test_budget_script_passes_on_the_shipped_files():
+    """FORGE-07 A5: the budget table is measured by re-importing the committed FBX, not read from the generator."""
+    import subprocess
+
+    if not FBX_COMMITTED.exists():
+        pytest.skip("citizen_kit.fbx not committed yet")
+    r = subprocess.run([sys.executable, "-I", str(BLENDER / "scripts" / "charkit_budget.py")], capture_output=True, text=True, timeout=300)
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-1000:]
+    assert "charkit budget: PASS" in r.stdout

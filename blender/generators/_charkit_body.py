@@ -148,8 +148,21 @@ def _cap(S, grow, rim_y, tilt_z, rim_flare=0.0, thick=0.1):
     rings = list(reversed(rings))
     m = loft(rings, seg=seg, n=S.n if S.A else 2.5, caps=(True, False), phase=ph(S, seg), color=TINT,
              smooth=S.smooth, tag="hair")
-    m.v = [(x, y + tilt_z * z, z) if i < seg else (x, y, z) for i, (x, y, z) in enumerate(m.v)]
+    tilt_rim(m, seg, rim_y, tilt_z, grow + rim_flare)
     return m
+
+
+def tilt_rim(m, seg, rim_y, tilt_z, grow):
+    """Tilt the open rim (the first `seg` vertices) like y += tilt_z * z and re-fit each rim vertex to the head contour at its new
+    height, so the flat rim cap stays inside the cranium and no dark underside sliver shows below the front edge."""
+    r0 = head_radius_at(rim_y)
+    for i in range(seg):
+        x, y, z = m.v[i]
+        y2 = y + tilt_z * z
+        r1 = head_radius_at(y2)
+        sx = (r1[0] + grow) / (r0[0] + grow)
+        sz = (r1[1] + grow) / (r0[1] + grow)
+        m.v[i] = (x * sx, y2, z * sz)
 
 
 def build_hair(S, R):
@@ -180,8 +193,9 @@ def build_hair(S, R):
                   [0.2, 0.19, 0.16, 0.08], seg=S.seg(6, 4), n=2.0, color=TINT, smooth=sm, tag="hair") for sx in (-1, 1)]
     reg("hair_pigtails", merge(_cap(S, 0.05, 4.76, -0.3, thick=0.1), *tails))
     chin = sphere(0.74, 0.34, 0.64, seg=S.seg(10, 7), rings=S.seg(5, 4), color=TINT, smooth=sm, tag="hair").move(0, 4.22, -0.1)
-    must = sphere(0.3, 0.09, 0.1, seg=S.seg(8, 6), rings=2, color=TINT, smooth=sm, tag="hair").move(0, 4.34, -0.74)
-    reg("hair_beard", merge(chin, must))
+    must = [sphere(0.22, 0.09, 0.1, seg=S.seg(8, 6), rings=2, color=TINT, smooth=sm, tag="hair").rot(sx * -14, "z").move(sx * 0.17, 4.36, -0.73)
+            for sx in (-1, 1)]
+    reg("hair_beard", merge(chin, *must))
     band = torus(0.8, 0.17, seg=seg, tseg=S.seg(5, 4), y=4.88, rz=0.77, color=TINT, smooth=sm, tag="hair", phase=ph(S, seg))
     reg("hair_tonsure", band)
 

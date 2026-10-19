@@ -159,19 +159,31 @@ def build_hats(S, R):
 
 
 def _hood(S, thick, rim_y, tilt_z, tip=0.0, flare=0.0, back=True):
-    """Cowl over the head: a shell with the rim tilted (high at the forehead, low at the nape) and a drape at the back."""
+    """Cowl over the head: a shell whose rim is tilted (high at the forehead, low at the nape) and a drape at the back.
+
+    The tilt is a shear that fades out towards the crown (no fold where a lower ring would stick up past the raised front
+    rim); every vertex is then re-fitted to the head contour at its new height, so the shell hugs the cranium."""
     seg = S.seg(10, 8)
     n = S.n if S.A else 2.5
+    top = 5.3
     rings = []
-    ys = (5.3, 5.0, 4.7)
-    for y in ys:
-        rx, rz, cz = head_radius_at(y)
-        rings.append((y, rx + thick, rz + thick, 0.0, cz))
-    rings.append((rim_y, head_radius_at(rim_y)[0] + thick + flare, head_radius_at(rim_y)[1] + thick + flare, 0.0, 0.0))
+    for y in (5.3, 5.05, 4.8):
+        if y > rim_y + 0.05:
+            rx, rz, cz = head_radius_at(y)
+            rings.append((y, rx + thick, rz + thick, 0.0, cz))
+    rx, rz, cz = head_radius_at(rim_y)
+    rings.append((rim_y, rx + thick + flare, rz + thick + flare, 0.0, cz))
     rings = [(5.42 + thick + tip, 0.0, 0.0)] + rings
     rings = list(reversed(rings))
     m = loft(rings, seg=seg, n=n, caps=(True, False), phase=ph(S, seg), color=TINT, smooth=S.smooth, tag="cloth")
-    m.v = [(x, y + tilt_z * z, z) if i < seg else (x, y, z) for i, (x, y, z) in enumerate(m.v)]
+    for i, (x, y, z) in enumerate(m.v):
+        w = min(1.0, max(0.0, (top - y) / (top - rim_y)))
+        if w <= 0.0 or i >= len(m.v) - 1 and False:
+            continue
+        y2 = y + tilt_z * z * w
+        r0, r1 = head_radius_at(y), head_radius_at(y2)
+        g = thick + flare * w
+        m.v[i] = (x * (r1[0] + g) / (r0[0] + g), y2, z * (r1[1] + g) / (r0[1] + g))
     if back:  # a fold of cloth round the neck / shoulders
         neck = loft([(3.9, 0.7, 0.62), (4.12, 0.9, 0.82), (4.34, 0.88, 0.8)], seg=seg, n=n, caps=(True, True), phase=ph(S, seg),
                     color=TINT, smooth=S.smooth, tag="cloth")
@@ -392,9 +404,9 @@ def build_regalia(S, R):
     # cape: a back panel hanging from the shoulders to just above the hips (clears every leg swing); kingdom
     rx_of = lambda y: torso_r(y)[0] + 0.14
     rz_of = lambda y: torso_r(y)[1]
-    cape = panel(rx_of, rz_of, 2.4, 3.85, -0.88, 0.88, 0.1, front=False, nx=S.seg(4, 3), ny=2, off=0.1, flare=0.35, color=TINT,
+    cape = panel(rx_of, rz_of, 2.3, 3.85, -0.9, 0.9, 0.1, front=False, nx=S.seg(4, 3), ny=2, off=0.12, flare=0.5, color=TINT,
                  smooth=sm, tag="cloth")
-    cape.paint((0.72, 0.72, 0.72), where=lambda x, y, z: y < 2.78)
+    cape.paint((0.8, 0.8, 0.8), where=lambda x, y, z: y < 2.7)
     cape.paint((0.9, 0.9, 0.9), where=lambda x, y, z: y > 3.7)
     cape.h = [1.0] * len(cape.v)
     R.add("cape", cape, "Torso", "cape", "kingdom", weld="torso", tags=("governor",))

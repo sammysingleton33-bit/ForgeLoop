@@ -37,6 +37,7 @@ def parse(argv):
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--samples", type=int, default=0)
     ap.add_argument("--kaykit", default="", help="KayKit Adventurers pack root (read-only cache), option C")
+    ap.add_argument("--ground", default="", help="r,g,b 0-255 ground colour for the portrait view (neutral grey avoids the green bounce on skin)")
     ap.add_argument("--building", default="")
     ap.add_argument("--building-scale", type=float, default=25.0)
     return ap.parse_args(argv)
@@ -109,7 +110,7 @@ def main(argv):
     if a.view == "portrait":
         for job, face, hair, kingdom in CHARS:
             ckit_view.QUICK = quick
-            sc = ckit_view.stage(480, 480, a.samples or (16 if not quick else 6), quick=quick)
+            sc = ckit_view.stage(480, 480, a.samples or (16 if not quick else 6), ground=tuple(float(v) for v in a.ground.split(",")) if a.ground else ckit_view.GRASS, quick=quick)
             objs, top, hw = place_option(a.option, job, face, hair, kingdom, 0, 0, 0, state)
             cam = rig.add_camera(sc, 30)
             dist = ckit_scene.portrait(cam, top, hw)

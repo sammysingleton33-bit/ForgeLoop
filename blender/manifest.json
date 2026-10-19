@@ -7306,14 +7306,14 @@
       },
       "generator": "char_kit",
       "generator_version": 1,
-      "geometry_hash": "1fd8f4c974c8f988",
+      "geometry_hash": "2d83cd0a9e67a23a",
       "id": "char_kit_01",
       "kingdom": null,
       "kit": {
         "jobs": {
           "blacksmith": {
             "pieces_max": 11,
-            "tris_max": 658
+            "tris_max": 670
           },
           "builder": {
             "pieces_max": 12,
@@ -7368,7 +7368,7 @@
         "max_ruler_tris": 934,
         "pieces": 99,
         "style": "B",
-        "total_piece_tris": 6538
+        "total_piece_tris": 6550
       },
       "license": "project-original",
       "material": "M_charkit_vc",

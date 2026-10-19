@@ -40,16 +40,18 @@ def parse(argv):
     ap.add_argument("--target", default="")
     ap.add_argument("--dist", type=float, default=0.0)
     ap.add_argument("--pitch", type=float, default=0.0)
+    ap.add_argument("--az", type=float, default=0.0, help="camera azimuth about the target in degrees (180 = look at the backs)")
     ap.add_argument("--ground", default="", help="r,g,b 0-255 ground colour (default grass); a neutral grey stops the green bounce tinting skin in close-ups")
+    ap.add_argument("--silhouette", action="store_true", help="flat black figures on white (Workbench): judge the identity from the outline alone")
     ap.add_argument("--building", default="")
     ap.add_argument("--building-scale", type=float, default=25.0)
     return ap.parse_args(argv)
 
 
-def look_grid(n_skin=6):
-    """24 looks: columns vary skin; rows vary hair style / hair colour / outfit together."""
-    rows = [(1, 1, 1), (2, 5, 2), (3, 2, 3), (4, 7, 4), (5, 3, 5), (6, 8, 6), (2, 4, 1), (4, 6, 3)]
-    return [[{"skin": s + 1, "hair": h, "hairColor": hc, "outfit": o} for s in range(n_skin)] for (h, hc, o) in rows]
+def look_grid(rows=6, cols=6):
+    """rows x cols distinct looks: skin, hair style, hair colour and outfit all move together so no two neighbours match."""
+    return [[{"skin": 1 + (c + r) % 6, "hair": 1 + (c * 2 + r * 3) % 6, "hairColor": 1 + (c * 3 + r * 5) % 8, "outfit": 1 + (c + 2 * r) % 6}
+             for c in range(cols)] for r in range(rows)]
 
 
 def main(argv):
@@ -92,23 +94,29 @@ def main(argv):
         ckit_scene.gameplay(cam, (0, 2.8, 0), a.dist or 46.0, a.pitch or 12.0, fov=70)
     elif scene == "looks":
         grid = look_grid()
-        job = "idle"
+        jobs = ["idle", "idle", "idle", "idle", "farmer", "builder"]
         for r, row in enumerate(grid):
             for c, lk in enumerate(row):
-                x, z = (2.5 - c) * 5.2, r * 5.2
-                kit.spawn(job if r < 4 else "farmer", lk, "crimson", x, z, 0, tag=f"l{r}{c}_")
-        ckit_scene.gameplay(cam, (0, 2.0, 18.0), a.dist or 58.0, a.pitch or 38.0, fov=60)
+                kit.spawn(jobs[r], lk, "crimson", (2.5 - c) * 5.2, r * 5.6, 0, tag=f"l{r}{c}_")
+        ckit_scene.gameplay(cam, (0, 2.6, 12.0), a.dist or 36.0, a.pitch or 30.0, fov=48)
     elif scene == "kingdoms":
         for i, kd in enumerate(KINGDOMS):
             for r, job in enumerate(("soldier", "soldier_sword", "soldier_bow", "governor")):
                 kit.spawn(job, {"skin": 1 + (i + r) % 6, "hair": 1, "hairColor": 1, "outfit": 1}, kd, (1.5 - i) * 8.0, r * 7.0, 0, tag=f"{kd}{job}_")
-        ckit_scene.gameplay(cam, (0, 2.8, 10.0), a.dist or 56.0, a.pitch or 30.0, fov=60)
+        ckit_scene.gameplay(cam, (0, 2.8, 10.0), a.dist or 56.0, a.pitch or 30.0, az_deg=a.az, fov=60)
     elif scene == "poses":
         acts = [("idle", 0.0), ("walk", 12.0), ("carry", 8.0), ("work", 0.0), ("fight", 0.0), ("celebrate", 0.0), ("dead", 0.0)]
         job = a.target or "farmer"
         for i, (act, sp) in enumerate(acts):
             kit.spawn(job, None, "crimson", (3 - i) * 7.5, 0, 0, action=act, phase=0.25, speed=sp, tag=f"{act}_")
-        ckit_scene.gameplay(cam, (0, 2.8, 0), a.dist or 46.0, a.pitch or 12.0, fov=60)
+        ckit_scene.gameplay(cam, (0, 2.8, 0), a.dist or 46.0, a.pitch or 12.0, az_deg=a.az, fov=60)
+    elif scene == "turntable":
+        # one citizen seen from the front, right side, back and left side (yaw 0 / 90 / 180 / 270): shows capes, packs, quivers
+        job = a.target or "governor"
+        lk = ckit_rigload.job_look(JOBS.index(job) if job in JOBS else 0)
+        for i, yaw in enumerate((0, 90, 180, 270)):
+            kit.spawn(job, lk, "crimson", (1.5 - i) * 5.0, 0, yaw, tag=f"t{i}_")
+        ckit_scene.gameplay(cam, (0, 3.0, 0), a.dist or 21.0, a.pitch or 8.0, fov=60)
     elif scene == "portraits":
         # head and shoulders of every job (Kit.portrait framing), composed into one contact sheet
         from PIL import Image, ImageDraw
@@ -146,6 +154,16 @@ def main(argv):
         return
     else:
         raise SystemExit(f"unknown scene {scene}")
+    if a.silhouette:
+        sc.render.engine = "BLENDER_WORKBENCH"
+        sh = sc.display.shading
+        sh.light, sh.color_type, sh.single_color = "FLAT", "SINGLE", (0.02, 0.02, 0.02)
+        sh.show_shadows = sh.show_cavity = sh.show_object_outline = False
+        sh.background_type, sh.background_color = "VIEWPORT", (1.0, 1.0, 1.0)
+        sc.view_settings.view_transform = "Standard"
+        for ob in bpy.data.objects:
+            if ob.name == "forge_ground":
+                ob.hide_render = True
     rig.render(sc, a.out)
     print(f"[scenes] {scene} -> {a.out}", flush=True)
 

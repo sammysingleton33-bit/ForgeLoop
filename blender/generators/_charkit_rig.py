@@ -119,7 +119,7 @@ TINT_SHIFT = [0, -0.1, 0.08, -0.16, 0.12, -0.05, 0.05, -0.12]  # per (hairColor 
 # _l/_r side suffix
 KIT_TINT = {"sleeve_soldier": 0.85, "sleeve_robe": 0.72, "torso_tunic": 0.8, "torso_work": 0.85, "torso_jerkin": 1.0,
             "torso_sleeveless": 0.85, "torso_robe": 0.66, "torso_tabard": 1.0, "torso_regal": 1.0, "hat_hood": 0.72, "hat_ribbon": 0.85,
-            "hat_pompom": 0.85, "crown_cap": 0.9, "strap_kingdom": 0.85, "cape": 1.0, "tool_pennant": 0.9, "crest_crimson": 1.0,
+            "hat_pompom": 0.85, "crown_cap": 0.9, "strap_kingdom": 0.85, "cape": 0.58, "tool_pennant": 0.9, "crest_crimson": 1.0,
             "crest_azure": 1.0, "crest_emerald": 1.0, "crest_gold": 1.0, "shield_crimson": 0.9, "shield_azure": 0.9, "shield_emerald": 0.9,
             "shield_gold": 0.9, "neck_scarf": 0.8}
 
