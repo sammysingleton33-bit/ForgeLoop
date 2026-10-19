@@ -3,6 +3,7 @@
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
+local ArenaConfig = require("@game/ReplicatedStorage/Forge/Config/Arena")
 local Caps = require("@game/ReplicatedStorage/Game/Arena/Caps")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local HowToPlayDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/HowToPlayController")
@@ -88,18 +89,33 @@ describe("HowToPlayModel (pure)", function()
 	it("follows a changed config: phases, the newcomer lock and the support caps", function()
 		local pacing = {
 			modes = { quick = { Founding = 120, Expansion = 180, Conflict = 240, Endgame = 300 } },
-			arena = { duel = 60, intro = 60 },
 		}
 		local match = { mode = "quick", rulers = { newcomerLockSeconds = 45 } }
 		local caps = table.clone(Caps.NUMBERS)
 		caps.passivePerStat = 0.04
 		caps.maxTriggers = 2
-		local cards = HowToPlayModel.cards({ pacing = pacing, match = match, caps = caps })
+		local arena = { voteSeconds = 30, duelMaxSeconds = 90 }
+		local cards = HowToPlayModel.cards({ pacing = pacing, match = match, caps = caps, arena = arena })
 		expect(cards[1].body).toContain("Founding 2 min, Expansion 3 min, Conflict 4 min, Endgame 5 min")
 		expect(cards[1].body).toContain("about 2 min")
 		expect(cards[4].body).toContain("45 seconds")
 		expect(cards[5].body).toContain("+4%")
 		expect(cards[5].body).toContain("up to 2 short perks")
+	end)
+
+	it("the arena's length is config Arena's stages (what ArenaService runs), else Pacing.arena (#237)", function()
+		local total = 0
+		for _, key in HowToPlayModel.ARENA_STAGES do
+			total += ArenaConfig[key] or 0
+		end
+		expect(total).toBeGreaterThan(0)
+		local body = HowToPlayModel.cards()[1].body
+		expect(body).toContain(`about {math.floor(total / 60 + 0.5)} min`)
+		expect(body).never.toContain("a few min")
+		local fallback = HowToPlayModel.cards({ arena = {}, pacing = { modes = Pacing.modes, arena = { duel = 180 } } })
+		expect(fallback[1].body).toContain("about 3 min")
+		local none = HowToPlayModel.cards({ arena = {}, pacing = { modes = Pacing.modes } })
+		expect(none[1].body).toContain("a few min")
 	end)
 
 	it("lengths round to the nearest minute", function()

@@ -16,6 +16,8 @@ RUN = ["lune", "run", "roblox/tests/harness/run.luau", "--project", "games/game-
 M, V, K = U + "HowToPlayModel.luau", U + "HowToPlay.luau", C + "HowToPlayController.luau"
 H = "economy/HowToPlay"
 ROWS = [
+    ("arena ignores config Arena", M, "\t\tlocal s = c.arena[key]", "\t\tlocal s = nil", H, "config Arena's stages"),
+    ("no Pacing.arena fallback", M, "\t\tfor _, s in c.pacing.arena or {} do", "\t\tfor _, s in {} do", H, "config Arena's stages"),
     ("Crown Points copy drifts", M, "buildings, objectives, enemy units defeated and rival keeps taken", "buildings, land, objectives and raids", H,
      "sources the simulation has"),
     ("keys never bound", K, "\tself:_bind(open)", "\tself:_bind(false)", H, "through ContextActionService"),

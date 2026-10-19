@@ -5,8 +5,9 @@
 
 		HowToPlayModel.cards(cfg?) -> { Card }   six cards, in match order
 			Card = { id, title, icon, picture (an icon name drawn large), body (plain words, < WORD_LIMIT words) }
-			cfg = { pacing, match, caps } (defaults: config Pacing, config Match, Arena/Caps), so every number is the
-			game's own: the phase lengths of Match.mode from Pacing (else Match.durations), the arena's stage lengths,
+			cfg = { pacing, match, caps, arena } (defaults: config Pacing, config Match, Arena/Caps, config Arena), so
+			every number is the game's own: the phase lengths of Match.mode from Pacing (else Match.durations), the
+			arena's length from config Arena's stage seconds (what ArenaService runs; else Pacing.arena),
 			the newcomer lock and the support caps. Nothing here is bought or sold (D-053: no monetization).
 		HowToPlayModel.phases(cfg?) -> string   "Founding 8 min, Expansion 12 min, Conflict 15 min, Endgame 10 min"
 		HowToPlayModel.words(s) -> number        the word count a spec checks
@@ -15,6 +16,7 @@
 	repeat FORGE-04's in-match tips (FL-0137) word for word: the cards explain the rules, the tips point at buttons.
 ]]
 
+local ArenaConfig = require("@game/ReplicatedStorage/Forge/Config/Arena")
 local Caps = require("@game/ReplicatedStorage/Game/Arena/Caps")
 local Match = require("@game/ReplicatedStorage/Forge/Config/Match")
 local Pacing = require("@game/ReplicatedStorage/Forge/Config/Pacing")
@@ -26,7 +28,12 @@ HowToPlayModel.PHASES = table.freeze({ "Founding", "Expansion", "Conflict", "End
 
 local function defaults(cfg: any?): any
 	local c = cfg or {}
-	return { pacing = c.pacing or Pacing, match = c.match or Match, caps = c.caps or Caps.NUMBERS }
+	return {
+		pacing = c.pacing or Pacing,
+		match = c.match or Match,
+		caps = c.caps or Caps.NUMBERS,
+		arena = c.arena or ArenaConfig,
+	}
 end
 
 local function durations(c: any): { [string]: number }
@@ -53,10 +60,22 @@ function HowToPlayModel.phases(cfg: any?): string
 	return table.concat(parts, ", ")
 end
 
+-- The stages ArenaService runs (config Arena, FORGE-01): vote, loadout, intro, the duel's safety clock, crowning.
+HowToPlayModel.ARENA_STAGES =
+	table.freeze({ "voteSeconds", "loadoutSeconds", "introSeconds", "duelMaxSeconds", "crowningSeconds" })
+
 local function arenaMinutes(c: any): string
 	local total = 0
-	for _, s in c.pacing.arena or {} do
-		total += s
+	for _, key in HowToPlayModel.ARENA_STAGES do
+		local s = c.arena[key]
+		if type(s) == "number" then
+			total += s
+		end
+	end
+	if total <= 0 then -- no config Arena stages: the older Pacing.arena table, when it is there
+		for _, s in c.pacing.arena or {} do
+			total += s
+		end
 	end
 	return minutes(total) or "a few min"
 end
