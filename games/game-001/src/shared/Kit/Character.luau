@@ -77,10 +77,12 @@ Soldier kingdom crest (CONTRACTS G13.2, D-033(3)): Kit.character(kind, job, king
 	friend and foe read apart without colour: crimson a tall pointed spire (CornerWedgePart turned 45°, point at
 	the front), azure a wide flat square plate overhanging the helm (Block), emerald an UPRIGHT plume fin along the
 	helm (WedgePart, high at the back: a cylinder swept back read as a cannon), gold a dome cap (a Ball 1.8 sunk into
-	the helm top so it covers and overhangs the helm). One primitive each, welded to the Head as `Hair` (D-032, so still
-	≤ 9 parts) with KitHeadwear "crest_spire" | "crest_square" | "crest_plume" | "crest_dome" and the kingdom
-	colour (KitTint 1). Without a kingdom, or with an unknown one, soldiers keep the plain helm (8 parts);
-	citizens and governors ignore it. Character.CRESTS maps KingdomId → crest name.
+	the helm top so it covers and overhangs the helm). One primitive each, welded to the Head as `Hair` (D-032): a soldier is
+	9 base parts with the crest and 11 with its two D-048 detail parts (the knight and the archer too: measured 11 in every
+	kingdom). With KitHeadwear "crest_spire" | "crest_square" | "crest_plume" | "crest_dome" and the kingdom colour
+	(KitTint 1). Without a kingdom, or with an unknown one, soldiers keep the plain helm (8 base parts, 10 with the details; a
+	knight without a kingdom has no shield mark: 9); citizens and governors ignore it. Character.CRESTS maps KingdomId →
+	crest name.
 
 	Looks (G13.2): CitizenLook = { skin, hair, hairColor, outfit }, 1-based indices into LOOK_RANGES. Any value
 	is accepted: non-numbers, NaN and ±inf fall back to the default index; other numbers are floored and

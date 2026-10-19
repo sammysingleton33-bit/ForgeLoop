@@ -10,6 +10,13 @@
 	                FRONT face and wholly inside that wall block (nothing overhangs a silhouette); a gate keeps one broken leaf
 	                at 0.9, a gate's two tower caps stay identical (a cap falls whole or not at all);
 	  2. repair     deterministic, idempotent and reversible in any order: a repaired model is exactly the model as built;
+	  2b. frames    damage is worked out in the model's OWN frame (the pivot): a model turned (90, 180 degrees) or moved (to any
+	                height, with WorldView.placeModel) before it is damaged is damaged exactly like one at the origin, a model
+	                moved after it is damaged takes its marks, its rubble and the parts it lost along (repair puts every part back
+	                exactly in place at the new spot), rubble stands on the model's base plane at any height, every wall and gate
+	                level of the four kingdoms stays inside the model's own bounds with at most 14 extra parts, the L1 palisade's
+	                marks are spread over its logs and posts, each wholly inside one and below its top, and a level the Kit does
+	                not have (a wall asked for at level 5) is damaged like the level it really is;
 	  3. burning    the Burning attribute and the model's top are untouched (FORGE-04's Burning look reads both), every mark
 	                stays inside the model;
 	  4. recolour   Kit.setKingdomColor works on damaged models and on the parts waiting for a repair;
@@ -21,6 +28,7 @@ local describe, it = T.describe, T.it
 
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Damage = require("@game/ReplicatedStorage/Game/Kit/Damage")
+local WorldView = require("@game/ReplicatedStorage/Game/Sim/WorldView")
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 
 local CANON: { [string]: Color3 } = {}
@@ -147,8 +155,18 @@ end
 for _, bt in { "keep", "house", "wall", "gate" } do
 	table.insert(FULL, { bt, MAX_LEVEL[bt] or 2, "emerald" })
 end
-local QUICK =
-	{ { "house", 2, "crimson" }, { "wall", 2, "crimson" }, { "watchtower", 2, "crimson" }, { "gate", 3, "crimson" } }
+-- the lower wall and gate levels too: the L1 palisade (logs and posts, no wall block) is the odd one out
+for _, e in { { "wall", 1, "crimson" }, { "wall", 2, "crimson" }, { "gate", 1, "crimson" }, { "gate", 2, "crimson" } } do
+	table.insert(FULL, e)
+end
+local QUICK = {
+	{ "house", 2, "crimson" },
+	{ "wall", 2, "crimson" },
+	{ "wall", 2, "azure" }, -- a pale wall: a mark in its own colour is not "within 0.06" of it
+	{ "wall", 1, "crimson" }, -- the palisade: marks on logs and posts, at the floor of the mark colours
+	{ "watchtower", 2, "crimson" },
+	{ "gate", 3, "crimson" },
+}
 
 local function damaged(bt: string, lv: number, hue: string, d: any): Model
 	local m = Kit.build(bt, lv, "complete", CANON[hue])
@@ -357,18 +375,21 @@ CHECKS.damage = function(quick: boolean?)
 				local supports: { BasePart } = {} -- the wall blocks a mark may sit on: upright blocks at least 3 tall, not a plinth
 				local standIn = m:GetAttribute("KitStandIn") == true -- the VS-2 stand-ins (mine, market, granary, shrine) have posts, not walls
 				for _, q in parts(m) do
-					if
-						not standIn
-						and q:GetAttribute("KitDamage") ~= true
-						and q:IsA("Part")
-						and (q :: Part).Shape == Enum.PartType.Block
-						and q.Size.Y >= 3
-						and q.Name ~= "Plinth"
-						and q.Transparency < 1
-						and math.abs(q.CFrame.UpVector.Y) > 0.99
-						and math.abs(q.CFrame.LookVector.Z) > 0.99
-					then
-						table.insert(supports, q)
+					if not standIn and q:GetAttribute("KitDamage") ~= true and q:IsA("Part") and q.Transparency < 1 then
+						local shape = (q :: Part).Shape
+						if q.Name == "Palisade" then -- the L1 palisade's logs: vertical cylinders, a mark sits inside one
+							if shape == Enum.PartType.Cylinder then
+								table.insert(supports, q)
+							end
+						elseif
+							shape == Enum.PartType.Block
+							and q.Size.Y >= 3
+							and q.Name ~= "Plinth"
+							and math.abs(q.CFrame.UpVector.Y) > 0.99
+							and math.abs(q.CFrame.LookVector.Z) > 0.99
+						then
+							table.insert(supports, q)
+						end
 					end
 				end
 				for _, p in m:GetChildren() do
@@ -386,12 +407,16 @@ CHECKS.damage = function(quick: boolean?)
 							and p.Material ~= Enum.Material.Glass
 						if kind == "breach" or kind == "crack" or kind == "chip" then
 							local sizeOk = if kind == "breach"
-								then p.Size.Z <= 0.12 and p.Size.X >= 1.5 and p.Size.Y <= 4.4
+								then p.Size.Z <= 0.12 and p.Size.X >= 0.6 and p.Size.Y <= 4.4
 								elseif kind == "crack" then p.Size.Z <= 0.1 and p.Size.X <= 0.2
 								else p.Size.X <= 1.5 and p.Size.Y <= 1.1 and p.Size.Z <= 0.5
+							-- the floor of the marks on an untinted wall: no channel under (44,40,36) / 255 (a spec pins it so that a
+							-- floor lowered towards black is caught: the palisade's posts are dark enough to sit on it)
+							local underFloor = p:GetAttribute("KitTint") == nil
+								and (c.R * 255 < 43.5 or c.G * 255 < 39.5 or c.B * 255 < 35.5)
 							if shapeOf(p) ~= "box" or p.ClassName ~= "Part" or not sizeOk then
 								table.insert(out, `{stag}: a {kind} is not a thin box of the right size`)
-							elseif not (notBlack and lit) then
+							elseif not (notBlack and lit) or underFloor then
 								table.insert(out, `{stag}: a {kind} is black, glowing or see-through`)
 							elseif math.abs(p.CFrame.LookVector.Z) < 0.99 then
 								table.insert(out, `{stag}: a {kind} is not on the front face`)
@@ -416,9 +441,14 @@ CHECKS.damage = function(quick: boolean?)
 									then
 										ok = true
 										local ratio = lum / math.max(luminance(sup.Color), 1e-3)
+										-- a light wall's mark must be in the band by ratio; only a wall so dark that the marks' floor
+										-- (44,40,36) keeps them from the band (the palisade's posts) may be within 0.06 of it
 										band = band
 											or (ratio >= lo and ratio <= hi)
-											or math.abs(lum - luminance(sup.Color)) < 0.06
+											or (
+												luminance(sup.Color) < 0.25
+												and math.abs(lum - luminance(sup.Color)) < 0.06
+											)
 									end
 								end
 								if not ok then
@@ -577,6 +607,444 @@ CHECKS.damage = function(quick: boolean?)
 	return out
 end
 
+-- ------------------------------------------------------------------ 7. frames: turned, moved, at any height
+
+local function pivotOf(m: Model): CFrame
+	local root = m.PrimaryPart :: BasePart
+	return root.CFrame * root.PivotOffset
+end
+
+-- every part of a model in the model's OWN frame (its pivot), bucketed by what it is (name, shape, size, colour, material, damage
+-- kind): the same damaged model gives the same buckets wherever it stands. CFrames are 32-bit floats in Roblox (and in the Lune
+-- mock), so two placements of one model differ in the last digits: buckets are compared with a tolerance, not as text.
+type Rows = { [string]: { { number } } }
+local function frameRows(model: Model, world: boolean?): Rows
+	local inv = if world then CFrame.new() else pivotOf(model):Inverse()
+	local rows: Rows = {}
+	for _, p in parts(model) do
+		local shape = if p:IsA("Part") then (p :: Part).Shape.Name else p.ClassName
+		local s = p.Size
+		local key = `{p.Name}|{shape}|{r3(s.X)},{r3(s.Y)},{r3(s.Z)}|{p.Color:ToHex()}|{p.Material.Name}|{p:GetAttribute(
+			"KitDamageKind"
+		)}`
+		rows[key] = rows[key] or {}
+		table.insert(rows[key], { (inv * p.CFrame):GetComponents() })
+	end
+	return rows
+end
+
+-- nil when the two are the same parts in the same places (within 0.002), else what differs first
+local function rowsDiff(a: Rows, b: Rows): string?
+	for key, list in a do
+		local other = b[key]
+		if other == nil or #other ~= #list then
+			return `{key}: {#list} here, {if other then #other else 0} there`
+		end
+		local free = table.clone(other)
+		for _, comps in list do
+			local at = nil
+			for i, cand in free do
+				local same = true
+				for j = 1, 12 do
+					if math.abs(cand[j] - comps[j]) > 0.002 then
+						same = false
+						break
+					end
+				end
+				if same then
+					at = i
+					break
+				end
+			end
+			if at == nil then
+				local c = comps
+				return `{key}: nothing there at ({r3(c[1])}, {r3(c[2])}, {r3(c[3])})`
+			end
+			table.remove(free, at)
+		end
+	end
+	for key, other in b do
+		if a[key] == nil then
+			return `{key}: {#other} there, none here`
+		end
+	end
+	return nil
+end
+
+-- WorldView.placeModel is what puts every building in the world: the pivot lands on the CFrame, parts parked off the model stay
+local function moveTo(m: Model, at: Vector3, yawDeg: number)
+	WorldView.placeModel(m, CFrame.new(at) * CFrame.Angles(0, math.rad(yawDeg), 0))
+end
+
+-- { type, level, kingdom, every state and both turns }: the wall and gate levels are the ones that matter, the other types at their top
+-- level get one turn and two states
+local FRAMES_QUICK: { { any } } = {
+	{ "wall", 1, "crimson", true },
+	{ "wall", 2, "crimson", true },
+	{ "gate", 2, "crimson", true },
+	{ "watchtower", 2, "crimson", false },
+	{ "keep", 1, "crimson", false },
+}
+local FRAMES_FULL: { { any } } = {}
+for _, hue in { "crimson", "azure", "emerald", "gold" } do
+	for lv = 1, 3 do
+		table.insert(FRAMES_FULL, { "wall", lv, hue, true })
+		table.insert(FRAMES_FULL, { "gate", lv, hue, true })
+	end
+end
+for _, bt in Kit.BUILDING_TYPES do
+	if bt ~= "wall" and bt ~= "gate" then
+		table.insert(FRAMES_FULL, { bt, MAX_LEVEL[bt] or 2, "crimson", false })
+	end
+end
+table.insert(FRAMES_FULL, { "keep", 1, "crimson", false })
+table.insert(FRAMES_FULL, { "keep", 2, "crimson", false })
+
+CHECKS.frames = function(quick: boolean?)
+	local out: { string } = {}
+	-- a first spot 40 studs up and a second well off the origin, each with its own turn
+	local spots = { Vector3.new(123.4, 40, -77.7), Vector3.new(-310.25, 3.5, 58.1) }
+	for _, e in if quick then FRAMES_QUICK else FRAMES_FULL do
+		local bt, lv, hue, every = e[1], e[2], e[3], e[4]
+		local yaws = if every and not quick then { 90, 180 } else { 90 }
+		local states = if every and not quick then { 1, 2, 3, 4 } else { 2, 4 }
+		local tag = `{bt} L{lv} {hue}`
+		local base = Kit.build(bt, lv, "complete", CANON[hue])
+		local baseRows = frameRows(base)
+		-- the bounds the damage parts must stay inside, in the model's own frame: the as-built extent of the visible parts
+		-- (x and y), a little in front for the rubble and the chips (z), and nothing above the top or below the base plane
+		local lo, hi = Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
+		for _, p in parts(base) do
+			if p ~= base.PrimaryPart and p.Transparency < 1 then
+				local c, h = p.CFrame.Position, halfExtents(p)
+				lo, hi = lo:Min(c - h), hi:Max(c + h)
+			end
+		end
+		for si, s in states do
+			local d = STATE_AT[s]
+			local stag = `{tag} state {s}`
+			local ref = damaged(bt, lv, hue, d)
+			local refRows = frameRows(ref)
+			-- the budget, and the bounds (every damage part, in the model's own frame)
+			if extras(ref) > Damage.MAX_EXTRA_PARTS then
+				table.insert(out, `{stag}: {extras(ref)} extra parts (cap {Damage.MAX_EXTRA_PARTS})`)
+			end
+			for _, p in ref:GetChildren() do
+				if p:IsA("BasePart") and p:GetAttribute("KitDamage") == true then
+					local c, h = p.CFrame.Position, halfExtents(p)
+					local kind = p:GetAttribute("KitDamageKind")
+					-- breaches, cracks, chips and the broken leaf lie inside the box of the model as built; rubble (the foot of the
+					-- corner, in front) and the stump may reach 0.6 past a side, rubble 4 in front; nothing above the top or under
+					-- the base plane
+					local out2 = if kind == "rubble" or kind == "stump" then 0.6 else 0.01
+					local front = if kind == "rubble" then 4 else 0.01
+					if
+						c.X - h.X < lo.X - out2
+						or c.X + h.X > hi.X + out2
+						or c.Y - h.Y < -0.3
+						or c.Y + h.Y > hi.Y + 1e-3
+						or c.Z - h.Z < lo.Z - front
+						or c.Z + h.Z > hi.Z + 0.01
+					then
+						table.insert(
+							out,
+							`{stag}: a {p:GetAttribute("KitDamageKind")} lies outside the model's own bounds ({r3(c.X)}, {r3(
+								c.Y
+							)}, {r3(c.Z)})`
+						)
+					end
+				end
+			end
+			-- plain repair, the model not moved: exactly the model as built (every wall and gate level, four kingdoms, every state)
+			do
+				local fixed = damaged(bt, lv, hue, d)
+				fixed:SetAttribute("Damage", 0)
+				Kit.applyDamage(fixed)
+				local left = rowsDiff(baseRows, frameRows(fixed))
+				if left or count(fixed) ~= count(base) or #Damage.stashed(fixed) > 0 then
+					table.insert(
+						out,
+						`{stag}: repair does not restore the model exactly ({left or "parts left parked or doubled"})`
+					)
+				end
+			end
+			-- turned (and moved to another height) BEFORE the damage: exactly the damage of the model at the origin
+			for i, yaw in yaws do
+				local at = spots[i]
+				local t = Kit.build(bt, lv, "complete", CANON[hue])
+				moveTo(t, at, yaw)
+				t:SetAttribute("Damage", d)
+				Kit.applyDamage(t)
+				local diff = rowsDiff(refRows, frameRows(t))
+				if diff then
+					table.insert(
+						out,
+						`{stag}: turned {yaw} degrees and moved to y {at.Y}, the damage differs in the model's own frame ({diff})`
+					)
+				end
+				-- rubble stands on the model's base plane wherever that is (y = 40 for the first spot)
+				for _, p in t:GetChildren() do
+					if p:IsA("BasePart") and p:GetAttribute("KitDamageKind") == "rubble" then
+						local bottom = p.CFrame.Position.Y - p.Size.Y / 2
+						if math.abs(bottom - (at.Y - 0.2)) > 0.01 then
+							table.insert(
+								out,
+								`{stag}: rubble rests at world y {r3(bottom)}, not on the base plane ({r3(at.Y - 0.2)})`
+							)
+							break
+						end
+					end
+				end
+				-- the repair after that move is exactly the model as built
+				t:SetAttribute("Damage", 0)
+				Kit.applyDamage(t)
+				if rowsDiff(baseRows, frameRows(t)) then
+					table.insert(out, `{stag}: repair after the turn does not restore the model exactly`)
+				end
+			end
+			-- moved AFTER the damage: the marks, the rubble and the parts that were taken off all follow the model
+			local m = damaged(bt, lv, hue, d)
+			moveTo(m, spots[1], yaws[1])
+			if rowsDiff(refRows, frameRows(m)) then
+				table.insert(out, `{stag}: the damage did not follow the model when it was moved`)
+			end
+			m:SetAttribute("Damage", 0)
+			Kit.applyDamage(m)
+			local back = rowsDiff(baseRows, frameRows(m))
+			if back then
+				table.insert(out, `{stag}: repair after a move leaves parts behind ({back})`)
+			end
+			local other = states[1 + si % #states]
+			-- the G13.9 move (WorldView.placeModel on a damaged building: FORGE-04's FL-0143): damaged, moved to a new place AND a
+			-- new yaw, repaired: EVERY part is where it is in a pristine copy moved the same way, in world CFrames (nothing left
+			-- at the old place, nothing doubled); then damaged again at another state in the new place: the same as a copy moved
+			-- the same way and damaged at that state
+			do
+				local pristine = Kit.build(bt, lv, "complete", CANON[hue])
+				moveTo(pristine, spots[2], yaws[#yaws])
+				local mv = damaged(bt, lv, hue, d)
+				moveTo(mv, spots[2], yaws[#yaws])
+				mv:SetAttribute("Damage", 0)
+				Kit.applyDamage(mv)
+				local drift = rowsDiff(frameRows(pristine, true), frameRows(mv, true))
+				if drift then
+					table.insert(
+						out,
+						`{stag}: after a move and a repair a part is not where the pristine copy has it ({drift})`
+					)
+				end
+				if count(mv) ~= count(pristine) or #Damage.stashed(mv) > 0 then
+					table.insert(
+						out,
+						`{stag}: after a move and a repair the model has {count(mv)} parts (pristine {count(pristine)}) and {#Damage.stashed(
+							mv
+						)} still parked`
+					)
+				end
+				mv:SetAttribute("Damage", STATE_AT[other])
+				Kit.applyDamage(mv)
+				local twin = Kit.build(bt, lv, "complete", CANON[hue])
+				moveTo(twin, spots[2], yaws[#yaws])
+				twin:SetAttribute("Damage", STATE_AT[other])
+				Kit.applyDamage(twin)
+				local again = rowsDiff(frameRows(twin, true), frameRows(mv, true))
+				if again then
+					table.insert(out, `{stag}: damaged again at state {other} after a move and a repair ({again})`)
+				end
+			end
+			-- moved twice, then damaged again at another state: the same as a fresh model at that state
+			local m2 = damaged(bt, lv, hue, d)
+			moveTo(m2, spots[1], yaws[1])
+			moveTo(m2, spots[2], yaws[#yaws])
+			m2:SetAttribute("Damage", STATE_AT[other])
+			Kit.applyDamage(m2)
+			local again = rowsDiff(frameRows(damaged(bt, lv, hue, STATE_AT[other])), frameRows(m2))
+			if again then
+				table.insert(
+					out,
+					`{stag}: after two moves, state {other} differs from a fresh model at that state ({again})`
+				)
+			end
+		end
+		-- a gate opened while a leaf is out, then moved and repaired: the open gate, in place
+		if bt == "gate" then
+			local g = damaged(bt, lv, hue, 0.3)
+			Kit.setGateOpen(g, true)
+			moveTo(g, spots[1], yaws[1])
+			g:SetAttribute("Damage", 0)
+			Kit.applyDamage(g)
+			local ref = Kit.build(bt, lv, "complete", CANON[hue])
+			Kit.setGateOpen(ref, true)
+			if rowsDiff(frameRows(ref), frameRows(g)) then
+				table.insert(
+					out,
+					`{tag}: a gate opened and moved while a leaf was out does not repair to the open gate`
+				)
+			end
+		end
+	end
+	-- re-dressing a model turned a quarter turn (or half): every damage part stays inside the footprint, in the model's own
+	-- frame, at every state it is re-dressed to (a world-axes damage drops rubble outside it): the sides and the back strictly,
+	-- the front no more than 2 studs beyond (the Kit's own allowance for entrance steps; only rubble goes that far)
+	local footEntries = if quick
+		then { { "keep", 1 }, { "wall", 2 } }
+		else {
+			{ "keep", 1 },
+			{ "keep", 2 },
+			{ "keep", 3 },
+			{ "wall", 1 },
+			{ "wall", 2 },
+			{ "wall", 3 },
+			{ "gate", 1 },
+			{ "gate", 3 },
+			{ "watchtower", 1 },
+			{ "watchtower", 2 },
+			{ "house", 1 },
+			{ "house", 2 },
+		}
+	for _, e in footEntries do
+		local bt, lv = e[1], e[2]
+		local fp = Kit.footprint(bt, lv)
+		for yi, yaw in if quick then { 90, 270 } else { 90, 180, 270 } do
+			local t = Kit.build(bt, lv, "complete", CANON.crimson)
+			moveTo(t, spots[1 + yi % 2], yaw)
+			local inv = pivotOf(t):Inverse()
+			for _, d in if quick then { 0.6, 0.97 } else { 0.3, 0.97, 0.6, 0.75, 0, 0.5, 0.95 } do
+				t:SetAttribute("Damage", d)
+				Kit.applyDamage(t)
+				for _, p in t:GetChildren() do
+					local kind = p:GetAttribute("KitDamageKind")
+					if p:IsA("BasePart") and kind ~= nil then
+						local cf = inv * p.CFrame
+						local lc = cf.Position
+						-- the half extents in the model's frame
+						local r, u, l = cf.RightVector, cf.UpVector, cf.LookVector
+						local hx = (math.abs(r.X) * p.Size.X + math.abs(u.X) * p.Size.Y + math.abs(l.X) * p.Size.Z) / 2
+						local hz = (math.abs(r.Z) * p.Size.X + math.abs(u.Z) * p.Size.Y + math.abs(l.Z) * p.Size.Z) / 2
+						local front = if kind == "rubble" then 2.05 else 0.05
+						if
+							math.abs(lc.X) + hx > fp.X / 2 + 0.05
+							or lc.Z - hz < -fp.Y / 2 - front
+							or lc.Z + hz > fp.Y / 2 + 0.05
+						then
+							table.insert(
+								out,
+								`{bt} L{lv} turned {yaw}, re-dressed to Damage {d}: a {kind} lies outside the footprint {fp.X}x{fp.Y} (x {r3(
+									lc.X
+								)} +-{r3(hx)}, z {r3(lc.Z)} +-{r3(hz)})`
+							)
+						end
+					end
+				end
+			end
+		end
+	end
+	-- the L1 palisade: its marks are spread over its logs and posts, each wholly inside one and below its top
+	for _, hue in if quick then { "crimson" } else { "crimson", "azure", "emerald", "gold" } do
+		for _, s in { 1, 2, 3, 4 } do
+			local m = damaged("wall", 1, hue, STATE_AT[s])
+			local stag = `palisade {hue} state {s}`
+			local supports: { BasePart } = {}
+			for _, p in parts(m) do
+				if p.Name == "Palisade" or p.Name == "PalisadePost" then
+					table.insert(supports, p)
+				end
+			end
+			local used: { [BasePart]: boolean } = {}
+			local nMarks = 0
+			for _, p in m:GetChildren() do
+				local kind = p:GetAttribute("KitDamageKind")
+				if p:IsA("BasePart") and (kind == "breach" or kind == "crack" or kind == "chip") then
+					local pe, cp = halfExtents(p), p.CFrame.Position
+					local home: BasePart? = nil
+					for _, sup in supports do
+						local se, sp = halfExtents(sup), sup.CFrame.Position
+						if
+							math.abs(cp.X - sp.X) + pe.X <= se.X + 0.05
+							and cp.Y + pe.Y <= sp.Y + se.Y - 0.05
+							and cp.Y - pe.Y >= sp.Y - se.Y
+							and cp.Z < sp.Z - se.Z + 0.2
+							and cp.Z > sp.Z - se.Z - 0.8
+						then
+							home = sup
+							break
+						end
+					end
+					if home == nil then
+						table.insert(
+							out,
+							`{stag}: a {kind} is not wholly inside a log or a post, below its top ({r3(cp.X)}, {r3(cp.Y)})`
+						)
+					elseif kind ~= "chip" then
+						used[home] = true
+						nMarks += 1
+					end
+				end
+			end
+			local distinct = 0
+			for _ in used do
+				distinct += 1
+			end
+			if nMarks >= 2 and distinct < 2 then
+				table.insert(out, `{stag}: all {nMarks} marks are on one log or post`)
+			end
+		end
+	end
+	return out
+end
+
+-- the level a model stores is the level that was built: a level the Kit does not have is the highest it has (or 1), and the
+-- damage of a wall asked for at level 5 is that of the level 3 wall
+local TOP_LEVEL = {
+	keep = 3,
+	house = 2,
+	farm = 3,
+	storehouse = 2,
+	lumbercamp = 3,
+	quarry = 3,
+	barracks = 4,
+	watchtower = 2,
+	wall = 3,
+	gate = 3,
+	mine = 1,
+	blacksmith = 1,
+	market = 1,
+	infirmary = 1,
+	granary = 1,
+	shrine = 1,
+}
+CHECKS.level = function()
+	local out: { string } = {}
+	for _, bt in Kit.BUILDING_TYPES do
+		for _, asked in { -3, 0, 0.5, 1, 2, 3, 4, 5, 99, 2.7, 0 / 0 } do
+			local want = if asked ~= asked then 1 else math.clamp(math.floor(asked), 1, TOP_LEVEL[bt])
+			local m = Kit.build(bt, asked, "complete", CANON.crimson)
+			if m:GetAttribute("KitLevel") ~= want then
+				table.insert(
+					out,
+					`{bt} asked for level {asked} stores KitLevel {m:GetAttribute("KitLevel")}, want {want}`
+				)
+			end
+		end
+	end
+	for _, e in
+		{
+			{ "wall", 5, 3 },
+			{ "gate", 9, 3 },
+			{ "keep", 7, 3 },
+			{ "barracks", 8, 4 },
+			{ "house", 5, 2 },
+			{ "wall", 0, 1 },
+		}
+	do
+		local a, b = damaged(e[1], e[2], "crimson", 0.97), damaged(e[1], e[3], "crimson", 0.97)
+		if signature(a) ~= signature(b) then
+			table.insert(out, `{e[1]} asked for level {e[2]} is not damaged like level {e[3]}`)
+		end
+	end
+	return out
+end
+
 -- ------------------------------------------------------------------ the spec
 
 local function expectClean(list: { string })
@@ -589,6 +1057,12 @@ describe("Damage states (FL-0128)", function()
 	it("adds and removes exactly the documented parts, deterministically and reversibly", function()
 		expectClean(CHECKS.damage())
 	end)
+	it("works in the model's own frame: turned, moved and at any height, and every wall and gate level", function()
+		expectClean(CHECKS.frames())
+	end)
+	it("damages a level the Kit does not have like the level it really is", function()
+		expectClean(CHECKS.level())
+	end)
 end)
 
 -- ------------------------------------------------------------------ mutants
@@ -599,12 +1073,14 @@ describe("Damage mutants are caught", function()
 		applyDamage = Kit.applyDamage,
 		setKingdomColor = Kit.setKingdomColor,
 		stashed = Damage.stashed,
+		frameOf = Damage.frameOf,
 	}
 	local function restore()
 		Kit.build = original.build
 		Kit.applyDamage = original.applyDamage
 		Kit.setKingdomColor = original.setKingdomColor
 		Damage.stashed = original.stashed
+		Damage.frameOf = original.frameOf
 	end
 	local function caught(name: string, by: string, mutate: () -> ())
 		it(`catches: {name} (by {by})`, function()
@@ -620,9 +1096,10 @@ describe("Damage mutants are caught", function()
 		end)
 	end
 	it("passes unmutated (the baseline)", function()
-		for _, name in { "damage" } do
+		for _, name in { "damage", "level" } do
 			expectClean(CHECKS[name]())
 		end
+		expectClean(CHECKS.frames(true))
 	end)
 
 	caught("applyDamage does nothing", "damage", function()
@@ -749,6 +1226,32 @@ describe("Damage mutants are caught", function()
 			original.applyDamage(m)
 			eachMark(m, { "chip" }, function(p)
 				p.Color = Color3.new(p.Color.R * 0.55, p.Color.G * 0.55, p.Color.B * 0.55)
+			end)
+		end
+	end)
+	caught("a pale wall's breach is the wall's own colour (it hides as 'within 0.06')", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			local wall: BasePart? = nil
+			for _, p in m:GetChildren() do
+				if p:IsA("BasePart") and (p.Name == "Curtain" or p.Name == "Walls") then
+					wall = p
+				end
+			end
+			if wall then
+				eachMark(m, { "breach" }, function(p)
+					p.Color = (wall :: BasePart).Color
+				end)
+			end
+		end
+	end)
+	caught("the floor of the mark colours is lowered a little (41,38,34 on a dark post)", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "breach", "crack" }, function(p)
+				if p.Color.R * 255 < 47 and p.Color.R * 255 > 43.5 then
+					p.Color = Color3.fromRGB(41, 38, 34)
+				end
 			end)
 		end
 	end)
@@ -894,4 +1397,77 @@ describe("Damage mutants are caught", function()
 			return m
 		end
 	end)
+
+	-- the frame rules: a building is damaged in its own frame, wherever it stands and however it is turned
+	caught("the damage is worked out on the world axes (a turned building is damaged on its back)", "frames", function()
+		Damage.frameOf = function()
+			return CFrame.new()
+		end
+	end)
+	caught("the parts it takes off wait at absolute CFrames (a move leaves them behind)", "frames", function()
+		local at: { [BasePart]: CFrame } = {}
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			for _, p in Damage.stashed(m) do
+				if at[p] == nil then
+					at[p] = p.CFrame
+				end
+			end
+			for p, cf in at do
+				if p.Parent == m then
+					p.CFrame = cf
+					at[p] = nil
+				end
+			end
+		end
+	end)
+	caught(
+		"the rubble lies at world y = size / 2 - 0.2 (a model standing at y 40 gets it underground)",
+		"frames",
+		function()
+			Kit.applyDamage = function(m)
+				original.applyDamage(m)
+				for _, p in m:GetChildren() do
+					if p:IsA("BasePart") and p:GetAttribute("KitDamageKind") == "rubble" then
+						local cf = p.CFrame
+						p.CFrame = CFrame.new(cf.X, p.Size.Y / 2 - 0.2, cf.Z) * (cf - cf.Position)
+					end
+				end
+			end
+		end
+	)
+	caught("every mark of the palisade sits on one log", "frames", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			local x0: number? = nil
+			for _, p in m:GetChildren() do
+				local kind = p:GetAttribute("KitDamageKind")
+				if p:IsA("BasePart") and (kind == "breach" or kind == "crack" or kind == "chip") then
+					x0 = x0 or p.CFrame.X
+					p.CFrame = p.CFrame + Vector3.new((x0 :: number) - p.CFrame.X, 0, 0)
+				end
+			end
+		end
+	end)
+	caught("a palisade mark pokes out above its log", "frames", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			for _, p in m:GetChildren() do
+				if p:IsA("BasePart") and p:GetAttribute("KitDamageKind") == "breach" then
+					p.CFrame = p.CFrame + Vector3.new(0, 30, 0)
+				end
+			end
+		end
+	end)
+	caught(
+		"KitLevel stores the level that was asked for (a wall asked for at level 5 is not a level 3 wall)",
+		"level",
+		function()
+			Kit.build = function(bt, lv, ...)
+				local m = original.build(bt, lv, ...)
+				m:SetAttribute("KitLevel", lv)
+				return m
+			end
+		end
+	)
 end)

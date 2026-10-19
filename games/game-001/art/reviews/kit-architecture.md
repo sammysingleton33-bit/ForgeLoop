@@ -658,7 +658,7 @@ Unchanged: `kit_fl0128_tower_ram.jpg`, `kit_fl0128_towers_170.jpg`, `kit_fl0128_
 | - | Tall grey slab beside the damaged house | not mine | it is the house's own gable wall (`Gable`, base geometry on main), visible once the roof tiles are gone; left alone |
 
 Not chased (per FORGE-00): units at 170 studs, tower L2 against L1 at 170, keep damage at 0.3, the ram at 170. The all-built worst case
-grew from 26,217 to 26,322 (the tympanum, the tower seats and the wall L3 courses), under the 26,900 pin.
+grew from 26,217 to 26,322 (the tympanum, the tower seats and the wall L3 courses), under the 27,000 ceiling (not a 26,900 pin: see the errata handoff).
 
 ### FL-0128 defects round B (after the "any visible defects?" review; branch `forge/02-blender-fl0128-defects`, stacked on the war branch)
 Author: FORGE-02. Scope fixed by FORGE-00: three items only (breach marks, gate L3 closed, open-gate floor). Every image below was opened
@@ -681,8 +681,39 @@ onto the side face. KitWarKit: no tympanum at the closed L1/L2 arch, no panel be
 
 Numbers: parts per piece unchanged except the L3 gate, +1 for the tympanum (gate L1 72-77, L2 102-113, L3 121-132 against the 90 / 120 /
 150 caps; wall 26-30 / 36-40 / 52-60; watchtower L1 107-116, L2 105-122); the breach, crack and chip marks add 4 / 6 / 8 / 9 parts at state 1 to 4 (12 with rubble at state 4) within the 14
-extra-part budget. All-built worst case 26,326 of 27,000 (it was 26,322; the four L3 tympana), under the 26,900 pin.
+extra-part budget. All-built worst case 26,326 of 27,000 (it was 26,322; the four L3 tympana), under the 27,000 ceiling.
 Not chased (per FORGE-00): shield and bow grip (FL-0135), keep damage, framing, units at 170, tower L2 against L1, the ram at 170.
+
+### FL-0128 damage frames (P1 before FL-0143 makes damage live; branch `forge/02-blender-damage-frames`, stacked on defects round B)
+Author: FORGE-02. FORGE-00's list: `Kit/Damage.luau` worked on world axes and absolute CFrames, all dormant until `Kit.applyDamage` is called
+on placed buildings (FL-0143). Headless evidence only (Lune specs, Blender Cycles previews of Lune dumps); Studio unverified. I opened every
+re-rendered sheet (`img/`): `kit_fl0128_damage.jpg`, `kit_fl0128_damage_kingdoms.jpg`, `kit_fl0128_damage_170.jpg` (same cameras and scale as
+before) and the new `kit_fl0128_damage_frames.jpg` (the L1 palisade at 0 / 0.3 / 0.6 / 0.9 / 0.97 in two kingdoms; a wall L2 and a gate L2 built
+turned 0 / 90 / 180 / 270 degrees).
+
+| # | Defect | Result | Evidence |
+|---|---|---|---|
+| a | world axes: a turned building was damaged on its back, the parts lost changed with its position | fixed | everything is chosen in the model's own frame (the pivot) and turned into world CFrames only when a part is made; spec "frames": every wall and gate level in the four kingdoms, every state, built turned 90 / 180 (and 270 for the footprint) at another height and place: part for part the damage of the model at the origin (tolerance 0.002, CFrames are 32-bit floats) |
+| b | removed parts stashed at absolute CFrames: a move left them behind | fixed | stored relative to the PrimaryPart, restored at its CFrame as it is then (untouched, bit for bit, when the model has not moved); gate leaves and bands return in the gate's current pose; spec: damaged, moved to a new place AND yaw, repaired = a pristine copy moved the same way, every part (world CFrames), none doubled, none parked; then damaged again at another state = a pristine moved copy damaged at that state |
+| c | rubble at world y = size / 2 - 0.2 | fixed | stands on the model's base plane (y = 0 of its frame); spec: a model at y 40 and y 3.5 has the rubble bottom at base - 0.2 |
+| d | L1 palisade: every mark on the -X post, soot overhanging it and above the top | fixed | no wall block exists there, so the marks are spread (a stride across the standing logs and the two posts) over at least two logs / posts at every state, each narrower than its support, wholly inside it and below its top (spec, four kingdoms, states 1..4); wood marks on wood |
+| - | `KitLevel` stored the level asked for (a wall asked for at level 5 stored 5, and the damage was seeded by it) | fixed | `Kit.build` clamps to `Kit.MAX_LEVEL[type]` and stores/names the clamped level; Kit.spec and KitDamage pin it, with mutants |
+| - | (FORGE-00 addition) re-dressing a turned model dropped rubble outside the keep's footprint | fixed | spec: keep L1..L3, wall, gate, watchtower, house re-dressed at seven states turned 90 / 180 / 270: every damage part inside the footprint in the Root's frame; rubble may reach 2 studs in front of it (the Kit's own entrance-step allowance: strictly inside would hide it in most buildings); the keep's stump is shrunk to fit |
+
+What changed for the eye, compared with the previous sheets (same cameras). I dumped every damaged variant (every type at every level, four
+kingdoms, four states: 592) with the old and the new code. 96 are the stand-ins' second level, which no longer exists (they are level 1: the
+same damage as their level 1, bit for bit). Of the other 496: 115 are identical, bit for bit; 331 differ only in where the rubble lies (it is
+now up to 2 studs in front of the footprint instead of up to 5.6: closer to the foot, partly against the wall); 50 differ otherwise: the 16 L1
+palisade variants (marks on logs and posts), 30 watchtower L1 / L2 and storehouse L1 variants where the bite or the marks pick another of two
+equally distant parts (those ties were decided by float noise of 1e-6 before and are decided by the part order now) and the 4 keep L1
+variants whose stump slab is shrunk to fit its footprint. On the re-rendered sheets the walls, gates, houses, towers and the keep read as
+before; the 0.3 / 0.6 / 0.9 marks, bites and collapsed corners are where they were except in those 50 variants (the sheets show two
+of them: the Frostmere watchtower L2's bite at 0.3 / 0.6 / 0.9 takes another of two equally distant merlons, the Emberhold one's chips at 0.6
+lie elsewhere on the face; the rest is unchanged).
+
+Not done here: the order the damage walks a model's parts in is now the part attribute `KitOrder`, written once by `Kit.build`; a model
+built by anything else, or a part re-formed by a recolour, is ordered by position (robust except at a rounding edge). The ceiling is
+unchanged (26,326 of 27,000: no part was added); farms are built at level 2 by the ceiling spec (level 3: +3 parts each).
 
 ## FL-0072 — Crown Arena venue, crowd figures, armour and weapons (G12.6; FORGE-02; Blender previews, not Studio)
 
