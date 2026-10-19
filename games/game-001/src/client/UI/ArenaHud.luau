@@ -305,17 +305,17 @@ function ArenaHud:update(model: any)
 		local frame = strip:FindFirstChild(pair[1])
 		local s = pair[2]
 		if frame then
-			for _, bar in { { "Hp", s.hp, s.hpText }, { "Stamina", s.stamina, nil } } do
-				local b = frame:FindFirstChild(bar[1])
+			for _, row in { { "Hp", s.hp, s.hpText }, { "Stamina", s.stamina, nil } } do
+				local b = frame:FindFirstChild(row[1])
 				local fill = b and b:FindFirstChild("Fill")
-				if b and bar[2] ~= nil then
-					b:SetAttribute("share", bar[2])
+				if b and row[2] ~= nil then
+					b:SetAttribute("share", row[2])
 					if fill then
-						fill.Size = UDim2.fromScale(math.clamp(bar[2], 0, 1), 1)
+						fill.Size = UDim2.fromScale(math.clamp(row[2], 0, 1), 1)
 					end
 					local label = b:FindFirstChild("Label")
-					if label and bar[3] then
-						label.Text = bar[3]
+					if label and row[3] then
+						label.Text = row[3]
 					end
 				end
 			end
