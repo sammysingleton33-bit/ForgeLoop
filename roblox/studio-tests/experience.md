@@ -455,7 +455,7 @@ Steps
 4. During a move: pan with WASD and zoom with the wheel. The move stays open. Press E: the view doesn't turn. Right-drag: the view turns, and the move stays open. Phone emulator: a one-finger drag pans, the ghost goes to where the finger first touched, and the move stays open until **Move here**. (A left press confirms on a mouse, so a left drag is not a pan during a move; FORGE-07's #157 M1.)
 5. Confirm with **Move here** on a free spot. After the toast, you are back in walk mode (from step 1) and tapping a citizen opens their card again. Repeat from the aerial view: the aerial view stays.
 6. Start a move, then press X (or gamepad B): the move ends, nothing moved, the house is no longer dimmed, and taps select again. Repeat with Q (FORGE-03's cancel): same. Start a move and press Esc: only Roblox's menu opens.
-7. Drag-gesture rows: write "parked, FL-0123".
+7. (Needs FORGE-03's drag gesture, #234.) Phone emulator, two touches: hold a building 0.5 s to drag it, then put a second finger down near the right edge and move it (as if pinching). The view does not edge-pan. Move the first finger, the one holding the building, to the right edge: the view pans right. Lift it: the pan stops at once. (FORGE-07 on #234; FORGE-03's U30 step 6 checks the same.)
 
 Pass: steps 1–6 hold.
 

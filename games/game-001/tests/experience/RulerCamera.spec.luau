@@ -454,6 +454,73 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		expect(CameraDef.edgeDirection(Vector2.new(640, 720), Vector2.new(1280, 720), 48)).toEqual(Vector2.new(0, -1))
 	end)
 
+	it(
+		"edit drag on touch: only the finger holding the building edge-pans; a second finger never does (#234)",
+		function()
+			boot()
+			controller._opts.viewportWidth = 1280
+			controller:setMode("overview")
+			input:set("edit")
+			env.mock:advance(0.2)
+			settle()
+			local function touch(x, y)
+				return { UserInputType = Enum.UserInputType.Touch, Position = Vector3.new(x, y, 0) }
+			end
+			local holding = touch(400, 300)
+			userInput.InputBegan:Fire(holding, true) -- the hold starts on the building (over the world)
+			-- a second finger lands near the right edge before the hold completes (a pinch starting)
+			local other = touch(1270, 360)
+			userInput.InputBegan:Fire(other, false)
+			expect(controller:setEditDrag(true)).toBe(true) -- FORGE-03's hold of 0.45 s
+			local start = controller:getFocus() :: Vector3
+			-- the second finger moves at the edge: no edge-pan
+			other.Position = Vector3.new(1275, 360, 0)
+			userInput.InputChanged:Fire(other, false)
+			frames(30)
+			expect(near(controller:getFocus() :: Vector3, start, 1e-6)).toBe(true)
+			-- the holding finger reaches the edge: the view pans
+			holding.Position = Vector3.new(1279, 360, 0)
+			userInput.InputChanged:Fire(holding, true)
+			frames(30)
+			local moved = (controller:getFocus() :: Vector3) - start
+			expect(moved.Magnitude > 1).toBe(true)
+			-- the holding finger lifts: the edge-pan stops, even before setEditDrag(false)
+			userInput.InputEnded:Fire(holding, true)
+			local stopped = controller:getFocus() :: Vector3
+			frames(30)
+			expect(near(controller:getFocus() :: Vector3, stopped, 1e-6)).toBe(true)
+			controller:setEditDrag(false)
+			-- without an edit drag, any finger's move is the pointer again (the next drag picks its finger)
+			expect(#controller._touches).toBe(1) -- the second finger is still down
+			userInput.InputEnded:Fire(other, false)
+			expect(#controller._touches).toBe(0)
+		end
+	)
+
+	it("setEditDrag(true) stops a pan already under way, and a held drag never pans until a new press", function()
+		boot()
+		controller:setMode("overview")
+		input:set("edit")
+		env.mock:advance(0.2)
+		settle()
+		local start = controller:getFocus() :: Vector3
+		mouse("InputBegan", Enum.UserInputType.MouseButton1, 400, 300)
+		mouse("InputChanged", Enum.UserInputType.MouseMovement, 300, 300) -- a pan starts
+		expect(controller._drag).never.toBeNil()
+		expect(controller:setEditDrag(true)).toBe(true)
+		expect(controller._drag).toBeNil() -- FORGE-03 can rely on this (#234 ask 2)
+		mouse("InputChanged", Enum.UserInputType.MouseMovement, 200, 300)
+		controller:setEditDrag(false) -- the hold ends
+		mouse("InputChanged", Enum.UserInputType.MouseMovement, 100, 300) -- the button is still down
+		frames(20)
+		local after = controller:getFocus() :: Vector3
+		-- only the pan made before the hold moved the view; nothing after the hold began
+		mouse("InputChanged", Enum.UserInputType.MouseMovement, 50, 300)
+		frames(20)
+		expect(near(controller:getFocus() :: Vector3, after, 1e-6)).toBe(true)
+		expect((after - start).Magnitude < 1e3).toBe(true)
+	end)
+
 	it("a selection never moves the camera, in edit mode too (B17 Move flow: a tap aims the ghost; #148 B1)", function()
 		boot()
 		local kingdoms = roblox.Instance.new("Folder")

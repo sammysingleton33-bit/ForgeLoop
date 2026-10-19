@@ -47,10 +47,13 @@
 	the previous mode and the View key.
 	Base editing (G13.9, FL-0121): in B17's Move flow (D-052 (1)) edit mode lasts while a building is
 	being moved, and a tap there aims the ghost, so selections in edit mode never move the camera
-	(FORGE-07's #148 B1 side effect). setEditDrag (parked with the drag gesture, FL-0123: no caller
-	yet) is for FORGE-03's edit UI while it drags a building: a mouse drag or one-finger
-	drag no longer pans; instead, a pointer within EDGE_PIXELS of the screen edge pans toward that
-	edge (faster nearer the edge, at most panSpeed). setEditDrag(false), or leaving edit mode, ends it.
+	(FORGE-07's #148 B1 side effect). setEditDrag is for FORGE-03's edit UI while it drags a building
+	(FL-0123, #234: a 0.45 s hold, then setEditDrag(true), false on release): a mouse drag or one-finger
+	drag no longer pans, and a pan already under way stops (setEditDrag(true) clears it); instead, a
+	pointer within EDGE_PIXELS of the screen edge pans toward that edge (faster nearer the edge, at
+	most panSpeed). On touch the pointer is the finger holding the building: the oldest touch still
+	down when setEditDrag(true) comes, so a second finger (a pinch near an edge) never edge-pans
+	(FORGE-07 on #234). setEditDrag(false), leaving edit mode, or that finger lifting ends it.
 	Shake: magnitude 0..1 maps to at most shake.maxDegrees, eased out within maxDuration, at most
 	maxActive at once, never with cameraShake off or reduced motion on (SettingsController); a NaN or
 	infinite magnitude or duration is refused. Each frame's shake is undone before Roblox's camera
@@ -389,6 +392,8 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_drag = nil,
 		_editDrag = false,
 		_pointer = nil :: Vector2?,
+		_touches = {} :: { any }, -- touches down, oldest first (one InputObject per finger)
+		_dragTouch = nil :: any, -- the finger holding the dragged building (edit drag on touch)
 		_panLast = nil,
 		_pinch = 1,
 		_twist = 0,
@@ -720,9 +725,15 @@ end
 function Controller:setEditDrag(active: any): boolean
 	local on = active == true and self._input ~= nil and self._input.mode == "edit"
 	self._editDrag = on
+	self._dragTouch = nil
 	if on then
 		self._drag = nil -- a pan already under way stops
 		self._panLast = nil
+		local finger = self._touches[1] -- the one that was held: only it edge-pans
+		if finger ~= nil then
+			self._dragTouch = finger
+			self._pointer = Vector2.new(finger.Position.X, finger.Position.Y)
+		end
 	end
 	return on
 end
@@ -1237,6 +1248,9 @@ function Controller:_bindPointer()
 	track(
 		self._connections,
 		connect(userInput, "InputBegan", function(input, processed)
+			if input.UserInputType == Enum.UserInputType.Touch and not table.find(self._touches, input) then
+				table.insert(self._touches, input) -- every finger, even over UI (the drag starts on a button)
+			end
 			if processed or self.mode ~= "overview" then
 				return
 			end
@@ -1251,6 +1265,14 @@ function Controller:_bindPointer()
 		connect(userInput, "InputEnded", function(input)
 			if self._drag and input.UserInputType == self._drag.button then
 				self._drag = nil
+			end
+			local finger = table.find(self._touches, input)
+			if finger ~= nil then
+				table.remove(self._touches, finger)
+			end
+			if input == self._dragTouch then
+				self._dragTouch = nil -- the dragging finger lifted: its point no longer edge-pans
+				self._pointer = nil
 			end
 			if input.KeyCode == Enum.KeyCode.Thumbstick1 then
 				self._stick = Vector2.zero
@@ -1268,7 +1290,10 @@ function Controller:_bindPointer()
 					self:zoomBy(-input.Position.Z)
 				end
 			elseif kind == Enum.UserInputType.MouseMovement or kind == Enum.UserInputType.Touch then
-				self._pointer = Vector2.new(input.Position.X, input.Position.Y) -- edge-pan (G13.9)
+				-- edge-pan (G13.9): while a finger holds the building, only that finger moves the point
+				if kind ~= Enum.UserInputType.Touch or self._dragTouch == nil or input == self._dragTouch then
+					self._pointer = Vector2.new(input.Position.X, input.Position.Y)
+				end
 				if kind == Enum.UserInputType.MouseMovement then
 					self:_mouseMoved(input.Position)
 				end
