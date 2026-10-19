@@ -505,7 +505,11 @@ end
 function KingdomHudController:metrics(): any
 	local size = self:_safeArea()
 	-- The reputation strip's room only while it shows (ReputationPanelController sets the flag).
-	return Layout.compute(size.X, size.Y, { reputation = self.state.reputation == true })
+	return Layout.compute(
+		size.X,
+		size.Y,
+		{ reputation = self.state.reputation == true, support = self.state.support == true }
+	)
 end
 
 -- ------------------------------------------------------------------ menus and actions

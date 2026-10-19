@@ -12,10 +12,12 @@
 	     (invisible parts tagged BuildZone + ZoneId, Kingdom), the objective zone (ObjectiveZone +
 	     ObjectiveId, Radius), plot markers (KingdomPlot + Kingdom) and build slot markers
 	     (Kit.slotMarker; its Root part is tagged BuildSlot + SlotId, Size, Kingdom; G13.5);
-	  4. places props and forests from WorldPlan.props (deterministic), PROPS_PER_FRAME per frame, cleared off the
+	  4. places the Crown Arena (Kit.arena at Layout.arena, FL-0072, G12.6): once, neutral, tagged CrownArena with its attachments
+	     as Kit builds them; ArenaService dresses it with Kit.arenaDress when the two kingdoms are known;
+	  5. places props and forests from WorldPlan.props (deterministic), PROPS_PER_FRAME per frame, cleared off the
 	     plots' fields, buildings, slots and roads and thinned by the dressing density knob (world/Layout
 	     features.density, D-047; 1.0 = the untrimmed valley);
-	  5. fires `ready` and logs the build time in ms.
+	  6. fires `ready` and logs the build time in ms.
 	It never calls Kit.build: BuildingService and ObjectiveService build buildings (G6, G10).
 	Tags are for visuals and client hints only; the sim reads Layout.
 
@@ -23,7 +25,7 @@
 		WorldService.ready: Signal<()>
 		WorldService:isReady(): boolean
 		WorldService:getRoot(): Folder?     -- Workspace.World once built
-		WorldService.stats: { ms, terrainOps, props, parts }
+		WorldService.stats: { ms, terrainOps, props, parts, arenaParts }  -- parts counts every part created, the arena's included
 	Test hooks: set `service.terrain` (Kit/Terrain recorder), `service.layout`, `service.dressed`,
 	`service.density` (overrides the layout's dressing knob, e.g. WorldPlan.FULL_DENSITY),
 	`service.voxelsPerFrame` or `service.partsPerFrame` before start().
@@ -61,7 +63,7 @@ function Def.new(env, _registry)
 		terrain = Terrain.forWorkspace(env.Workspace, env.log),
 		layout = Layout,
 		lighting = LightingPreset,
-		stats = { ms = 0, terrainOps = 0, props = 0, parts = 0 },
+		stats = { ms = 0, terrainOps = 0, props = 0, parts = 0, arenaParts = 0 },
 		dressed = table.clone(WorldService.DRESSED),
 		density = nil :: { [string]: number }?, -- nil: the layout's knob (features.density)
 		voxelsPerFrame = WorldService.VOXELS_PER_FRAME,
@@ -250,6 +252,7 @@ function WorldService:_build()
 	local zonesFolder = self:_folder("Zones", root)
 	local slotsFolder = self:_folder("BuildSlots", root)
 	local propsFolder = self:_folder("Props", root)
+	local arenaFolder = self:_folder("Arena", root)
 
 	-- terrain, chunked by voxel budget
 	local ops = WorldPlan.terrainOps(layout, self.density)
@@ -346,6 +349,25 @@ function WorldService:_build()
 		CollectionService:AddTag(zone, "ObjectiveZone")
 	end
 	self:_wait()
+
+	-- the Crown Arena (G12.6): one model, neutral until the two kingdoms of the final duel are known. Its low parts (the ring, the
+	-- stands, the gate walls) collide, everything above COLLIDE_HEIGHT (towers' tops, caps, banners, the royal roof) does not.
+	local arena = layout.arena
+	if arena then
+		local model = Kit.arena()
+		model.Name = "CrownArena"
+		local p = arena.cframe.Position
+		local y = WorldPlan.groundHeight(layout, p.X, p.Z)
+		placeModel(model, CFrame.new(p.X, y, p.Z) * (arena.cframe - arena.cframe.Position))
+		model:SetAttribute("RegionId", arena.regionId)
+		decorate(model, y)
+		model.Parent = arenaFolder
+		CollectionService:AddTag(model, "CrownArena")
+		local before = parts
+		count(model)
+		self.stats.arenaParts = parts - before
+		self:_wait()
+	end
 
 	-- props and forests, deterministic, at most partsPerFrame parts per frame
 	local placements = WorldPlan.props(layout, self.dressed, self.density)
