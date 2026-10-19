@@ -6,6 +6,7 @@
 		ArenaDoubles.REMOTES      { Arena = { State, GetState, Choose, Events }, Kingdom = { Support, GetSupport } }
 		ArenaDoubles.service      (world) -> server Def "ArenaDouble":
 			svc.state                    the ArenaState GetState answers
+			svc.getStateCalls            how many Arena.GetState requests reached the server
 			svc:setState(state)          stores it and fires Arena.State to everyone
 			svc:events(batch)            fires Arena.Events { { t, kind, side, data? } } to everyone
 			svc.support[userId]          the SupportView Kingdom.GetSupport answers that player
@@ -158,7 +159,7 @@ function ArenaDoubles.service(_world)
 		dependencies = { "RemoteService" },
 		new = function(_env, registry)
 			local remotes = registry:get("RemoteService")
-			local svc = { state = { stage = "qualify" }, support = {}, choices = {} }
+			local svc = { state = { stage = "qualify" }, support = {}, choices = {}, getStateCalls = 0 }
 			function svc:setState(state)
 				self.state = state
 				remotes:fireAll("Arena.State", state)
@@ -171,6 +172,7 @@ function ArenaDoubles.service(_world)
 			end
 			function svc:start()
 				remotes:handle("Arena.GetState", function()
+					self.getStateCalls += 1
 					return self.state
 				end)
 				remotes:handle("Kingdom.GetSupport", function(player)

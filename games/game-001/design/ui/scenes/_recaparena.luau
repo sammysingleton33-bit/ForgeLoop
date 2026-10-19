@@ -7,6 +7,7 @@
 ]]
 local ArenaDoubles = require("../../../tests/economy/doubles/ArenaDoubles")
 local ArenaHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ArenaHudController")
+local DuelDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/DuelController")
 local ArmyDoubles = require("../../../tests/economy/doubles/ArmyDoubles")
 local PopulationDoubles = require("../../../tests/economy/doubles/PopulationDoubles")
 local RecapDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/LeadershipRecapController")
@@ -37,7 +38,7 @@ return function(ctx, opts)
 	return scene(ctx, {
 		remotes = ArmyDoubles.remotes(Rep.REMOTES, ArenaDoubles.REMOTES),
 		services = { PopulationDoubles.service, Rep.service(START), ArmyDoubles.service, ArenaDoubles.service },
-		clientDefinitions = { ReputationDef, SummaryDef, RecapDef, ArenaHudDef },
+		clientDefinitions = { ReputationDef, SummaryDef, RecapDef, DuelDef, ArenaHudDef },
 	}, function(world, _hud)
 		local rep = world.server:get("ReputationService")
 		local pop = world.server:get("PopulationService")

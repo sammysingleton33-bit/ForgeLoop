@@ -42,7 +42,7 @@
 	key's "Accessory" (AccessoryWeld, KitAccessory); other extras take their piece id (plus the joint for mirrored ones) and
 	a Weld named "PieceWeld". Every part: CanCollide/CanTouch/CanQuery false, Massless, SmoothPlastic (colour = the baked vertex colours
 	or palette texture, if any, times MeshPart.Color; a TextureID (a shared palette texture) is kept as imported, never
-	required); CollisionFidelity Box. Colour per piece `tint`:
+	required); CollisionFidelity Box (set by the Studio import, a game script cannot write it). Colour per piece `tint`:
 		skin   Character.LOOK_PALETTES.skin[look.skin]        hair   ...hairColor[look.hairColor]
 		kingdom shade(kingdomColor, f), attribute KitTint = f (so Kit.setKingdomColor recolours exactly); f = tint_factor
 		       or 0.8 (citizens, shifted per individual like the part-built outfits) / 1 (soldiers, governors); sleeves lighter
@@ -770,7 +770,8 @@ function CharacterMesh.build(
 		part.Transparency = 0
 		part.Reflectance = 0
 		part.Material = Enum.Material.SmoothPlastic
-		part.CollisionFidelity = Enum.CollisionFidelity.Box
+		-- CollisionFidelity is not set here: a game script cannot write it (Plugin security); the Studio import sets Box
+		-- (blender/studio/import_char_kit.luau) and the saved Forge.Assets pieces carry it
 
 		local tint = def.tint
 		if tint == "skin" then

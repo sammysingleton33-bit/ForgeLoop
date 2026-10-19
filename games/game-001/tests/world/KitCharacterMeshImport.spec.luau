@@ -153,6 +153,7 @@ local function runScript(place: Place, edits: { [string]: string }?): (any, { st
 			Vector3 = Vector3,
 			Color3 = Color3,
 			CFrame = CFrame,
+			Enum = Enum, -- the command bar has it: the import sets CollisionFidelity
 		},
 	})
 	local report = chunk()
@@ -191,6 +192,7 @@ describe("import_char_kit.luau: the Studio import script, against fake trees", f
 				local piece = folder:FindFirstChild(id) :: MeshPart
 				expect(piece).never.toBeNil()
 				expect(piece.ClassName).toBe("MeshPart")
+				expect(piece.CollisionFidelity).toBe(Enum.CollisionFidelity.Box) -- set by the import (plugin rights), never by the Kit
 				expect((piece.Size - Vector3.new(def.size[1], def.size[2], def.size[3])).Magnitude).toBeLessThan(1e-4)
 				expect(piece.Parent).toBe(folder)
 			else

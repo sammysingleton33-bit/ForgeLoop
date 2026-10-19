@@ -6,6 +6,7 @@ local D = require("./RulerDoubles")
 local RulerDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/RulerController")
 
 local C = RulerDef.DEFAULTS
+local Arena = require("@game/ReplicatedStorage/Forge/Config/Arena")
 local EAST = Vector3.new(1, 0, 0)
 
 describe("RulerController pure rules (FL-0053)", function()
@@ -193,5 +194,99 @@ describe("RulerController with a character (FL-0053)", function()
 		latePlayer.Character = character
 		local reg = D.boot(lateEnv, { ruler = { player = latePlayer }, camera = false })
 		expect(reg:get("RulerController"):getCharacter()).toBe(character)
+	end)
+end)
+
+describe("RulerController in a Crown Arena duel (FL-0139, FORGE-07 #255 M1)", function()
+	local env, actions, player, ruler, duel
+
+	-- A DuelController double: isChampion() reads `champion` (or errors when `broken`).
+	local function boot(arena)
+		env = MockEnv.new({ seed = 139, isServer = false, localPlayer = { userId = 5501 } })
+		actions = D.actions()
+		player = D.player()
+		duel = { champion = false, broken = false }
+		function duel.isChampion(self)
+			if self.broken then
+				error("no duel state")
+			end
+			return self.champion
+		end
+		local registry = D.boot(env, {
+			input = { actions = actions },
+			ruler = { actions = actions, player = player, arena = arena },
+			camera = false,
+			extra = {
+				{
+					name = "DuelController",
+					dependencies = {},
+					new = function()
+						return duel
+					end,
+				},
+			},
+		})
+		ruler = registry:get("RulerController")
+	end
+
+	local function sprintFor(n)
+		for _ = 1, n do
+			ruler:update(1 / 60)
+		end
+	end
+
+	it("a champion walks at ring.walkSpeed and never sprints; sprint works again after the duel", function()
+		boot({ ring = { walkSpeed = 12 } }) -- a value unlike walk (16) and sprint (24)
+		local character, humanoid = D.character()
+		player.CharacterAdded:Fire(character)
+		humanoid.MoveDirection = EAST
+		actions:press(RulerDef.ACTION, Enum.UserInputState.Begin, { KeyCode = Enum.KeyCode.LeftShift })
+		sprintFor(20)
+		expect(humanoid.WalkSpeed).toBe(C.sprintSpeed) -- not a champion yet: the ruler sprints
+		duel.champion = true -- the duel starts
+		ruler:update(1 / 60)
+		expect(humanoid.WalkSpeed).toBe(12) -- held at once, not eased down from a sprint
+		expect(ruler.sprinting).toBe(false)
+		sprintFor(30)
+		expect(humanoid.WalkSpeed).toBe(12)
+		duel.champion = false -- crowning or cancel
+		sprintFor(30)
+		expect(humanoid.WalkSpeed).toBe(C.sprintSpeed)
+		expect(ruler.sprinting).toBe(true)
+	end)
+
+	it("without config Arena's ring a champion still never sprints (the walk speed)", function()
+		boot({})
+		local character, humanoid = D.character()
+		player.CharacterAdded:Fire(character)
+		humanoid.MoveDirection = EAST
+		duel.champion = true
+		actions:press(RulerDef.ACTION, Enum.UserInputState.Begin, { KeyCode = Enum.KeyCode.LeftShift })
+		sprintFor(30)
+		expect(humanoid.WalkSpeed).toBe(C.walkSpeed)
+		expect(ruler.sprinting).toBe(false)
+	end)
+
+	it("the real config Arena: a champion holds ring.walkSpeed (or the walk speed before it exists)", function()
+		boot(nil)
+		local character, humanoid = D.character()
+		player.CharacterAdded:Fire(character)
+		humanoid.MoveDirection = EAST
+		duel.champion = true
+		actions:press(RulerDef.ACTION, Enum.UserInputState.Begin, { KeyCode = Enum.KeyCode.LeftShift })
+		sprintFor(30)
+		local ring = Arena.ring
+		expect(humanoid.WalkSpeed).toBe(if type(ring) == "table" then ring.walkSpeed else C.walkSpeed)
+	end)
+
+	it("a champion check that errors reads as no duel: movement as usual", function()
+		boot({ ring = { walkSpeed = 12 } })
+		local character, humanoid = D.character()
+		player.CharacterAdded:Fire(character)
+		humanoid.MoveDirection = EAST
+		duel.broken = true
+		actions:press(RulerDef.ACTION, Enum.UserInputState.Begin, { KeyCode = Enum.KeyCode.LeftShift })
+		sprintFor(30)
+		expect(humanoid.WalkSpeed).toBe(C.sprintSpeed)
 	end)
 end)

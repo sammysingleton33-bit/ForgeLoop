@@ -125,8 +125,8 @@ M = [
  ("FL-0074", C2+"CrowdFiguresController.luau", 'return math.floor(index * share) ~= math.floor((index - 1) * share)', 'return index <= math.floor(share * 60)', "CrowdFigures", "moves: a share picks", "game"),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'if director ~= self._director then\n\t\tself._director = director', 'if self._director == nil then\n\t\tself._director = director', "CrowdFigures", "a new pair refills the stands", "game"),
  ("FL-0074", C2+"CrowdFiguresController.luau", '\t\tself._director = director\n\t\tself:_clear()\n', '\t\tself._director = director\n', "CrowdFigures", "a new pair refills the stands", "game"),
- ("FL-0074", C2+"CrowdFiguresController.luau", 'local attachment = root:FindFirstChild(`Stand{Def.STANDS[side]}_Row{spot.row}_Seat{spot.seat}`)', 'local attachment = root:FindFirstChild(`StandA_Row{spot.row}_Seat{spot.seat}`)', "CrowdFigures", "a duel fills both stands", "game"),
- ("FL-0074", C2+"CrowdFiguresController.luau", 'WorldView.placeModel(figure, seat)\n', '', "CrowdFigures", "a duel fills both stands", "game"),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'local name = `Stand{Def.STANDS[side]}_Row{spot.row}_Seat{spot.seat}`', 'local name = `StandA_Row{spot.row}_Seat{spot.seat}`', "CrowdFigures", "a duel fills both stands", "game"),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'WorldView.placeModel(figure, spot.seat)\n', '', "CrowdFigures", "a duel fills both stands", "game"),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'local counts = Def.counts(self._citizens, { a = sides.a.tier, b = sides.b.tier })', 'local counts = Def.counts({}, { a = sides.a.tier, b = sides.b.tier })', "CrowdFigures", "a duel fills both stands", "game"),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'if color == nil then\n\t\t\tcontinue', 'if false then\n\t\t\tcontinue', "CrowdFigures", "for a kingdom the config lacks", "game"),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'if self._motions[reaction.stand] ~= nil then\n\t\tself:_settle(reaction.stand)', 'if false then\n\t\tself:_settle(reaction.stand)', "CrowdFigures", "a new motion starts from the seats", "game"),
@@ -142,7 +142,7 @@ M = [
  ("FL-0074", C2+"CrowdFiguresController.luau", 'counts.b = math.floor(counts.b * Def.REDUCED_SHARE)', 'counts.b = counts.b', "CrowdFigures", "low-end clients", "game"),
  ("FL-0074", ST, 'local scale = math.min(1, budget / full) -- never longer than the full pass', 'local scale = budget / full -- never longer than the full pass', 'CrowdStage', 'the pass shrinks to the intro time left', 'game'),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'self._pending = not self:_seat(director) -- retried', 'self._pending = false and self:_seat(director) -- retried', 'CrowdFigures', 'the arena streams in after the director', 'game'),
- ("FL-0074", C2+"CrowdFiguresController.luau", '\t\tself.figures[side] = list\n\tend\n\treturn true\nend', '\t\tself.figures[side] = list\n\tend\n\treturn false\nend', 'CrowdFigures', 'the arena streams in after the director', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", '\treturn #plan == 0\nend', '\treturn false\nend', 'CrowdFigures', 'builds BUILD_PER_STEP figures a step', 'game'),
  # FORGE-07 #237 M2 and L1-L3; FORGE-00's 07:48 correction (Pacing.arena.intro from config Arena)
  ("FL-0074", C2+"CrowdFiguresController.luau", 'then settings:reducedMotion()', 'then settings:get("reducedMotion")', 'CrowdFigures', "the platform's Reduce Motion skips the hops", 'game'),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'else settings:get("reducedMotion")', 'else false', 'CrowdFigures', 'low-end clients', 'game'),
@@ -155,4 +155,23 @@ M = [
  ("FL-0074", G + "config/Pacing.luau", 'loadout = Arena.loadoutSeconds,', 'loadout = Arena.voteSeconds,', 'CrowdDirector', 'arena stage timings in Pacing', 'game'),
  ("FL-0074", G + "config/Pacing.luau", 'crowning = Arena.crowningSeconds,', 'crowning = Arena.introSeconds,', 'CrowdDirector', 'arena stage timings in Pacing', 'game'),
  ("FL-0074", G + "config/Pacing.luau", 'duel = 120, -- the expected duel', 'duel = 195, -- the expected duel', 'CrowdDirector', 'arena stage timings in Pacing', 'game'),
+ # FORGE-00 B22 verifier: GetState on start, Kit's seat grid with one warning, the stands built a batch a step
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'Def.ROWS = Kit.ARENA.SEAT_ROWS', 'Def.ROWS = 3', 'CrowdFigures', 'builds BUILD_PER_STEP figures a step', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'while #plan > 0 and built < Def.BUILD_PER_STEP do', 'while #plan > 0 do', 'CrowdFigures', 'builds BUILD_PER_STEP figures a step', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'for i = 1, math.max(#perSide.a, #perSide.b) do', 'for i = 1, math.min(#perSide.a, #perSide.b) do', 'CrowdFigures', 'a duel fills both stands', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", '\t\t\t\t\tself._warnedSeats = true\n', '', 'CrowdFigures', 'a seat attachment the arena lacks', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", '\tself._pending = false\n\tself._plan = nil\n', '\tself._pending = false\n', 'CrowdFigures', 'a new pair refills the stands', 'game'),
+ ("FL-0074", G + "config/Pacing.luau", 'qualify = 5,', 'qualify = 4,', 'CrowdDirector', 'arena stage timings in Pacing', 'game'),
+ # FORGE-07 #256 M1: follow DuelController (one GetState asker); L1 a-c
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'Def.BUILD_PER_STEP = 24', 'Def.BUILD_PER_STEP = 12', 'CrowdFigures', 'builds BUILD_PER_STEP figures a step', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", '\t\tfor _, side in { "a", "b" } do\n\t\t\tif perSide[side][i] ~= nil then', '\t\tfor _, side in { "b", "a" } do\n\t\t\tif perSide[side][i] ~= nil then', 'CrowdFigures', 'builds BUILD_PER_STEP figures a step', 'game'),
+ # FORGE-00's ruling on FORGE-07 #256 M1: DuelController is a dependency and the crowd's only source (no GetState ask)
+ ("FL-0074", K2, '\tself:_followDuel()\n', '', 'CrowdClient', 'a late joiner seeds its director from DuelController', 'game'),
+ ("FL-0074", K2, 'local ok, state = pcall(duel.getState, duel)', 'local ok, state = false, nil', 'CrowdClient', 'a late joiner seeds its director from DuelController', 'game'),
+ ("FL-0074", K2, 'duel.stateChanged:connect(function(state)', 'duel.stateChanged:connect(function(_state)', 'CrowdClient', 'a late joiner seeds its director from DuelController', 'game'),
+ ("FL-0074", K2, 'dependencies = { "DuelController" }', 'dependencies = {}', 'CrowdClient', 'a late joiner seeds its director from DuelController', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", '\tself:_followDuel()\n', '', 'CrowdFigures', "a late joiner's citizens come from DuelController", 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'local ok, state = pcall(duel.getState, duel)', 'local ok, state = false, nil', 'CrowdFigures', "a late joiner's citizens come from DuelController", 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'duel.stateChanged:connect(function(state)', 'duel.stateChanged:connect(function(_state)', 'CrowdFigures', "a late joiner's citizens come from DuelController", 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'dependencies = { "FeedbackCrowdController", "DuelController" }', 'dependencies = { "FeedbackCrowdController" }', 'CrowdFigures', "a late joiner's citizens come from DuelController", 'game'),
 ]

@@ -4,9 +4,10 @@
 	(design crown-arena.md §4-§5; CONTRACTS G12.4, G12.6).
 
 	The feed (LoadoutController and ArenaIntroController read it):
-		Arena.State / Arena.GetState   the public ArenaState (G12.4), followed once the server declares them
-		Arena.Events                   the duel's batched events; through FORGE-01's DuelController.events (G12.6) when
-		                               that controller exists, else straight from the remote
+		ArenaState                     from FORGE-01's DuelController, the client's one arena door (G12.6): seeded
+		                               from getState() and followed through stateChanged (DuelController alone
+		                               listens to Arena.State and asks Arena.GetState, once)
+		duel events                    DuelController.events, one at a time
 		Kingdom.Support / GetSupport   the local ruler's SupportView (asked again when the loadout stage starts)
 	Until FORGE-01's ArenaService and SupportService land (FL-0070 / FL-0071) nothing is declared and nothing shows;
 	the specs and scenes use tests/economy/doubles/ArenaDoubles.
@@ -15,7 +16,7 @@
 	watching. During the intro and the duel (and the loadout, for a champion) the kingdom HUD steps aside
 	(KingdomHudController:setArenaFocus), so the crest and pills never sit under the duel strip.
 
-	Depends on KingdomHudController (remotes, store, modal layer, layout).
+	Depends on KingdomHudController (remotes, store, modal layer, layout) and DuelController (the arena feed).
 	API (specs, scenes, LoadoutController, ArenaIntroController)
 		arena.state (ArenaState?)   arena.support (SupportView?)   arena.track   arena.view
 		arena.changed: Signal<(ArenaState?)>   arena.supportChanged: Signal<(SupportView?)>
@@ -34,7 +35,7 @@ local Signature = require("../UI/Signature")
 local ArenaHudController = {}
 ArenaHudController.__index = ArenaHudController
 
-local Def = { name = "ArenaHudController", dependencies = { "KingdomHudController" } }
+local Def = { name = "ArenaHudController", dependencies = { "KingdomHudController", "DuelController" } }
 
 ArenaHudController.POLL_SEC = 0.25 -- the clocks and a fired perk's glow
 ArenaHudController.FOCUS = table.freeze({ intro = true, duel = true }) -- the kingdom HUD steps aside for everyone
@@ -91,39 +92,31 @@ function ArenaHudController:start()
 			self:render(metrics)
 		end)
 	)
-	self:_listen("Arena.State", function(state)
-		self:setState(state)
-	end)
 	self:_listen("Kingdom.Support", function(view)
 		self:setSupport(view)
 	end)
-	-- the duel's events: FORGE-01's DuelController when it exists (G12.6), else the remote itself
-	local duel = self._registry:find(ArenaHudController.DUEL)
-	local viaController = false
-	if duel ~= nil and type(duel.events) == "table" and duel.events.connect then
-		viaController = pcall(function()
-			table.insert(
-				self._connections,
-				duel.events:connect(function(event)
-					self:onEvents({ event })
-				end)
-			)
-		end)
-	end
-	if not viaController then
-		self:_listen("Arena.Events", function(batch)
-			self:onEvents(batch)
-		end)
-	end
-	if self.hud:hasRemote("Arena.GetState") then
-		env.spawn(function()
-			local ok, state = pcall(function()
-				return self.hud.remotes:invoke("Arena.GetState")
-			end)
-			if ok and type(state) == "table" and not self._destroyed then
+	-- the arena feed: FORGE-01's DuelController (G12.6), the client's one door to Arena.State / GetState / Events
+	local duel = self._registry:get(ArenaHudController.DUEL)
+	local ok, err = pcall(function()
+		table.insert(
+			self._connections,
+			duel.stateChanged:connect(function(state)
 				self:setState(state)
-			end
-		end)
+			end)
+		)
+		table.insert(
+			self._connections,
+			duel.events:connect(function(event)
+				self:onEvents({ event })
+			end)
+		)
+	end)
+	if not ok then
+		env.log("warn", "ArenaHudController: cannot follow DuelController", { error = tostring(err) })
+	end
+	local seeded = duel:getState()
+	if type(seeded) == "table" then
+		self:setState(seeded)
 	end
 	self._running = true
 	env.spawn(function()

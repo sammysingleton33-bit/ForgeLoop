@@ -77,11 +77,13 @@ def asset_id_for(gen, i, params):
 def build_generator(name, args, expect=None):
     import bpy  # noqa: F401  (import here so --list / tests work without bpy)
 
-    from lib import asset, ckit_kit, contact, export, manifest, rig, validate
+    from lib import asset, ckit_kit, contact, envkit_build, export, manifest, rig, validate
 
     gen = importlib.import_module(f"generators.{name}")
     if getattr(gen, "KIT", False):  # multi-piece kits (one FBX, rig.json): lib/ckit_kit.py
         return ckit_kit.run_generator(gen, args, expect)
+    if getattr(gen, "ENV_KIT", False):  # the environment mesh kit (one FBX, env.json): lib/envkit_build.py
+        return envkit_build.run_generator(gen, args, expect)
     n = args.variants or getattr(gen, "DEFAULT_VARIANTS", 6)
     out = Path(args.out)
     rdir = Path(args.renders) / name

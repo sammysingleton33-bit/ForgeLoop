@@ -215,6 +215,10 @@ describe("Ledger.moments cap", function()
 		)
 	end)
 
+	it("keeps 400 moments per kingdom", function()
+		expect(Ledger.MAX_PER_KINGDOM).toBe(400)
+	end)
+
 	it("hands out frozen moments", function()
 		local ledger = Ledger.new()
 		local moment = Ledger.record(ledger, "crimson", 7, "fedRatioKept", 1, 5)
