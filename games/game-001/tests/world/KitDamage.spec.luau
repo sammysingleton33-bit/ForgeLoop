@@ -108,7 +108,7 @@ end
 -- ------------------------------------------------------------------ 6. damage
 
 -- every building type at its highest level for Emberhold; a spread of four for Thornwood, whose hoarding roofs differ most;
--- `quick` (the mutants' run) is four types in Emberhold
+-- `quick` (the mutants' run) is three small types in Emberhold
 local FULL = {}
 for _, bt in Kit.BUILDING_TYPES do
 	table.insert(FULL, { bt, MAX_LEVEL[bt] or 2, "crimson" })
@@ -116,8 +116,7 @@ end
 for _, bt in { "keep", "house", "wall", "gate" } do
 	table.insert(FULL, { bt, MAX_LEVEL[bt] or 2, "emerald" })
 end
-local QUICK =
-	{ { "keep", 3, "crimson" }, { "house", 2, "crimson" }, { "wall", 2, "crimson" }, { "watchtower", 2, "crimson" } }
+local QUICK = { { "house", 2, "crimson" }, { "wall", 2, "crimson" }, { "watchtower", 2, "crimson" } }
 
 local function damaged(bt: string, lv: number, hue: string, d: any): Model
 	local m = Kit.build(bt, lv, "complete", CANON[hue])
