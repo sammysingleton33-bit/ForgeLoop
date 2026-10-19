@@ -368,7 +368,7 @@ function ArenaService:start()
 	self._running = true
 	self._match:registerArena({
 		beginArena = function(qualifiers: { string }): boolean
-			if not self.config.enabled then
+			if self.config.enabled ~= true then
 				return false -- not switched on yet: the match settles on Crown Points at once
 			end
 			return self:_begin(qualifiers)

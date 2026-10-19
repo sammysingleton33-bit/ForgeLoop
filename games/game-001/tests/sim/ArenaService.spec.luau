@@ -249,6 +249,16 @@ describe("ArenaService: the host", function()
 		expect(state.b.citizens > 0).toBe(true)
 	end)
 
+	it("only `enabled = true` switches the arena on (a truthy value does not)", function()
+		local world = boot({ 1, 2 })
+		local sloppy = shortConfig()
+		sloppy.enabled = 1 :: any
+		world.arena.config = sloppy
+		reachArena(world)
+		expect(world.arena:state().stage).toBe("done")
+		expect(world.arena._flow).toBeNil()
+	end)
+
 	it("ships switched off: the match goes to Crown Points at once, as with no host", function()
 		local world = boot({ 1, 2 })
 		world.arena.config = ArenaConfig -- the shipped config
@@ -594,6 +604,21 @@ describe("SupportService", function()
 		world.leadership:sample()
 		expect(#received(world.env, "Kingdom.Support", world.players[1])).toBe(before + 1)
 		expect(#received(world.env, "Kingdom.Support", world.players[2]) >= 1).toBe(true)
+	end)
+
+	it("an AI champion's reasons are the kingdom's own moments, not a departed ruler's personal ones", function()
+		local world = boot({ 1, 2 })
+		local kingdom = world.sim:kingdomOfUser(1).id
+		world.leadership:record(kingdom, 1, "starvation", 1) -- ruler 1's own conduct
+		world.leadership:record(kingdom, nil, "keepUpgraded", 1) -- the kingdom's reputation
+		world.leadership:sample()
+		local human = world.support:forChampion(1, kingdom)
+		assert(human, "support")
+		expect(table.find(human.reasons, "Let the kingdom go hungry")).never.toBeNil()
+		local ai = world.support:forChampion(nil, kingdom)
+		assert(ai, "support")
+		expect(table.find(ai.reasons, "Let the kingdom go hungry")).toBeNil()
+		expect(table.find(ai.reasons, "Raised the keep for all to see")).never.toBeNil()
 	end)
 
 	it("names the three moments that moved the score most as the champion's reasons, each text once", function()

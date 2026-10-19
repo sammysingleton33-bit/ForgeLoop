@@ -319,8 +319,10 @@ function ArenaFlow:vote(userId: number, candidate: number): (boolean, string?)
 			if not contains(candidates, candidate) then
 				return false, "not_a_candidate"
 			end
-			self._votes[userId] = candidate
-			self._rev += 1
+			if self._votes[userId] ~= candidate then -- the same vote again changes nothing, so nothing is broadcast
+				self._votes[userId] = candidate
+				self._rev += 1
+			end
 			return true, nil
 		end
 	end
@@ -374,11 +376,20 @@ function ArenaFlow:choose(userId: number, weapon: string, armour: string, trigge
 		end
 		table.insert(chosen, trigger)
 	end
+	local changed = not champion.chosen
+		or champion.weapon ~= weapon
+		or champion.armour ~= armour
+		or #champion.triggers ~= #chosen
+	for index, trigger in chosen do
+		changed = changed or champion.triggers[index] ~= trigger
+	end
 	champion.weapon = weapon
 	champion.armour = armour
 	champion.triggers = chosen
 	champion.chosen = true
-	self._rev += 1
+	if changed then -- the same loadout again changes nothing, so nothing is broadcast
+		self._rev += 1
+	end
 	return true, nil
 end
 
