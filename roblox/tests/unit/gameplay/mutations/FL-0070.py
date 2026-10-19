@@ -8,10 +8,15 @@ M = [
  # --- the score
  ("FL-0070", SM, 'return sampling.wholeMatchShare * wholeAverage + (1 - sampling.wholeMatchShare) * recentAverage', 'return recentAverage', "sim/SupportModel", "a good deed in the last minute cannot jump a tier"),
  ("FL-0070", SM, 'return sampling.wholeMatchShare * wholeAverage + (1 - sampling.wholeMatchShare) * recentAverage', 'return wholeAverage', "sim/SupportModel", "an early mistake is repairable"),
- ("FL-0070", SM, 'if sample.t <= now then', 'if true then', "sim/SupportModel", "ignores samples from the future"),
+ ("FL-0070", SM, 'if finite(sample.t) and sample.t <= now then', 'if true then', "sim/SupportModel", "ignores samples from the future"),
  ("FL-0070", SM, 'if score >= cfg.tiers[tier].min then', 'if score > cfg.tiers[tier].min then', "sim/SupportModel", "tierOf honours the band edges"),
- ("FL-0070", SM, 'local value = clamp(sample.components[component] or NEUTRAL, 0, 100)', 'local value = sample.components[component] or 0', "sim/SupportModel", "a sample that lacks a component counts it as neutral"),
+ ("FL-0070", SM, 'local value = clamp(if finite(raw) then raw else NEUTRAL, 0, 100)', 'local value = clamp(raw or 0, 0, 100)', "sim/SupportModel", "a sample that lacks a component counts it as neutral"),
  ("FL-0070", SM, 'if recent == nil or before == nil then\n\t\treturn 0', 'if recent == nil or before == nil then\n\t\treturn 1', "sim/SupportModel", "the trend is the change over 5 minutes"),
+ # --- non-finite input (FORGE-07 L1)
+ ("FL-0070", SM, 'local value = clamp(if finite(raw) then raw else NEUTRAL, 0, 100)', 'local value = clamp(raw or NEUTRAL, 0, 100)', "sim/SupportModel", "a NaN or infinite input is never evidence"),
+ ("FL-0070", SM, 'if finite(sample.t) and sample.t <= now then', 'if sample.t <= now then', "sim/SupportModel", "a NaN or infinite input is never evidence"),
+ ("FL-0070", SM, 'if not finite(now) then\n\t\treturn NEUTRAL', 'if false then\n\t\treturn NEUTRAL', "sim/SupportModel", "a NaN or infinite input is never evidence"),
+ ("FL-0070", SM, 'if not finite(score) then\n\t\tscore = NEUTRAL', 'if false then\n\t\tscore = NEUTRAL', "sim/SupportModel", "a NaN or infinite input is never evidence"),
  # --- the offers
  ("FL-0070", SM, 'citizen.loyalty >= cfg.offer.pledgedLoyalty', 'citizen.loyalty > cfg.offer.pledgedLoyalty', "sim/SupportModel", "offers a perk at loyalty 80"),
  ("FL-0070", SM, 'citizen.loyalty >= cfg.offer.empoweredLoyalty', 'citizen.loyalty > cfg.offer.empoweredLoyalty', "sim/SupportModel", "offers a perk at loyalty 80"),

@@ -41,14 +41,24 @@ local function clamp(x: number, lo: number, hi: number): number
 	return math.max(lo, math.min(hi, x))
 end
 
+-- A number that is neither NaN nor infinite. The support chain never lets one through: math.min / math.max swallow a NaN
+-- (the answer depends on the argument order), so a bad input would otherwise become a top or bottom score.
+local function finite(x: any): boolean
+	return type(x) == "number" and x == x and x > -math.huge and x < math.huge
+end
+
 -- The time-weighted average of one component (nil samples count as neutral).
 local function weightedAverage(samples: { Sample }, component: string, now: number, cfg: any): number
 	local sampling = cfg.sampling
 	local all, recent = 0, 0
 	local allSum, recentSum = 0, 0
+	if not finite(now) then
+		return NEUTRAL
+	end
 	for _, sample in samples do
-		if sample.t <= now then
-			local value = clamp(sample.components[component] or NEUTRAL, 0, 100)
+		if finite(sample.t) and sample.t <= now then
+			local raw = sample.components[component]
+			local value = clamp(if finite(raw) then raw else NEUTRAL, 0, 100)
 			all += 1
 			allSum += value
 			if sample.t > now - sampling.recentSeconds then
@@ -70,6 +80,9 @@ end
 
 function SupportModel.tierOf(score: number, config: any?): SupportTier
 	local cfg = config or Support
+	if not finite(score) then
+		score = NEUTRAL -- a NaN is no evidence either way: the middle tier, never a top or bottom one
+	end
 	for _, tier in cfg.tierOrder do
 		if score >= cfg.tiers[tier].min then
 			return tier
@@ -93,7 +106,7 @@ function SupportModel.score(
 		total += weight * value
 		weights += weight
 	end
-	local score = clamp(total / weights, 0, 100)
+	local score = clamp(total / weights, 0, 100) -- every average is finite (weightedAverage), so this is too
 	return score, SupportModel.tierOf(score, cfg), breakdown
 end
 

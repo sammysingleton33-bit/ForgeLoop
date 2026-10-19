@@ -81,6 +81,35 @@ describe("Arena/SupportModel: score and tiers", function()
 		expect(math.abs(score - (20 * 100 + 80 * 50) / 100) < 1e-9).toBe(true)
 	end)
 
+	it("a NaN or infinite input is never evidence: the middle tier, not a top or bottom score", function()
+		local nan = 0 / 0
+		-- one component NaN, one infinite, one negative-infinite: each counts as neutral, like a missing one
+		local samples = flat(0, 600, 50)
+		samples[3].components.loyalty = nan
+		samples[4].components.morale = math.huge
+		samples[5].components.conduct = -math.huge
+		local score, tier = SupportModel.score(samples, { now = 600 })
+		expect(score).toBe(50)
+		expect(tier).toBe("divided")
+		-- a NaN timestamp is dropped; a NaN or infinite `now` reads as no history
+		local stamped = flat(0, 600, 90)
+		stamped[2].t = nan
+		table.insert(stamped, { t = -math.huge, components = { loyalty = 0, conduct = 0, morale = 0 } }) -- an infinite past
+		local good = SupportModel.score(stamped, { now = 600 })
+		expect(math.abs(good - 90) < 1e-9).toBe(true)
+		local noNow, noNowTier = SupportModel.score(flat(0, 600, 90), { now = nan })
+		expect(noNow).toBe(50)
+		expect(noNowTier).toBe("divided")
+		expect((SupportModel.score(flat(0, 600, 90), { now = math.huge }))).toBe(50)
+		-- tierOf: NaN is the neutral tier; real out-of-range scores still clamp to the ends
+		expect(SupportModel.tierOf(nan)).toBe("divided")
+		expect(SupportModel.tierOf(-5)).toBe("hostile")
+		expect(SupportModel.tierOf(500)).toBe("adoring")
+		-- and the trend stays a finite number
+		local trend = SupportModel.trend(samples, { now = 600 })
+		expect(trend == trend).toBe(true)
+	end)
+
 	it("each component counts by its weight: loyalty (20) moves the score twice as far as morale (10)", function()
 		local function with(component: string, value: number)
 			local samples = flat(0, 900, 50)
