@@ -461,11 +461,11 @@ describe("LeadershipService acts from the simulation", function()
 	it("does not record overConscription for an army at or under the share", function()
 		-- an army sized to exactly the bar: the bar is set to this kingdom's own ratio, so it is "at", not "above"
 		local probe = boot(nil, FAST)
-		local citizens = #probe.k.citizenIds
+		local citizenCount = #probe.k.citizenIds
 		local atBar = table.clone(FAST)
 		atBar.rules = table.clone(FAST.rules)
 		atBar.rules.conscription = table.clone(FAST.rules.conscription)
-		atBar.rules.conscription.soldierShareAbove = 3 / (3 + citizens)
+		atBar.rules.conscription.soldierShareAbove = 3 / (3 + citizenCount)
 		local exact = boot(nil, atBar)
 		exact.k.unitIds = {}
 		for i = 1, 3 do
@@ -477,7 +477,7 @@ describe("LeadershipService acts from the simulation", function()
 			end
 			tick(exact)
 		end
-		expect(#exact.k.citizenIds).toBe(citizens)
+		expect(#exact.k.citizenIds).toBe(citizenCount)
 		expect(#actsOf(exact, "overConscription", 1)).toBe(0)
 		local w = boot(nil, FAST)
 		for _ = 1, 6 do
