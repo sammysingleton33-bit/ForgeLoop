@@ -5,7 +5,7 @@
 	Portrait.portrait(kind, job, kingdomColor, look?, kingdom?) -> Model
 		Calls Kit.character's builder (CharacterMesh.character: the imported-mesh rig when the kit is imported, else
 		Character.character) with the same arguments (never a copy of the rig code), so the portrait and
-		the world rig look identical: the same ≤ 9 parts with the same names, classes, sizes, colours,
+		the world rig look identical: the same parts (the part-built rig's ≤ 11, or the mesh rig's ≤ 16) with the same names, classes, sizes, colours,
 		materials, CFrames, look and soldier crest, and the same attributes (KitKind, KitJob, KitLook,
 		KitRootHeight; KitTint, KitHeadwear, KitTool). Portrait-only changes:
 		- every part is Anchored: a still pose needs no WorldModel and no physics;
