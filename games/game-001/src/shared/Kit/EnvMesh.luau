@@ -287,7 +287,8 @@ local function prepare(assetId: string, def: any, model: Model): (Model?, string
 		mesh.Reflectance = 0
 		mesh.Material = Enum.Material.SmoothPlastic
 		mesh.Color = Color3.new(1, 1, 1) -- the colours are baked into the mesh (tint "fixed")
-		mesh.CollisionFidelity = Enum.CollisionFidelity.Hull
+		-- CollisionFidelity is not set here: a game script cannot write it (Plugin security). The Studio import sets Hull on every
+		-- Body (blender/studio/import_env_kit.luau) and the saved Forge.Assets Model carries it.
 	end
 	local box = colliderOf(def)
 	if box then
@@ -323,10 +324,16 @@ local function log(assetId: string, why: string)
 	end
 end
 
-function EnvMesh.accept(assetId: string, clone: Model): (Model?, string?)
+function EnvMesh.accept(assetId: string, clone: Model?): (Model?, string?)
 	local def = propsOf(activeData())[assetId]
 	if def == nil then
 		return clone, nil
+	end
+	if clone == nil then -- the template is not Archivable: it clones to nil
+		local reason = "the template cannot be cloned (Archivable is false)"
+		rejected[assetId] = reason
+		log(assetId, reason)
+		return nil, reason
 	end
 	local ok, model, why
 	if type(def) == "table" then

@@ -144,6 +144,24 @@ describe("Kit.prop builds the stand-in unless a matching imported Model is there
 		end
 	)
 
+	it("rejects a template that cannot be cloned (Archivable false clones to nil) without erroring", function()
+		EnvKit.install(data, EnvKit.assets(data, {}))
+		local messages = {}
+		EnvMesh.setLogger(function(message)
+			table.insert(messages, message)
+		end)
+		local ready, why = EnvMesh.accept("bush_01", nil)
+		EnvMesh.setLogger(nil)
+		expect(ready).toBeNil()
+		expect(string.find(tostring(why), "cannot be cloned", 1, true)).never.toBeNil()
+		expect(EnvMesh.status().rejected.bush_01).toBe(why)
+		expect(#messages).toBe(1)
+		-- an id the data does not list passes through, nil or not
+		local passed, whyNot = EnvMesh.accept("prop_goods_01", nil)
+		expect(passed).toBeNil()
+		expect(whyNot).toBeNil()
+	end)
+
 	it("rejects a Model whose bounds are not the data's: scale, axes, a moved pivot, a missing mesh part", function()
 		local bad: { [string]: any } = {
 			["scaled 28x (a unit mistake)"] = { scale = Vector3.new(28, 28, 28) },
@@ -271,7 +289,7 @@ describe("an accepted mesh prop behaves like a stand-in: pivot at the base centr
 				expect(body.Transparency).toBe(0)
 				expect(body.Material).toBe(Enum.Material.SmoothPlastic)
 				expect(body.Color:ToHex()).toBe("ffffff") -- baked vertex colours, not the template's green
-				expect(body.CollisionFidelity).toBe(Enum.CollisionFidelity.Hull)
+				expect(body.CollisionFidelity).toBe(Enum.CollisionFidelity.Box) -- the template's own: a game script cannot write it
 				local centre, size = EnvKit.drawn(prop)
 				expect((size - Vector3.new(def.size[1], def.size[2], def.size[3])).Magnitude).toBeLessThan(1e-3)
 				expect((centre - Vector3.new(def.bbox_center[1], def.bbox_center[2], def.bbox_center[3])).Magnitude).toBeLessThan(

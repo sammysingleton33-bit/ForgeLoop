@@ -144,6 +144,7 @@ local function runScript(place: Place, edits: { [string]: string }?): (any, { st
 			Vector3 = Vector3,
 			Color3 = Color3,
 			CFrame = CFrame,
+			Enum = Enum, -- the command bar has it: the import sets CollisionFidelity
 		},
 	})
 	local report = chunk()
@@ -214,6 +215,7 @@ describe("import_env_kit.luau: the Studio import script, against fake trees", fu
 				expect(body.CanTouch).toBe(false)
 				expect(body.Massless).toBe(true)
 				expect(body.CastShadow).toBe(true)
+				expect(body.CollisionFidelity).toBe(Enum.CollisionFidelity.Hull) -- set by the import (plugin rights), never by the Kit
 				expect((body.Size - Vector3.new(def.size[1], def.size[2], def.size[3])).Magnitude).toBeLessThan(1e-4)
 				expect(
 					(body.CFrame.Position - Vector3.new(def.bbox_center[1], def.bbox_center[2], def.bbox_center[3])).Magnitude
