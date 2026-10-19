@@ -110,7 +110,15 @@ function ArenaService:_place(userId: number, x: number, z: number, towardX: numb
 			return
 		end
 		local y = height or root.CFrame.Position.Y
-		character:PivotTo(CFrame.lookAt(Vector3.new(x, y, z), Vector3.new(towardX, y, towardZ)))
+		local cframe = CFrame.lookAt(Vector3.new(x, y, z), Vector3.new(towardX, y, towardZ))
+		-- through KingdomService's adapter, the one way this game moves a character (a spec observes it there)
+		local kingdoms = self._registry:find("KingdomService")
+		local adapter = kingdoms and kingdoms.adapter
+		if adapter and adapter.pivot then
+			adapter.pivot(character, cframe)
+		else
+			character:PivotTo(cframe)
+		end
 	end)
 end
 
