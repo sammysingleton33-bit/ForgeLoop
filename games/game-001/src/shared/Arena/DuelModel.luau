@@ -160,7 +160,7 @@ local function fire(state: any, side: any, trigger: any, events: { DuelEvent })
 				{ rate = state.config.maxHp * effect.magnitude / trigger.duration, endsAt = endsAt }
 			)
 		elseif effect.kind == "telegraph" then
-			side.warning = { lead = effect.lead, usesLeft = effect.uses or 1, endsAt = endsAt }
+			side.warning = { lead = effect.lead or 0, usesLeft = effect.uses or 1, endsAt = endsAt }
 		end
 	end
 	emit(state, events, "triggerFired", side.id, { source = trigger.source })
@@ -171,6 +171,9 @@ local function canFire(state: any, trigger: any): boolean
 end
 
 local function conditionHolds(state: any, side: any, condition: string): boolean
+	if type(condition) ~= "string" then
+		return false -- Caps refuses a trigger without one; a model fed an unchecked setup never fires it, it does not throw
+	end
 	local threshold = string.match(condition, "^hpBelow:([%d%.]+)$")
 	if threshold then
 		if side.hp / state.config.maxHp < tonumber(threshold) :: number then
