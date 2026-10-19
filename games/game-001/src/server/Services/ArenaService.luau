@@ -19,8 +19,8 @@
 	perk from the offer, never from the client), every duellist's modifier list is checked against the caps by DuelRunner,
 	`inRange` and `facing` come from where the characters stand on the server, and a player who leaves forfeits.
 
-	The host answers beginArena with false unless config Arena `enabled` is true (it ships false until the client, the ring
-	bounds and the Studio gate land), so the match goes to Crown Points exactly as with no host.
+	The host answers beginArena with false unless config Arena `enabled` is true (on since the client and the ring bounds
+	landed; the two-player Studio run is still owed), so the match goes to Crown Points exactly as with no host.
 	Champions are placed on the marks of WorldLayout.arena (position, height, facing) at the start of the intro; a config
 	`site` overrides it, and a fallback at the origin serves a world with neither. `site`, `placeAt` and `poseOf` can be
 	replaced by specs.

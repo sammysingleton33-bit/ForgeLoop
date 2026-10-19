@@ -14,8 +14,9 @@
 	simultaneousSeconds    a second champion leaving this soon after a forfeit makes it a draw (both_left)
 	ai                     an AI kingdom's champion: weapon, armour and skill 0..1 (DuelAI; the governor difficulty,
 	                       BRIEF §16.3, will set the skill)
-	enabled                false until the DuelController client, the ring bounds and the Studio gate land: the arena host
-	                       then answers no to beginArena and the match goes to the Crown Points result at once
+	enabled                the arena switch: false = the host answers no to beginArena and the match goes to the Crown
+	                       Points result at once (and the support meter stays dark). On since the DuelController client and
+	                       the ring bounds landed; the two-player Studio run is still owed
 	ring                   the champions' bounds, kept by the server from the intro to the end of the duel: one beyond the
 	                       ring's radius (WorldLayout.arena duelRadius; `fallbackRadius` around a `site` override) plus `margin`
 	                       studs is put back at the edge, WalkSpeed is fixed at `walkSpeed` and restored afterwards, and a
@@ -51,7 +52,7 @@ return {
 	defaultWeapon = "swordShield",
 	defaultArmour = "medium",
 	ai = { weapon = "swordShield", armour = "medium", skill = 0.5 },
-	enabled = false,
+	enabled = true,
 	ring = { margin = 2, walkSpeed = 16, fallbackRadius = 12 },
 	tick = 1 / 30,
 	maxCatchup = 0.25,
