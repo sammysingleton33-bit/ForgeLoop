@@ -48,7 +48,7 @@ RIG.JSON v1 (what Kit/CharacterMesh reads; the FL-0135 contract plus the clarifi
            jobs build "idle". Slot keys are free labels except [+] "hair" (the piece becomes the part Hair: KitHeadwear)
            and "acc" (Accessory: KitAccessory). The pieces of one assembly: exactly one base piece for each of Torso, Head,
            LeftArm, RightArm, LeftLeg, RightLeg, at most one for Tool/TorsoTool, any number of extras, <= 16 pieces in all
-           (a mirror piece counts twice), and within the triangle BUDGET (D-057 amendment (9)): citizens 1,000 in all, of
+           (a mirror piece counts twice), and within the triangle BUDGET (D-057 amendment (15)): citizens 1,000 in all, of
            which the body <= 900 and the hand tool or sack with its heads <= 150; soldiers and governors 1,500 in all.
            template   a piece id, or [+] an id with ONE variant token (same look -> same model):
                       %look.<axis>%  the pieces whose id is prefix + digits + suffix, in numeric order, one picked by the
@@ -360,6 +360,9 @@ def validate(data) -> tuple[list[str], list[str]]:
         if n_pieces > MAX_PIECES:
             errors.append(f"{where}: {n_pieces} pieces, the budget is {MAX_PIECES} (D-057: draw calls per citizen)")
         style = "governor" if key == "governor" else "soldier" if key.startswith("soldier") else "citizen"
+        # D-057 (16): the kingdom must still read on a mesh soldier (D-033 (3)): every soldier assembly carries a %kingdom% crest piece
+        if style == "soldier" and not any("%kingdom%" in tmpl and "crest" in tmpl for _, tmpl, _ in slots):
+            errors.append(f"{where}: a soldier assembly needs a %kingdom% crest piece (a slot template with crest and %kingdom%; D-057 (16), D-033 (3))")
         limits = BUDGET[style]
         for what, got in (("total", tris_bound), ("body", tris_bound - tool_bound), ("tool", tool_bound)):
             if what in limits and got > limits[what]:
@@ -538,6 +541,7 @@ def broken_kits(good: dict):
         ("no variants", m(lambda d: d["assemblies"]["idle"].update(hair="wig_%look.hair%")), "no piece fits"),
         ("no such piece", m(lambda d: d["assemblies"]["idle"].update(boot="boot_99")), "no piece 'boot_99'"),
         ("kingdom missing", drop_piece("armour_azure"), "kingdom azure"),
+        ("soldier without a crest", m(lambda d: d["assemblies"]["soldier"].pop("hair")), "crest piece"),
         (
             "variants disagree",
             m(lambda d: d["pieces"]["torso_02"].update(joint="Head", weld_to=None, slot="head")),
@@ -622,7 +626,7 @@ def selftest() -> int:
     check(warns(fatten_tool, "tool triangles over the citizen budget of 150"), "a 200-triangle hoe is warned about (tool budget 150)")
     check(warns(drop_neutral, "no neutral variant"), "a missing neutral variant is warned about")
     check(warns(drop_job, "no 'miner'"), "a missing job assembly is warned about")
-    check(BUDGET["citizen"] == {"total": 1000, "body": 900, "tool": 150} and BUDGET["soldier"] == {"total": 1500}, "the budget constants are D-057 amendment (9)'s")
+    check(BUDGET["citizen"] == {"total": 1000, "body": 900, "tool": 150} and BUDGET["soldier"] == {"total": 1500}, "the budget constants are D-057 amendment (15)'s")
     print(f"selftest: {'FAIL' if failures else 'PASS'} ({len(failures)} failure(s))")
     return 1 if failures else 0
 

@@ -22,6 +22,7 @@
       "geometry_hash": "5b380f704e5ada3c",
       "id": "castle_keep_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue"
@@ -93,6 +94,7 @@
       "geometry_hash": "8b7287e62dcf5cdc",
       "id": "castle_keep_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "green"
@@ -164,6 +166,7 @@
       "geometry_hash": "1e048857a33fb3ae",
       "id": "castle_keep_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red"
@@ -235,6 +238,7 @@
       "geometry_hash": "6f18083fce9cdf04",
       "id": "castle_keep_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "yellow"

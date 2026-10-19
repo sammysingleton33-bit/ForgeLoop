@@ -22,6 +22,7 @@
       "geometry_hash": "f9d91807187c1d3e",
       "id": "resource_ore_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "iron",
@@ -91,6 +92,7 @@
       "geometry_hash": "7619c727872f5043",
       "id": "resource_ore_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "iron",
@@ -160,6 +162,7 @@
       "geometry_hash": "f9ce9c2dab1d0d00",
       "id": "resource_ore_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "gold",
@@ -229,6 +232,7 @@
       "geometry_hash": "bdeabb63ac995a69",
       "id": "resource_ore_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "gold",
@@ -298,6 +302,7 @@
       "geometry_hash": "abf52327d5603ec5",
       "id": "resource_ore_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "crystal",
@@ -367,6 +372,7 @@
       "geometry_hash": "88d430dd351708f5",
       "id": "resource_ore_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "ore": "crystal",

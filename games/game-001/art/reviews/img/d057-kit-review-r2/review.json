@@ -1,0 +1,104 @@
+{
+ "round": "re-score 2 (kit v2: 103 pieces, runtime contract, job-coloured cloth, kingdom mantle)",
+ "reviewer": "fresh image-only session (session_01AYvet95dcwjQ27WqBRjcCk, claude-sonnet-5-5, sparse checkout of this directory only, 2026-10-19)",
+ "images": [
+  "sheet_portraits.jpg",
+  "sheet_before_after_portrait.jpg",
+  "sheet_gameplay40.jpg",
+  "sheet_aerial170.jpg",
+  "sheet_jobs_variation.jpg",
+  "sheet_silhouettes.jpg",
+  "sheet_kingdoms_sides.jpg"
+ ],
+ "reply_verbatim": {
+  "scores": {
+   "Reference": {
+    "silhouette": 2,
+    "variation": 2,
+    "readability": 2,
+    "proportions": 3,
+    "palette": 3,
+    "detail": 1,
+    "cohesion": 4,
+    "cost": 5
+   },
+   "Kit": {
+    "silhouette": 3,
+    "variation": 4,
+    "readability": 3,
+    "proportions": 3,
+    "palette": 3,
+    "detail": 4,
+    "cohesion": 4,
+    "cost": 4
+   }
+  },
+  "identities": {
+   "farmer": {
+    "at40": "yes",
+    "at170": "yes",
+    "evidence": "Wide straw hat with red band, hoe; readable from above"
+   },
+   "miner": {
+    "at40": "yes",
+    "at170": "partly",
+    "evidence": "Orange helmet with lamp, pickaxe; pick thin and lost from above"
+   },
+   "woodcutter": {
+    "at40": "yes",
+    "at170": "partly",
+    "evidence": "Dark cap, big axe; axe head fades at distance"
+   },
+   "blacksmith": {
+    "at40": "partly",
+    "at170": "no",
+    "evidence": "Dark cap, beard, small hammer; tiny, similar to woodcutter and builder"
+   },
+   "merchant": {
+    "at40": "partly",
+    "at170": "partly",
+    "evidence": "Purple hat and tunic distinctive; scale prop is tiny and thin"
+   },
+   "healer": {
+    "at40": "partly",
+    "at170": "no",
+    "evidence": "White cap with green cross only visible close; crook thin"
+   },
+   "soldier": {
+    "at40": "yes",
+    "at170": "yes",
+    "evidence": "Grey helmet, red crest, spear and banner; kingdom colour clear"
+   },
+   "builder": {
+    "at40": "partly",
+    "at170": "no",
+    "evidence": "White cap and mallet; resembles healer and blacksmith from above"
+   },
+   "hauler": {
+    "at40": "partly",
+    "at170": "partly",
+    "evidence": "Orange hair and brown sack help; sack is small, no clear silhouette"
+   },
+   "idle": {
+    "at40": "no",
+    "at170": "no",
+    "evidence": "Plain beige clothes and brown cap; generic, no identifying prop"
+   },
+   "governor": {
+    "at40": "yes",
+    "at170": "partly",
+    "evidence": "Gold crown, red cape, tall sceptre; crown shrinks to a dot"
+   }
+  },
+  "defects": [
+   "Most worker jobs (blacksmith, builder, healer, hauler, idle) are not distinguishable at 170 studs. Props are thin and small, and torsos share a red top with beige or white clothing (sheet_aerial170, sheet_jobs_variation).",
+   "The kingdom colour sits on one small shoulder/chest band on workers. The other clothes are neutral, so the colour reads weakly from above, and the 4-kingdom test shows only soldiers and rulers (sheet_aerial170, sheet_kingdoms_sides).",
+   "Silhouettes of the non-tool jobs (hauler, blacksmith, merchant, healer, idle, builder) are near-identical blobs of the same body shape. Only the tool-bearing jobs and the soldier/governor differ (sheet_silhouettes).",
+   "Variation within a job is mostly skin and hair colour. The 36-citizen grid shares one body, one outfit layout and one red top, so same-job citizens read as clones at distance (sheet_jobs_variation).",
+   "The face and body proportions are awkward: oversized heads, stiff T-pose arms, mismatched grey-skinned arms, and a face that is only visible close (sheet_portraits, sheet_before_after_portrait). Faces and a few identity cues (the healer's cross, the crown) vanish at 40 studs and above (sheet_gameplay40)."
+  ],
+  "ship": false,
+  "verdict": "NEEDS-WORK",
+  "notes": "The Kit is clearly better than the Reference in portraits and variety. It fits the world well, and the farmer, soldier and governor read. The role identities at gameplay and aerial distance do not yet meet the readability/silhouette threshold (>=4) for the non-tool jobs. Fix by giving each job a bigger signature prop or colour block, and by putting the kingdom colour on more of the clothing, before replacing the launch art."
+ }
+}

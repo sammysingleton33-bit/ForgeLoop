@@ -1,0 +1,104 @@
+{
+ "round": "re-score 1 (kit v1: 99 pieces, kingdom-coloured torsos)",
+ "reviewer": "fresh image-only session (session_01MkZ7UF4JBg9TWbubhznioq, claude-sonnet-5-5, sparse checkout of this directory only, 2026-10-19)",
+ "images": [
+  "sheet_portraits.jpg",
+  "sheet_before_after_portrait.jpg",
+  "sheet_gameplay40.jpg",
+  "sheet_aerial170.jpg",
+  "sheet_jobs_variation.jpg",
+  "sheet_silhouettes.jpg",
+  "sheet_kingdoms_sides.jpg"
+ ],
+ "reply_verbatim": {
+  "scores": {
+   "Reference": {
+    "silhouette": 2,
+    "variation": 1,
+    "readability": 2,
+    "proportions": 2,
+    "palette": 3,
+    "detail": 1,
+    "cohesion": 4,
+    "cost": 5
+   },
+   "Kit": {
+    "silhouette": 3,
+    "variation": 3,
+    "readability": 3,
+    "proportions": 4,
+    "palette": 4,
+    "detail": 4,
+    "cohesion": 4,
+    "cost": 4
+   }
+  },
+  "identities": {
+   "farmer": {
+    "at40": "yes",
+    "at170": "yes",
+    "evidence": "Wide straw hat with red band reads clearly from above."
+   },
+   "miner": {
+    "at40": "yes",
+    "at170": "partly",
+    "evidence": "Orange helmet with lamp and pickaxe; tool thin from above."
+   },
+   "woodcutter": {
+    "at40": "partly",
+    "at170": "no",
+    "evidence": "Dark cap and axe; the axe is lost against other tool carriers."
+   },
+   "blacksmith": {
+    "at40": "partly",
+    "at170": "no",
+    "evidence": "Brown beard and hammer; dark outfit blends into the crowd."
+   },
+   "merchant": {
+    "at40": "partly",
+    "at170": "no",
+    "evidence": "Blue cap, yellow-brown coat, scale pole; small and thin."
+   },
+   "healer": {
+    "at40": "partly",
+    "at170": "no",
+    "evidence": "White headcloth with a tiny green cross; staff is thin."
+   },
+   "soldier": {
+    "at40": "yes",
+    "at170": "partly",
+    "evidence": "Grey helmet, spear, crest and flag; helmet visible from above."
+   },
+   "builder": {
+    "at40": "partly",
+    "at170": "no",
+    "evidence": "Cream cap with mallet, easily confused with hauler and woodcutter."
+   },
+   "hauler": {
+    "at40": "yes",
+    "at170": "partly",
+    "evidence": "Large brown sack and orange beanie; sack is distinctive."
+   },
+   "idle": {
+    "at40": "partly",
+    "at170": "no",
+    "evidence": "Plain brown hat and tunic; reads only as nobody-in-particular."
+   },
+   "governor": {
+    "at40": "yes",
+    "at170": "partly",
+    "evidence": "Gold crown, white collar and cape, golden staff; kingdom colour is clear."
+   }
+  },
+  "defects": [
+   "Most non-farmer, non-soldier jobs blur together at 170 studs: the aerial sheet shows red tunics in a similar size with tiny hats and tools, so blacksmith, merchant, healer, woodcutter, builder and idle can't be told apart (sheet_aerial170, sheet_jobs_variation).",
+   "Every citizen wears the same red tunic, so the kingdom colour doesn't separate jobs, and the red dominates the silhouettes and colour variety. Jobs rely on small hats and thin tools that vanish from above (sheet_jobs_variation, sheet_aerial170).",
+   "The silhouettes of the lower-body jobs (builder, hauler, idle, blacksmith, healer, merchant) share nearly the same torso and head outline. Only hats and tools differ, and thin tools like the merchant's scale and the healer's staff are barely visible as black shapes (sheet_silhouettes).",
+   "Same-job variation is mostly skin, hair and hat tone swaps on identical bodies and outfits. The 36-look grid reads as clones with different heads, so a crowd of the same job looks repetitive (sheet_jobs_variation).",
+   "Faces are tiny flat black dashes with inconsistent skin shading (the blacksmith and idle citizens have very dark faces with no readable features, the healer has a faint cross). Detail that helps in the portraits is invisible at 40 studs and above, and the aerial improvement over the Reference is marginal (sheet_portraits, sheet_gameplay40, sheet_aerial170)."
+  ],
+  "ship": false,
+  "verdict": "NEEDS-WORK",
+  "notes": "The Kit is a clear improvement over the Reference in the portraits and at 40 studs: faces, hair, boots, crowns and capes are present, and the kingdom colours read well on soldiers and rulers (sheet_kingdoms_sides). It fails the readability and silhouette thresholds (>= 4), because at the aerial distance most jobs collapse into the same small red figure. The Kit needs bigger or more distinct job-specific shapes and colour blocking, such as tunic colours by job and larger hats and props, plus more body variety, before it can replace the Reference as the launch citizen art."
+ }
+}

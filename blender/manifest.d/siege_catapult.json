@@ -22,6 +22,7 @@
       "geometry_hash": "05e3ea9ba07b1215",
       "id": "siege_catapult_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "counterweight",
@@ -94,6 +95,7 @@
       "geometry_hash": "6d55a193dee79f24",
       "id": "siege_catapult_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "torsion",
@@ -166,6 +168,7 @@
       "geometry_hash": "224d4fe2856e04d0",
       "id": "siege_catapult_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "torsion",
@@ -238,6 +241,7 @@
       "geometry_hash": "7e7f46f1b04a4558",
       "id": "siege_catapult_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "counterweight",

@@ -3,8 +3,9 @@
 	Support (ReplicatedStorage.Forge.Config.Support) — the Crown Arena support score, tiers, key-citizen perks and the
 	ruler decisions that feed them (design `crown-arena.md` §3-§4; CONTRACTS G12). Owner: FORGE-01.
 
-	PROVISIONAL weights (BRIEF §16.9); every value is inside the G12.3 caps (Arena/Caps) and FORGE-05's caps spec asserts
-	that. Read by Arena/SupportModel (pure) and, later, LeadershipService / SupportService.
+	PROVISIONAL weights (BRIEF §16.9); every value is inside the G12.3 caps (Arena/Caps). tests/sim/SupportModel.spec
+	asserts that for every tier x pick set x power (FORGE-05's caps spec checks the design fixture, not this file).
+	Read by Arena/SupportModel (pure) and LeadershipService (acts, rules).
 
 	components[c].weight        share of the score (sums to 100)
 	sampling                    LeadershipService samples every `intervalSeconds`; the score weights the whole match

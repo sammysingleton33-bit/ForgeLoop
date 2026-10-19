@@ -5,8 +5,10 @@
 	are the ones FORGE-05's fairness harness already uses (tests/fairness/CapsCheck.luau, DuelDouble.luau).
 ]]
 
-export type KingdomId = string
-export type EntityId = number
+local KingdomTypes = require("../Kingdom/Types")
+
+export type KingdomId = KingdomTypes.KingdomId
+export type EntityId = KingdomTypes.EntityId
 
 export type SupportTier = "adoring" | "loyal" | "divided" | "restless" | "hostile"
 export type SupportComponent = "reputation" | "happiness" | "stability" | "morale" | "loyalty" | "conduct" | "valour"
@@ -83,7 +85,7 @@ export type DuelAction = "light" | "heavy" | "block" | "blockEnd" | "parry" | "d
 -- One support effect on one duellist (the shape Caps.check and DuelModel read; CONTRACTS G12.2 names the type, this
 -- defines it). See Arena/Caps for the rules.
 export type Modifier = {
-	source: string, -- "tier:adoring", "perk:reforge", "crowdRally", "fineWares"
+	source: string, -- "tier:adoring", "perk:reforge", "perk:fineWares", "crowdRally"
 	kind: string, -- "passive" | "trigger" | "heal" | "telegraph"
 	stat: string?, -- passive and trigger: damageReduction | damage | staminaRegen
 	magnitude: number?, -- a fraction (+6 % = 0.06); heal: a fraction of max HP
