@@ -385,6 +385,8 @@ Then, with SupportService on, run a desktop window and the phone emulator (667 Ã
    move and the moment appears at the top of the open drawer without it jumping back to the top of its scroll.
 4. Treasury income ticking does not flicker the chip or reset the drawer's scroll.
 5. Phone emulator: the chip stays clear of the pills and the objective tracker; the drawer scrolls to the last moment.
+6. On a real phone (not only the emulator): tap the chip with a thumb. It is 26 px tall, like the strip and pills
+   beside it (FORGE-07 L3 on #225); note if it takes more than one try.
 
 ## U27 â€” Results recap: Arena & support (FL-0073; needs FORGE-01's SupportService and the Arena remotes)
 Play a match to Results with the arena debug presets (your kingdom's champion Adoring, one with Restless), desktop and

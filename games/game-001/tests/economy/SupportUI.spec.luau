@@ -7,6 +7,7 @@ local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, 
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local KingdomHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/KingdomHudController")
 local KingdomWorld = require("./doubles/KingdomWorld")
+local Layout = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/Layout")
 local Sup = require("./doubles/SupportDoubles")
 local Support = require("@game/ReplicatedStorage/Forge/Config/Support")
 local SupportMeterDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/SupportMeterController")
@@ -403,5 +404,126 @@ describe("Support meter phone fit (667 × 375, L7)", function()
 			expect(find(p, "Component_" .. id)).toBeTruthy()
 		end
 		expect(p.Size.Y.Offset).toBeGreaterThan(150) -- room to read, scrolled
+	end)
+end)
+
+-- FORGE-07 L1 on #225: the behaviours the first spec round did not pin.
+describe("Support meter: pinned edges (FORGE-07 L1)", function()
+	local previous
+	beforeEach(function()
+		previous = Create.useTestConnector()
+	end)
+	afterEach(function()
+		Create.setConnector(previous)
+	end)
+
+	local function countAsks(world)
+		local remotes = world.hud.remotes
+		local invoke = remotes.invoke
+		local counter = { n = 0 }
+		remotes.invoke = function(self, name, ...)
+			if name == "Kingdom.GetSupport" then
+				counter.n += 1
+			end
+			return invoke(self, name, ...)
+		end
+		counter.restore = function()
+			remotes.invoke = invoke
+		end
+		return counter
+	end
+
+	it("asks Kingdom.GetSupport again only when my kingdom changes, not on every kingdoms push", function()
+		local world = newWorld()
+		world.kingdoms:addCrownPoints("crimson", 1) -- the first push tells the controller which kingdom is mine
+		world:advance(0.2)
+		local asks = countAsks(world)
+		for _ = 1, 5 do
+			world.kingdoms:addCrownPoints("crimson", 1) -- a kingdoms change that is not mine changing
+			world:advance(0.2)
+		end
+		expect(asks.n).toBe(0)
+		asks.restore()
+		world:destroy()
+	end)
+
+	it("no chip without a kingdom banner, even with a view applied", function()
+		local world = newWorld({ kingdom = false })
+		world.sup:apply({ score = 80, tier = "loyal", trend = 0, breakdown = {}, moments = {} }, true)
+		world:advance(0.1)
+		expect(meter(world)).toBeNil()
+		world:destroy()
+	end)
+
+	it("a nil view from GetSupport leaves no gap in the layout", function()
+		local world = newWorld()
+		expect(world.hud:metrics().hud.support).toBeTruthy()
+		world.sup:apply(nil, false) -- the server answers SupportView? (nil: nothing to show)
+		world:advance(0.1)
+		expect(world.hud.state.support).toBe(false)
+		expect(world.hud:metrics().hud.support).toBeNil()
+		expect(meter(world)).toBeNil()
+		world:destroy()
+	end)
+
+	it("a narrow phone hides the chip during a conversation, like the reputation strip", function()
+		local world = newWorld({ width = 568, height = 320 })
+		local m = world.hud:metrics()
+		expect(m.hud.pills.rows or 1).toBeGreaterThan(1) -- the narrow-phone case
+		expect(meter(world)).toBeTruthy()
+		world.hud:setMenu("conversation")
+		world:advance(0.1)
+		expect(meter(world)).toBeNil()
+		world.hud:setMenu(nil)
+		world:advance(0.1)
+		expect(meter(world)).toBeTruthy()
+		world:destroy()
+	end)
+
+	it("destroy removes the push listener", function()
+		local world = newWorld()
+		expect(world.sup._push).toBeTruthy()
+		world.sup:destroy()
+		expect(world.sup._push).toBeNil()
+		world:destroy()
+	end)
+
+	it("the chip sits a gap below the stack; the phone chip is wide enough for 'Adoring 100 ▲'", function()
+		local world = newWorld({ width = 667, height = 375 })
+		local r = world.hud:metrics().hud.support
+		local without = Layout.compute(667, 375, { reputation = world.hud.state.reputation == true })
+		expect(r.y).toBe(without.hud.bottom + 6)
+		expect(r.width).toBeGreaterThan(139)
+		world:destroy()
+	end)
+
+	it("the open chip has the gold 2 px outline", function()
+		local world = newWorld()
+		world.sup:open()
+		world:advance(0.1)
+		local stroke = meter(world):FindFirstChildWhichIsA("UIStroke")
+		expect(stroke.Thickness).toBe(2)
+		world:destroy()
+	end)
+
+	it("the model clamps the score, survives NaN, and rounds at the edges", function()
+		local nan = 0 / 0
+		local v =
+			SupportMeterModel.view({ score = 105, tier = "adoring", trend = nan, breakdown = { happiness = nan } })
+		expect(v.score).toBe(100)
+		expect(v.trend.arrow).toBe("▬")
+		expect(v.components[2].value).toBeNil()
+		expect(SupportMeterModel.view({ score = 50, tier = "divided", trend = 0.5 }).trend.arrow).toBe("▬")
+		expect(SupportMeterModel.view({ score = 50, tier = "divided", trend = -0.5 }).trend.arrow).toBe("▬")
+		expect(SupportMeterModel.view({ score = 50, tier = "divided", trend = 0.51 }).trend.arrow).toBe("▲")
+		local m = SupportMeterModel.view({
+			score = 50,
+			tier = "divided",
+			moments = { { t = 1, component = "conduct", delta = -2.5, text = "x" } },
+		})
+		expect(m.moments[1].deltaText).toBe("−3")
+		expect(SupportMeterModel.view({ score = 50, tier = "divided", trend = 3 }).trend.text).toBe(
+			`Rising +3 in {math.floor(Support.trendSeconds / 60 + 0.5)} min`
+		)
 	end)
 end)
