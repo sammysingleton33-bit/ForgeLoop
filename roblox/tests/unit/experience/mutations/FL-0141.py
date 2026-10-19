@@ -91,6 +91,8 @@ M = [
  ("FL-0141", R, 'write(joints.Root, root, weight * body, false, io)', 'write(joints.Root, root, weight, false, io)', DP, "over an avatar's Animator", "game"),
  ("FL-0141", R, 'write(joints.Torso, torso, weight * body, false, io)', 'write(joints.Torso, torso, weight, false, io)', DP, "over an avatar's Animator", "game"),
  ("FL-0141", R, 'write(joints.Torso, torso, weight * body, false, io)\n\t\twrite(joints.LeftLeg, undo * pose.LeftLeg, weight * body, false, io)', 'write(joints.Torso, torso, weight * body, false, io)\n\t\twrite(joints.LeftLeg, undo * pose.LeftLeg, weight, false, io)', DP, "over an avatar's Animator", "game"),
+ ("FL-0141", R, 'write(joints.LeftLeg, undo * pose.LeftLeg, weight * body, false, io)\n\t\twrite(joints.RightLeg, undo * pose.RightLeg, weight * body, false, io)\n\telse', 'write(joints.LeftLeg, undo * pose.LeftLeg, weight * body, false, io)\n\t\twrite(joints.RightLeg, undo * pose.RightLeg, weight, false, io)\n\telse', DP, "over an avatar's Animator", "game"),
+ ("FL-0141", R, 'write(joints.RightLeg, undo * pose.RightLeg, weight * body, false, io)\n\tend', 'write(joints.RightLeg, undo * pose.RightLeg, weight, false, io)\n\tend', DP, "over an avatar's Animator", "game"),
  ("FL-0141", A, 'local fading = self._stoppedAt ~= nil and t - self._stoppedAt <= DuelPoses.XFADE + 0.05', 'local fading = false', FD, "depends on DuelController and follows", "game"),
  ("FL-0141", A, 'duellist.userId == me and duellist.isAI ~= true then', 'duellist.userId == me then', FD, "your own sent press animates", "game"),
 ]
