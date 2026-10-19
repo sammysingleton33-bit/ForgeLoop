@@ -15,6 +15,7 @@
 		CharacterMesh.status() -> Status             -- diagnostics: pieces, assemblies, missing pieces, mesh vs fallback builds
 		CharacterMesh.setAssetSource(folder?)        -- the Assets folder (Kit.setAssetSource passes it on); CitizenKit is its child
 		CharacterMesh.setData(data?)                 -- replaces the committed data (specs, tools); nil restores it
+		CharacterMesh.setLogger(fn?)                 -- where the once-per-reason 'mesh rig not used' line goes (default: warn)
 		CharacterMesh.plan(data, kind, job, kingdomColor, look?, kingdom?) -> (Plan?, string?)   -- pure: which pieces, why not
 		CharacterMesh.build(data, folder, kind, job, kingdomColor, look?, kingdom?) -> (Model?, string?)   -- folder = CitizenKit
 		CharacterMesh.missingPieces(data, folder?) -> { string }   -- piece ids absent or unusable in the CitizenKit folder
@@ -143,6 +144,8 @@ local override: any = nil
 local assetSource: Instance? = nil
 local meshBuilds, fallbackBuilds = 0, 0
 local lastFallback: string? = nil
+local logger: ((string) -> ())? = nil
+local logged: { [string]: boolean } = {}
 
 local function activeData(): any
 	return override or CharacterMeshData
@@ -155,6 +158,27 @@ end
 function CharacterMesh.setData(data: any?)
 	override = data
 	meshBuilds, fallbackBuilds, lastFallback = 0, 0, nil
+	table.clear(logged)
+end
+
+-- Where the "mesh rig not used" line goes (default: warn). Tests set their own and nil puts the default back.
+function CharacterMesh.setLogger(fn: ((string) -> ())?)
+	logger = fn
+end
+
+-- A rig that falls back is said ONCE for each reason (never an error, never a line per citizen): the data and the folder are there,
+-- so the build was meant to be a mesh rig, and only the client builds rigs, so this is the line the owner looks for in the client Output.
+local function logFallback(reason: string)
+	if logged[reason] then
+		return
+	end
+	logged[reason] = true
+	local message = `Kit.character: mesh rig not used ({reason}); building the part-built citizen`
+	if logger then
+		logger(message)
+	elseif type(warn :: any) == "function" then
+		warn(message)
+	end
 end
 
 local function isTable(v: any): boolean
@@ -770,7 +794,8 @@ function CharacterMesh.build(
 		part.Transparency = 0
 		part.Reflectance = 0
 		part.Material = Enum.Material.SmoothPlastic
-		-- CollisionFidelity is not set here: a game script cannot write it (Plugin security); the Studio import sets Box
+		-- CollisionFidelity is not set here: the API reference says "This property cannot be read or manipulated by scripts during
+		-- runtime"; the Studio import sets Box
 		-- (blender/studio/import_char_kit.luau) and the saved Forge.Assets pieces carry it
 
 		local tint = def.tint
@@ -880,7 +905,8 @@ function CharacterMesh.character(
 			meshBuilds += 1
 			return model
 		end
-		lastFallback = if ok then why else `error: {tostring(model)}`
+		lastFallback = if ok then tostring(why) else `error: {tostring(model)}`
+		logFallback(lastFallback :: string)
 	end
 	fallbackBuilds += 1
 	return Character.character(kind, job, kingdomColor, look, kingdom)

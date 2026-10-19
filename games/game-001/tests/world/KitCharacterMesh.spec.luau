@@ -128,6 +128,40 @@ describe("Kit.character falls back to the part-built rig, whole, whenever the ki
 		expect(#status.missing).toBe(#CharacterMesh.missingPieces(fixtureData, kitFolder))
 	end)
 
+	it(
+		"says once for each reason that a mesh rig was not used (the client's Output), never once per citizen",
+		function()
+			MeshKit.install(fixtureData, MeshKit.assets(fixtureData, { omit = { tool_hoe_blade = true } }))
+			local lines = {}
+			CharacterMesh.setLogger(function(message)
+				table.insert(lines, message)
+			end)
+			for _ = 1, 5 do
+				fallsBack(Kit.character("citizen", "farmer", AZURE)) -- needs the missing blade, every time
+			end
+			expect(#lines).toBe(1)
+			expect(string.find(lines[1], "Kit.character: mesh rig not used", 1, true)).never.toBeNil()
+			expect(string.find(lines[1], "tool_hoe_blade", 1, true)).never.toBeNil() -- the reason is in the line
+			-- a rig that does build says nothing, and another reason is another line
+			expect(Kit.character("citizen", "idle", AZURE):GetAttribute("KitMesh")).toBe(true)
+			expect(#lines).toBe(1)
+			MeshKit.install(fixtureData, MeshKit.assets(fixtureData, { omit = { crest_azure = true } })) -- new data resets the memory
+			CharacterMesh.setLogger(function(message)
+				table.insert(lines, message)
+			end)
+			fallsBack(Kit.character("soldier", "soldier", AZURE, nil, "azure"))
+			fallsBack(Kit.character("soldier", "soldier", AZURE, nil, "azure"))
+			expect(#lines).toBe(2)
+			-- and with no data or no folder it stays quiet: that is today's part-built world, not a fault
+			MeshKit.uninstall()
+			CharacterMesh.setLogger(function(message)
+				table.insert(lines, message)
+			end)
+			fallsBack(Kit.character("citizen", "farmer", AZURE))
+			expect(#lines).toBe(2)
+		end
+	)
+
 	it("falls back per assembly: a missing piece sends only the rigs that need it to the part-built rig", function()
 		MeshKit.install(fixtureData, MeshKit.assets(fixtureData, { omit = { tool_hoe_blade = true } }))
 		fallsBack(Kit.character("citizen", "farmer", AZURE)) -- needs the hoe blade

@@ -1,13 +1,14 @@
 --!nonstrict
 --[[
-	Kit never writes a property that needs plugin rights (FL-0136 / D-057 follow-up; found by FORGE-00's CONTRACTS verify
-	pass). MeshPart.CollisionFidelity has Plugin security: a game script that writes it fails ("The current thread cannot
-	write 'CollisionFidelity' (lacking capability Plugin)"), the build inside Kit's pcall is rejected, and every mesh prop and
-	every mesh rig falls back to part-built in a live server while the headless specs (Lune has no such check) stay green.
-	The Studio import scripts set these (the command bar has plugin rights) and the saved Forge.Assets models carry them.
+	Kit never writes a property that scripts cannot manipulate at runtime (FL-0136 / D-057 follow-up; found by FORGE-00's CONTRACTS
+	verify pass). The API reference says of MeshPart.CollisionFidelity: "This property cannot be read or manipulated by scripts
+	during runtime" (it lists it as not saved and not replicated). A game script that writes it can fail, the build inside Kit's
+	pcall is then rejected, and every mesh prop and every mesh rig falls back to part-built in a live server while the headless
+	specs (Lune has no such check) stay green. The Studio import scripts set these (the command bar runs with plugin rights).
 
 	This is a static scan of every Kit/*.luau: no assignment to .CollisionFidelity, .RenderFidelity, .MeshId or .DoubleSided.
-	Reading them is fine (Kit/EnvMesh reads MeshId to see that an import has a mesh).
+	Reading MeshId is the one allowed use (Kit/EnvMesh reads it to see that an import has a mesh); FORGE-05's plugin-props
+	check.sh step scans all of roblox/src and games/*/src, this one is the Kit-local guard with its own self-test.
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")

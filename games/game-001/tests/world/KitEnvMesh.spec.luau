@@ -98,7 +98,7 @@ describe("Kit.prop builds the stand-in unless a matching imported Model is there
 		)
 	end)
 
-	it("clones an id the data does not list exactly as before, whatever it holds", function()
+	it("clones an id the data does not list and passes it through unchanged, whatever it holds", function()
 		local assets = EnvKit.assets(data, { all = { dirty = true } })
 		EnvKit.install({ schema_version = 1, unit = "stud", props = {} }, assets)
 		local template = assets.tree_oak_01 :: Model

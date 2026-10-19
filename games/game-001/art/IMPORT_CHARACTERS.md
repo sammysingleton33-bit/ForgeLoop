@@ -38,10 +38,18 @@ match, stop and report what you see. Nothing here costs money or needs an API ke
 5. Delete the leftover `citizen_kit` model from Workspace, **File > Save**, and Publish if you play from Roblox.
 
 ## 3. Look at it (Play, F5)
-**First, the Play-test check (a game script has fewer rights than the command bar, so a smoke test that passes in the command bar can still fall back in
-Play):** in the server command bar `print(require(game.ReplicatedStorage.Game.Kit.Kit).characterMeshStatus())` must show mesh builds (`meshBuilds` above 0)
-and no fallback reason (`lastFallback` empty) once citizens exist. CollisionFidelity (Box) is set by the import script, not by the Kit: a game script cannot
-write it, and the saved `CitizenKit.rbxm` carries it. If the Kit fell back, send the status output to FORGE-02.
+**First, check that the mesh rigs are really in use (a game script has fewer rights than the command bar, so an import that passes the command-bar smoke test can still fall
+back in Play):** only the **client** builds citizen rigs, so look there, not at the server.
+1. **Explorer first.** In Play, `Workspace.KingdomEntities.<citizen_...>` holding **MeshParts** (a `Root` Part and MeshParts named `Torso`, `Head`, `LeftArm`...) is the mesh rig; a citizen made of plain
+   Parts is the part-built fallback. Do the same for a soldier and the ruler. Most citizens should be the MeshPart kind.
+2. In the **client** Output (View > Output, Client) there is no line starting `Kit.character: mesh rig not used` (the Kit says it once for each reason a rig fell back).
+3. In the **client** command bar (Test tab > Current: Client), `local s = require(game.ReplicatedStorage.Game.Kit.Kit).characterMeshStatus(); print(s.source, s.meshBuilds, s.fallbackBuilds, s.lastFallback)`
+   must print `source` true, `meshBuilds` above 0 and no `lastFallback`. If `source` is false the command bar gave you a fresh copy of the module: trust step 1 and tell FORGE-02 both.
+4. **CollisionFidelity (unverified).** The import script sets Box on every piece (a game script cannot read or write the property at runtime, the API reference says so). The reference also lists it as
+   not saved and not replicated: after you save `CitizenKit.rbxm` and run `rojo build`, select one piece in the built place and read **CollisionFidelity** in Properties. Box is what we expect; if it shows Default,
+   tell FORGE-02 (nothing breaks: the pieces do not collide and raycasts do not hit them).
+5. **Imported with an earlier build?** An earlier import run set no CollisionFidelity on pieces it kept: run the import script again (it now sets Box on pieces it keeps too), or Bulk Import `citizen_kit.fbx` again.
+If any of this fails, stop and send the Output and what Explorer shows to FORGE-02: those citizens are still the part-built ones.
 
 Citizens by job at the **aerial camera** (farmer hat, woodcutter, miner, builder, hauler sack read apart; the kingdom colour
 shows on torsos from above), a **conversation portrait**, the **ruler** (crown, cape), each kingdom's **soldiers** (crest and

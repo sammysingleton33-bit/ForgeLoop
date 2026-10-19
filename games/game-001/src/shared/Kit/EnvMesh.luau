@@ -21,7 +21,7 @@
 	  * SIZE SANITY: the MeshParts' bounding box in the pivot frame must match the data's size (per axis within
 	    max(0.1, 0.5 %)) and centre (0.25). A Model that does not (a wrong import scale or axes, a moved pivot, a mesh gone)
 	    is rejected: Kit.prop builds the stand-in instead, and the reason is logged ONCE per asset id (never an error).
-	Ids the data does not list pass through Kit.prop exactly as before (a Model in the folder is cloned as is).
+	Ids the data does not list pass through Kit.prop unchanged (a Model in the folder is cloned as is, nothing is checked).
 
 	API
 		EnvMesh.accept(assetId, clone) -> (Model?, string?)   -- the clone made ready, or nil + why (the caller builds the stand-in)
@@ -47,8 +47,8 @@ EnvMesh.REL_TOLERANCE = 0.005
 EnvMesh.CENTER_TOLERANCE = 0.25
 EnvMesh.SOLID_HEIGHT = 7 -- WorldService.COLLIDE_HEIGHT: only parts below it block movement
 EnvMesh.FAMILIES = table.freeze({ "tree", "bush", "rock", "flower", "crop", "haystack", "fence" })
--- Triangles per prop (the contract's: trees 300-900, bushes/rocks/flowers 40-400; crops, haystacks and fences are FORGE-02's
--- proposal, the contract is silent). The specs and env_to_luau.py read these and nothing else (--print-budget).
+-- Triangles per prop (D-057 (19): trees 300-900, bushes/rocks/flowers 40-400; crops, haystacks and fences are FORGE-02's
+-- proposal, the decision is silent). The specs and env_to_luau.py read these and nothing else (--print-budget).
 EnvMesh.BUDGET = table.freeze({
 	tree = table.freeze({ min = 300, max = 900 }),
 	bush = table.freeze({ min = 40, max = 400 }),
@@ -196,7 +196,7 @@ end
 local function prepare(assetId: string, def: any, model: Model): (Model?, string?)
 	local root = model.PrimaryPart
 	if root == nil or root:IsA("MeshPart") or not root:IsA("BasePart") then
-		return nil, "its PrimaryPart is not an invisible Root Part"
+		return nil, "it has no PrimaryPart that is a plain Part (the Root)"
 	end
 	if not (isVec3(def.size) and isVec3(def.bbox_center)) then
 		return nil, "the data has no size or bbox_center"
@@ -289,7 +289,8 @@ local function prepare(assetId: string, def: any, model: Model): (Model?, string
 		mesh.Reflectance = 0
 		mesh.Material = Enum.Material.SmoothPlastic
 		mesh.Color = Color3.new(1, 1, 1) -- the colours are baked into the mesh (tint "fixed")
-		-- CollisionFidelity is not set here: a game script cannot write it (Plugin security). The Studio import sets Hull on every
+		-- CollisionFidelity is not set here: the API reference says "This property cannot be read or manipulated by scripts during
+		-- runtime". The Studio import sets Hull on every
 		-- Body (blender/studio/import_env_kit.luau) and the saved Forge.Assets Model carries it.
 	end
 	local box = colliderOf(def)

@@ -192,7 +192,7 @@ describe("import_char_kit.luau: the Studio import script, against fake trees", f
 				local piece = folder:FindFirstChild(id) :: MeshPart
 				expect(piece).never.toBeNil()
 				expect(piece.ClassName).toBe("MeshPart")
-				expect(piece.CollisionFidelity).toBe(Enum.CollisionFidelity.Box) -- set by the import (plugin rights), never by the Kit
+				expect(piece.CollisionFidelity).toBe(Enum.CollisionFidelity.Box) -- set by the import (it runs with plugin rights), never by the Kit
 				expect((piece.Size - Vector3.new(def.size[1], def.size[2], def.size[3])).Magnitude).toBeLessThan(1e-4)
 				expect(piece.Parent).toBe(folder)
 			else
@@ -252,11 +252,18 @@ describe("import_char_kit.luau: the Studio import script, against fake trees", f
 		expect(report.ok).toBe(true)
 		expect(count(place.scene)).toBe(0)
 		expect(count(folderOf(place))).toBe(EXPECTED)
+		-- pieces an earlier run left without the physics shape get it on the re-run (the kept ones, not only the imported)
+		for _, piece in (folderOf(place) :: Instance):GetChildren() do
+			(piece :: MeshPart).CollisionFidelity = Enum.CollisionFidelity.Default
+		end
 		local again, printed = runScript(place)
 		expect(again.imported).toBe(0)
 		expect(again.kept).toBe(EXPECTED)
 		expect(again.ok).toBe(true)
 		expect(joined(printed)).toContain("RESULT: OK")
+		for _, piece in (folderOf(place) :: Instance):GetChildren() do
+			expect((piece :: MeshPart).CollisionFidelity).toBe(Enum.CollisionFidelity.Box)
+		end
 	end)
 
 	it("finds pieces nested in the importer's sub-models", function()

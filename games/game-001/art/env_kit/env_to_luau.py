@@ -402,7 +402,7 @@ def selftest() -> int:
     check(warns(family_mismatch, "unusual for rock_"), "a family that does not match the id prefix is warned about")
     check(warns(a_bit_low, "not 0"), "a base 0.1-0.5 off the ground is warned about")
     check(warns(tall_collider, "over 7"), "a collider taller than 7 is warned about")
-    check(BUDGET["tree"] == {"min": 300, "max": 900} and BUDGET["bush"] == {"min": 40, "max": 400}, "the budget constants are the contract's")
+    check(BUDGET["tree"] == {"min": 300, "max": 900} and BUDGET["bush"] == {"min": 40, "max": 400}, "the budget constants are the documented ones (D-057 (19), this header)")
     print(f"selftest: {'FAIL' if failures else 'PASS'} ({len(failures)} failure(s))")
     return 1 if failures else 0
 
