@@ -533,9 +533,9 @@ def build_mantle(S, R):
     It is the large kingdom-coloured area seen from above; the job lives in the tunic colour, hat and tool. Wider than the
     torso by 0.04 at the sides (the sleeves start at x = 1.01) and 0.12 in front / behind (clear of aprons and straps)."""
     seg = S.seg(10, 8)
-    rings = [(y, torso_r(y)[0] + 0.04, torso_r(y)[1] + 0.12) for y in (3.4, 3.62, 3.84)] + [(3.97, 0.5, 0.42)]
+    rings = [(y, torso_r(y)[0] + 0.04, torso_r(y)[1] + 0.12) for y in (3.22, 3.46, 3.7, 3.86)] + [(3.97, 0.5, 0.42)]
     m = loft(rings, seg=seg, n=S.n if S.A else 2.5, caps=(True, True), phase=ph(S, seg), color=TINT, smooth=S.smooth, tag="cloth")
-    m.paint((0.8, 0.8, 0.8), where=lambda x, y, z: y < 3.5)  # a darker hem band
+    m.paint((0.8, 0.8, 0.8), where=lambda x, y, z: y < 3.34)  # a darker hem band
     m.h = [1.0] * len(m.v)
     R.add("mantle_kingdom", m, "Torso", "extra", "kingdom", weld="torso", tags=("citizen",))
 

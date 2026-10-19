@@ -100,8 +100,11 @@ def main():
                                             ("AFTER: 36 looks (skin x hair x hair colour x outfit); rows 1-4 idle citizens, row 5 farmers, row 6 builders", load(s, "looks"))], 1200)
 
     # 6 silhouettes
-    sheets["sheet_silhouettes"] = stack([("BEFORE: silhouettes of the eleven identities (current rigs, about 35 studs)", load(s, "old_sil_jobs")),
-                                         ("AFTER: silhouettes, mesh kit", load(s, "sil_jobs"))], 1400)
+    rows = [("BEFORE: silhouettes of the eleven identities (current rigs, about 35 studs, seen from the front)", load(s, "old_sil_jobs")),
+            ("AFTER: silhouettes, mesh kit, from the front", load(s, "sil_jobs"))]
+    if (Path(s) / "sil_jobs_yaw.png").exists():
+        rows += [("BEFORE: the same turned 40 degrees", load(s, "old_sil_jobs_yaw")), ("AFTER: the same turned 40 degrees", load(s, "sil_jobs_yaw"))]
+    sheets["sheet_silhouettes"] = stack(rows, 1400)
 
     # 7 kingdoms and rulers from the front and the back, plus capes / packs from four sides
     sheets["sheet_kingdoms_sides"] = stack([("AFTER: soldiers (spear, sword + shield, bow) and rulers in the four kingdom colours, from the front", load(s, "kingdoms")),

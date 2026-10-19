@@ -7306,22 +7306,22 @@
       },
       "generator": "char_kit",
       "generator_version": 1,
-      "geometry_hash": "cc0ef483e54e4e8a",
+      "geometry_hash": "a1a280b819f12ec0",
       "id": "char_kit_01",
       "kingdom": null,
       "kit": {
         "jobs": {
           "blacksmith": {
             "pieces_max": 13,
-            "tris_max": 748
+            "tris_max": 764
           },
           "builder": {
             "pieces_max": 13,
-            "tris_max": 790
+            "tris_max": 806
           },
           "farmer": {
             "pieces_max": 15,
-            "tris_max": 894
+            "tris_max": 910
           },
           "governor": {
             "pieces_max": 16,
@@ -7329,23 +7329,23 @@
           },
           "hauler": {
             "pieces_max": 14,
-            "tris_max": 936
+            "tris_max": 952
           },
           "healer": {
             "pieces_max": 14,
-            "tris_max": 938
+            "tris_max": 954
           },
           "idle": {
             "pieces_max": 13,
-            "tris_max": 798
+            "tris_max": 814
           },
           "merchant": {
             "pieces_max": 15,
-            "tris_max": 926
+            "tris_max": 942
           },
           "miner": {
             "pieces_max": 13,
-            "tris_max": 830
+            "tris_max": 846
           },
           "soldier": {
             "pieces_max": 14,
@@ -7361,14 +7361,14 @@
           },
           "woodcutter": {
             "pieces_max": 14,
-            "tris_max": 822
+            "tris_max": 838
           }
         },
-        "max_citizen_tris": 938,
+        "max_citizen_tris": 954,
         "max_ruler_tris": 934,
         "pieces": 103,
         "style": "B",
-        "total_piece_tris": 6788
+        "total_piece_tris": 6804
       },
       "license": "project-original",
       "material": "M_charkit_vc",
@@ -7442,7 +7442,7 @@
       "texture": "none (vertex colours, 0 bytes of texture memory)",
       "triangles": {
         "budget_lod0": 1000,
-        "lod0": 938,
+        "lod0": 954,
         "lod1": 12
       },
       "validation_pass": true

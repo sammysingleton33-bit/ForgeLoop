@@ -40,6 +40,7 @@ def parse(argv):
     ap.add_argument("--target", default="")
     ap.add_argument("--dist", type=float, default=0.0)
     ap.add_argument("--pitch", type=float, default=0.0)
+    ap.add_argument("--yaw", type=float, default=0.0, help="turn of every citizen of the jobs lineup (degrees about the vertical axis)")
     ap.add_argument("--az", type=float, default=0.0, help="camera azimuth about the target in degrees (180 = look at the backs)")
     ap.add_argument("--ground", default="", help="r,g,b 0-255 ground colour (default grass); a neutral grey stops the green bounce tinting skin in close-ups")
     ap.add_argument("--silhouette", action="store_true", help="flat black figures on white (Workbench): judge the identity from the outline alone")
@@ -88,9 +89,9 @@ def main(argv):
             x = ((n - 1) / 2 - i) * 6.2
             if a.old:
                 m = _old_job(old, job)
-                kitparts.build_model(m, sc.collection, transform=ckit_scene.roblox_matrix(x, 0, 0, 0))
+                kitparts.build_model(m, sc.collection, transform=ckit_scene.roblox_matrix(x, 0, 0, a.yaw))
             else:
-                kit.spawn(job, ckit_rigload.job_look(i), "crimson", x, 0, 0, tag=f"{job}_")
+                kit.spawn(job, ckit_rigload.job_look(i), "crimson", x, 0, a.yaw, tag=f"{job}_")
         ckit_scene.gameplay(cam, (0, 2.8, 0), a.dist or 46.0, a.pitch or 12.0, fov=70)
     elif scene == "looks":
         grid = look_grid()
