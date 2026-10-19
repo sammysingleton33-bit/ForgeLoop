@@ -2,11 +2,12 @@
 
 One row: (task, file, old, new, spec filter, expected failing test, project). The path prefixes
 S, C, X, G, C2 and F come from mutations.py. Add rows for FL-0143 here only (D-038 (7)).
+Left out (equivalent): `if before ~= damage then` -> `if true then` only writes the same Damage value again, which
+changes nothing a spec can see (the mocks have no AttributeChanged); the damage-state check still guards the apply.
 """
 FB = C2 + "FeedbackController.luau"
 BD = "experience/BuildingDamage"
 M = [
- ("FL-0143", FB, 'if before ~= damage then', 'if true then', BD, "the poll does it", "game"),
  ("FL-0143", FB, 'if kit.damageState(damage) ~= kit.damageState(was) then', 'if true then', BD, "Damage follows Hp/MaxHp", "game"),
  ("FL-0143", FB, 'local was = if type(before) == "number" then before else 0', 'local was = 0', BD, "Damage follows Hp/MaxHp", "game"),
  ("FL-0143", FB, 'model:SetAttribute("Damage", damage)', 'local _ = damage', BD, "Damage follows Hp/MaxHp", "game"),

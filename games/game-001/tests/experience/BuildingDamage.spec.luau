@@ -149,11 +149,12 @@ describe("FeedbackController: building damage follows HP (FL-0143, FL-0128 war k
 		building(folder, "house", 1, 51, 10, 100)
 		expect(feedback:refreshDamage()).toBe(0)
 		expect(env.mock:hasLog("warn", "FeedbackController: Kit.applyDamage failed")).toBe(true)
-		-- without the war kit at all, nothing happens
-		local none = boot(
-			MockEnv.new({ seed = 146, isServer = false }),
-			setmetatable({ applyDamage = false }, { __index = Kit })
-		)
+		-- without the war kit at all, nothing happens: no Damage written, nothing logged
+		local bare = MockEnv.new({ seed = 146, isServer = false })
+		local none = boot(bare, setmetatable({ applyDamage = false }, { __index = Kit }))
+		local untouched = building(buildingsFolder(bare), "house", 1, 52, 10, 100)
 		expect(none:refreshDamage()).toBe(0)
+		expect(untouched:GetAttribute("Damage")).toBeNil()
+		expect(bare.mock:hasLog("warn", "FeedbackController: Kit.applyDamage failed")).toBe(false)
 	end)
 end)
