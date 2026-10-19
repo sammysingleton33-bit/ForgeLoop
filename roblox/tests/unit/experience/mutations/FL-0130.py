@@ -18,7 +18,8 @@ M = [
  # --- Moments: SiegeChanged / RaidChanged (proposed G9)
  ("FL-0130", F+"Moments.luau", 'byName = if on then attackerName(details, ctx) else nil,', 'byName = nil,', "KingdomFeedback", "SiegeChanged and RaidChanged", "game"),
  ("FL-0130", F+"Moments.luau", 'if ids == nil or #ids ~= 1 or type(ids[1]) ~= "string" then', 'if ids == nil or #ids < 1 or type(ids[1]) ~= "string" then', "KingdomFeedback", "SiegeChanged and RaidChanged", "game"),
- ("FL-0130", F+"Moments.luau", 'position = if on and kind == "raid" and typeof(details.position) == "Vector3" then details.position else nil,', 'position = details.position,', "KingdomFeedback", "SiegeChanged and RaidChanged", "game"),
+ ("FL-0130", F+"Moments.luau", 'return if typeof(details.position) == "Vector3" then details.position else nil', 'return details.position', "KingdomFeedback", "SiegeChanged and RaidChanged", "game"),
+ ("FL-0130", F+"Moments.luau", 'position = if on then alertPosition(kind, details, ctx) else nil,', 'position = alertPosition(kind, details, ctx),', "KingdomFeedback", "SiegeChanged and RaidChanged", "game"),
  ("FL-0130", F+"Moments.luau", 'body = body or line.bodyPlain,', 'body = body,', "KingdomFeedback", "SiegeChanged and RaidChanged", "game"),
  # --- Moments: timed phases and whole bodies
  ("FL-0130", F+"Moments.luau", 'minutes = if minutes ~= 0 then minutes else nil', 'minutes = minutes', "KingdomFeedback", "phase moments carry the phase's length from Pacing", "game"),
@@ -54,7 +55,7 @@ M = [
  ("FL-0130", C2+"FeedbackWarController.luau", 'if before ~= nil and Def.STANDING[before.state or ""] then', 'if before ~= nil then', "WarFeedback", "a standing building that is destroyed collapses", "game"),
  ("FL-0130", C2+"FeedbackWarController.luau", 'for index = 1, math.min(#positions, Def.COLLAPSE_MAX) do', 'for index = 1, #positions do', "WarFeedback", "a kingdom's fall collapses at most", "game"),
  ("FL-0130", C2+"FeedbackWarController.luau", 'if moment.on == true and typeof(moment.position) == "Vector3" then', 'if moment.on == true then', "WarFeedback", "a raid becomes the alert", "game"),
- ("FL-0130", C2+"FeedbackWarController.luau", 'elseif moment.kind == "kingdomFell" then\n\t\tself:_clearAlert()', 'elseif false then\n\t\tself:_clearAlert()', "WarFeedback", "a raid becomes the alert", "game"),
+ ("FL-0130", C2+"FeedbackWarController.luau", 'elseif kind == "kingdomFell" then\n\t\tself:_clearAlert()', 'elseif false then\n\t\tself:_clearAlert()', "WarFeedback", "a raid becomes the alert", "game"),
  ("FL-0130", C2+"FeedbackWarController.luau", 'pcall(camera.setMode, camera, "overview")\n\tend\n\tlocal ok, moved', 'local _ = 0\n\tend\n\tlocal ok, moved', "WarFeedback", "a raid becomes the alert", "game"),
  ("FL-0130", C2+"FeedbackWarController.luau", 'if table.find(Def.ALERT_KEYS, input.KeyCode) then', 'if false then', "WarFeedback", "a raid becomes the alert", "game"),
  ("FL-0130", C2+"FeedbackWarController.luau", 'if (spot.position - position).Magnitude <= Def.HOTSPOT_STUDS then', 'if false then', "WarFeedback", "hotspots merge within HOTSPOT_STUDS", "game"),
@@ -85,4 +86,9 @@ M = [
  ("FL-0130", C2+"RulerSpectateController.luau", '\t\tself._pending = false\n', '', "WarFeedback", "never starts during Results or Lobby", "game"),
  ("FL-0130", C2+"RulerCameraController.luau", 'keepaliveSec = 1, moveStuds = 10 })', 'keepaliveSec = 1, moveStuds = 0 })', "RulerCamera", "reports the overview's focus for interest", "game"),
  ("FL-0130", G+A, '\t"WarChanged",\n\t"SiegeChanged",', '\t"WarChangedX",\n\t"SiegeChanged",', "KingdomFeedback", "the war events are declared on the real bus", "game"),
+ ("FL-0130", F+"Moments.luau", 'position = if on then alertPosition(kind, details, ctx) else nil,', 'position = if on and kind == "raid" then alertPosition(kind, details, ctx) else nil,', 'KingdomFeedback', 'a siege moment points at the besieged keep', "game"),
+ ("FL-0130", G+A, 'return part and part.CFrame.Position', 'return part and Vector3.zero', 'KingdomFeedback', 'a siege moment points at the besieged keep', "game"),
+ ("FL-0130", C2+"FeedbackWarController.luau", 'Def.ALERT_ORDER = table.freeze({ "siege", "raid" })', 'Def.ALERT_ORDER = table.freeze({ "raid", "siege" })', 'WarFeedback', 'a siege on our keep is an alert too', "game"),
+ ("FL-0130", C2+"FeedbackWarController.luau", 'if alert ~= nil and (kind == nil or kind == name) then', 'if alert ~= nil then', 'WarFeedback', 'a siege on our keep is an alert too', "game"),
+ ("FL-0130", C2+"FeedbackWarController.luau", 'if kind == "raid" or kind == "siege" then', 'if kind == "raid" then', 'WarFeedback', 'a siege on our keep is an alert too', "game"),
 ]
