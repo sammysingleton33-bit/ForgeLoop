@@ -86,7 +86,7 @@ local function run(density: { [string]: number }?)
 	env.mock:advance(30)
 	Kit.prop = original
 	expect(svc.stats.error).toBeNil()
-	local out = { parts = svc.stats.parts, props = svc.stats.props, byId = byId }
+	local out = { parts = svc.stats.parts, arenaParts = svc.stats.arenaParts, props = svc.stats.props, byId = byId }
 	svc:destroy()
 	return out
 end
@@ -114,7 +114,13 @@ describe("FL-0136 inventory of placed nature and crops", function()
 			e.features = fFull[id]
 		end
 		local plan = {}
-		for _, p in WorldPlan.props(Layout, { crimson = true, azure = true, emerald = true, gold = true }, WorldPlan.FULL_DENSITY) do
+		for _, p in
+			WorldPlan.props(
+				Layout,
+				{ crimson = true, azure = true, emerald = true, gold = true },
+				WorldPlan.FULL_DENSITY
+			)
+		do
 			plan[p.assetId] = (plan[p.assetId] or 0) + 1
 		end
 		local nodes = {}
@@ -139,11 +145,23 @@ describe("FL-0136 inventory of placed nature and crops", function()
 		for id in ids do
 			placed[id] = true
 		end
-		for _, id in {
-			"resource_wood_01", "resource_wood_02", "rock_cliff_01", "rock_cliff_02", "resource_ore_01", "resource_ore_02",
-			"resource_ore_05", "resource_ore_06", "farm_fence_01", "farm_fence_02", "farm_field_wheat_03",
-			"farm_field_cabbage_01", "farm_field_cabbage_02",
-		} do
+		for _, id in
+			{
+				"resource_wood_01",
+				"resource_wood_02",
+				"rock_cliff_01",
+				"rock_cliff_02",
+				"resource_ore_01",
+				"resource_ore_02",
+				"resource_ore_05",
+				"resource_ore_06",
+				"farm_fence_01",
+				"farm_fence_02",
+				"farm_field_wheat_03",
+				"farm_field_cabbage_01",
+				"farm_field_cabbage_02",
+			}
+		do
 			ids[id] = true
 		end
 		local subjects = {}
@@ -156,20 +174,40 @@ describe("FL-0136 inventory of placed nature and crops", function()
 		for k, v in WorldPlan.CLEAR.radius do
 			clear[k] = v
 		end
-		expect(full.props).toBe(616)
-		expect(full.parts).toBe(8309) -- the pinned figure of WorldService.spec (density 1.0, crimson dressed)
+		-- the pinned figures of WorldService.spec (density 1.0, crimson dressed; the arena's parts are counted apart)
+		expect(full.props).toBe(615)
+		expect(full.parts - full.arenaParts).toBe(8271)
 		-- the scene data: the shipped world's placements, the resource nodes, and two plots' starting buildings (part-built)
 		local placements = {}
 		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.density(Layout)) do
-			table.insert(placements, { id = p.assetId, x = round(p.cframe.X), z = round(p.cframe.Z), yaw = round(yawOf(p.cframe)), feature = p.feature })
+			table.insert(placements, {
+				id = p.assetId,
+				x = round(p.cframe.X),
+				z = round(p.cframe.Z),
+				yaw = round(yawOf(p.cframe)),
+				feature = p.feature,
+			})
 		end
 		local placementsFull = {}
 		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY) do
-			table.insert(placementsFull, { id = p.assetId, x = round(p.cframe.X), z = round(p.cframe.Z), yaw = round(yawOf(p.cframe)), feature = p.feature })
+			table.insert(placementsFull, {
+				id = p.assetId,
+				x = round(p.cframe.X),
+				z = round(p.cframe.Z),
+				yaw = round(yawOf(p.cframe)),
+				feature = p.feature,
+			})
 		end
 		local nodeList = {}
 		for _, n in Layout.resourceNodes do
-			table.insert(nodeList, { id = n.id, assetId = n.assetId, resource = n.resource, x = round(n.cframe.X), z = round(n.cframe.Z), yaw = round(yawOf(n.cframe)) })
+			table.insert(nodeList, {
+				id = n.id,
+				assetId = n.assetId,
+				resource = n.resource,
+				x = round(n.cframe.X),
+				z = round(n.cframe.Z),
+				yaw = round(yawOf(n.cframe)),
+			})
 		end
 		local color: { [string]: Color3 } = {}
 		for _, identity in KingdomsConfig.identities do
@@ -182,13 +220,26 @@ describe("FL-0136 inventory of placed nature and crops", function()
 			local buildings = {}
 			for _, name in { "keep", "storehouse", "farm", "lumbercamp", "quarry" } do
 				local cf = plot.anchors[name]
-				table.insert(buildings, { name = name, x = round(cf.X), z = round(cf.Z), yaw = round(yawOf(cf)), model = serialise(Kit.build(name, 1, "complete", color[k])) })
+				table.insert(buildings, {
+					name = name,
+					x = round(cf.X),
+					z = round(cf.Z),
+					yaw = round(yawOf(cf)),
+					model = serialise(Kit.build(name, 1, "complete", color[k])),
+				})
 			end
 			for i = 1, 2 do
 				local slot = plot.buildSlots[i]
-				table.insert(buildings, { name = "house", x = round(slot.center.X), z = round(slot.center.Z), yaw = round(slot.rot), model = serialise(Kit.build("house", 1, "complete", color[k])) })
+				table.insert(buildings, {
+					name = "house",
+					x = round(slot.center.X),
+					z = round(slot.center.Z),
+					yaw = round(slot.rot),
+					model = serialise(Kit.build("house", 1, "complete", color[k])),
+				})
 			end
-			plots[k] = { keep = { x = round(keep.X), z = round(keep.Z), yaw = round(yawOf(keep)) }, buildings = buildings }
+			plots[k] =
+				{ keep = { x = round(keep.X), z = round(keep.Z), yaw = round(yawOf(keep)) }, buildings = buildings }
 		end
 		local o = process.env.FORGE_ENV_INVENTORY
 		if o and o ~= "" then
@@ -202,10 +253,17 @@ describe("FL-0136 inventory of placed nature and crops", function()
 					clear = clear,
 					subjects = subjects,
 					slots = #Layout.plots.crimson.buildSlots * 4,
-					scene = { placements = placements, placementsFull = placementsFull, nodeList = nodeList, plots = plots },
+					scene = {
+						placements = placements,
+						placementsFull = placementsFull,
+						nodeList = nodeList,
+						plots = plots,
+					},
 				}, false)
 			)
-			print(`env inventory: shipped parts {shipped.parts} (props {shipped.props}), full parts {full.parts} (props {full.props}), {#Layout.resourceNodes} nodes -> {o}`)
+			print(
+				`env inventory: shipped parts {shipped.parts} (props {shipped.props}), full parts {full.parts} (props {full.props}), {#Layout.resourceNodes} nodes -> {o}`
+			)
 		end
 	end)
 end)
