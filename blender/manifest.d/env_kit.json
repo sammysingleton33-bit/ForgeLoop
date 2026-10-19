@@ -94,9 +94,21 @@
       "preview": "previews/env_kit.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "geometry changed since the last review",
+        "notes": "env_kit_01 (the 58 ids the world places: 52 as the part-built world does, 6 only as imported meshes): SET B (these meshes) PASS in all four groups; minimum over the groups shown (proportions 3 from the dressing reviewer, cost 3 from the crops reviewer). The 52 phase-2 ids are geometrically unchanged since their review (subset hash 61bac208a4421907); the 6 dressing ids were reviewed in phase 3. Renders are Blender, not Studio. The resource node markers are Kit-level parts, not in this FBX (img/d057-env-nodes-r1). env_kit_02 (9 spare ids nothing places) is not reviewed.",
         "review_file": "reviews/env_kit.md",
-        "verdict": "UNREVIEWED"
+        "reviewer": "fresh-context subagents, one per family group (images + rubric only): phase 2 trees/bushes/flowers, rocks/boulders/nodes and crops for the first 52 ids (games/game-001/art/reviews/img/d057-env-nature-r1/review.json), phase 3 farm dressing for the 6 fence, cabbage-variant and cliff ids (img/d057-env-dressing-r1/review.json)",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
       },
       "seed": 7,
       "sockets": {},

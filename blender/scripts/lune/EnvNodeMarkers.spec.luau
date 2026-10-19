@@ -65,6 +65,19 @@ end
 
 describe("FL-0136 phase 3: node marker dump", function()
 	it("builds the marker on every node model (stand-in and mesh) the way WorldService does", function()
+		local Props = require("@game/ReplicatedStorage/Game/Kit/Props")
+		local lift = tonumber(process.env.FORGE_NODE_MARKER_LIFT or "")
+		if lift then
+			Props.NODE_MARKER_LIFT = lift
+		end
+		local size = tonumber(process.env.FORGE_NODE_MARKER_ORB or "")
+		if size then
+			Props.NODE_MARKER_ORB = size
+		end
+		local post = tonumber(process.env.FORGE_NODE_MARKER_POST or "")
+		if post then
+			Props.NODE_MARKER_POST = post
+		end
 		local out = {}
 		local seen = {}
 		for _, n in Layout.resourceNodes do

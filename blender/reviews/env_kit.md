@@ -33,3 +33,12 @@ No author round 2 was needed (PASS on all three groups). The reviewed geometry i
 - The three plain bushes are alike; flower tufts are small. The three stone quarries differ mostly by tone and rubble.
 - Wheat reads as a field of peaked tufts, not stalks; the shoots stage is faint at 82 studs; the haystack is small and low contrast against the grass.
 - Stage and plot variants of wheat/cabbage change the field as a whole (they are not per-plant meshes), so "ripe vs unripe" works only if the runtime places the stage ids.
+
+## Phase 3 (FL-0136 follow-ups; branch forge/02-blender-fl0136-dressing)
+`env_kit_01` is now 58 ids: the 52 phase-2 ids (geometrically unchanged: subset hash 61bac208a4421907, so their round-1 review stands) plus the six the world places only as imported meshes (`WorldPlan.meshDressing`: `farm_fence_01/02`, `farm_field_cabbage_01/02`, `rock_cliff_01/02`).
+Geometry hash of the 58: `4a676b85217c85f3`, pinned in `env_kit.json`. `env_kit_02` is now 9 spare ids (wood nodes, iron and crystal ore, wheat 03 to 05), unreviewed.
+
+Fresh D-019 reviewer, round 1 (one session, blind, image-only; `games/game-001/art/reviews/img/d057-env-dressing-r1/review.json`): SET B (the world with the meshes and the dressing) **PASS** 4 / 4 / 4 / 3 / 4 / 4 / 4 / 5 (silhouette / variation / readability / proportions / palette / detail / cohesion / cost), SET A (the part-built world) NEEDS-WORK 2 / 2 / 3 / 3 / 4 / 3 / 3 / 2.
+Non-blocking: fences thin and nearly invisible at 170 studs and identical repeats, the cliffs small and pale, the cabbage variants subtle, the wheat busy. No author round 2 was needed. The dressing renders were made from the committed FBX.
+
+The resource node markers (post and orb) are Kit-level parts, not in this FBX; their D-019 round is `img/d057-env-nodes-r1/review.json` (SET B PASS 4 / 4 / 4 / 3 / 4 / 4 / 3 / 4). Details, numbers and limits: `games/game-001/art/reviews/env-mesh.md` "Phase 3".
