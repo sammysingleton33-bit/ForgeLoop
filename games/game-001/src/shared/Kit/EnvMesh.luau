@@ -11,8 +11,10 @@
 	    and its MeshParts at the data's bbox_center (relative to that pivot). Anything else in the clone is deleted: scripts,
 	    SurfaceAppearance, Decals, Welds, nested Models and Folders (the MeshParts are lifted out first), non-mesh parts,
 	    attributes and tags. Nothing in an imported Model can run, load or carry state.
-	  * physics as the stand-ins: Root and MeshParts are Anchored, CanTouch false, Massless, MeshParts CanCollide false (their
-	    Hull collision shape for raycasts is set by the Studio import: a game script cannot write it), Root invisible. What
+	  * physics as the stand-ins: Root and MeshParts are Anchored, CanTouch false, Massless, MeshParts CanCollide false and CanQuery
+	    true (so selection and placement raycasts hit their shape; the shape is the Body's CollisionFidelity, which the Studio import
+	    sets to Hull in the open place and which a game script cannot manipulate; the API dump lists it as not saved, so a saved or
+	    built place is expected, unverified, to have Default, the precise shape: a cost in physics memory, not a behaviour), Root invisible. What
 	    the part-built props block (trunks, rocks, bushes, low parts: WorldService.decorate lets only parts above
 	    COLLIDE_HEIGHT through) is an invisible solid Collider Part from the
 	    data (`collider`, used as given, else a family default: trees a trunk, rocks and haystacks 80 % of each footprint axis,
@@ -290,8 +292,9 @@ local function prepare(assetId: string, def: any, model: Model): (Model?, string
 		mesh.Material = Enum.Material.SmoothPlastic
 		mesh.Color = Color3.new(1, 1, 1) -- the colours are baked into the mesh (tint "fixed")
 		-- CollisionFidelity is not set here: scripts cannot manipulate it at runtime (API reference) and the API dump lists it as not
-		-- saved and not replicated. The Studio import sets Hull on every Body (blender/studio/import_env_kit.luau) in the open place; it is
-		-- not in the saved .rbxm, and nothing here relies on it (the Body does not collide, a raycast hits its default shape).
+		-- saved and not replicated. The Studio import sets Hull on every Body (blender/studio/import_env_kit.luau) in the open place; a saved
+		-- or built place is expected (unverified) to have Default. Nothing here sets or reads it, but the Body is CanQuery true, so selection
+		-- and placement raycasts hit whichever shape it has (Default = precise, a cost in physics memory; the owner reads it in Render Stats).
 	end
 	local box = colliderOf(def)
 	if box then

@@ -1911,7 +1911,8 @@ BUILDERS.gate = function(ctx, level, color, style, fp)
 	)
 	if lv == 3 then
 		-- the portcullis is a grille in the point of the arch above the leaves: short bars that follow the arch, a cross
-		-- bar ties them; raised 7 studs it is hidden inside the lintel (the opening is clear when the gate is open)
+		-- bar ties them; raised 7 studs it is hidden inside the lintel (the passage under the arch is clear when the gate is open; the
+		-- Tympanum behind the bars stays, as it does at every level)
 		local lift = CFrame.new(0, 7, 0)
 		local barBottom = 9.7 -- just above the leaves
 		for _, bx in { -4.0, -2.4, -0.8, 0.8, 2.4, 4.0 } do
