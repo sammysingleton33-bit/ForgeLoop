@@ -1,0 +1,40 @@
+{
+  "assets": {
+    "prop_cart_covered_01": {
+      "geometry_hash": "61b211da49a0bc4a",
+      "verdict": "PASS"
+    },
+    "prop_cart_handcart_01": {
+      "geometry_hash": "ee8a80cadfb99cb9",
+      "verdict": "PASS"
+    },
+    "prop_cart_haycart_01": {
+      "geometry_hash": "b0e238ece4e0952e",
+      "verdict": "PASS"
+    },
+    "prop_cart_logcart_01": {
+      "geometry_hash": "1b9e147159979d1d",
+      "verdict": "PASS"
+    },
+    "prop_cart_wagon_01": {
+      "geometry_hash": "f4297d734b74af41",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "prop_cart",
+  "generator_version": 1,
+  "notes": "Five distinct cart types read clearly at 40 studs; haycart_01 load reads as a smooth dough dome with white fang-like fringe rather than hay, and kingdom accents on handcart/wagon/logcart are near-invisible at distance. covered_01 (1776) and wagon_01 (1716) sit right at the 1800 cap.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 3,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

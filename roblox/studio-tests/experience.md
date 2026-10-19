@@ -528,6 +528,7 @@ Needs:
 - Steps 2–5 need a real war on the build: FORGE-01's FL-0125, where AI kingdoms fight in Conflict. The `match.phase` jump also moves the war grace (D-054 (5)). Until then, write "blocked: needs FL-0125".
 - The hit flash needs FORGE-01 to send the G4 `hit` cue. The kneel needs FORGE-01's death pose. Handoff: `production/handoffs/2026-10-18-forge-04-to-forge-01-war-events.md`. Without the cue, write "no flash: no hit cue yet".
 - Every sound is silent until the owner picks assets (`war.hit`, `war.collapse`). Write "silent (no asset)".
+- The camera's interest focus report (`Sim.Focus`, D-055 (5)) has nothing visible. FORGE-05's bandwidth probe measures it once FORGE-01's remote exists.
 
 | Rule | Expected |
 |---|---|
@@ -536,8 +537,8 @@ Needs:
 | Hit flash | A soldier or citizen that is hit flashes white for a moment, with a few bright sparks. No blood, ever |
 | Death | The fallen kneel or lie down, then fade out over about a second. Nobody stays on the field. A rig reused later is fully visible |
 | Building hit | Dust and stone chips at the roof, and the building jolts briefly (no jolt with Reduced motion on). It stands exactly where it was afterwards |
-| Collapse | A destroyed building leaves a large dust cloud and debris where it stood. The camera shakes a little if it is near (not with Reduced motion or Camera shake off). A cancelled construction site never collapses. A new match never collapses the old world |
-| Spectate | When your keep falls, the camera moves to the first battle or a standing keep. `.` (period) or R1 goes to the next target and `,` (comma) or L1 to the previous one. You can still pan and zoom. Results ends it |
+| Collapse | A destroyed building leaves a large dust cloud and debris where it stood. The camera shakes a little if it is near (not with Reduced motion or Camera shake off). A cancelled construction site never collapses. A new match never collapses the old world. Known limit: if two kingdoms' keeps fall in the same update, that batch looks like a new world and shows no collapse |
+| Spectate | When your keep falls, the camera moves to the first battle or a standing keep. `.` (period) or R1 goes to the next target and `,` (comma) or L1 to the previous one. You can still pan and zoom. Results ends it, and it never starts again during Results or Lobby; a player who joins during Results starts watching when the next match begins, if still not seated |
 
 Steps
 1. Play Solo, aerial view. Run `fx.announce raid`: the toast, plus a red beacon at the map centre. Press G: the camera goes there. Switch to walk mode (V), press G again: the aerial view comes back, at the beacon. Run `fx.announce raidOver`: the beacon goes. Screenshot **E15-1** (the beacon from the start zoom).
@@ -550,6 +551,7 @@ Pass: step 1 holds (2–5 when FL-0125 is on the build). Copy every red line fro
 
 History:
 - 2026-10-18 FORGE-04: written (FL-0130 part 2).
+- 2026-10-18 FORGE-04: spectating never starts during Results or Lobby (FORGE-07's #189 M1); the two-keeps-in-one-batch limit noted (FORGE-07 on #183).
 
 ## E17 — The arena crowd you hear and read: reactions, subtitles, ducking (FL-0074 part 2a, game-001)
 

@@ -1,0 +1,220 @@
+{
+  "assets": [
+    {
+      "budget_class": "bridge",
+      "category": "bridge",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 40.052,
+        "y": 8.839,
+        "z": 14.0
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bridge_wood_humped_01.fbx",
+        "validation": "exports/bridge_wood_humped_01.validation.json"
+      },
+      "generator": "bridge_wood",
+      "generator_version": 1,
+      "geometry_hash": "b93fbd5fe2c984eb",
+      "id": "bridge_wood_humped_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "length": 40.0,
+        "type": "humped"
+      },
+      "preview": "previews/bridge_wood.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Flat, trestle and humped forms are distinct and read at 63 studs. All three are one uniform brown with no secondary material, and the stepped end-ramp planks on plank_01 and trestle_01 show gaps that read as broken steps.",
+        "review_file": "reviews/bridge_wood.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7002,
+      "sockets": {
+        "end_a": [
+          19.991,
+          0.0,
+          0.0
+        ],
+        "end_b": [
+          -20.009,
+          0.0,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3092,
+        "lod1": 1082
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "bridge",
+      "category": "bridge",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 32.022,
+        "y": 6.738,
+        "z": 14.0
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bridge_wood_plank_01.fbx",
+        "validation": "exports/bridge_wood_plank_01.validation.json"
+      },
+      "generator": "bridge_wood",
+      "generator_version": 1,
+      "geometry_hash": "0064c86bc374b97d",
+      "id": "bridge_wood_plank_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "length": 32.0,
+        "type": "plank"
+      },
+      "preview": "previews/bridge_wood.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Flat, trestle and humped forms are distinct and read at 63 studs. All three are one uniform brown with no secondary material, and the stepped end-ramp planks on plank_01 and trestle_01 show gaps that read as broken steps.",
+        "review_file": "reviews/bridge_wood.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7000,
+      "sockets": {
+        "end_a": [
+          16.011,
+          0.038,
+          0.0
+        ],
+        "end_b": [
+          -15.989,
+          0.038,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2316,
+        "lod1": 810
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "bridge",
+      "category": "bridge",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 44.018,
+        "y": 9.538,
+        "z": 14.0
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/bridge_wood_trestle_01.fbx",
+        "validation": "exports/bridge_wood_trestle_01.validation.json"
+      },
+      "generator": "bridge_wood",
+      "generator_version": 1,
+      "geometry_hash": "7abd4b80d4d534ca",
+      "id": "bridge_wood_trestle_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "length": 44.0,
+        "type": "trestle"
+      },
+      "preview": "previews/bridge_wood.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Flat, trestle and humped forms are distinct and read at 63 studs. All three are one uniform brown with no secondary material, and the stepped end-ramp planks on plank_01 and trestle_01 show gaps that read as broken steps.",
+        "review_file": "reviews/bridge_wood.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7001,
+      "sockets": {
+        "end_a": [
+          21.991,
+          0.038,
+          0.0
+        ],
+        "end_b": [
+          -22.009,
+          0.038,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3496,
+        "lod1": 1222
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 3
+  },
+  "generator": "bridge_wood",
+  "variation": {
+    "closest_pair": [
+      "bridge_wood_humped_01",
+      "bridge_wood_trestle_01"
+    ],
+    "mean_pair_diff": 0.4355,
+    "min_pair_diff": 0.3583,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

@@ -18,6 +18,7 @@ local DiplomacyDoubles = {}
 
 DiplomacyDoubles.PROPOSAL_SEC = 60
 DiplomacyDoubles.TRUCE_SEC = 120
+DiplomacyDoubles.ASK_SEC = 60 -- an open ask for war lasts this long (FORGE-01, config)
 DiplomacyDoubles.DECLARATION = {
 	name = "Kingdom.Diplomacy",
 	kind = "function",
@@ -67,7 +68,7 @@ DiplomacyDoubles.def = {
 		local remotes = registry:get("RemoteService")
 		local kingdoms = registry:get("KingdomService")
 		local svc = {
-			state = { relations = {}, proposals = {}, cooldowns = {}, graceEndsAt = nil, seniors = {} },
+			state = { relations = {}, proposals = {}, cooldowns = {}, graceEndsAt = nil, seniors = {}, asks = {} },
 			calls = {},
 			asks = {},
 			refuse = nil :: string?,
@@ -124,7 +125,15 @@ DiplomacyDoubles.def = {
 			publish()
 		end
 		-- a co-ruler asks the senior ruler (userId) for war on target: the server's notice to them
+		-- (and, as FORGE-01's PR 2, the open ask in state: asks = { { from, fromName, target, expiresAt } })
 		function svc:askFrom(fromUserId, fromName, target, seniorUserId)
+			table.insert(self.state.asks, {
+				from = fromUserId,
+				fromName = fromName,
+				target = target,
+				expiresAt = now() + DiplomacyDoubles.ASK_SEC,
+			})
+			publish()
 			local senior = playerOf(env, seniorUserId)
 			if senior then
 				remotes:fire("Kingdom.WarAsk", senior, fromUserId, fromName, target)
@@ -159,6 +168,13 @@ DiplomacyDoubles.def = {
 						return false, "not_senior"
 					elseif action == "declareWar" then
 						table.insert(svc.asks, { from = player.UserId, target = target })
+						table.insert(svc.state.asks, {
+							from = player.UserId,
+							fromName = player.Name,
+							target = target,
+							expiresAt = t + DiplomacyDoubles.ASK_SEC,
+						})
+						publish()
 						local to = playerOf(env, senior)
 						if to then
 							remotes:fire("Kingdom.WarAsk", to, player.UserId, player.Name, target)

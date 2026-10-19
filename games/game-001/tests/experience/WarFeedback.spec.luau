@@ -508,6 +508,54 @@ describe("RulerSpectateController (FL-0130 part 2)", function()
 		end
 	)
 
+	it("follows FL-0125's Match.Spectate: true starts it, false ends it, and its kingdom is never a target", function()
+		local spectate = boot()
+		spectate:onKingdomState({ mine = nil, kingdoms = kingdoms(nil, true).kingdoms }) -- a spectator: mine is nil
+		spectate:onSpectate(true, { reason = "eliminated", kingdomId = "crimson", by = "azure", standing = {} })
+		expect(spectate.active).toBe(true)
+		for _, target in spectate:targets() do
+			expect(target.kingdom == "crimson").toBe(false)
+		end
+		spectate:onSpectate(false)
+		expect(spectate.active).toBe(false)
+		spectate:onSpectate(true, { reason = "match_full", standing = {} })
+		expect(spectate.active).toBe(true)
+		spectate:onSpectate("yes")
+		expect(spectate.active).toBe(true)
+	end)
+
+	it(
+		"never starts during Results or Lobby; a Match.Spectate(true) then waits for a playing phase (#189 M1)",
+		function()
+			local spectate = boot()
+			spectate:onKingdomState(kingdoms("crimson", false))
+			expect(spectate.active).toBe(true)
+			spectate:onPhase("Results")
+			expect(spectate.active).toBe(false)
+			spectate:onKingdomState(kingdoms(nil, false)) -- a state push during Results (a ruler leaves)
+			expect(spectate.active).toBe(false)
+			spectate:onKingdomState(kingdoms("crimson", false))
+			expect(spectate.active).toBe(false)
+			expect(spectate:setActive(true)).toBe(false)
+			-- a late joiner: Match.State(Results), then Match.Spectate(true)
+			local late = boot()
+			late:onPhase("Results")
+			late:onSpectate(true, { reason = "match_full", standing = {} })
+			expect(late.active).toBe(false)
+			late:onPhase("Lobby")
+			expect(late.active).toBe(false)
+			late:onPhase("Founding")
+			expect(late.active).toBe(true) -- still not seated: it watches the new match
+			-- seated in the lobby: Match.Spectate(false) clears the pending start
+			local seated = boot()
+			seated:onPhase("Results")
+			seated:onSpectate(true, { reason = "match_full", standing = {} })
+			seated:onSpectate(false)
+			seated:onPhase("Founding")
+			expect(seated.active).toBe(false)
+		end
+	)
+
 	it("ends at Results and Lobby; a new match forgets the old kingdom", function()
 		local spectate = boot()
 		spectate:onKingdomState(kingdoms("crimson", false))
@@ -520,7 +568,10 @@ describe("RulerSpectateController (FL-0130 part 2)", function()
 		spectate:onPhase("Lobby")
 		spectate:onKingdomState(kingdoms(nil, false)) -- the old crimson is not ours any more
 		expect(spectate.active).toBe(false)
-		expect(spectate:setActive(true)).toBe(true) -- by hand (FL-0125's Match.Spectate)
+		expect(spectate:setActive(true)).toBe(false) -- never in the lobby
+		spectate:onPhase("Founding")
+		expect(spectate.active).toBe(false) -- nothing pending: the new match plays normally
+		expect(spectate:setActive(true)).toBe(true) -- by hand
 		expect(spectate:setActive(true)).toBe(false)
 		-- spectating by hand while our kingdom stands: our own keep is never a target
 		spectate:setActive(false)

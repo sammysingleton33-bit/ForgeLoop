@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "char_citizen_01": {
+      "geometry_hash": "c79dde301b16b3de",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_citizen_02": {
+      "geometry_hash": "b61342066234b91b",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_citizen_03": {
+      "geometry_hash": "297bcde466364faa",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_citizen_04": {
+      "geometry_hash": "210a9b633e9b0be5",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_citizen_05": {
+      "geometry_hash": "8c9e7ebb3531156a",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_citizen_06": {
+      "geometry_hash": "91fb4dd7a87058a8",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "char_citizen",
+  "generator_version": 1,
+  "notes": "Stiff shared A-pose; kingdom colour weak/wrong (red 01 green hood); faceted heads clash with soft buildings; brown-heavy.",
+  "reviewer": "fresh-context subagent (images + rubric only)",
+  "round": 4,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 3,
+    "palette": 3,
+    "proportions": 3,
+    "readability": 3,
+    "silhouette": 3,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "NEEDS-WORK"
+}

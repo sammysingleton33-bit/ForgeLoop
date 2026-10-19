@@ -1,0 +1,767 @@
+{
+  "assets": [
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              9.525,
+              6.171,
+              1.624
+            ],
+            "name": "wall_left",
+            "size": [
+              0.6,
+              12.264,
+              26.625
+            ]
+          },
+          {
+            "center": [
+              -9.525,
+              6.171,
+              1.624
+            ],
+            "name": "wall_right",
+            "size": [
+              0.6,
+              12.264,
+              26.625
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              6.171,
+              14.637
+            ],
+            "name": "wall_back",
+            "size": [
+              19.65,
+              12.264,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              6.912,
+              6.171,
+              -11.389
+            ],
+            "name": "front_l",
+            "size": [
+              4.625,
+              12.264,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -6.912,
+              6.171,
+              -11.389
+            ],
+            "name": "front_r",
+            "size": [
+              4.625,
+              12.264,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              11.471,
+              -11.389
+            ],
+            "name": "front_header",
+            "size": [
+              9.2,
+              1.664,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -0.0,
+              0.239,
+              1.624
+            ],
+            "name": "floor",
+            "size": [
+              19.65,
+              0.4,
+              26.625
+            ]
+          },
+          {
+            "center": [
+              -7.8,
+              1.389,
+              -14.789
+            ],
+            "name": "bales",
+            "size": [
+              3.4,
+              2.7,
+              3.6
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 24.334,
+        "y": 34.484,
+        "z": 33.206
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_barn_01.fbx",
+        "validation": "exports/farm_barn_01.validation.json"
+      },
+      "generator": "farm_barn",
+      "generator_version": 2,
+      "geometry_hash": "4fee346ee0c3da99",
+      "id": "farm_barn_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "banner": "left",
+        "cupola": true,
+        "doors": "open_r",
+        "extra": null,
+        "kingdom": "red",
+        "loft": "closed",
+        "roof": "half_hip",
+        "walls": "wood"
+      },
+      "preview": "previews/farm_barn.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
+        "review_file": "reviews/farm_barn.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7700,
+      "sockets": {
+        "deposit": [
+          -6.4,
+          0.039,
+          -14.689
+        ],
+        "door": [
+          -0.0,
+          0.039,
+          -14.689
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 5012,
+        "lod1": 1754
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -11.039,
+              3.037,
+              4.277
+            ],
+            "name": "lean_to",
+            "size": [
+              6.0,
+              6.0,
+              14.406
+            ]
+          },
+          {
+            "center": [
+              11.415,
+              6.206,
+              1.658
+            ],
+            "name": "wall_left",
+            "size": [
+              0.6,
+              12.336,
+              26.193
+            ]
+          },
+          {
+            "center": [
+              -7.739,
+              6.206,
+              1.658
+            ],
+            "name": "wall_right",
+            "size": [
+              0.6,
+              12.336,
+              26.193
+            ]
+          },
+          {
+            "center": [
+              1.838,
+              6.206,
+              14.454
+            ],
+            "name": "wall_back",
+            "size": [
+              19.754,
+              12.336,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              8.777,
+              6.206,
+              -11.139
+            ],
+            "name": "front_l",
+            "size": [
+              4.677,
+              12.336,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -5.1,
+              6.206,
+              -11.139
+            ],
+            "name": "front_r",
+            "size": [
+              4.677,
+              12.336,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              1.838,
+              11.506,
+              -11.139
+            ],
+            "name": "front_header",
+            "size": [
+              9.2,
+              1.736,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              1.838,
+              0.237,
+              1.658
+            ],
+            "name": "floor",
+            "size": [
+              19.754,
+              0.4,
+              26.193
+            ]
+          },
+          {
+            "center": [
+              -5.962,
+              1.387,
+              -14.539
+            ],
+            "name": "bales",
+            "size": [
+              3.4,
+              2.7,
+              3.6
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 29.493,
+        "y": 28.607,
+        "z": 32.708
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_barn_02.fbx",
+        "validation": "exports/farm_barn_02.validation.json"
+      },
+      "generator": "farm_barn",
+      "generator_version": 2,
+      "geometry_hash": "fedb9b8f00a1b234",
+      "id": "farm_barn_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "cupola": false,
+        "doors": "closed",
+        "extra": "lean_to",
+        "kingdom": "blue",
+        "loft": "open",
+        "roof": "thatch",
+        "walls": "wood_light"
+      },
+      "preview": "previews/farm_barn.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
+        "review_file": "reviews/farm_barn.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7701,
+      "sockets": {
+        "deposit": [
+          -4.562,
+          0.037,
+          -14.439
+        ],
+        "door": [
+          1.838,
+          0.037,
+          -14.439
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 5276,
+        "lod1": 1846
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -10.957,
+              6.029,
+              -6.375
+            ],
+            "name": "granary",
+            "size": [
+              6.7,
+              11.983,
+              7.5
+            ]
+          },
+          {
+            "center": [
+              13.07,
+              5.976,
+              1.704
+            ],
+            "name": "wall_left",
+            "size": [
+              0.6,
+              11.877,
+              26.357
+            ]
+          },
+          {
+            "center": [
+              -5.757,
+              5.976,
+              1.704
+            ],
+            "name": "wall_right",
+            "size": [
+              0.6,
+              11.877,
+              26.357
+            ]
+          },
+          {
+            "center": [
+              3.657,
+              5.976,
+              14.583
+            ],
+            "name": "wall_back",
+            "size": [
+              19.427,
+              11.877,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              10.513,
+              5.976,
+              -11.175
+            ],
+            "name": "front_l",
+            "size": [
+              4.513,
+              11.877,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -3.2,
+              5.976,
+              -11.175
+            ],
+            "name": "front_r",
+            "size": [
+              4.513,
+              11.877,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              3.657,
+              11.276,
+              -11.175
+            ],
+            "name": "front_header",
+            "size": [
+              9.2,
+              1.277,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              3.657,
+              0.237,
+              1.704
+            ],
+            "name": "floor",
+            "size": [
+              19.427,
+              0.4,
+              26.357
+            ]
+          },
+          {
+            "center": [
+              -4.143,
+              1.387,
+              -14.575
+            ],
+            "name": "bales",
+            "size": [
+              3.4,
+              2.7,
+              3.6
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 31.225,
+        "y": 26.231,
+        "z": 32.765
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_barn_03.fbx",
+        "validation": "exports/farm_barn_03.validation.json"
+      },
+      "generator": "farm_barn",
+      "generator_version": 2,
+      "geometry_hash": "f2f1133b558ed1d0",
+      "id": "farm_barn_03",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "cupola": false,
+        "doors": "half",
+        "extra": "granary",
+        "kingdom": "yellow",
+        "loft": "open",
+        "roof": "tile",
+        "walls": "whitewash"
+      },
+      "preview": "previews/farm_barn.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
+        "review_file": "reviews/farm_barn.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7702,
+      "sockets": {
+        "deposit": [
+          -2.743,
+          0.037,
+          -14.475
+        ],
+        "door": [
+          3.657,
+          0.037,
+          -14.475
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 6340,
+        "lod1": 2218
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -12.586,
+              3.139,
+              1.723
+            ],
+            "name": "aisle_wall",
+            "size": [
+              0.6,
+              6.077,
+              27.684
+            ]
+          },
+          {
+            "center": [
+              12.465,
+              6.237,
+              1.723
+            ],
+            "name": "wall_left",
+            "size": [
+              0.6,
+              12.274,
+              27.684
+            ]
+          },
+          {
+            "center": [
+              -7.386,
+              6.237,
+              1.723
+            ],
+            "name": "wall_right",
+            "size": [
+              0.6,
+              12.274,
+              27.684
+            ]
+          },
+          {
+            "center": [
+              2.54,
+              6.237,
+              15.265
+            ],
+            "name": "wall_back",
+            "size": [
+              20.452,
+              12.274,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              9.653,
+              6.237,
+              -11.819
+            ],
+            "name": "front_l",
+            "size": [
+              5.026,
+              12.274,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              -4.573,
+              6.237,
+              -11.819
+            ],
+            "name": "front_r",
+            "size": [
+              5.026,
+              12.274,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              2.54,
+              11.537,
+              -11.819
+            ],
+            "name": "front_header",
+            "size": [
+              9.2,
+              1.674,
+              0.6
+            ]
+          },
+          {
+            "center": [
+              2.54,
+              0.3,
+              1.723
+            ],
+            "name": "floor",
+            "size": [
+              20.452,
+              0.4,
+              27.684
+            ]
+          },
+          {
+            "center": [
+              -5.26,
+              1.45,
+              -15.219
+            ],
+            "name": "bales",
+            "size": [
+              3.4,
+              2.7,
+              3.6
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 29.907,
+        "y": 32.711,
+        "z": 34.131
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_barn_04.fbx",
+        "validation": "exports/farm_barn_04.validation.json"
+      },
+      "generator": "farm_barn",
+      "generator_version": 2,
+      "geometry_hash": "56eee46604e329bb",
+      "id": "farm_barn_04",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "cupola": true,
+        "doors": "open_l",
+        "extra": "aisle",
+        "kingdom": "green",
+        "loft": "open",
+        "roof": "catslide",
+        "walls": "wood"
+      },
+      "preview": "previews/farm_barn.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Every barn now has an emblem banner beside its doors, and all four emblems read in grayscale at 75 studs: crown (01), star (02), sun in a cream roundel (03, not gold-on-gold) and ivory oak leaf (04). Four distinct roofs: red half-hip with kicked eaves + cupola, blue thatch + lean-to woodshed, yellow steep gable + half-timbered granary on staddles, green long gable + cupola + stone bread oven. Medieval vs American: 02 and 03 read European. 01 and 04 still carry American cues in the kingdom-colour X-braced double doors plus a cupola with weathervane flag; 01 in particular reads as a classic red barn at a glance. Cohesion is held at 3 for that reason. Advisory: plank doors with iron strap hinges (ART_DIRECTION section 4) and a louvre or ridge vent instead of the cupola. Tris 5012-6340/8000.",
+        "review_file": "reviews/farm_barn.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7703,
+      "sockets": {
+        "deposit": [
+          -3.86,
+          0.1,
+          -15.119
+        ],
+        "door": [
+          2.54,
+          0.1,
+          -15.119
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 6292,
+        "lod1": 2202
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "farm_barn",
+  "variation": {
+    "closest_pair": [
+      "farm_barn_03",
+      "farm_barn_04"
+    ],
+    "mean_pair_diff": 0.1777,
+    "min_pair_diff": 0.1204,
+    "pass": true,
+    "threshold": 0.08
+  }
+}
