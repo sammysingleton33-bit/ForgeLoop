@@ -187,6 +187,12 @@ describe("DuelRunner: geometry", function()
 		expect(side).toBe(0) -- at 90 degrees: below the facing bar
 	end)
 
+	it("a swing 45 degrees off the line still lands: the bar is a cone, not a line", function()
+		local d = math.sqrt(0.5)
+		local hits = swingOnce(poses({ x = 0, z = 0, fx = d, fz = d }, { x = 4, z = 0, fx = -1, fz = 0 }))
+		expect(hits).toBe(1)
+	end)
+
 	it("the same position is in range and facing; a human the world cannot find cannot hit", function()
 		local same = swingOnce(poses({ x = 3, z = 3, fx = 1, fz = 0 }, { x = 3, z = 3, fx = 1, fz = 0 }))
 		expect(same).toBe(1)
@@ -197,6 +203,28 @@ describe("DuelRunner: geometry", function()
 			return nil
 		end)
 		expect(lost).toBe(0)
+		local lostOpponent = swingOnce(function(userId: number)
+			if userId == 1 then
+				return { x = 0, z = 0, fx = 1, fz = 0 }
+			end
+			return nil
+		end)
+		expect(lostOpponent).toBe(0) -- the opponent cannot be found either
+	end)
+
+	it("a swing that misses is not relayed (miss and dodged stay inside)", function()
+		local runner = newRunner(
+			human(1),
+			human(2),
+			{ pose = poses({ x = 0, z = 0, fx = 1, fz = 0 }, { x = 99, z = 0, fx = -1, fz = 0 }) }
+		)
+		local clock = { t = 0 }
+		runner:step(0)
+		runner:act(1, "light", 0)
+		local events = run(runner, clock, 30)
+		expect(#ofKind(events, "hit")).toBe(0)
+		expect(#ofKind(events, "miss")).toBe(0)
+		expect(#ofKind(events, "dodged")).toBe(0)
 	end)
 
 	it("an AI has no body: against one the duel is virtual, as it is with no pose provider at all", function()
@@ -325,6 +353,8 @@ describe("DuelRunner: time", function()
 		local runner = newRunner(human(1), human(2))
 		expect(#runner:step(1000)).toBe(0)
 		expect(runner:snapshot().t).toBe(0)
+		runner:step(1000 + TICK) -- the next step counts from the first, not from zero
+		expect(runner:snapshot().t <= 2 * TICK).toBe(true)
 	end)
 
 	it("sends a public snapshot every snapshotEvery duel seconds, and never after the end", function()
@@ -383,6 +413,29 @@ describe("DuelRunner: AI hands and the end", function()
 		expect(ended[1].data.reason).toBe(reason)
 		expect(side == "a" or side == "b" or side == "draw").toBe(true)
 		expect(#ofKind(runner:step(clock.t + 1), "snapshot")).toBe(0)
+		for _, snapshot in ofKind(events, "snapshot") do
+			expect(snapshot.t < ended[1].t).toBe(true) -- the last word is "ended"
+		end
+	end)
+
+	it("the last word is ended: no snapshot follows it, even when one is due that very tick", function()
+		local config = table.clone(ArenaConfig)
+		config.snapshotEvery = 0 -- a snapshot is due on every tick
+		local runner = DuelRunner.new({ a = human(1), b = human(2), seed = 3 }, config)
+		runner._model.b.hp = 1 -- one light hit ends it
+		local clock = { t = 0 }
+		runner:step(0)
+		runner:act(1, "light", 0)
+		local events = run(runner, clock, 30)
+		expect(runner:finished()).toBe(true)
+		expect(events[#events].kind).toBe("ended")
+		local ended = 0
+		for _, event in events do
+			if event.kind == "ended" then
+				ended += 1
+			end
+		end
+		expect(ended).toBe(1)
 	end)
 
 	it("relays only the contract's kinds: no miss, no dodged, no raw sources", function()
