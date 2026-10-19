@@ -55,6 +55,17 @@
 		Kit.regionMarkers(polygon, kingdomColor) -> Model
 		Kit.slotMarker(size: Vector2, kingdomColor) -> Model   -- G13.5 build slot marker (Root is the query target)
 		Kit.NEUTRAL_COLOR, Kit.setKingdomColor(model, color)
+	Crown Arena (FL-0072, G12.6; Kit/Arena.luau, Crowd.luau, Gear.luau have the contracts):
+		Kit.arena(kingdomA?, kingdomB?) -> Model       -- the venue: ring, two stands (72 seats each, StandA_Row<r>_Seat<s>,
+		                                                  StandA_Rail<n>, StandA_Royal<n>), royal boxes, gates (GateA / GateB),
+		                                                  SpawnA / SpawnB; neutral stone and timber + a DressA / DressB sub-model
+		                                                  per kingdom (cap silhouette AND emblem); <= 700 parts neutral, cap 900
+		Kit.arenaDress(model, kingdomA?, kingdomB?)    -- rebuild both dresses in place (ArenaService, at the Arena phase)
+		Kit.crowdFigure(kingdomColor, role?, variant?) -> Model  -- <= 4 parts, client-only, feet pivot, front -Z; role: KeyRole
+		Kit.armour(armour, kingdomColor) -> { Accessory }        -- "light" | "medium" | "heavy" on Hat / BodyFront / BodyBack / Collar
+		Kit.weapon(weapon, kingdomColor?) -> Tool                -- "swordShield" | "greatsword" | "spear" | "mace"
+		Kit.ARENA (dimensions, PART_BUDGET), Kit.CROWD_ROLES, CROWD_MAX_PARTS, CROWD_ROLE_MAX_PARTS, CROWD_VARIANTS, CROWD_HEIGHT, crowdPoolKey,
+		Kit.ARMOURS, Kit.WEAPONS
 	Additive (emblems): Kit.EMBLEM_KINDS ({ [hue style]: kind }), Kit.emblemKind(color) -> kind?
 	Recolour: Kit.setKingdomColor recolours every KitTint part and re-forms every emblem to the new
 		colour's kind (a neutral colour removes them; a kingdom colour adds them on a neutral model). It
@@ -72,9 +83,12 @@
 		the kingdom, the key gains ".<kingdom>"), Kit.SOLDIER_CRESTS (KingdomId → crest name).
 ]]
 
+local Arena = require("./Arena")
 local Buildings = require("./Buildings")
 local Character = require("./Character")
 local CharacterMesh = require("./CharacterMesh")
+local Gear = require("./Gear")
+local Crowd = require("./Crowd")
 local Parts = require("./Parts")
 local Pieces = require("./Pieces")
 local Portrait = require("./Portrait")
@@ -86,7 +100,7 @@ export type BuildingType = string -- Kingdom/Types BuildingType (kept local so K
 export type Stage = number | string
 
 Kit.NEUTRAL_COLOR = Color3.fromRGB(208, 200, 184)
-Kit.VERSION = "0.5.0" -- 0.5: kingdom architecture styles (FL-0127); 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques
+Kit.VERSION = "0.6.0" -- 0.6: Crown Arena, crowd figures, duel gear (FL-0072); 0.5: kingdom architecture styles (FL-0127); 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques
 -- G2 BuildingType + the G13.5 VS-2 types (part-built stand-ins until FL-0086)
 Kit.BUILDING_TYPES = {
 	"keep",
@@ -127,6 +141,24 @@ Kit.lookKey = Character.lookKey
 -- soldier helmet crest per KingdomId (G13.2, D-033(3)): crimson "crest_spire", azure "crest_square",
 -- emerald "crest_plume", gold "crest_dome" (the Hair part's KitHeadwear)
 Kit.SOLDIER_CRESTS = Character.CRESTS
+
+-- Crown Arena (FL-0072, G12.6): the venue, its kingdom dress and the numbers Layout.arena mirrors
+Kit.arena = Arena.build -- (kingdomA?, kingdomB?) -> Model: neutral stone, timber and sand + each side's kingdom dress
+Kit.arenaDress = Arena.dress -- (model, kingdomA?, kingdomB?): rebuild both dresses in place
+Kit.ARENA = Arena
+-- Crowd figures (G12.6): <= 4 primitive parts (<= 8 for a key citizen, v0.4-g11a), client-only; role props for the six key citizens
+Kit.crowdFigure = Crowd.build -- (kingdomColor, role: KeyRole?, variant: number?) -> Model, feet-pivoted, front -Z
+Kit.CROWD_ROLES = Crowd.ROLES
+Kit.CROWD_MAX_PARTS = Crowd.MAX_PARTS
+Kit.CROWD_ROLE_MAX_PARTS = Crowd.ROLE_MAX_PARTS
+Kit.CROWD_VARIANTS = Crowd.VARIANTS
+Kit.CROWD_HEIGHT = Crowd.HEIGHT
+Kit.crowdPoolKey = Crowd.poolKey
+-- Duel gear (G12.1 Armour / Weapon, G12.6): accessories in attachment space (R15 and R6) and a Tool with a Handle, no scripts
+Kit.armour = Gear.armour -- (armour: "light" | "medium" | "heavy", kingdomColor) -> { Accessory }
+Kit.weapon = Gear.weapon -- (weapon: "swordShield" | "greatsword" | "spear" | "mace", kingdomColor?) -> Tool
+Kit.ARMOURS = Gear.ARMOURS
+Kit.WEAPONS = Gear.WEAPONS
 
 Kit.footprint = Buildings.footprint
 Kit.build = Buildings.build
