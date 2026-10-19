@@ -1,0 +1,52 @@
+{
+  "assets": {
+    "prop_banner_blue_01": {
+      "geometry_hash": "078a1cb5a572aef8",
+      "verdict": "PASS"
+    },
+    "prop_banner_blue_02": {
+      "geometry_hash": "371e1bc049bfd40c",
+      "verdict": "PASS"
+    },
+    "prop_banner_green_01": {
+      "geometry_hash": "ffc553b57c006d59",
+      "verdict": "PASS"
+    },
+    "prop_banner_green_02": {
+      "geometry_hash": "f437abb3e0c4fbf6",
+      "verdict": "PASS"
+    },
+    "prop_banner_red_01": {
+      "geometry_hash": "b1fb92952605a3e7",
+      "verdict": "PASS"
+    },
+    "prop_banner_red_02": {
+      "geometry_hash": "e9882550e94c5d3f",
+      "verdict": "PASS"
+    },
+    "prop_banner_yellow_01": {
+      "geometry_hash": "3e63b8f23a9f323e",
+      "verdict": "PASS"
+    },
+    "prop_banner_yellow_02": {
+      "geometry_hash": "caca0f2ab7df7a00",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "prop_banner",
+  "generator_version": 1,
+  "notes": "All 8 pass. Crown, star, oak leaf and sun read in grayscale at 43 studs; sun has pointed rays on a cream disc (no gold on gold); no flame. Four forms (stand banner, swallowtail flag, wall banner, finial pole) give clear variation. Non-blocking: yellow_01 small-banner sun in ring reads cog-like at distance (sun finial carries it); green_02 oak finial reads feather-like edge-on; yellow_02 acorn finial is a gold teardrop, swap for a ball or sun to rule out any flame read; each form exists for only 2 kingdoms; crown is gold with cream band here but plain cream on smithy/barracks, unify; proxy occludes blue_02 in the strip. Tris 560-790 of 800 (green_02/yellow_02 at 98-99%).",
+  "reviewer": "fresh-context subagent",
+  "round": 4,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

@@ -1,0 +1,303 @@
+{
+  "assets": [
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 29.078,
+        "y": 38.332,
+        "z": 21.843
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_windmill_01.fbx",
+        "validation": "exports/farm_windmill_01.validation.json"
+      },
+      "generator": "farm_windmill",
+      "generator_version": 2,
+      "geometry_hash": "6ecea280c4d5bc20",
+      "id": "farm_windmill_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "angle": 12,
+        "cap": "cone",
+        "gallery": false,
+        "kingdom": "red",
+        "sails": "canvas",
+        "tower": "stone"
+      },
+      "preview": "previews/farm_windmill.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Four different mill types (red stone tower mill, green octagonal smock mill, blue white tower mill with gallery, yellow post mill on trestle) and kingdom-coloured sail cloth: excellent silhouette and variation, all separable in grayscale. Crown, leaf and star banners are visible at 67 studs. Issues: 04 (yellow) has its sun banner only on the side away from the gameplay camera, so add one to the sail face. The bare lattice sails pointing down in front of the tower read as ladders (01, 03). On 02 the green is only on 2 sails + a small banner (beige thatch cap). 4.1-5.6k of 8k.",
+        "review_file": "reviews/farm_windmill.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 5
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7600,
+      "sockets": {
+        "deposit": [
+          -5.0,
+          0.058,
+          -10.613
+        ],
+        "door": [
+          -0.0,
+          0.058,
+          -9.613
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 5006,
+        "lod1": 1752
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 24.013,
+        "y": 36.767,
+        "z": 21.796
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_windmill_02.fbx",
+        "validation": "exports/farm_windmill_02.validation.json"
+      },
+      "generator": "farm_windmill",
+      "generator_version": 2,
+      "geometry_hash": "75c939539865d331",
+      "id": "farm_windmill_02",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "angle": 40,
+        "cap": "thatch",
+        "gallery": false,
+        "kingdom": "green",
+        "sails": "mixed",
+        "tower": "smock"
+      },
+      "preview": "previews/farm_windmill.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Four different mill types (red stone tower mill, green octagonal smock mill, blue white tower mill with gallery, yellow post mill on trestle) and kingdom-coloured sail cloth: excellent silhouette and variation, all separable in grayscale. Crown, leaf and star banners are visible at 67 studs. Issues: 04 (yellow) has its sun banner only on the side away from the gameplay camera, so add one to the sail face. The bare lattice sails pointing down in front of the tower read as ladders (01, 03). On 02 the green is only on 2 sails + a small banner (beige thatch cap). 4.1-5.6k of 8k.",
+        "review_file": "reviews/farm_windmill.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 5
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7601,
+      "sockets": {
+        "deposit": [
+          -5.0,
+          0.049,
+          -10.738
+        ],
+        "door": [
+          -0.0,
+          0.049,
+          -9.738
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 4828,
+        "lod1": 1688
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 29.6,
+        "y": 39.916,
+        "z": 22.625
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_windmill_03.fbx",
+        "validation": "exports/farm_windmill_03.validation.json"
+      },
+      "generator": "farm_windmill",
+      "generator_version": 2,
+      "geometry_hash": "9f68cd1650c248c9",
+      "id": "farm_windmill_03",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "angle": 0,
+        "cap": "boat",
+        "gallery": true,
+        "kingdom": "blue",
+        "sails": "mixed",
+        "tower": "white"
+      },
+      "preview": "previews/farm_windmill.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Four different mill types (red stone tower mill, green octagonal smock mill, blue white tower mill with gallery, yellow post mill on trestle) and kingdom-coloured sail cloth: excellent silhouette and variation, all separable in grayscale. Crown, leaf and star banners are visible at 67 studs. Issues: 04 (yellow) has its sun banner only on the side away from the gameplay camera, so add one to the sail face. The bare lattice sails pointing down in front of the tower read as ladders (01, 03). On 02 the green is only on 2 sails + a small banner (beige thatch cap). 4.1-5.6k of 8k.",
+        "review_file": "reviews/farm_windmill.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 5
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7602,
+      "sockets": {
+        "deposit": [
+          -5.0,
+          0.054,
+          -10.643
+        ],
+        "door": [
+          -0.0,
+          0.054,
+          -9.643
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 5594,
+        "lod1": 1956
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "farm",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 24.055,
+        "y": 30.208,
+        "z": 23.349
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/farm_windmill_04.fbx",
+        "validation": "exports/farm_windmill_04.validation.json"
+      },
+      "generator": "farm_windmill",
+      "generator_version": 2,
+      "geometry_hash": "c0c11f639e395b7d",
+      "id": "farm_windmill_04",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "angle": 28,
+        "cap": "post",
+        "gallery": false,
+        "kingdom": "yellow",
+        "sails": "canvas",
+        "tower": "post"
+      },
+      "preview": "previews/farm_windmill.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Four different mill types (red stone tower mill, green octagonal smock mill, blue white tower mill with gallery, yellow post mill on trestle) and kingdom-coloured sail cloth: excellent silhouette and variation, all separable in grayscale. Crown, leaf and star banners are visible at 67 studs. Issues: 04 (yellow) has its sun banner only on the side away from the gameplay camera, so add one to the sail face. The bare lattice sails pointing down in front of the tower read as ladders (01, 03). On 02 the green is only on 2 sails + a small banner (beige thatch cap). 4.1-5.6k of 8k.",
+        "review_file": "reviews/farm_windmill.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 5
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7603,
+      "sockets": {
+        "deposit": [
+          -3.4,
+          0.079,
+          10.025
+        ],
+        "door": [
+          0.8,
+          0.079,
+          10.025
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 4060,
+        "lod1": 1420
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "farm_windmill",
+  "variation": {
+    "closest_pair": [
+      "farm_windmill_01",
+      "farm_windmill_03"
+    ],
+    "mean_pair_diff": 0.4378,
+    "min_pair_diff": 0.275,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

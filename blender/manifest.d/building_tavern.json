@@ -1,0 +1,457 @@
+{
+  "assets": [
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 37.091,
+        "y": 42.992,
+        "z": 29.062
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_tavern_01.fbx",
+        "validation": "exports/building_tavern_01.validation.json"
+      },
+      "generator": "building_tavern",
+      "generator_version": 1,
+      "geometry_hash": "9e919989676e9aa9",
+      "id": "building_tavern_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "chimney": 1,
+        "dormers": 3,
+        "ground": "stone",
+        "kingdom": "red",
+        "porch": "gable",
+        "roof": "tile",
+        "storeys": 3,
+        "wing": false
+      },
+      "preview": "previews/building_tavern.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Same 3-storey box x6; thatch makes blue/green/red read yellow; sign too small to identify a tavern.",
+        "review_file": "reviews/building_tavern.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7500,
+      "sockets": {
+        "door": [
+          1.618,
+          0.0,
+          -10.425
+        ],
+        "sign": [
+          -5.982,
+          8.342,
+          -8.675
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 10508,
+        "lod1": 3676
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 46.734,
+        "y": 36.272,
+        "z": 29.247
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_tavern_02.fbx",
+        "validation": "exports/building_tavern_02.validation.json"
+      },
+      "generator": "building_tavern",
+      "generator_version": 1,
+      "geometry_hash": "a8fce00670f0bfcd",
+      "id": "building_tavern_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "chimney": -1,
+        "dormers": 2,
+        "ground": "plaster",
+        "kingdom": "blue",
+        "porch": "gable",
+        "roof": "thatch",
+        "storeys": 2,
+        "wing": true
+      },
+      "preview": "previews/building_tavern.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Same 3-storey box x6; thatch makes blue/green/red read yellow; sign too small to identify a tavern.",
+        "review_file": "reviews/building_tavern.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7501,
+      "sockets": {
+        "door": [
+          4.462,
+          0.0,
+          -10.422
+        ],
+        "sign": [
+          -3.138,
+          7.973,
+          -8.672
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 10744,
+        "lod1": 3760
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 37.094,
+        "y": 45.395,
+        "z": 29.516
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_tavern_03.fbx",
+        "validation": "exports/building_tavern_03.validation.json"
+      },
+      "generator": "building_tavern",
+      "generator_version": 1,
+      "geometry_hash": "8268b584a166d726",
+      "id": "building_tavern_03",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "chimney": -1,
+        "dormers": 2,
+        "ground": "plaster",
+        "kingdom": "green",
+        "porch": "pentice",
+        "roof": "thatch",
+        "storeys": 3,
+        "wing": false
+      },
+      "preview": "previews/building_tavern.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Same 3-storey box x6; thatch makes blue/green/red read yellow; sign too small to identify a tavern.",
+        "review_file": "reviews/building_tavern.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7502,
+      "sockets": {
+        "door": [
+          -0.75,
+          0.0,
+          -10.572
+        ],
+        "sign": [
+          6.85,
+          14.331,
+          -9.722
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 11240,
+        "lod1": 3934
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 47.157,
+        "y": 33.782,
+        "z": 28.194
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_tavern_04.fbx",
+        "validation": "exports/building_tavern_04.validation.json"
+      },
+      "generator": "building_tavern",
+      "generator_version": 1,
+      "geometry_hash": "b1f85ae88d1cf9a3",
+      "id": "building_tavern_04",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "chimney": 1,
+        "dormers": 3,
+        "ground": "stone",
+        "kingdom": "yellow",
+        "porch": "pentice",
+        "roof": "tile",
+        "storeys": 2,
+        "wing": true
+      },
+      "preview": "previews/building_tavern.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Same 3-storey box x6; thatch makes blue/green/red read yellow; sign too small to identify a tavern.",
+        "review_file": "reviews/building_tavern.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7503,
+      "sockets": {
+        "door": [
+          -3.711,
+          0.0,
+          -9.959
+        ],
+        "sign": [
+          -11.311,
+          14.02,
+          -9.109
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 9644,
+        "lod1": 3374
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 38.745,
+        "y": 35.071,
+        "z": 28.797
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_tavern_05.fbx",
+        "validation": "exports/building_tavern_05.validation.json"
+      },
+      "generator": "building_tavern",
+      "generator_version": 1,
+      "geometry_hash": "1b5ba371f731c6f0",
+      "id": "building_tavern_05",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "chimney": -1,
+        "dormers": 3,
+        "ground": "plaster",
+        "kingdom": "red",
+        "porch": "pentice",
+        "roof": "thatch",
+        "storeys": 2,
+        "wing": false
+      },
+      "preview": "previews/building_tavern.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Same 3-storey box x6; thatch makes blue/green/red read yellow; sign too small to identify a tavern.",
+        "review_file": "reviews/building_tavern.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7504,
+      "sockets": {
+        "door": [
+          0.425,
+          0.0,
+          -10.199
+        ],
+        "sign": [
+          -7.175,
+          14.166,
+          -9.349
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 10368,
+        "lod1": 3628
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_large",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 46.026,
+        "y": 42.415,
+        "z": 28.932
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_tavern_06.fbx",
+        "validation": "exports/building_tavern_06.validation.json"
+      },
+      "generator": "building_tavern",
+      "generator_version": 1,
+      "geometry_hash": "124e2faf926cdbb7",
+      "id": "building_tavern_06",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "chimney": 1,
+        "dormers": 3,
+        "ground": "plaster",
+        "kingdom": "blue",
+        "porch": "gable",
+        "roof": "tile",
+        "storeys": 3,
+        "wing": true
+      },
+      "preview": "previews/building_tavern.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Same 3-storey box x6; thatch makes blue/green/red read yellow; sign too small to identify a tavern.",
+        "review_file": "reviews/building_tavern.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 4,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7505,
+      "sockets": {
+        "door": [
+          -3.239,
+          0.0,
+          -10.302
+        ],
+        "sign": [
+          -10.839,
+          8.077,
+          -8.552
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 12000,
+        "lod0": 11556,
+        "lod1": 4044
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "building_tavern",
+  "variation": {
+    "closest_pair": [
+      "building_tavern_01",
+      "building_tavern_06"
+    ],
+    "mean_pair_diff": 0.2676,
+    "min_pair_diff": 0.1366,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

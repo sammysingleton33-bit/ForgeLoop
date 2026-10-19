@@ -1,0 +1,505 @@
+{
+  "assets": [
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              3.867,
+              4.0,
+              0.35
+            ],
+            "name": "trunk",
+            "size": [
+              2.565,
+              8.0,
+              2.565
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 15.485,
+        "y": 33.825,
+        "z": 12.187
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_01.fbx",
+        "validation": "exports/tree_birch_01.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 3,
+      "geometry_hash": "f6bba29dcf51100a",
+      "id": "tree_birch_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "birch",
+        "style": "leaning"
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
+        "review_file": "reviews/tree_birch.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7017,
+      "sockets": {
+        "canopy_top": [
+          -2.821,
+          32.199,
+          -0.791
+        ],
+        "harvest": [
+          3.867,
+          0.0,
+          -1.166
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2158,
+        "lod1": 754
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.995,
+              4.0,
+              1.101
+            ],
+            "name": "trunk",
+            "size": [
+              3.77,
+              8.0,
+              2.965
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 19.454,
+        "y": 36.786,
+        "z": 11.691
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_02.fbx",
+        "validation": "exports/tree_birch_02.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 3,
+      "geometry_hash": "0daf472bdea51ab1",
+      "id": "tree_birch_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "birch",
+        "style": "twin"
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
+        "review_file": "reviews/tree_birch.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7076,
+      "sockets": {
+        "canopy_top": [
+          -2.591,
+          34.428,
+          -0.508
+        ],
+        "harvest": [
+          0.995,
+          0.0,
+          -0.592
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2436,
+        "lod1": 852
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.046,
+              4.0,
+              1.21
+            ],
+            "name": "trunk",
+            "size": [
+              3.559,
+              8.0,
+              3.413
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 12.981,
+        "y": 31.247,
+        "z": 12.437
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_03.fbx",
+        "validation": "exports/tree_birch_03.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 3,
+      "geometry_hash": "06328fab39a090bc",
+      "id": "tree_birch_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "birch",
+        "style": "clump"
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
+        "review_file": "reviews/tree_birch.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7135,
+      "sockets": {
+        "canopy_top": [
+          0.221,
+          29.614,
+          -1.33
+        ],
+        "harvest": [
+          0.046,
+          0.0,
+          -0.873
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3016,
+        "lod1": 1054
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              3.364,
+              4.0,
+              1.607
+            ],
+            "name": "trunk",
+            "size": [
+              2.86,
+              8.0,
+              2.86
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 17.786,
+        "y": 38.822,
+        "z": 12.519
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_04.fbx",
+        "validation": "exports/tree_birch_04.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 3,
+      "geometry_hash": "1f51a1d4c82ca556",
+      "id": "tree_birch_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "birch",
+        "style": "broken"
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
+        "review_file": "reviews/tree_birch.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7194,
+      "sockets": {
+        "canopy_top": [
+          -3.032,
+          36.724,
+          -0.575
+        ],
+        "harvest": [
+          3.364,
+          0.0,
+          -0.083
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 1818,
+        "lod1": 636
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.57,
+              4.0,
+              -0.791
+            ],
+            "name": "trunk",
+            "size": [
+              1.87,
+              8.0,
+              1.87
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 14.263,
+        "y": 28.844,
+        "z": 8.319
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_05.fbx",
+        "validation": "exports/tree_birch_05.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 3,
+      "geometry_hash": "63155736abc35d46",
+      "id": "tree_birch_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "birch",
+        "style": "young_branch"
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
+        "review_file": "reviews/tree_birch.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7253,
+      "sockets": {
+        "canopy_top": [
+          -1.082,
+          27.157,
+          -0.257
+        ],
+        "harvest": [
+          -0.57,
+          0.0,
+          -1.896
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 1666,
+        "lod1": 582
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.772,
+              4.0,
+              -0.094
+            ],
+            "name": "trunk",
+            "size": [
+              2.75,
+              8.0,
+              2.75
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 19.687,
+        "y": 33.958,
+        "z": 9.604
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_birch_06.fbx",
+        "validation": "exports/tree_birch_06.validation.json"
+      },
+      "generator": "tree_birch",
+      "generator_version": 3,
+      "geometry_hash": "73941da9b28e72d1",
+      "id": "tree_birch_06",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "birch_gold",
+        "style": "forked"
+      },
+      "preview": "previews/tree_birch.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Pale marked trunks read as birch and the autumn ramp is coherent, but the crowns are 3-4 same-size blobs stacked straight up the trunk with pinched waists and no branch arms, so 01/03/04 read as stacked scoops and 05 as a lollipop on a stub, with no drooping birch crown shape. Fix the 06 trunk (a thicker, whiter sleeve with a flat top under cream forks), add root flare to 01-03/05, and replace the protruding sliver bark marks and hairline twig spikes with flush, bolder marks.",
+        "review_file": "reviews/tree_birch.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 3,
+          "readability": 4,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7312,
+      "sockets": {
+        "canopy_top": [
+          -4.991,
+          32.157,
+          0.673
+        ],
+        "harvest": [
+          -0.772,
+          0.0,
+          -1.719
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2452,
+        "lod1": 858
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "tree_birch",
+  "variation": {
+    "closest_pair": [
+      "tree_birch_02",
+      "tree_birch_06"
+    ],
+    "mean_pair_diff": 0.5318,
+    "min_pair_diff": 0.4161,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

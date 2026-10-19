@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "building_market_01": {
+      "geometry_hash": "1ae36fde84fd3f51",
+      "verdict": "PASS"
+    },
+    "building_market_02": {
+      "geometry_hash": "167a60443c00daae",
+      "verdict": "PASS"
+    },
+    "building_market_03": {
+      "geometry_hash": "8efb86a527fb04f3",
+      "verdict": "PASS"
+    },
+    "building_market_04": {
+      "geometry_hash": "711918262d284bc2",
+      "verdict": "PASS"
+    },
+    "building_market_05": {
+      "geometry_hash": "eb43fcfdc168d825",
+      "verdict": "PASS"
+    },
+    "building_market_06": {
+      "geometry_hash": "cd487472c8b6bc52",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "building_market",
+  "generator_version": 1,
+  "notes": "Lower halves cloned; produce blobs read as mush at 62 studs; 02 splayed poles; 04 purple finial off-palette.",
+  "reviewer": "fresh-context subagent (images + rubric only)",
+  "round": 4,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

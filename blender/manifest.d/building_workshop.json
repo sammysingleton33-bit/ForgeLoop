@@ -1,0 +1,457 @@
+{
+  "assets": [
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 40.913,
+        "y": 21.253,
+        "z": 24.131
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_workshop_01.fbx",
+        "validation": "exports/building_workshop_01.validation.json"
+      },
+      "generator": "building_workshop",
+      "generator_version": 1,
+      "geometry_hash": "fb85de305dd76c20",
+      "id": "building_workshop_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "bays": 2,
+        "crane": "treadwheel",
+        "house_ground": "plaster",
+        "house_roof": "thatch",
+        "house_side": 1,
+        "kingdom": "red",
+        "shed_roof": "tile",
+        "storeys": 1
+      },
+      "preview": "previews/building_workshop.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "One kit mirrored and re-roofed; green/red show no team colour; house reads as a tower bolted to a shed; water wheel on dry ground.",
+        "review_file": "reviews/building_workshop.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7700,
+      "sockets": {
+        "deposit": [
+          12.787,
+          0.0,
+          -13.88
+        ],
+        "interact": [
+          3.925,
+          0.0,
+          -10.038
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 6806,
+        "lod1": 2382
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 40.849,
+        "y": 27.985,
+        "z": 23.521
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_workshop_02.fbx",
+        "validation": "exports/building_workshop_02.validation.json"
+      },
+      "generator": "building_workshop",
+      "generator_version": 1,
+      "geometry_hash": "ff3ab522b48db16a",
+      "id": "building_workshop_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "bays": 2,
+        "crane": "jib",
+        "house_ground": "stone",
+        "house_roof": "tile",
+        "house_side": -1,
+        "kingdom": "blue",
+        "shed_roof": "shingle",
+        "storeys": 2
+      },
+      "preview": "previews/building_workshop.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "One kit mirrored and re-roofed; green/red show no team colour; house reads as a tower bolted to a shed; water wheel on dry ground.",
+        "review_file": "reviews/building_workshop.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7701,
+      "sockets": {
+        "deposit": [
+          -12.754,
+          0.0,
+          -13.533
+        ],
+        "interact": [
+          -3.774,
+          0.0,
+          -9.965
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 6974,
+        "lod1": 2440
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 48.885,
+        "y": 21.759,
+        "z": 24.003
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_workshop_03.fbx",
+        "validation": "exports/building_workshop_03.validation.json"
+      },
+      "generator": "building_workshop",
+      "generator_version": 1,
+      "geometry_hash": "938e45a1fa5def40",
+      "id": "building_workshop_03",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "bays": 3,
+        "crane": "jib",
+        "house_ground": "plaster",
+        "house_roof": "thatch",
+        "house_side": 1,
+        "kingdom": "green",
+        "shed_roof": "shingle",
+        "storeys": 1
+      },
+      "preview": "previews/building_workshop.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "One kit mirrored and re-roofed; green/red show no team colour; house reads as a tower bolted to a shed; water wheel on dry ground.",
+        "review_file": "reviews/building_workshop.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7702,
+      "sockets": {
+        "deposit": [
+          16.772,
+          0.0,
+          -13.686
+        ],
+        "interact": [
+          7.671,
+          0.0,
+          -9.937
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 6602,
+        "lod1": 2310
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 48.339,
+        "y": 22.282,
+        "z": 24.474
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_workshop_04.fbx",
+        "validation": "exports/building_workshop_04.validation.json"
+      },
+      "generator": "building_workshop",
+      "generator_version": 1,
+      "geometry_hash": "d1782ad83d6e6542",
+      "id": "building_workshop_04",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "bays": 3,
+        "crane": "treadwheel",
+        "house_ground": "stone",
+        "house_roof": "thatch",
+        "house_side": -1,
+        "kingdom": "yellow",
+        "shed_roof": "tile",
+        "storeys": 1
+      },
+      "preview": "previews/building_workshop.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "One kit mirrored and re-roofed; green/red show no team colour; house reads as a tower bolted to a shed; water wheel on dry ground.",
+        "review_file": "reviews/building_workshop.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7703,
+      "sockets": {
+        "deposit": [
+          -16.5,
+          0.0,
+          -13.937
+        ],
+        "interact": [
+          -7.504,
+          0.0,
+          -10.053
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 7058,
+        "lod1": 2470
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 48.698,
+        "y": 28.464,
+        "z": 23.744
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_workshop_05.fbx",
+        "validation": "exports/building_workshop_05.validation.json"
+      },
+      "generator": "building_workshop",
+      "generator_version": 1,
+      "geometry_hash": "1a7b2c4eb969b96e",
+      "id": "building_workshop_05",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "bays": 3,
+        "crane": "jib",
+        "house_ground": "plaster",
+        "house_roof": "thatch",
+        "house_side": -1,
+        "kingdom": "red",
+        "shed_roof": "shingle",
+        "storeys": 2
+      },
+      "preview": "previews/building_workshop.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "One kit mirrored and re-roofed; green/red show no team colour; house reads as a tower bolted to a shed; water wheel on dry ground.",
+        "review_file": "reviews/building_workshop.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7704,
+      "sockets": {
+        "deposit": [
+          -16.679,
+          0.0,
+          -13.7
+        ],
+        "interact": [
+          -7.659,
+          0.0,
+          -10.29
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 7498,
+        "lod1": 2624
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "building_medium",
+      "category": "building",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 40.785,
+        "y": 27.506,
+        "z": 23.942
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/building_workshop_06.fbx",
+        "validation": "exports/building_workshop_06.validation.json"
+      },
+      "generator": "building_workshop",
+      "generator_version": 1,
+      "geometry_hash": "c713c6154e41b716",
+      "id": "building_workshop_06",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "bays": 2,
+        "crane": "treadwheel",
+        "house_ground": "stone",
+        "house_roof": "tile",
+        "house_side": 1,
+        "kingdom": "blue",
+        "shed_roof": "tile",
+        "storeys": 2
+      },
+      "preview": "previews/building_workshop.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "One kit mirrored and re-roofed; green/red show no team colour; house reads as a tower bolted to a shed; water wheel on dry ground.",
+        "review_file": "reviews/building_workshop.md",
+        "reviewer": "fresh-context subagent (images + rubric only)",
+        "round": 4,
+        "scores": {
+          "cohesion": 3,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 2,
+          "silhouette": 3,
+          "triangle_cost": 3,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7705,
+      "sockets": {
+        "deposit": [
+          12.723,
+          0.0,
+          -13.794
+        ],
+        "interact": [
+          3.838,
+          0.0,
+          -10.089
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 8000,
+        "lod0": 7502,
+        "lod1": 2624
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "building_workshop",
+  "variation": {
+    "closest_pair": [
+      "building_workshop_01",
+      "building_workshop_03"
+    ],
+    "mean_pair_diff": 0.2811,
+    "min_pair_diff": 0.1795,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

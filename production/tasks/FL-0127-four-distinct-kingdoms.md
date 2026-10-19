@@ -3,7 +3,7 @@ id: FL-0127
 title: "Four distinct, fully dressed kingdoms: architecture, emblems and surroundings per kingdom (VS-2 row 1)"
 track: asset
 owner: forge-02
-status: READY
+status: BUILDING
 priority: P1
 game: game-001
 created: 2026-10-18
@@ -37,3 +37,4 @@ Automated: Kit/World specs, part-count spec under the ceiling, NodeKeepOut for a
 
 ## Log
 - 2026-10-18 FORGE-00: created for Operation Crownfall (owner directive 2026-10-18, D-053).
+- 2026-10-18 forge-02: READY → BUILDING. Started (Operation Crownfall, D-053; FORGE-00's mission 1). Part 1: three neutral outposts in world/Layout.luau (ids outpost_n/s/w, kind capture, regions, nav nodes, road spurs, ObjectiveZone), consumed by FL-0126 once FORGE-01 adds the config rows; then the four distinct kingdoms.

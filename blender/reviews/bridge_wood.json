@@ -1,0 +1,32 @@
+{
+  "assets": {
+    "bridge_wood_humped_01": {
+      "geometry_hash": "b93fbd5fe2c984eb",
+      "verdict": "PASS"
+    },
+    "bridge_wood_plank_01": {
+      "geometry_hash": "0064c86bc374b97d",
+      "verdict": "PASS"
+    },
+    "bridge_wood_trestle_01": {
+      "geometry_hash": "7abd4b80d4d534ca",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "bridge_wood",
+  "generator_version": 1,
+  "notes": "Flat, trestle and humped forms are distinct and read at 63 studs. All three are one uniform brown with no secondary material, and the stepped end-ramp planks on plank_01 and trestle_01 show gaps that read as broken steps.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 3,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 4,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

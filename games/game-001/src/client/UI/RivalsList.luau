@@ -41,7 +41,7 @@ function RivalsList.key(view: any, phone: boolean, confirm: string?): string
 		for j, a in r.actions do
 			actions[j] = { id = a.id, enabled = a.enabled, variant = a.variant }
 		end
-		rows[i] = { id = r.id, relation = r.relation, note = r.note ~= nil, actions = actions }
+		rows[i] = { id = r.id, relation = r.relation, note = r.note ~= nil, ask = r.ask ~= nil, actions = actions }
 	end
 	return Signature.of({ tab = "rivals", rows = rows, phone = phone, confirm = confirm, senior = view.senior })
 end
@@ -184,20 +184,30 @@ local function row(r: any, phone: boolean, ui: any, order: number, senior: strin
 			extra = { Name = "Note", Size = UDim2.new(1, 0, 0, 16), LayoutOrder = 2, Parent = frame },
 		})
 	end
+	if r.ask then
+		-- an open ask for war on this rival (D-054; FORGE-01's diplomacy.asks): until answered or expired
+		Style.text({
+			text = r.ask,
+			weight = Enum.FontWeight.Bold,
+			size = 12,
+			color = Theme.color("gules"),
+			extra = { Name = "Ask", Size = UDim2.new(1, 0, 0, 16), LayoutOrder = 3, Parent = frame },
+		})
+	end
 	if #r.actions == 0 then
 		return frame
 	end
 	local confirming = ui.confirm == r.id
 	if confirming then
 		local question = if senior then `Ask {senior} to declare war on {r.name}?` else `Declare war on {r.name}?`
-		line(frame, "Question", question, 3, "textPrimary", true)
+		line(frame, "Question", question, 4, "textPrimary", true)
 	end
 	local actions = Create("Frame", {
 		Name = "Actions",
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		LayoutOrder = 4,
+		LayoutOrder = 5,
 		Parent = frame,
 	}, { List = Style.list("x", 8, Enum.HorizontalAlignment.Left, Enum.VerticalAlignment.Center) })
 	if confirming then
@@ -232,7 +242,7 @@ local function row(r: any, phone: boolean, ui: any, order: number, senior: strin
 	end
 	if reason then
 		-- Its own line under the buttons: beside them it was cut off on phones.
-		line(frame, "Reason", reason, 5, "textSecondary", false)
+		line(frame, "Reason", reason, 6, "textSecondary", false)
 	end
 	return frame
 end
@@ -278,6 +288,10 @@ function RivalsList.paint(body: Instance, view: any, phone: boolean?)
 			local note = frame:FindFirstChild("Note")
 			if note and r.note then
 				note.Text = r.note
+			end
+			local ask = frame:FindFirstChild("Ask")
+			if ask and r.ask then
+				ask.Text = r.ask
 			end
 			local reasonLabel = frame:FindFirstChild("Reason")
 			if reasonLabel then
