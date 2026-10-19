@@ -413,7 +413,7 @@ describe("Kingdom/Military: combat", function()
 		expect(a.hp).toBe(80)
 		expect(b.hp).toBe(80)
 		expect(intruder.hp).toBe(80)
-		expect(sim.buildings[k1.keepId].hp).toBe(6000)
+		expect(sim.buildings[k1.keepId].hp).toBe(sim.buildings[k1.keepId].maxHp)
 		expect(#F.events(sim, "UnitKilled")).toBe(0)
 		expect(k1.threats).toEqual({})
 	end)
@@ -459,11 +459,11 @@ describe("Kingdom/Military: combat", function()
 		sim:advance(3)
 		expect(holder.x).toBe(150)
 		expect(holder.z).toBe(0)
-		expect(bait.hp).toBe(400)
+		expect(bait.hp).toBe(bait.maxHp)
 		bait.x = 153 -- now in weapon range
 		sim:advance(1)
 		expect(holder.x).toBe(150)
-		expect(bait.hp).toBeLessThan(400)
+		expect(bait.hp).toBeLessThan(bait.maxHp)
 	end)
 
 	it("a unit closing in from any direction reaches striking range (no floating-point stall)", function()
@@ -521,9 +521,9 @@ describe("Kingdom/Military: combat", function()
 		expect(wall.hp).toBe(900 - 60 * 4)
 		local soldier = unit(sim, k2, "soldier", 108, 3) -- 4.5 from the wall's edge: in range
 		sim:advance(3) -- ram strikes again at 3.25 (cooldown 3); soldier at 0.5, 1.5, 2.5
-		expect(wall.hp).toBe(900 - 240 * 2 - 8 * 3) -- soldier siege 1: plain damage
+		expect(wall.hp).toBe(900 - 240 * 2 - 2 * 3) -- soldier siege 0.25: 8 x 0.25 = 2 a hit
 		sim:advance(5.75)
-		expect(sim.buildings[wall.id]).toBe(wall) -- 900 - 3 x 240 - 8 x 8 = 116 left
+		expect(sim.buildings[wall.id]).toBe(wall) -- 900 - 3 x 240 - 8 x 2 = 164 left
 		sim:advance(0.25) -- the ram's fourth blow at 9.25
 		expect(sim.buildings[wall.id]).toBeNil()
 		expect(wall.destroyed).toBe(true)
@@ -541,7 +541,7 @@ describe("Kingdom/Military: combat", function()
 		local lonelyRam = unit(sim, k2, "ram", 152, -150)
 		sim:advance(4)
 		expect(defender.hp).toBe(80)
-		expect(lonelyRam.hp).toBeLessThan(400)
+		expect(lonelyRam.hp).toBeLessThan(lonelyRam.maxHp)
 		F.assertInvariants(sim)
 	end)
 
@@ -549,7 +549,7 @@ describe("Kingdom/Military: combat", function()
 		local sim, k1, k2 = world()
 		war(sim)
 		local wall = addBuilding(sim, k1, "wall", 125, 0, 1)
-		wall.hp = 24 -- three soldier hits
+		wall.hp = 6 -- three soldier hits (2 each against a building)
 		local bait = unit(sim, k1, "ram", 110, 0) -- behind the wall; rams do not fight back
 		local raider = unit(sim, k2, "soldier", 140, 0, { kind = "Move", x = 100, z = 0 })
 		local blockedAt = nil
@@ -566,13 +566,13 @@ describe("Kingdom/Military: combat", function()
 			if sim.buildings[wall.id] then
 				-- never inside the wall's footprint while it stands
 				expect(raider.x).toBeGreaterThanOrEqual(125 + 4 + Military.UNIT_RADIUS)
-				expect(bait.hp).toBe(400)
+				expect(bait.hp).toBe(bait.maxHp)
 			end
 		end
 		expect(blockedAt).toBeTruthy()
 		expect(sim.buildings[wall.id]).toBeNil()
 		sim:advance(5)
-		expect(bait.hp).toBeLessThan(400) -- through the breach to the target
+		expect(bait.hp).toBeLessThan(bait.maxHp) -- through the breach to the target
 
 		-- at Peace nothing blocks: the same march walks straight through a wall
 		local sim2, a1, a2 = world()
@@ -608,7 +608,7 @@ describe("Kingdom/Military: combat", function()
 			expect(outside.alive).toBe(false)
 			expect(sheltered.alive).toBe(true)
 			expect(sheltered.hp).toBe(40)
-			expect(keep.hp).toBeLessThan(6000) -- the raider at the keep hit the building instead
+			expect(keep.hp).toBeLessThan(keep.maxHp) -- the raider at the keep hit the building instead
 			expect(siege.alive).toBe(true)
 			expect(raider.alive).toBe(true)
 			F.assertInvariants(sim)
@@ -1182,7 +1182,7 @@ describe("Kingdom/Military: unit orders (UnitOrder, G8 Army.Command)", function(
 		war(sim)
 		Objectives.install(sim, { { id = "post", x = 60, z = 0, radius = 10 } })
 		local wall = addBuilding(sim, k1, "wall", 125, 0, 1) -- 65 from the post: outside the held ground
-		wall.hp = 24 -- three soldier hits
+		wall.hp = 6 -- three soldier hits (2 each against a building)
 		local raider = unit(sim, k2, "soldier", 140, 0, { kind = "Defend" })
 		assert(order(RIVAL, sim, { raider.id }, "capture", nil, nil, "post"))
 		sim:advance(15)
