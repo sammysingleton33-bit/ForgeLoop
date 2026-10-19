@@ -92,9 +92,14 @@ end
 -- of SPAWN_PAD studs around the ruler spawn point, turned with the plot). A road segment is a plot road when
 -- both its ends lie within PLOT_ROAD_REACH of a keep; the valley roads beyond the gate are not.
 local SPAWN_PAD, PLOT_ROAD_REACH = 16, 130
+-- A crop field keeps FIELD_GAP studs of free ground around it: FORGE-02's farm fences stand FENCE_OFFSET (2.4) studs outside a
+-- field and their collider is solid, so a building or wall must not reach over them (the area itself stays the field).
+local FIELD_GAP = 3
 local RESERVED = {}
 for _, field in WorldLayout.features.fields do
-	table.insert(RESERVED, Footprint.rect(field.size, field.center.X, field.center.Y, field.yaw))
+	local area = Footprint.rect(field.size, field.center.X, field.center.Y, field.yaw)
+	area.gap = FIELD_GAP
+	table.insert(RESERVED, area)
 end
 for _, identity in KingdomsConfig.identities do
 	local plot = WorldLayout.plots[identity.id]
