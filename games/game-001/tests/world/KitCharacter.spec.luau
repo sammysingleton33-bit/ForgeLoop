@@ -1050,10 +1050,10 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 			expect(pos(strap).Z).toBeLessThan(-0.55) -- in front of the chest (the torso's front face is at -0.575)
 			expect(primitive(tie)).toBe("Part/Ball")
 			expect(pos(tie).Y).toBeGreaterThan(pos(sack).Y + 1.0) -- at the sack's top
-			-- the soldier's spear: a 5.4 shaft (FL-0128, was 9), pale, with a steel spearhead and a kingdom pennant
+			-- the soldier's spear: a 4.8 shaft (FL-0128, was 9), pale, with a steel spearhead and a hanging kingdom pennant
 			local soldier = Kit.character("soldier", "soldier", CRIMSON, nil, "crimson")
 			local spear, head, pennant = child(soldier, "Tool"), child(soldier, "Detail1"), child(soldier, "Detail2")
-			expect(spear.Size.X).toBeGreaterThanOrEqual(5.0)
+			expect(spear.Size.X).toBeGreaterThanOrEqual(4.4)
 			expect(spear.Size.X).toBeLessThanOrEqual(6.2)
 			expect(lum(spear.Color)).toBeGreaterThan(0.6)
 			expect(primitive(head)).toBe("CornerWedgePart")

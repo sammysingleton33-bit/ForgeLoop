@@ -24,10 +24,19 @@ What changed, for the receivers (none of it needs a new wire field; the names th
 - **Units.** Spear soldier: the spear is 1.3x the body's height and held at the hand (before: 2.5x and beside the body). Knight: bulky (2.9 across), a large kingdom-coloured shield with an emblem that is never dark, a broad helm with a bigger crest, the sword at the fist. Archer: round head, a curved three-part bow at the hand with a visible string (the quiver is dropped). Crests: Emberhold a spire, Frostmere a flat plate, Thornwood an upright plume fin (a wedge, no longer a swept cylinder), Sunspire a dome cap. Still 11 parts with the crest; `Pose.JOINTS` unchanged. The detail welds are now `Tool` (spearhead, pennant, bowlimb, bowstring) and `LeftArm` (shield, shieldmark); nothing on the `Torso` any more.
 - New EntityController-visible attribute: none. Values that changed meaning: `KitDamageKind` ("smoke" -> "soot"), the ram's extent (above).
 
+## FL-0128 defect round (after the second fresh review: visible defects)
+Defect-only round (no new features). What changed for the receivers; nothing needs a new wire field or attribute:
+- **Gate L1 and L2, closed:** a recessed `Tympanum` (stone, 1 part, fixed, it stays when the leaves open) fills the point of the arch above the leaves, so no sky shows through. L3 keeps its portcullis there. The passage floor (`GateRoad`) is now chosen from the wall: light sand on dark stone (Emberhold), dark earth on the light stones (Frostmere, Thornwood, Sunspire).
+- **Damage kinds** are now `"crack"`, `"soot"`, `"chip"`, `"leaf"`, `"rubble"`, `"stump"`. Cracks and soot are lit dark browns (never black), chips are small pale blocks of broken stone beside them, `"leaf"` is the broken gate leaf that stays at Damage 0.75 and above (one short board in the closed leaf's plane; `Kit.setGateOpen` does not move it, so the gate reads as ruined shut or open; repair removes it). Counts per state: cracks 2/3/3/3, soot 1/2/3/3, chips 1/2/2/3, rubble 0/2/3/3, removed 4/7/10/13; at most 14 extra parts. A gate's bite starts mid-span and alternates sides; a tower cap (cone, pyramid, hoarding roof, dome) falls whole or not at all. The watchtower (all but Thornwood) has a `CapSeat` stone course under its cap so the roof stands on the platform where the merlons are gone.
+- **Units:** the spear is carried (butt 1 stud off the ground, leaning forward) with a pennant that hangs under the head; the knight's sword rises outward and forward from the fist, clear of the arm and torso; the Thornwood shield mark is a flat slanted bar (no glossy ball); the bow is 1.25 per limb, 30 degrees, held below the chin. Detail names and welds are unchanged (`Tool`: spearhead, pennant, bowlimb, bowstring; `LeftArm`: shield, shieldmark), 11 parts with the crest.
+- **Walls:** L1 palisade logs, rails and posts are the same dark timber in every kingdom (the new part attribute `KitNoSkin = true` keeps `KingdomStyle.paint` off them; the banner carries the kingdom). Wall L3 has two stepped buttresses (three `Buttress` courses each, each narrower and shallower than the one below) beside the end piers instead of four flat piers: 52-60 parts (cap 60).
+- **Counts now:** wall 26-30 / 36-40 / 52-60, gate 72-77 / 102-113 / 120-131, watchtower L1 107-116 and L2 105-122 (cap 130), ram 37-42, units 11. All-built worst case 26,322 of 27,000 (pinned at 26,900): +105 over the last round from the tympanum, the tower seats and the wall L3 courses.
+- New EntityController-visible attribute: none (`KitNoSkin` is a build-time part attribute). `KitDamageKind` gains "chip" and "leaf".
+
 ## Evidence
 Headless only (Lune, Selene, StyLua, Blender Cycles previews of Lune dumps); nothing was seen in Studio.
-- Part counts (all four kingdoms, measured by `Kit.partCount`): wall L1/L2/L3 26-30 / 36-40 / 50-58 (caps 30 / 45 / 60); gate 71-76 / 101-112 / 120-131 (caps 90 / 120 / 150); watchtower L2 105-121 (cap 130); ram 37-42 (cap 45); soldier, knight, archer 11 with the kingdom crest (cap 11), 9-10 without; damage at most 14 extra parts (cap 14), none at Damage 0.
-- All-built worst case (D-047, 27,000): 26,217 (WorldService 6869 + kingdoms 19,015 + neutral towers 333), pinned at 26,900 by `tests/world/KitCeiling.spec.luau`.
+- Part counts (all four kingdoms, measured by `Kit.partCount`): wall L1/L2/L3 26-30 / 36-40 / 52-60 (caps 30 / 45 / 60); gate 72-77 / 102-113 / 120-131 (caps 90 / 120 / 150); watchtower L2 105-122 (cap 130); ram 37-42 (cap 45); soldier, knight, archer 11 with the kingdom crest (cap 11), 9-10 without; damage at most 14 extra parts (cap 14), none at Damage 0.
+- All-built worst case (D-047, 27,000): 26,322 (WorldService 6869 + kingdoms 19,117 + neutral towers 336), pinned at 26,900 by `tests/world/KitCeiling.spec.luau`.
 - Specs, run headless: see the worker report for the counts per folder.
 
 ## Interfaces touched
@@ -50,28 +59,29 @@ All additive; nothing existing changes meaning. Proposed CONTRACTS G10 rows:
 | model attribute `Damage` | number 0..1 | set by the client (for example `Kit.damageFromHp(Hp, MaxHp)` from the `Hp` and `MaxHp` attributes WorldView already writes) | read by `Kit.applyDamage` only |
 | `Kit.applyDamage(model)` | function | builds or removes the damage parts for the model's `Damage`; idempotent; call again after every change | stage models (`KitStage ~= "complete"`) and models without a PrimaryPart ignore it |
 | model attribute `KitDamageState` | number 1..4 | absent at state 0 | written by `Kit.applyDamage` |
-| part attributes `KitDamage` (true), `KitDamageKind` ("crack" / "soot" / "rubble" / "stump") | on the added parts | direct children of the model | anchored like every building part; `CanCollide`, `CanTouch` and `CanQuery` are false |
+| part attributes `KitDamage` (true), `KitDamageKind` ("crack" / "soot" / "chip" / "leaf" / "rubble" / "stump") | on the added parts | direct children of the model | anchored like every building part; `CanCollide`, `CanTouch` and `CanQuery` are false |
 | `Kit.damageState(d)` -> 0..4, `Kit.damageFromHp(hp, maxHp)` -> 0..1, `Kit.DAMAGE_THRESHOLDS` | functions / table | `{ 0.25, 0.5, 0.75, 0.95 }` | |
 
 Damage states (cumulative; totals at that state; budgets pinned by `KitDamage.spec`):
 
-| state | Damage | cracks | soot | rubble | crenellation / roof / thatch / palisade parts removed | gate leaves | collapse |
-|---|---|---|---|---|---|---|---|
-| 0 | < 0.25 | 0 | 0 | 0 | 0 | 0 | none: the model is exactly as built, **byte-identical** (signature equal, no `KitDamageState`) |
-| 1 | >= 0.25 | 2 | 1 | 0 | 4 | 1 (+ bands) | |
-| 2 | >= 0.5 | 4 | 2 | 2 | 7 | 1 | |
-| 3 | >= 0.75 | 6 | 3 | 3 | 10 | both | + the top of the front-right corner (caps, merlons, roof parts) and a stump slab where a tower cap fell |
-| 4 | >= 0.95 | 7 | 3 | 3 | 13 | both | the same |
+| state | Damage | cracks | soot | chips | rubble | crenellation / roof / thatch / palisade parts removed | gate leaves | collapse |
+|---|---|---|---|---|---|---|---|---|
+| 0 | < 0.25 | 0 | 0 | 0 | 0 | 0 | 0 | none: the model is exactly as built, **byte-identical** (signature equal, no `KitDamageState`) |
+| 1 | >= 0.25 | 2 | 1 | 1 | 0 | 4 | 1 gone (+ bands) | |
+| 2 | >= 0.5 | 3 | 2 | 2 | 2 | 7 | 1 gone | |
+| 3 | >= 0.75 | 3 | 3 | 2 | 3 | 10 | both gone, one broken leaf stays (`"leaf"` part) | + the top of the front-right corner (merlons, roof tiles; a tower cap falls whole) and a stump slab where a cap fell |
+| 4 | >= 0.95 | 3 | 3 | 3 | 3 | 13 | the same | the same |
 
-At most 14 extra parts (13 marks and rubble at state 4 plus one "stump" slab when a tower cap fell; 0 at state 0). The removed parts are a contiguous BITE of the crenellation or the roof edge (nearest to a seed on the front first), so 0.3 differs visibly from 0 on a wall, a tower, a gate and a house. Cracks are thin dark slabs lying on the outermost exposed wall block (nothing in front of them); soot is an opaque warm-charcoal streak high on the right half; rubble is blocks in the wall's own colour at the corner's foot. Removed parts are picked by a deterministic order seeded from `KitType | KitLevel | KitVariant`, so state 2 keeps what state 1 took, a repair gives the exact model back and the same `Damage` gives the same parts on any client in any order.
+At most 14 extra parts (12 marks, chips and rubble at state 4, plus a broken leaf on a gate or one "stump" slab when a tower cap fell; 0 at state 0). The removed parts are a contiguous BITE of the crenellation or the roof edge (nearest to a seed first; a gate starts mid-span and alternates sides), so 0.3 differs visibly from 0 on a wall, a tower, a gate and a house. Cracks are thin slabs lying on the outermost exposed wall block (nothing in front of them) and soot an opaque streak high on the right half, both lit dark browns (every colour channel above 40 / 255, never black); chips are small pale blocks of broken stone at their feet; rubble is blocks in the wall's own colour at the corner's foot. Removed parts are picked by a deterministic order seeded from `KitType | KitLevel | KitVariant`, so state 2 keeps what state 1 took, a repair gives the exact model back and the same `Damage` gives the same parts on any client in any order.
 
 ## How Damage and Burning coexist (FORGE-04)
 - `Burning` stays what it is: a model attribute that FeedbackController reads, with the flames at the top of `model:GetBoundingBox()`. `Kit.applyDamage` never reads, writes or clears `Burning`, `Hp` or `MaxHp`.
 - The top of the model is unchanged by damage: the highest part is never removed (it is not in the pool of parts that go missing), and every added mark lies inside the box. So the flames start at the same height on a damaged building as on a whole one; the soot streaks are on the walls below them. Spec: `KitDamage.spec` "top moved" check, every building type, every state.
 - Suggested order on the client: set `Damage` (from `Hp / MaxHp`) and call `Kit.applyDamage(model)`; set `Burning` as today. The two are independent; a burning building at Damage 0.9 shows cracks, soot, missing merlons and the collapsed corner under the fire.
-- The damage parts are plain opaque parts (`KitDamageKind` crack / soot / rubble / stump); there is no smoke part any more. FORGE-04 may add its own smoke effect (a ParticleEmitter) at the top of the box.
+- The damage parts are plain opaque parts (`KitDamageKind` crack / soot / chip / leaf / rubble / stump); there is no smoke part any more. FORGE-04 may add its own smoke effect (a ParticleEmitter) at the top of the box.
 - Repair: set `Damage` lower and call `Kit.applyDamage` again; the removed parts come back where they were. `Kit.setKingdomColor` recolours a damaged model and the parts waiting for a repair, and never touches the damage parts (cracks and soot are not kingdom-coloured; rubble copies the wall, with its tint).
 - A pooled model: set `Damage` to 0 and call `Kit.applyDamage` before returning it to the pool.
+- A damaged gate that is opened or closed keeps its broken leaf where it is (a damage part): call `Kit.setGateOpen` as before; it poses the parked leaf correctly for the repair.
 
 ## Wire finding: the unit kind does not reach the client (FORGE-01, FORGE-04)
 - `config/Military.luau` has the unit types soldier, archer, knight, ram. `Sim/Replication.entityOf` returns `kind = "soldier"` for every `sim.units` entry, and `jobOf(e)` is `e.job or "soldier"`; sim units have no `job`. So `EventCodec` spawn carries `kind = "soldier"`, `job = "soldier"` for a ram, an archer and a knight alike, and `EntityController.buildRig` builds `Kit.character("soldier", "soldier", ...)` for all of them. (`EventCodec.JOBS` = `Types.JOB_IDS`; the job is a u8 index into it.)

@@ -7,8 +7,10 @@
 	  1. units      the three kinds differ (weapon, shield, helm or bare head, width, torso colour, crest height, outline),
 	                stay within the 11-part rig with the kingdom crest (D-033), keep the Pose joints and the rig conventions,
 	                recolour like a fresh build, and unknown jobs are the spear soldier; the spear tip stands about 1.3 x the
-	                body's height, the sword and the bow are held at the fist, the bow is curved (two limbs and a string in
-	                front), the plume stands up, the dome caps the helm, no shield mark is dark;
+	                body's height, carried at the fist with its butt off the ground and a pennant HANGING under the head; the
+	                sword rises from the fist outward and forward, clear of the arm and torso; the bow is held at the fist, curved
+	                (two limbs and a string in front) and ends under the chin; the plume stands up, the dome caps the helm, no
+	                shield mark is dark or round (flat marks only);
 	  2. clearance  the shield, bow and sword keep clear of the head, torso, legs and arms in every Pose action;
 	  3. mutants    the key rules above are caught when broken.
 ]]
@@ -144,6 +146,15 @@ end
 local function halfX(p: BasePart): number
 	local cf, sz = p.CFrame, p.Size
 	return (math.abs(cf.RightVector.X) * sz.X + math.abs(cf.UpVector.X) * sz.Y + math.abs(cf.LookVector.X) * sz.Z) / 2
+end
+
+local function shapeOfPart(p: BasePart): string
+	if p:IsA("Part") and (p :: Part).Shape == Enum.PartType.Ball then
+		return "ball"
+	elseif p:IsA("Part") and (p :: Part).Shape == Enum.PartType.Cylinder then
+		return "cylinder"
+	end
+	return "box"
 end
 
 local function crestOf(rig: Model): BasePart?
@@ -289,6 +300,16 @@ CHECKS.units = function()
 		if mark and mark.Color.R * 0.3 + mark.Color.G * 0.59 + mark.Color.B * 0.11 < 0.5 then
 			table.insert(out, `{hue}: the shield mark is dark (it reads as a hole)`)
 		end
+		-- flat marks only: a round boss shone like glass; every mark is a thin plate (never a ball) in the same metal as the others
+		if mark and (shapeOfPart(mark) == "ball" or math.min(mark.Size.X, mark.Size.Y, mark.Size.Z) > 0.2) then
+			table.insert(out, `{hue}: the shield mark is a round boss ({shapeOfPart(mark)}), not a flat plate`)
+		end
+		if mark and mark.Material ~= Enum.Material.Metal then
+			table.insert(
+				out,
+				`{hue}: the shield mark is {mark.Material.Name}, not the same material as the other kingdoms'`
+			)
+		end
 		-- the spear: its tip about 1.3 x the body's height, planted near the ground, held at the fist
 		local spear = s:FindFirstChild("Tool") :: BasePart
 		local arm = s:FindFirstChild("RightArm") :: BasePart
@@ -301,8 +322,31 @@ CHECKS.units = function()
 		if tip < 7.0 or tip > 7.8 then
 			table.insert(out, `{hue}: the spear tip is at {r3(tip)} (about 7.3, 1.3 x the body's 5.5)`)
 		end
-		if spear.CFrame.Position.Y - halfY(spear) > 0.8 or spear.Size.X > 6.2 then
-			table.insert(out, `{hue}: the spear is not a short shaft planted near the ground`)
+		-- carried, not planted: the butt stands 0.4 to 1.8 off the ground, and the spear leans forward
+		local butt = spear.CFrame.Position.Y - halfY(spear)
+		if butt < 0.4 or butt > 1.8 or spear.Size.X > 6.2 then
+			table.insert(out, `{hue}: the spear's butt is {r3(butt)} off the ground (carried at the fist: 0.4 to 1.8)`)
+		end
+		local shaftAxis = spear.CFrame.RightVector
+		shaftAxis = if shaftAxis.Y > 0 then shaftAxis else -shaftAxis
+		if shaftAxis.Z > -0.12 then
+			table.insert(out, `{hue}: the spear does not lean forward (axis {shaftAxis})`)
+		end
+		-- the pennant HANGS (taller than wide, a cloth under the head), never a horizontal stick that reads as a second weapon
+		for _, p in parts(s) do
+			if p:GetAttribute("KitDetailKind") == "pennant" then
+				local w, h = halfX(p) * 2, halfY(p) * 2
+				if h < 1.2 or h < w * 1.4 then
+					table.insert(
+						out,
+						`{hue}: the pennant is {r3(w)} wide and {r3(h)} tall (it must hang, taller than wide)`
+					)
+				end
+				local top = p.CFrame.Position.Y + halfY(p)
+				if top > spear.CFrame.Position.Y + halfY(spear) then
+					table.insert(out, `{hue}: the pennant is above the shaft's end`)
+				end
+			end
 		end
 		if
 			math.abs(spear.CFrame.Position.X - arm.CFrame.Position.X) > 0.8
@@ -310,10 +354,20 @@ CHECKS.units = function()
 		then
 			table.insert(out, `{hue}: the spear is not at the fist`)
 		end
-		-- the sword points forward and up, its lower end at the fist
+		-- the sword rises from the fist outward, forward and up, its lower end at the fist: beside the arm, never across the arm
+		-- and the torso
 		local sword, swordArm = k:FindFirstChild("Tool") :: BasePart, k:FindFirstChild("RightArm") :: BasePart
-		if sword.CFrame.UpVector.Z > -0.4 or sword.CFrame.UpVector.Y < 0.5 then
-			table.insert(out, `{hue}: the sword is not held forward and up (up vector {sword.CFrame.UpVector})`)
+		local swordUp = sword.CFrame.UpVector
+		if swordUp.Z > -0.15 or swordUp.Y < 0.6 or swordUp.X < 0.3 then
+			table.insert(out, `{hue}: the sword is not held outward, forward and up (up vector {swordUp})`)
+		end
+		local swordTip = sword.CFrame.Position + swordUp * (sword.Size.Y / 2)
+		local kTorso = k:FindFirstChild("Torso") :: BasePart
+		if
+			swordTip.X < swordArm.CFrame.Position.X + 0.9
+			or swordTip.X < kTorso.CFrame.Position.X + kTorso.Size.X / 2 + 1.0
+		then
+			table.insert(out, `{hue}: the sword's tip ({r3(swordTip.X)}) crosses over the arm or the torso`)
 		end
 		local lowEnd = sword.CFrame.Position - sword.CFrame.UpVector * (sword.Size.Y / 2)
 		local fist = swordArm.CFrame.Position - Vector3.new(0, swordArm.Size.Y / 2 - 0.2, 0)
@@ -343,8 +397,19 @@ CHECKS.units = function()
 					`{hue}: the bow is not curved (the upper tip is only {r3(grip.Z - tipZ)} in front of the grip)`
 				)
 			end
-			if (stringPart :: BasePart).Size.X < 4.0 or (stringPart :: BasePart).CFrame.Position.Z > grip.Z - 0.6 then
+			if (stringPart :: BasePart).Size.X < 2.0 or (stringPart :: BasePart).CFrame.Position.Z > grip.Z - 0.6 then
 				table.insert(out, `{hue}: the bowstring is short or not in front of the limbs`)
+			end
+			-- held away from the face: the whole bow ends under the chin (the head's lowest point) in the standing pose
+			local archerHead = a:FindFirstChild("Head") :: BasePart
+			local function axisTop(
+				p: BasePart
+			): number -- the highest point of a cylinder along its own axis (X), plus its radius
+				return p.CFrame.Position.Y + math.abs(p.CFrame.RightVector.Y) * p.Size.X / 2 + p.Size.Y / 2
+			end
+			local bowTop = math.max(axisTop(bow), axisTop(limb :: BasePart), axisTop(stringPart :: BasePart))
+			if bowTop > archerHead.CFrame.Position.Y - archerHead.Size.Y / 2 + 0.05 then
+				table.insert(out, `{hue}: the bow reaches {r3(bowTop)}, up to the archer's face`)
 			end
 		end
 		-- outline at a distance: each kind's front silhouette (width x height of the whole figure) differs from the others'
@@ -756,6 +821,87 @@ describe("Unit kind mutants are caught", function()
 				extra.Part0 = m:FindFirstChild("Torso") :: BasePart
 				extra.Part1 = q
 				extra.Parent = q
+			end
+			return m
+		end
+	end)
+	local function pivotAbout(m: Model, tool: BasePart, point: Vector3, rotation: CFrame)
+		for _, p in parts(m) do
+			if
+				p == tool or (p:FindFirstChild("DetailWeld") and (p:FindFirstChild("DetailWeld") :: Weld).Part0 == tool)
+			then
+				p.CFrame = CFrame.new(point) * rotation * CFrame.new(-point) * p.CFrame
+			end
+		end
+	end
+	caught("the sword lies across the arm and the torso again", "units", function()
+		Kit.character = function(kind, job, ...)
+			local m = original.character(kind, job, ...)
+			if kind == "soldier" and job == "knight" then
+				local tool = m:FindFirstChild("Tool") :: BasePart
+				local grip = tool.CFrame.Position - tool.CFrame.UpVector * (tool.Size.Y / 2)
+				pivotAbout(m, tool, grip, CFrame.Angles(0, 0, math.rad(55)))
+			end
+			return m
+		end
+	end)
+	caught("the pennant is a flat horizontal stick again", "units", function()
+		Kit.character = function(kind, job, ...)
+			local m = original.character(kind, job, ...)
+			if kind == "soldier" and (job == "soldier" or job == "champion" or job == "") then
+				for _, p in parts(m) do
+					if p:GetAttribute("KitDetailKind") == "pennant" then
+						p.Size = Vector3.new(1.2, 0.1, 0.8)
+					end
+				end
+			end
+			return m
+		end
+	end)
+	caught("the spear is planted in the ground again", "units", function()
+		Kit.character = function(kind, job, ...)
+			local m = original.character(kind, job, ...)
+			if kind == "soldier" and (job == "soldier" or job == "champion" or job == "") then
+				local tool = m:FindFirstChild("Tool") :: BasePart
+				for _, p in parts(m) do
+					if
+						p == tool
+						or (p:FindFirstChild("DetailWeld") and (p:FindFirstChild("DetailWeld") :: Weld).Part0 == tool)
+					then
+						p.CFrame = p.CFrame - Vector3.new(0, 1.2, 0)
+					end
+				end
+			end
+			return m
+		end
+	end)
+	caught("a shield mark is a glossy round boss again", "units", function()
+		Kit.character = function(kind, job, color, look, kingdom)
+			local m = original.character(kind, job, color, look, kingdom)
+			if job == "knight" then
+				for _, p in parts(m) do
+					if p:GetAttribute("KitDetailKind") == "shieldmark" and p:IsA("Part") then
+						(p :: Part).Shape = Enum.PartType.Ball
+						p.Size = Vector3.new(1.15, 1.15, 1.15)
+					end
+				end
+			end
+			return m
+		end
+	end)
+	caught("the bow crosses the archer's face", "units", function()
+		Kit.character = function(kind, job, ...)
+			local m = original.character(kind, job, ...)
+			if kind == "soldier" and job == "archer" then
+				local tool = m:FindFirstChild("Tool") :: BasePart
+				for _, p in parts(m) do
+					if
+						p == tool
+						or (p:FindFirstChild("DetailWeld") and (p:FindFirstChild("DetailWeld") :: Weld).Part0 == tool)
+					then
+						p.CFrame = p.CFrame + Vector3.new(0, 1.4, 0)
+					end
+				end
 			end
 			return m
 		end

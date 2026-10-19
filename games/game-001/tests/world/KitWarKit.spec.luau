@@ -9,7 +9,9 @@
 	               up the front that reach the walkway, fuller banners between them) and the brazier sits on a plinth that
 	               rests on the walkway, never in a gap of the crenellation;
 	  1c. gateShape the lintel reaches the tower tops (no saddle), the voussoirs lie flush on the lintel face (nothing floats
-	               in front of the facade), the passage floor is a light stone;
+	               in front of the facade), a recessed tympanum fills the arch above the closed leaves of L1 and L2 (no sky
+	               shows through), the passage floor differs clearly in value from the wall of every kingdom;
+	  1d. palisade the L1 palisade is the same dark timber in all four kingdoms (the banner carries the kingdom);
 	  2. gatePose  Kit.setGateOpen moves leaves and portcullis by CFrame alone: no part added or removed, exactly the
 	               movable parts move, the round trip is exact, a moved and turned gate still opens, BOTH open leaves stand
 	               swung into the passage (face to the front, middle clear, outside the towers), the closed ones span it,
@@ -238,7 +240,14 @@ CHECKS.levels = function()
 						need(out, tag, hs, "Palisade", NONE, "stone from L2")
 						need(out, tag, hs, "Curtain", exactly(1), "the stone curtain")
 						need(out, tag, hs, "Merlon", atLeast(12), "crenellations")
-						need(out, tag, hs, "Buttress", exactly(if lv == 3 then 4 else 0), "four buttresses at L3 only")
+						need(
+							out,
+							tag,
+							hs,
+							"Buttress",
+							exactly(if lv == 3 then 6 else 0),
+							"two stepped buttresses of three courses at L3 only"
+						)
 						need(out, tag, hs, "EndPier", exactly(if lv == 3 then 2 else 0), "two end piers at L3 only")
 						need(out, tag, hs, "PierCap", exactly(if lv == 3 then 2 else 0), "their caps at L3 only")
 						need(
@@ -263,6 +272,14 @@ CHECKS.levels = function()
 					need(out, tag, hs, "GateLeaf", exactly(2), "two leaves")
 					need(out, tag, hs, "GateTower", exactly(2), "two towers")
 					need(out, tag, hs, "Lintel", exactly(1), "the arch")
+					need(
+						out,
+						tag,
+						hs,
+						"Tympanum",
+						exactly(if lv <= 2 then 1 else 0),
+						"the door head fills the arch at L1 and L2"
+					)
 					need(out, tag, hs, "LeafBand", exactly(if lv >= 2 then 4 else 0), "iron bands from L2")
 					need(out, tag, hs, "Banner", exactly(if lv >= 2 then 2 else 0), "tower banners from L2")
 					need(out, tag, hs, "PortcullisBar", exactly(if lv == 3 then 6 else 0), "a portcullis at L3")
@@ -422,19 +439,53 @@ CHECKS.wallL3 = function()
 		if curtain and walkway then
 			local frontZ = curtain.CFrame.Position.Z - halfExtents(curtain).Z
 			local walkTop = walkway.CFrame.Position.Y + halfExtents(walkway).Y
-			for _, b in named(w3, "Buttress") do
-				local e = halfExtents(b)
-				if b.CFrame.Position.Z - e.Z > frontZ - 1.5 then
-					table.insert(
-						out,
-						`{tag}: a buttress projects only {r3(frontZ - (b.CFrame.Position.Z - e.Z))} (want 1.5)`
-					)
+			-- two stepped buttresses (one beside each end pier), three courses each: every course narrower and shallower than the one
+			-- below, the largest projecting 1.5 or more, the top course tucked under the walkway's lip; never a flat upright plank
+			for _, sx in { -1, 1 } do
+				local steps: { BasePart } = {}
+				for _, b in named(w3, "Buttress") do
+					if (b.CFrame.Position.X < 0) == (sx < 0) then
+						table.insert(steps, b)
+					end
 				end
-				if b.CFrame.Position.Y + e.Y < walkTop - 0.5 then
-					table.insert(
-						out,
-						`{tag}: a buttress stops {r3(walkTop - (b.CFrame.Position.Y + e.Y))} short of the walkway`
-					)
+				table.sort(steps, function(p, q)
+					return p.CFrame.Position.Y < q.CFrame.Position.Y
+				end)
+				if #steps ~= 3 then
+					table.insert(out, `{tag}: {#steps} buttress courses on one side (want 3)`)
+				else
+					for i = 1, 3 do
+						local b = steps[i]
+						local e = halfExtents(b)
+						local face = b.CFrame.Position.Z - e.Z
+						if i == 1 and face > frontZ - 1.5 then
+							table.insert(out, `{tag}: the buttress projects only {r3(frontZ - face)} (want 1.5)`)
+						end
+						if i > 1 then
+							local below = steps[i - 1]
+							if b.Size.X >= below.Size.X - 0.2 or b.Size.Z >= below.Size.Z - 0.2 then
+								table.insert(
+									out,
+									`{tag}: buttress course {i} ({r3(b.Size.X)} x {r3(b.Size.Z)}) is not narrower and shallower than the one below ({r3(
+										below.Size.X
+									)} x {r3(below.Size.Z)})`
+								)
+							end
+						end
+						if b.Size.X < 2.4 or b.Size.Y > 9 then
+							table.insert(
+								out,
+								`{tag}: a buttress course is {r3(b.Size.X)} wide and {r3(b.Size.Y)} tall (a plank, not a pier)`
+							)
+						end
+					end
+					local top = steps[3].CFrame.Position.Y + halfExtents(steps[3]).Y
+					if top < walkTop - 1.2 then
+						table.insert(
+							out,
+							`{tag}: a buttress stops {r3(walkTop - top)} short of the walkway's underside`
+						)
+					end
 				end
 			end
 			for _, pier in named(w3, "EndPier") do
@@ -526,16 +577,86 @@ CHECKS.gateShape = function()
 			end
 			-- a light floor in the passage and light leaves (they have to read against the stone when open)
 			local road = named(m, "GateRoad")[1]
-			if road == nil or luminance(road.Color) < 0.55 then
+			if road == nil or math.abs(luminance(road.Color) - luminance(tower.Color)) < 0.22 then
 				table.insert(
 					out,
-					`{tag}: the passage floor is not a light stone (luminance {road and r3(luminance(road.Color))})`
+					`{tag}: the passage floor ({road and r3(luminance(road.Color))}) is too close in value to the wall ({r3(
+						luminance(tower.Color)
+					)})`
 				)
+			end
+			-- closed, L1 and L2 show no sky: every point of the arch above the floor lies behind a leaf or the door head
+			if lv <= 2 then
+				local holes = 0
+				for xi = -13, 13 do
+					local x = xi * 0.5
+					local archTop = 9 + 6 * (1 - math.abs(x) / 7) - (m.PrimaryPart :: BasePart).CFrame.Y - 0.3
+					local y = 0.4
+					while y < archTop do
+						local covered = false
+						for _, q in parts(m) do
+							if q:IsA("Part") and q.Transparency < 1 and q.Name ~= "GateRoad" and q.Name ~= "Root" then
+								local cf = rel(m, q)
+								if math.abs(q.CFrame.UpVector.Y) > 0.99 and math.abs(q.CFrame.LookVector.Z) > 0.99 then
+									if
+										math.abs(x - cf.X) <= q.Size.X / 2 + 0.1
+										and math.abs(y - cf.Y) <= q.Size.Y / 2
+									then
+										covered = true
+										break
+									end
+								end
+							end
+						end
+						if not covered then
+							holes += 1
+						end
+						y += 0.5
+					end
+				end
+				if holes > 0 then
+					table.insert(
+						out,
+						`{tag}: {holes} sample points of the closed arch show through (a hole above the leaves)`
+					)
+				end
 			end
 			local leaf = named(m, "GateLeaf")[1]
 			if leaf and luminance(leaf.Color) < 0.3 then
 				table.insert(out, `{tag}: the leaves are dark ({r3(luminance(leaf.Color))})`)
 			end
+		end
+	end
+	return out
+end
+
+-- ------------------------------------------------------------------ 1d. the L1 palisade is the same dark timber everywhere
+
+CHECKS.palisade = function()
+	local out: { string } = {}
+	local ref: { string } = {}
+	for hi, hue in HUES do
+		local wall = Kit.build("wall", 1, "complete", CANON[hue])
+		local colors: { string } = {}
+		for _, p in named(wall, "Palisade") do
+			local c = p.Color
+			if luminance(c) > 0.3 or not (c.R > c.G and c.G > c.B) then
+				table.insert(out, `wall L1 {hue}: a palisade log is not dark brown (luminance {r3(luminance(c))})`)
+				break
+			end
+			table.insert(colors, c:ToHex())
+		end
+		table.sort(colors)
+		if hi == 1 then
+			ref = colors
+		elseif table.concat(colors, ",") ~= table.concat(ref, ",") then
+			table.insert(
+				out,
+				`wall L1 {hue}: the palisade logs are not the colours of Emberhold's (the style re-skinned them)`
+			)
+		end
+		if #colors < 10 then
+			table.insert(out, `wall L1 {hue}: only {#colors} palisade logs`)
 		end
 	end
 	return out
@@ -800,6 +921,35 @@ end
 
 -- ------------------------------------------------------------------ 3. watchtower L2
 
+-- How far up the tower's axis a continuous run of parts goes from the platform (the Gallery's top) before a gap: the cap must
+-- stand ON the platform (a cone floating over a flattened parapet showed a dark ring), however many merlons are gone.
+local function axisReach(model: Model): (number, number)
+	local gallery = named(model, "Gallery")[1]
+	if gallery == nil then
+		return 0, 0
+	end
+	local top = gallery.CFrame.Position.Y + halfExtents(gallery).Y
+	local runs: { { number } } = {}
+	for _, p in parts(model) do
+		if p.Transparency < 1 and p.Name ~= "Merlon" then
+			local e, c = halfExtents(p), p.CFrame.Position
+			if math.abs(c.X) <= e.X and math.abs(c.Z) <= e.Z then
+				table.insert(runs, { c.Y - e.Y, c.Y + e.Y })
+			end
+		end
+	end
+	table.sort(runs, function(a, b)
+		return a[1] < b[1]
+	end)
+	local reach = top
+	for _, run in runs do
+		if run[1] <= reach + 0.05 then
+			reach = math.max(reach, run[2])
+		end
+	end
+	return reach - top, top
+end
+
 CHECKS.tower = function()
 	local out: { string } = {}
 	local cap = Buildings.PART_BUDGET.watchtower
@@ -830,6 +980,17 @@ CHECKS.tower = function()
 		need(out, `watchtower L1 {hue}`, ha, "BrazierBowl", NONE, "L1 has no braziers")
 		if (ha.Merlon or 0) > 0 and (hb.Merlon or 0) < (ha.Merlon or 0) + 6 then
 			table.insert(out, `{tag}: {hb.Merlon or 0} merlons, not more than L1 ({ha.Merlon})`)
+		end
+		for lv, tower in { a, b } do
+			local reach = axisReach(tower)
+			if reach < 3 then
+				table.insert(
+					out,
+					`watchtower L{lv} {hue}: the cap does not stand on the platform (the parts on the tower axis run only {r3(
+						reach
+					)} up from it)`
+				)
+			end
 		end
 		local sides = {}
 		for _, p in parts(b) do
@@ -1186,6 +1347,9 @@ describe("Wall and gate at three levels (FL-0128)", function()
 	it("seats the gate's span at the tower tops and its voussoirs flush on the facade, over a light floor", function()
 		expectClean(CHECKS.gateShape())
 	end)
+	it("keeps the L1 palisade the same dark timber in every kingdom", function()
+		expectClean(CHECKS.palisade())
+	end)
 	it("opens and closes the gate by CFrame alone, both leaves swung open and in view", function()
 		expectClean(CHECKS.gatePose())
 	end)
@@ -1264,7 +1428,7 @@ describe("War kit structure mutants are caught", function()
 	end
 
 	it("passes unmutated (the baseline)", function()
-		for _, name in { "levels", "wallL3", "gateShape", "gatePose", "tower", "ram" } do
+		for _, name in { "levels", "wallL3", "gateShape", "palisade", "gatePose", "tower", "ram" } do
 			expectClean(CHECKS[name]())
 		end
 	end)
@@ -1640,6 +1804,69 @@ describe("War kit structure mutants are caught", function()
 			return m
 		end
 	end
+	caught("the arch shows sky above the closed leaves (no tympanum)", "gateShape", function()
+		tweakGate("Tympanum", function(p)
+			p:Destroy()
+		end)
+	end)
+	caught("the passage floor matches the wall", "gateShape", function()
+		Kit.build = function(bt, lv, ...)
+			local m = original.build(bt, lv, ...)
+			if bt == "gate" then
+				local tower = named(m, "GateTower")[1]
+				for _, p in parts(m) do
+					if p.Name == "GateRoad" then
+						p.Color = tower.Color
+					end
+				end
+			end
+			return m
+		end
+	end)
+	caught("the L3 buttresses are flat upright planks again", "wallL3", function()
+		Kit.build = function(bt, lv, ...)
+			local m = original.build(bt, lv, ...)
+			if bt == "wall" and lv == 3 then
+				for _, sx in { -1, 1 } do
+					local seen = 0
+					for _, p in parts(m) do
+						if p.Name == "Buttress" and (p.CFrame.Position.X < 0) == (sx < 0) then
+							seen += 1
+							p.Size = Vector3.new(2.2, 7.3, 1.8)
+							p.CFrame = CFrame.new(p.CFrame.Position.X, p.CFrame.Position.Y, -4.4)
+						end
+					end
+				end
+			end
+			return m
+		end
+	end)
+	caught("a kingdom's palisade is grey stone-coloured again", "palisade", function()
+		Kit.build = function(bt, lv, stage, color, ...)
+			local m = original.build(bt, lv, stage, color, ...)
+			if bt == "wall" and lv == 1 and color == CANON.azure then
+				for _, p in parts(m) do
+					if p.Name == "Palisade" then
+						p.Color = Color3.fromRGB(128, 126, 124)
+					end
+				end
+			end
+			return m
+		end
+	end)
+	caught("the watchtower cap floats over the platform (no seat)", "tower", function()
+		Kit.build = function(bt, lv, ...)
+			local m = original.build(bt, lv, ...)
+			if bt == "watchtower" then
+				for _, p in parts(m) do
+					if p.Name == "CapSeat" then
+						p:Destroy()
+					end
+				end
+			end
+			return m
+		end
+	end)
 	caught("the gate's span sits lower than its towers (a saddle)", "gateShape", function()
 		tweakGate("Lintel", function(p)
 			p.Size = Vector3.new(p.Size.X, p.Size.Y - 4, p.Size.Z)
@@ -1651,9 +1878,9 @@ describe("War kit structure mutants are caught", function()
 			p.CFrame = p.CFrame - Vector3.new(0, 0, 0.8)
 		end)
 	end)
-	caught("the passage floor is dark", "gateShape", function()
+	caught("the passage floor is near the wall's value (mid grey on a mid stone)", "gateShape", function()
 		tweakGate("GateRoad", function(p)
-			p.Color = Color3.fromRGB(40, 38, 36)
+			p.Color = Color3.fromRGB(122, 118, 112)
 		end)
 	end)
 	caught("the gate leaves are dark", "gateShape", function()

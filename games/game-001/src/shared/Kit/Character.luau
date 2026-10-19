@@ -54,16 +54,20 @@ Soldier unit kinds (FL-0128): Kit.character("soldier", unitKind, ...) takes the 
 	kit uses for `soldier_<job>`): "soldier" (and any other job) is today's spear soldier, "knight" and "archer" are the
 	other two part-built kinds. All three keep the soldier rig (Root, Torso, Head, two arms, two legs, Tool; the crest as
 	Hair; at most 11 parts with their two details), the Pose joints and the kingdom crest, and differ by silhouette:
-		soldier  steel great helm, a spear held at the fist (tip 1.33x the body's height, the shaft at the hand) with a steel
-		         head and a pennant (Detail1 spearhead, Detail2 pennant, both on the Tool)
+		soldier  steel great helm, a spear carried at the fist (tip 1.3x the body's height, butt 1 stud off the ground, leaning
+		         forward and a little outward) with a steel head and a pennant that HANGS under the head (Detail1 spearhead,
+		         Detail2 pennant, both on the Tool)
 		knight   bulky (2.9 across), a broad great helm (1.95 wide) under the kingdom crest at 1.32x, kingdom-dark torso under
-		         steel plate sleeves, a sword (the Tool is the blade, its lower end in the fist) and a LARGE kingdom-coloured
+		         steel plate sleeves, a sword (the Tool is the blade, its lower end in the fist, rising OUTWARD and forward, beside
+		         the arm and clear of the torso) and a LARGE kingdom-coloured
 		         shield (1.9 x 2.6) on the left arm: Detail1 shield (welded to the LeftArm), Detail2 shieldmark (welded to the
-		         LeftArm): one primitive per kingdom in an emblem colour that is never dark (crimson a wedge, azure a diamond,
-		         emerald a ball, gold an ivory disc), as the 11-part cap leaves no room for the 3-5 part emblem
+		         LeftArm): one FLAT primitive per kingdom in an emblem colour that is never dark (crimson a wedge, azure a diamond,
+		         emerald a slanted leaf-bar, gold an ivory disc; never a glossy ball), as the 11-part cap leaves no room for the
+		         3-5 part emblem
 		archer   lean (1.95), no helm (a bare ROUND head in the kingdom crest worn as a cap or hood), a leather jerkin under
 		         kingdom sleeves, a CURVED bow of three parts at the fist: the Tool is the upper limb, Detail1 bowlimb the
-		         lower (both angled 22 degrees forward from the grip), Detail2 bowstring across their tips (both on the Tool)
+		         lower (both angled 30 degrees forward from the grip, 1.25 long: the whole bow ends under the chin, away from
+		         the face), Detail2 bowstring across their tips (both on the Tool)
 	The knight's shield details are welded to the LeftArm, not only the Head or the Tool (D-048 allows two rigid parts,
 	FL-0128 widens where they may be welded for the knight; never a joint). The archer has no quiver any more (the bow and
 	its string use both detail slots).
@@ -476,14 +480,14 @@ local SHIELD_MARKS: { [string]: PartSpec } = {
 		material = Enum.Material.Metal,
 		offset = SHIELD_OFFSET * CFrame.new(0, 0.1, -0.2) * CFrame.Angles(0, 0, math.rad(45)),
 	},
-	emerald = { -- a round lobe: the oak leaf
+	emerald = { -- a slanted flat leaf-bar: the oak leaf (flat like the others: a round boss shone like glass)
 		name = "shieldmark",
 		class = "Part",
-		shape = Enum.PartType.Ball,
-		size = Vector3.new(1.15, 1.15, 1.15),
+		shape = Enum.PartType.Block,
+		size = Vector3.new(0.6, 1.8, 0.16),
 		color = EMBLEM_IVORY_FIXED,
 		material = Enum.Material.Metal,
-		offset = SHIELD_OFFSET * CFrame.new(0, 0.1, -0.26),
+		offset = SHIELD_OFFSET * CFrame.new(0, 0.1, -0.2) * CFrame.Angles(0, 0, math.rad(-22)),
 	},
 	gold = { -- a flat ivory disc: the sun (never a dark disc, which read as a hole)
 		name = "shieldmark",
@@ -646,8 +650,12 @@ local GRIP_UNIT = CFrame.new(0, 0, -0.45) -- a soldier's spear, sword and bow ov
 -- its head is a detail part welded to it (`details`, offsets in the joint frame, KitDetail = true). The heads sit at
 -- head height beside the body, so a tool reads as a tool from the air. Handle colours and head shapes differ per job.
 local LEAN = CFrame.Angles(0, 0, math.rad(-6)) -- the top leans outwards (+X), away from the body
-local SWORD_LEAN = CFrame.Angles(math.rad(-40), 0, math.rad(-6)) -- the sword points forward (-Z) and up
-local BOW_LIMB, BOW_TILT = 2.6, math.rad(22) -- each bow limb is 2.6 long and leans 22 degrees forward from the grip
+-- the sword rises from the fist outward (+X) and forward (-Z): beside the arm and clear of the torso, never across them
+local SWORD_LEAN = CFrame.Angles(math.rad(-22), 0, math.rad(-28))
+-- the spear is carried at the fist, its butt off the ground, leaning forward and a little outward
+local SPEAR_LEAN = CFrame.Angles(math.rad(-14), 0, math.rad(-5))
+-- each bow limb is 1.25 long and leans 30 degrees forward from the grip (the whole bow ends under the chin)
+local BOW_LIMB, BOW_TILT = 1.25, math.rad(30)
 -- the hoe leans out 14 degrees: its handle clears the straw brim of every hat roll in every pose (0.04 or more with the
 -- brim's bounding box, 0.15 or more with the exact disc)
 local HOE_LEAN = CFrame.Angles(0, 0, math.rad(-14))
@@ -782,14 +790,15 @@ local TOOLS: { [string]: PartSpec } = {
 			},
 		},
 	},
-	spear = { -- a 5.4 pale ash shaft planted at the fist, a steel spearhead and a kingdom pennant (tip 1.33 x the body's height)
+	spear = { -- a 4.8 pale ash shaft carried at the fist (its butt 1 stud off the ground), a steel spearhead and a hanging
+		-- kingdom pennant under the head (tip 1.3 x the body's height)
 		name = "spear",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
-		size = Vector3.new(5.4, 0.4, 0.4),
+		size = Vector3.new(4.8, 0.4, 0.4),
 		color = ASH,
 		material = Enum.Material.Wood,
-		offset = GRIP_UNIT * CFrame.new(0, 0.64, 0) * UPRIGHT,
+		offset = GRIP_UNIT * SPEAR_LEAN * CFrame.new(0, 1.3, 0) * UPRIGHT,
 		details = {
 			{
 				name = "spearhead",
@@ -797,16 +806,16 @@ local TOOLS: { [string]: PartSpec } = {
 				size = Vector3.new(0.75, 1.6, 0.75),
 				color = STEEL,
 				material = Enum.Material.Metal,
-				offset = GRIP_UNIT * CFrame.new(0, 4.04, 0) * CFrame.Angles(0, math.rad(45), 0),
+				offset = GRIP_UNIT * SPEAR_LEAN * CFrame.new(0, 4.5, 0) * CFrame.Angles(0, math.rad(45), 0),
 			},
 			{
 				name = "pennant",
 				class = "Part",
 				shape = Enum.PartType.Block,
-				size = Vector3.new(1.2, 0.1, 0.8),
+				size = Vector3.new(0.85, 1.5, 0.1),
 				color = 0.9,
 				material = Enum.Material.Fabric,
-				offset = GRIP_UNIT * CFrame.new(0.7, 2.3, 0) * CFrame.Angles(0, 0, math.rad(-12)),
+				offset = GRIP_UNIT * SPEAR_LEAN * CFrame.new(0.48, 2.95, 0),
 			},
 		},
 	},
@@ -828,7 +837,7 @@ local TOOLS: { [string]: PartSpec } = {
 		color = C.woodLight,
 		material = Enum.Material.Wood,
 		offset = GRIP_UNIT
-			* CFrame.new(0, 0.2, 0)
+			* CFrame.new(0, -0.1, 0)
 			* CFrame.Angles(-BOW_TILT, 0, 0)
 			* CFrame.new(0, BOW_LIMB / 2, 0)
 			* UPRIGHT,
@@ -840,7 +849,7 @@ local TOOLS: { [string]: PartSpec } = {
 				size = Vector3.new(BOW_LIMB, 0.34, 0.34),
 				color = C.woodLight,
 				material = Enum.Material.Wood,
-				offset = GRIP_UNIT * CFrame.new(0, 0.2, 0) * CFrame.Angles(BOW_TILT, 0, 0) * CFrame.new(
+				offset = GRIP_UNIT * CFrame.new(0, -0.1, 0) * CFrame.Angles(BOW_TILT, 0, 0) * CFrame.new(
 					0,
 					-BOW_LIMB / 2,
 					0
@@ -853,7 +862,7 @@ local TOOLS: { [string]: PartSpec } = {
 				size = Vector3.new(2 * BOW_LIMB * math.cos(BOW_TILT), 0.13, 0.13),
 				color = LINEN,
 				material = Enum.Material.Fabric,
-				offset = GRIP_UNIT * CFrame.new(0, 0.2, -BOW_LIMB * math.sin(BOW_TILT)) * UPRIGHT,
+				offset = GRIP_UNIT * CFrame.new(0, -0.1, -BOW_LIMB * math.sin(BOW_TILT)) * UPRIGHT,
 			},
 		},
 	},

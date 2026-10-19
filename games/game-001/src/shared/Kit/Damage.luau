@@ -10,33 +10,39 @@
 		Kit.damageFromHp(hp, maxHp) -> number   1 - hp / maxHp, clamped
 		Kit.DAMAGE_THRESHOLDS = { 0.25, 0.5, 0.75, 0.95 }
 	Model attribute written: KitDamageState (1..4; absent at state 0). Every added part carries the attribute
-	KitDamage = true and KitDamageKind = "crack" | "soot" | "rubble" | "stump"; they are direct children of the model.
+	KitDamage = true and KitDamageKind = "crack" | "soot" | "chip" | "leaf" | "rubble" | "stump"; they are direct children of
+	the model.
 
 	States (cumulative; the numbers are the totals at that state)
-		state  Damage   cracks  soot  rubble  crenellation / roof parts taken  gate leaves  collapse
-		  0    < 0.25     0      0      0       0                                0            none (exactly as built)
-		  1    >= 0.25    2      1      0       4                                1 (+ its bands)
-		  2    >= 0.5     4      2      2       7                                1
-		  3    >= 0.75    6      3      3       10                               both         the top of the front-right corner
-		  4    >= 0.95    7      3      3       13                               both         the same
-	At most MAX_EXTRA_PARTS (14) parts are added (at most 13 marks and rubble, one more with the stump); none at state 0.
-	Real geometry goes missing from state 1, so 0.3 reads differently from 0 at the 170-stud camera: a BITE of merlons (or
-	roof tiles, thatch, lean-to roofs, palisade logs) is taken out of the crenellation or the roof edge, growing from a seed
-	on the front through the nearest parts (nearest to the bite's centre first, so it stays one contiguous gap and state 2
-	keeps what state 1 took). A gate loses one leaf (with its iron bands) at state 1 and both at state 3, so the passage is
-	seen through. The removed number is min(table, the parts that can go missing, without the highest part); the model's
-	top never moves. The collapsed corner (state 3 and 4) takes the caps, merlons and roof parts in the top half of the
-	front-right corner (x >= right edge - 30 %, z <= front edge + 30 %) on top. Never removed: banners, emblems, crests,
-	doors, windows, thrones or the kingdom caps outside the collapsed corner.
+		state  Damage   cracks  soot  chips  rubble  crenellation / roof parts taken  gate leaves   collapse
+		  0    < 0.25     0      0     0      0       0                                0             none (exactly as built)
+		  1    >= 0.25    2      1     1      0       4                                1 (+ bands)
+		  2    >= 0.5     3      2     2      2       7                                1
+		  3    >= 0.75    3      3     2      3       10                               both gone, one broken leaf left   the top of the front-right corner
+		  4    >= 0.95    3      3     3      3       13                               the same                          the same
+	At most MAX_EXTRA_PARTS (14) parts are added (at most 12 marks, chips and rubble, one broken leaf on a gate, one stump slab
+	when a tower cap fell); none at state 0. Real geometry goes missing from state 1, so 0.3 reads differently from 0 at the
+	170-stud camera: a BITE of merlons (or roof tiles, thatch, lean-to roofs, palisade logs) is taken out of the crenellation
+	or the roof edge, growing from a seed on the front through the nearest parts (so state 2 keeps what state 1 took). A gate's
+	bite starts at the middle of its span and is measured from there, mirror parts alternating, so its two towers wear down
+	alike. A gate loses one leaf (with its iron bands) at state 1 and the other at state 3, but keeps a BROKEN LEAF (a short
+	splintered board at the hinge, a damage part in the closed leaf's plane that setGateOpen never moves), so even at 0.9 it
+	reads as a ruined gate, shut or open. The removed number is min(table, the parts that can go missing, without the highest
+	part); the model's top never moves. The collapsed corner (state 3 and 4) takes the merlons, roof tiles and thatch in the top
+	half of the front-right corner (x >= right edge - 30 %, z <= front edge + 30 %) on top, and a tower CAP falls whole or not at
+	all (when its lowest part stands in that corner: every part of that cap, never a half cone or a turned pyramid; a gate's
+	caps stand in its middle and never fall, so its two roofs stay identical). Never removed: banners, emblems, crests, doors,
+	windows, thrones or the kingdom caps outside the collapsed corner.
 	Marks lie ON the walls the player sees, inside the model's width and below its top (never intersecting roofs or other
 	geometry), picked on the outermost upright wall block at a spread of points, the front face first (up to 4) then the
 	right face, and only where nothing (a turret, a porch, a banner) stands in front of it; a mark that finds no such site
-	goes on the biggest wall. Cracks are thin dark slabs (0.32 across, 0.1 deep) tilted on the face. Soot is an opaque
-	warm-charcoal streak (1.5 to 2.2 across, 0.08 deep, up to 6.5 long) high on the right half, where the fire was; it
-	replaces the old translucent smoke balls (nothing translucent or round is added any more). Rubble is up to three
-	blocks, 3.6/2.8/2.0 studs across, in the colour of the biggest wall at the corner's foot (with its tint, so a recolour
-	follows). The stump (state 3 and 4, only when a tower cap fell: Drum, Dome, Spire ...) is one tilted slab of broken
-	masonry seated on the highest box under where the lowest cap part stood, so the bare top of the tower shows broken.
+	goes on the biggest wall. Cracks are thin slabs (0.32 across, 0.1 deep) tilted on the face. Soot is an opaque streak
+	(1.5 to 2.2 across, 0.08 deep, up to 6.5 long) high on the right half, where the fire was. Cracks and soot are LIT dark
+	browns (62,50,43 and 74,59,49), never black (the spec keeps every channel above 40 / 255), in Slate, not Neon. Chips are
+	small pale blocks of freshly broken stone (238,230,212) standing proud of the face at the foot of the marks, so a mark
+	reads as breached masonry and not as a decal. Rubble is up to three blocks, 3.6/2.8/2.0 studs across, in the colour of the
+	biggest wall at the corner's foot (with its tint, so a recolour follows). The stump (state 3 and 4, only when a tower cap
+	fell) is one tilted slab of broken masonry seated on the highest box under where the lowest cap part stood.
 
 	Compatibility
 	- Burning (FORGE-04's FeedbackController reads the model attribute `Burning` and the model's bounding box top): this module
@@ -60,13 +66,18 @@ Damage.ATTRIBUTE = "Damage"
 Damage.STATE_ATTRIBUTE = "KitDamageState"
 Damage.PART_ATTRIBUTE = "KitDamage"
 -- per state 1..4 (state 0 adds and removes nothing)
-Damage.CRACKS = table.freeze({ 2, 4, 6, 7 })
-Damage.RUBBLE = table.freeze({ 0, 2, 3, 3 })
+Damage.CRACKS = table.freeze({ 2, 3, 3, 3 })
 Damage.SOOT = table.freeze({ 1, 2, 3, 3 })
+Damage.CHIPS = table.freeze({ 1, 2, 2, 3 })
+Damage.RUBBLE = table.freeze({ 0, 2, 3, 3 })
 Damage.REMOVED = table.freeze({ 4, 7, 10, 13 })
 
-local CRACK = Color3.fromRGB(30, 26, 24)
-local SOOT = Color3.fromRGB(48, 42, 38) -- warm charcoal: a scorch, not a hole
+-- lit dark browns, never black (a black slab reads as a hole): the spec keeps every channel above 40 / 255
+Damage.CRACK_COLOR = Color3.fromRGB(62, 50, 43)
+Damage.SOOT_COLOR = Color3.fromRGB(74, 59, 49)
+local CHIP_PALE = Color3.fromRGB(238, 230, 212)
+local CRACK = Damage.CRACK_COLOR
+local SOOT = Damage.SOOT_COLOR
 -- walls the cracks may sit on, then the parts that go missing and the parts of a collapsing corner
 local BODY =
 	{ Walls = true, Hall = true, Donjon = true, Shaft = true, Curtain = true, GateTower = true, BarnWalls = true }
@@ -76,25 +87,30 @@ Damage.MISSING = MISSING -- the part names that can go missing (tests read it)
 -- the parts of a tower cap (the stump marks where the lowest of them stood)
 local CAP =
 	{ Drum = true, DrumBand = true, Dome = true, Spire = true, SpireEave = true, CapEave = true, Hoarding = true }
+-- the parts of the collapsed corner that go one by one (a cap never goes in pieces: see CAP_PARTS)
 local CORNER = {
 	Merlon = true,
 	RoofTiles = true,
-	RoofCorner = true,
 	Thatch = true,
 	ThatchLayer = true,
 	LeanToRoof = true,
+	Palisade = true,
+}
+-- everything a tower cap is made of: when a cap falls ALL of it falls (a half cone or a turned pyramid never shows), and
+-- only a cap whose anchor stands in the collapsed corner falls
+local CAP_PARTS = {
+	Drum = true,
+	DrumBand = true,
+	Dome = true,
+	DomeTip = true,
 	Spire = true,
 	SpireEave = true,
 	CapEave = true,
 	Hoarding = true,
 	HoardingBeam = true,
-	Drum = true,
-	DrumBand = true,
-	Dome = true,
-	DomeTip = true,
+	RoofCorner = true,
 	Finial = true,
 	FinialBall = true,
-	Palisade = true,
 }
 
 -- parts taken off a damaged model, by model: weak, so a destroyed model takes its stash with it
@@ -205,7 +221,7 @@ local function make(kind: string, part: BasePart): BasePart
 	part.CanCollide = false
 	part.CanTouch = false
 	part.CanQuery = false
-	part.CastShadow = kind == "rubble" or kind == "stump"
+	part.CastShadow = kind == "rubble" or kind == "stump" or kind == "chip" or kind == "leaf"
 	return part
 end
 
@@ -313,19 +329,42 @@ function Damage.apply(model: Model)
 		end
 		local seeds = if #front > 0 then front else pool
 		local seed = seeds[1 + math.floor(rand() * #seeds)]
+		-- a gate's bite starts at the middle of its span and spreads outward, so both tower roofs keep (or lose) their
+		-- parapets alike: the two never look different
+		local isGate = false
+		for _, p in kids do
+			isGate = isGate or p.Name == "GateLeaf"
+		end
+		local middle = (lo.X + hi.X) / 2
+		if isGate then
+			for _, p in seeds do
+				if math.abs(p.CFrame.Position.X - middle) < math.abs(seed.CFrame.Position.X - middle) - 1e-6 then
+					seed = p
+				end
+			end
+		end
 		local remaining = table.clone(pool)
 		table.remove(remaining, table.find(remaining, seed) :: number)
 		table.insert(order, seed)
 		local sum = seed.CFrame.Position
+		local lastSide = math.sign(seed.CFrame.Position.X - middle)
+		-- a gate measures from the middle of its span (not from the drifting centroid of what is gone), so mirror parts come
+		-- off together and its two towers wear down alike
+		local gateCentre = Vector3.new(middle, seed.CFrame.Position.Y, seed.CFrame.Position.Z)
 		while #remaining > 0 do
-			local centroid = sum / #order
+			local centroid = if isGate then gateCentre else sum / #order
 			local bestAt, bestDistance = 1, math.huge
 			for i, p in remaining do
 				local d = (p.CFrame.Position - centroid).Magnitude
-				if d < bestDistance - 1e-6 then
+				-- a gate takes equally distant parts from alternate sides, so its two towers wear down together
+				local flips = isGate
+					and math.abs(d - bestDistance) <= 1e-6
+					and math.sign(p.CFrame.Position.X - middle) ~= lastSide
+				if d < bestDistance - 1e-6 or flips then
 					bestAt, bestDistance = i, d
 				end
 			end
+			lastSide = math.sign(remaining[bestAt].CFrame.Position.X - middle)
 			local chosen = table.remove(remaining, bestAt) :: BasePart
 			table.insert(order, chosen)
 			sum += chosen.CFrame.Position
@@ -339,6 +378,7 @@ function Damage.apply(model: Model)
 	end
 	local firstLeaf = if #leaves > 0 then math.floor(rand() * #leaves) + 1 else 0
 	local parked: { BasePart } = {}
+	local broken: BasePart? = nil -- from state 3 the leaf that was still standing is a broken remnant, not gone
 	local function take(p: BasePart)
 		if p ~= topPart and p.Parent == model then
 			p.Parent = nil
@@ -352,6 +392,9 @@ function Damage.apply(model: Model)
 	for i, leaf in leaves do
 		if i == firstLeaf or state >= 3 then
 			local side = root.CFrame:ToObjectSpace(leaf.CFrame).X
+			if i ~= firstLeaf then
+				broken = leaf
+			end
 			take(leaf)
 			for _, p in kids do -- its iron bands go with it
 				if p.Name == "LeafBand" and root.CFrame:ToObjectSpace(p.CFrame).X * side > 0 then
@@ -361,32 +404,66 @@ function Damage.apply(model: Model)
 		end
 	end
 
-	-- 2. the corner: the top of the front-right corner falls (state 3 and 4)
+	-- 2. the corner: the top of the front-right corner falls (state 3 and 4): merlons, roof tiles and thatch one by one,
+	-- and a tower cap whole (the lowest cap part standing in the corner anchors it, with everything of that cap)
 	local cornerX = hi.X - 0.15 * width
-	local stump: Box? = nil -- the lowest tower cap part that fell: the broken top of what stands under it
+	local stump: Box? = nil -- the lowest cap part that fell: the broken top of what stands under it
 	if state >= 3 then
 		local fallen = 0
 		for _, p in kids do
-			if fallen >= 14 then
-				break
-			end
-			if CORNER[p.Name] and p ~= topPart and p.Parent == model then
-				local c = p.CFrame.Position
-				if c.X >= hi.X - 0.3 * width and c.Z <= lo.Z + 0.3 * depth and c.Y >= lo.Y + 0.5 * height then
-					if CAP[p.Name] then
-						local box = boxOf(p)
-						if stump == nil or box.cy - box.hy < stump.cy - stump.hy then
-							stump = box
-						end
-					end
+			local c = p.CFrame.Position
+			if p.Parent == model and p ~= topPart and c.X >= hi.X - 0.3 * width and c.Z <= lo.Z + 0.3 * depth then
+				if CORNER[p.Name] and fallen < 14 and c.Y >= lo.Y + 0.5 * height then
 					take(p)
 					fallen += 1
+				elseif CAP[p.Name] and c.Y >= lo.Y + 0.5 * height then
+					local box = boxOf(p)
+					if stump == nil or box.cy - box.hy < stump.cy - stump.hy then
+						stump = box
+					end
+				end
+			end
+		end
+		if stump then
+			local reach = math.max(stump.hx, stump.hz) + 1.0
+			for _, p in kids do
+				local c = p.CFrame.Position
+				if
+					CAP_PARTS[p.Name]
+					and p ~= topPart
+					and p.Parent == model
+					and math.abs(c.X - stump.cx) <= reach
+					and math.abs(c.Z - stump.cz) <= reach
+					and c.Y >= stump.cy - stump.hy - 0.01
+				then
+					take(p)
 				end
 			end
 		end
 	end
 	if #parked > 0 then
 		stash[model] = parked
+	end
+	if state >= 3 and broken then
+		-- the broken leaf: a short splintered board hanging at the hinge, in the closed leaf's plane, so the gate still reads as
+		-- a ruined gate whether it stands open or shut (setGateOpen moves leaves and bands only, never this)
+		local leaf = broken :: BasePart
+		local closedAt = leaf:GetAttribute("KitGateClosedCF")
+		local leafCF = if typeof(closedAt) == "CFrame" then root.CFrame * (closedAt :: CFrame) else leaf.CFrame
+		local side = if root.CFrame:ToObjectSpace(leafCF).X < 0 then -1 else 1
+		make(
+			"leaf",
+			Parts.block(
+				ctx,
+				"DamageLeaf",
+				Vector3.new(2.4, 6.2, 0.5),
+				leafCF
+					* CFrame.new(side * (leaf.Size.X / 2 - 1.2), -(leaf.Size.Y - 6.2) / 2, 0.15)
+					* CFrame.Angles(0, side * 0.45, side * 0.1),
+				Parts.shade(leaf.Color, 0.8),
+				M.WoodPlanks
+			)
+		)
 	end
 
 	-- 3. cracks and soot: thin dark slabs lying flat on the walls the player sees, the front face first, then the right face
@@ -464,8 +541,9 @@ function Damage.apply(model: Model)
 					0
 				)
 		end
+		local marks: { { at: CFrame, len: number } } = {} -- every crack and soot streak: the chips sit at their feet
 		for i = 1, Damage.CRACKS[state] do
-			local onFront = i <= 4
+			local onFront = i ~= 3
 			local at, len, tilt = nil, 0, 0
 			local u, v = 0.5, 0.5
 			for _ = 1, 24 do -- a fixed number of draws per attempt, so the result depends on the model alone
@@ -479,6 +557,7 @@ function Damage.apply(model: Model)
 			if at == nil then
 				at, len = fallback(onFront, u, v, 0.3, 0.5), math.min(4.6, body.Size.Y * 0.5)
 			end
+			table.insert(marks, { at = (at :: CFrame) * CFrame.Angles(0, 0, tilt), len = len })
 			make(
 				"crack",
 				Parts.block(
@@ -487,7 +566,7 @@ function Damage.apply(model: Model)
 					Vector3.new(0.32, len, 0.1),
 					(at :: CFrame) * CFrame.Angles(0, 0, tilt),
 					CRACK,
-					M.SmoothPlastic
+					M.Slate
 				)
 			)
 		end
@@ -505,15 +584,31 @@ function Damage.apply(model: Model)
 			if at == nil then
 				at, len = fallback(onFront, 0.5 + 0.5 * u, v, 0.5, 0.4), math.min(6.5, body.Size.Y * 0.5)
 			end
+			table.insert(marks, { at = at :: CFrame, len = len })
 			make(
 				"soot",
+				Parts.block(ctx, "DamageSoot", Vector3.new(1.5 + 0.7 * rand(), len, 0.08), at :: CFrame, SOOT, M.Slate)
+			)
+		end
+		-- chipped stone: pale blocks of the wall's own stone at the foot of the marks, standing a little proud of the face, so
+		-- a mark reads as breached masonry and not as a decal
+		for i = 1, Damage.CHIPS[state] do
+			local m = marks[1 + ((i - 1) * 2) % #marks]
+			local size = Vector3.new(0.9 + 0.5 * rand(), 0.55 + 0.35 * rand(), 0.4)
+			local chipAt = m.at
+				* CFrame.new((rand() - 0.5) * 0.9, -m.len / 2 + 0.4, -0.2)
+				* CFrame.Angles(0, 0, (rand() - 0.5) * 0.7)
+			-- inside the model's width, whatever the face it sits on
+			chipAt += Vector3.new(math.clamp(chipAt.X, lo.X + 0.6, hi.X - 0.6) - chipAt.X, 0, 0)
+			make(
+				"chip",
 				Parts.block(
 					ctx,
-					"DamageSoot",
-					Vector3.new(1.5 + 0.7 * rand(), len, 0.08),
-					at :: CFrame,
-					SOOT,
-					M.SmoothPlastic
+					"DamageChip",
+					size,
+					chipAt,
+					CHIP_PALE, -- freshly broken stone: paler than any wall and the soot beside it, whatever the kingdom colour
+					M.Slate
 				)
 			)
 		end
@@ -554,9 +649,9 @@ function Damage.apply(model: Model)
 					Vector3.new(w, 1.0, d),
 					CFrame.new(stump.cx, supportY + 0.5, stump.cz)
 						* CFrame.Angles((rand() - 0.5) * 0.2, rand() * math.pi, (rand() - 0.5) * 0.2),
-					Parts.shade(body.Color, 0.7),
+					Parts.shade(body.Color, 0.92),
 					M.Slate,
-					if type(bodyTint) == "number" then bodyTint * 0.7 else nil
+					if type(bodyTint) == "number" then bodyTint * 0.92 else nil
 				)
 				make("stump", slab)
 			end

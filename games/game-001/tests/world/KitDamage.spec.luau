@@ -3,10 +3,12 @@
 	parts by Kit.applyDamage (Kit/Damage.luau). This spec pins:
 
 	  1. states     Damage 0 (and anything under 0.25 or not a number) is exactly the model as built; the four thresholds
-	                0.25/0.5/0.75/0.95 add and remove exactly the documented cracks, rubble, smoke and missing parts, at most 14
-	                extra parts, harmless to touch;
+	                0.25/0.5/0.75/0.95 add and remove exactly the documented cracks, soot, chips, rubble, a broken gate leaf
+	                and missing parts, at most 14 extra parts, harmless to touch; cracks and soot are lit dark browns (every
+	                channel above 40 / 255, never black), chips are paler stone, a gate keeps one broken leaf at 0.9, a
+	                gate's two tower caps stay identical (a cap falls whole or not at all);
 	  2. repair     deterministic, idempotent and reversible in any order: a repaired model is exactly the model as built;
-	  3. burning    the Burning attribute and the model's top are untouched (FORGE-04's Burning look reads both), the smoke
+	  3. burning    the Burning attribute and the model's top are untouched (FORGE-04's Burning look reads both), every mark
 	                stays inside the model;
 	  4. recolour   Kit.setKingdomColor works on damaged models and on the parts waiting for a repair;
 	  5. mutants    the key rules above are caught when broken.
@@ -25,6 +27,21 @@ for _, identity in KingdomsConfig.identities do
 	CANON[identity.id] = Color3.fromRGB(c[1], c[2], c[3])
 end
 local MAX_LEVEL = { keep = 3, barracks = 4, wall = 3, gate = 3 }
+-- everything a tower cap is made of (Kit/Damage CAP_PARTS)
+local CAP_PARTS = {
+	Drum = true,
+	DrumBand = true,
+	Dome = true,
+	DomeTip = true,
+	Spire = true,
+	SpireEave = true,
+	CapEave = true,
+	Hoarding = true,
+	HoardingBeam = true,
+	RoofCorner = true,
+	Finial = true,
+	FinialBall = true,
+}
 
 -- ------------------------------------------------------------------ helpers
 
@@ -184,7 +201,7 @@ CHECKS.damage = function(quick: boolean?)
 			table.insert(out, `damageFromHp({c[1]}, {c[2]}) = {Kit.damageFromHp(c[1], c[2])}, want {c[3]}`)
 		end
 	end
-	local cracks, rubble, soot = Damage.CRACKS, Damage.RUBBLE, Damage.SOOT
+	local cracks, rubble, soot, chips = Damage.CRACKS, Damage.RUBBLE, Damage.SOOT, Damage.CHIPS
 	do
 		for _, e in if quick then QUICK else FULL do
 			local bt, lv, hue = e[1], e[2], e[3]
@@ -223,10 +240,17 @@ CHECKS.damage = function(quick: boolean?)
 				end
 				local hasBody = extras(m, "crack") > 0
 				if hasBody then
-					if extras(m, "crack") ~= cracks[s] or extras(m, "rubble") ~= rubble[s] then
+					if
+						extras(m, "crack") ~= cracks[s]
+						or extras(m, "rubble") ~= rubble[s]
+						or extras(m, "chip") ~= chips[s]
+					then
 						table.insert(
 							out,
-							`{stag}: cracks {extras(m, "crack")}/{cracks[s]} rubble {extras(m, "rubble")}/{rubble[s]}`
+							`{stag}: cracks {extras(m, "crack")}/{cracks[s]} chips {extras(m, "chip")}/{chips[s]} rubble {extras(
+								m,
+								"rubble"
+							)}/{rubble[s]}`
 						)
 					end
 				elseif not (bt == "wall" and lv == 1) then
@@ -255,6 +279,28 @@ CHECKS.damage = function(quick: boolean?)
 					local wantLeaves = if s >= 3 then 0 else (baseHist.GateLeaf :: number) - 1
 					if (hm.GateLeaf or 0) ~= wantLeaves then
 						table.insert(out, `{stag}: {hm.GateLeaf or 0} gate leaves left, want {wantLeaves}`)
+					end
+				end
+				-- a gate at 0.75 and above keeps one broken leaf (a damage part, so it stands whether the gate is open or shut);
+				-- no other model has one
+				local wantBroken = if (baseHist.GateLeaf or 0) > 0 and s >= 3 then 1 else 0
+				if extras(m, "leaf") ~= wantBroken then
+					table.insert(out, `{stag}: {extras(m, "leaf")} broken leaves, want {wantBroken}`)
+				end
+				-- a gate's two tower caps change the same way: whole, or not at all
+				if bt == "gate" then
+					local left, right = 0, 0
+					for _, p in parts(m) do
+						if CAP_PARTS[p.Name] then
+							if p.CFrame.Position.X < 0 then
+								left += 1
+							else
+								right += 1
+							end
+						end
+					end
+					if left ~= right then
+						table.insert(out, `{stag}: the gate's tower caps differ ({left} parts left, {right} right)`)
 					end
 				end
 				-- the parts that can go missing (not the highest part of the model): exactly the documented number, or all of
@@ -308,7 +354,10 @@ CHECKS.damage = function(quick: boolean?)
 						if p.CanCollide or p.CanQuery or p.CanTouch then
 							table.insert(out, `{stag}: a {kind} part can collide or be touched`)
 						end
-						local dark = p.Color.R < 0.2 and p.Color.G < 0.2
+						-- a lit dark brown, never black: every channel at least 40 / 255 (32 for blue), the luminance still dark
+						local c = p.Color
+						local lum = 0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B
+						local dark = c.R >= 40 / 255 and c.G >= 36 / 255 and c.B >= 32 / 255 and lum <= 0.3
 						if
 							kind == "crack"
 							and not (
@@ -317,9 +366,11 @@ CHECKS.damage = function(quick: boolean?)
 								and p.Size.Z <= 0.12
 								and p.Size.X <= 0.4
 								and dark
+								and p.Transparency == 0
+								and p.Material ~= Enum.Material.Neon
 							)
 						then
-							table.insert(out, `{stag}: a crack is not a thin dark slab`)
+							table.insert(out, `{stag}: a crack is not a thin dark-brown slab`)
 						elseif
 							kind == "soot"
 							and not (
@@ -329,12 +380,46 @@ CHECKS.damage = function(quick: boolean?)
 								and p.Size.X >= 1.2
 								and dark
 								and p.Transparency == 0
+								and p.Material ~= Enum.Material.Neon
 							)
 						then
-							table.insert(out, `{stag}: soot is not a flat dark opaque streak`)
+							table.insert(
+								out,
+								`{stag}: soot is not a flat dark-brown opaque streak (not black, not Neon)`
+							)
+						elseif
+							kind == "chip"
+							and not (
+								shapeOf(p) == "box"
+								and p.Size.X <= 1.6
+								and p.Size.Y <= 1.2
+								and p.Size.Z <= 0.6
+								and p.Transparency == 0
+								and lum > 0.7
+							)
+						then
+							table.insert(out, `{stag}: a chip is not a small block of pale stone`)
+						elseif
+							kind == "leaf"
+							and not (
+								shapeOf(p) == "box"
+								and p.Size.Y >= 4
+								and p.Size.Y <= 7
+								and p.Size.X <= 3
+								and p.Transparency == 0
+							)
+						then
+							table.insert(out, `{stag}: the broken leaf is not a short board`)
 						elseif (kind == "rubble" or kind == "stump") and shapeOf(p) ~= "box" then
 							table.insert(out, `{stag}: rubble is not a block`)
-						elseif kind ~= "crack" and kind ~= "soot" and kind ~= "rubble" and kind ~= "stump" then
+						elseif
+							kind ~= "crack"
+							and kind ~= "soot"
+							and kind ~= "chip"
+							and kind ~= "leaf"
+							and kind ~= "rubble"
+							and kind ~= "stump"
+						then
 							table.insert(out, `{stag}: unknown damage kind {kind}`)
 						end
 					end
@@ -391,7 +476,7 @@ CHECKS.damage = function(quick: boolean?)
 				end
 				for _, p in burning:GetChildren() do
 					local kind = p:GetAttribute("KitDamageKind")
-					if p:IsA("BasePart") and (kind == "crack" or kind == "soot") then
+					if p:IsA("BasePart") and (kind == "crack" or kind == "soot" or kind == "chip") then
 						local x = p.CFrame.Position.X
 						if x < lo - 0.2 or x > hi + 0.2 or p.CFrame.Position.Y + halfExtents(p).Y > baseTop + 1e-3 then
 							table.insert(
@@ -554,6 +639,74 @@ describe("Damage mutants are caught", function()
 					local ball = p :: Part
 					ball.Shape = Enum.PartType.Ball
 					ball.Transparency = 0.5
+				end
+			end
+		end
+	end)
+	local function eachMark(m: Model, kinds: { string }, fn: (BasePart) -> ())
+		for _, p in m:GetChildren() do
+			if p:IsA("BasePart") and table.find(kinds, tostring(p:GetAttribute("KitDamageKind"))) then
+				fn(p)
+			end
+		end
+	end
+	caught("soot is pure black again", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "soot" }, function(p)
+				p.Color = Color3.fromRGB(10, 8, 8)
+			end)
+		end
+	end)
+	caught("cracks are pure black again", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "crack" }, function(p)
+				p.Color = Color3.fromRGB(20, 18, 16)
+			end)
+		end
+	end)
+	caught("soot glows (Neon)", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "soot" }, function(p)
+				p.Material = Enum.Material.Neon
+			end)
+		end
+	end)
+	caught("the chipped stone is gone", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "chip" }, function(p)
+				p:Destroy()
+			end)
+		end
+	end)
+	caught("the chips are as dark as the soot", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "chip" }, function(p)
+				p.Color = Color3.fromRGB(80, 66, 56)
+			end)
+		end
+	end)
+	caught("a gate at 0.9 loses its broken leaf (reads as open, not ruined)", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "leaf" }, function(p)
+				p:Destroy()
+			end)
+		end
+	end)
+	caught("one gate tower loses a piece of its roof", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			if Damage.stateOf(m:GetAttribute("Damage")) >= 1 and m:GetAttribute("KitType") == "gate" then
+				for _, p in m:GetChildren() do
+					if p:IsA("BasePart") and p.Name == "Spire" and p.CFrame.Position.X > 0 then
+						p:Destroy()
+						break
+					end
 				end
 			end
 		end
