@@ -30,7 +30,7 @@ local LINES: { [string]: { string } } = {
 	},
 	watchtower = { "Vision over your land", "Archers" },
 	wall = { "Defence", "Stronger defence", "Strongest defence" },
-	gate = { "A way through your walls", "Stronger gate", "Strongest gate" },
+	gate = { "Closes the gap in your walls", "Stronger gate", "Strongest gate" },
 }
 
 local BuildingLevels = {}
