@@ -441,9 +441,30 @@ end
 
 local ACTIONS = { "idle", "walk", "work", "carry", "fight", "flee", "celebrate" }
 
--- The smallest clearance between two groups of rig parts (by name) over every Pose action (walk, carry and flee at speeds
--- 0, 6 and 12; 12 phases per cycle). Returns the minimum and where it was.
-local function groupClearance(rig: Model, job: string, groupA: { string }, groupB: { string }): (number, string)
+-- Every Pose action (walk, carry and flee at speeds 0, 6 and 12; 12 phases per cycle) posed once for a rig.
+local function poseSet(rig: Model, job: string): { { world: { [BasePart]: CFrame }, label: string } }
+	local out = {}
+	for _, action in ACTIONS do
+		local speeds = if action == "walk" or action == "carry" or action == "flee" then { 0, 6, 12 } else { 0 }
+		for _, speed in speeds do
+			for i = 0, 11 do
+				table.insert(out, {
+					world = posed(rig, Pose.sample(action, job, i / 12, speed)),
+					label = `{action} speed {speed} phase {i}/12`,
+				})
+			end
+		end
+	end
+	return out
+end
+
+-- The smallest clearance between two groups of rig parts (by Name or KitDetailKind) over a rig's poses, and where it was.
+local function groupClearance(
+	rig: Model,
+	poses: { { world: { [BasePart]: CFrame }, label: string } },
+	groupA: { string },
+	groupB: { string }
+): (number, string)
 	local function named(names: { string }): { BasePart }
 		local out = {}
 		for _, p in parts(rig) do
@@ -455,18 +476,12 @@ local function groupClearance(rig: Model, job: string, groupA: { string }, group
 	end
 	local A, B = named(groupA), named(groupB)
 	local low, where = math.huge, ""
-	for _, action in ACTIONS do
-		local speeds = if action == "walk" or action == "carry" or action == "flee" then { 0, 6, 12 } else { 0 }
-		for _, speed in speeds do
-			for i = 0, 11 do
-				local w = posed(rig, Pose.sample(action, job, i / 12, speed))
-				for _, a in A do
-					for _, b in B do
-						local c = exactClearance(a, w[a], b, w[b])
-						if c < low then
-							low, where = c, `{a.Name}|{b.Name} {action} speed {speed} phase {i}/12`
-						end
-					end
+	for _, pose in poses do
+		for _, a in A do
+			for _, b in B do
+				local c = exactClearance(a, pose.world[a], b, pose.world[b])
+				if c < low then
+					low, where = c, `{a.Name}|{b.Name} {pose.label}`
 				end
 			end
 		end
@@ -491,14 +506,19 @@ local CLEARANCES = {
 CHECKS.clearance = function()
 	local out: { string } = {}
 	for _, hue in { "crimson", "gold" } do
-		for _, c in CLEARANCES do
-			local rig = unit(c[1], hue)
-			local low, where = groupClearance(rig, c[1], c[2], c[3])
-			if low < c[4] then
-				table.insert(
-					out,
-					`{c[1]} {hue}: {table.concat(c[2], "+")} vs {table.concat(c[3], "+")} only {r3(low)} apart ({where}, needs {c[4]})`
-				)
+		for _, kind in { "knight", "archer" } do
+			local rig = unit(kind, hue)
+			local poses = poseSet(rig, kind)
+			for _, c in CLEARANCES do
+				if c[1] == kind then
+					local low, where = groupClearance(rig, poses, c[2], c[3])
+					if low < c[4] then
+						table.insert(
+							out,
+							`{kind} {hue}: {table.concat(c[2], "+")} vs {table.concat(c[3], "+")} only {r3(low)} apart ({where}, needs {c[4]})`
+						)
+					end
+				end
 			end
 		end
 	end

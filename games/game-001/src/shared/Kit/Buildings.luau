@@ -23,6 +23,10 @@
 	in progress) measures ≈ 4.1k parts → 4 kingdoms + 3 neutral towers ≈ 16.9k, leaving ≈ 8k for
 	WorldService props and region markers. The caps are ceilings, not targets: every model at its cap would
 	sum to ≈ 23.6k, so new detail goes where it reads (roofs, doors, banners), never into hidden faces.
+	With the FL-0128 war kit the all-built worst case (every kingdom at its top levels, wall L3 x 12 and the gate at
+	L3) measures 26,313 of the D-047 ceiling 27,000: WorldService 6,869 + four kingdoms 19,111 (Emberhold 4,690,
+	Frostmere 4,804, Thornwood 4,895, Sunspire 4,722) + three neutral towers 333 (tests/world/KitCeiling.spec.luau).
+	If a later change goes over, cap the wall segments per kingdom in config before thinning the art.
 
 		type        cap   measured (min–max over levels, variants, the 4 + 2 FORGE-01 kingdom colours, neutral)
 		keep        300   182–292  (L1 182–236, L2 204–260, L3 234–292; Kit.spec: L1–L2 ≤ 260, L3 ≤ 300)
@@ -32,9 +36,9 @@
 		lumbercamp  130   46–59
 		quarry      130   51–64
 		barracks    260   119–248  (L1–L4)
-		watchtower  130   105–125
-		wall         60   35–42    (per 32-stud segment)
-		gate        150   92–113
+		watchtower  130   105–121  (L1 107–115, L2 105–121: the war-ready L2 of FL-0128)
+		wall         60   26–60    (per 32-stud segment; L1 26–30, L2 36–40, L3 52–60; per-level caps 30 / 45 / 60)
+		gate        150   71–131   (L1 71–76, L2 101–112, L3 120–131; per-level caps 90 / 120 / 150)
 		mine/blacksmith/market/infirmary/granary/shrine   110/150/150/150/110/80   (27–110, G13.5 stand-ins)
 		stages      110   29–85    (any type, stage 1..3)
 	Emblems (D-039, colour-vision finding 3) cost crown 3 / star 5 / oak 5 / sun 4 parts per banner, flag, pennant

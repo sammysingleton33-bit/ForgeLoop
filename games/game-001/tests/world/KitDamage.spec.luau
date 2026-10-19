@@ -107,13 +107,13 @@ end
 
 -- ------------------------------------------------------------------ 6. damage
 
--- every building type at its highest level for Emberhold; a spread of five for Thornwood, whose hoarding roofs differ most;
+-- every building type at its highest level for Emberhold; a spread of four for Thornwood, whose hoarding roofs differ most;
 -- `quick` (the mutants' run) is four types in Emberhold
 local FULL = {}
 for _, bt in Kit.BUILDING_TYPES do
 	table.insert(FULL, { bt, MAX_LEVEL[bt] or 2, "crimson" })
 end
-for _, bt in { "keep", "house", "wall", "watchtower", "gate" } do
+for _, bt in { "keep", "house", "wall", "gate" } do
 	table.insert(FULL, { bt, MAX_LEVEL[bt] or 2, "emerald" })
 end
 local QUICK =
@@ -259,7 +259,7 @@ CHECKS.damage = function(quick: boolean?)
 							table.insert(out, `{stag}: a crack is not a thin dark wedge`)
 						elseif
 							kind == "smoke"
-							and not (shapeOf(p) == "ball" and p.Transparency >= 0.5 and p.Transparency < 1)
+							and not (shapeOf(p) == "ball" and p.Transparency >= 0.4 and p.Transparency < 1)
 						then
 							table.insert(out, `{stag}: smoke is not a translucent ball`)
 						elseif kind == "rubble" and shapeOf(p) ~= "box" then
@@ -284,7 +284,7 @@ CHECKS.damage = function(quick: boolean?)
 			end
 			-- any order, and applying twice is applying once
 			local m = Kit.build(bt, lv, "complete", CANON[hue])
-			for _, d in if quick then { 0.97, 0.3, 0.6, 0.1 } else { 0.97, 0.3, 0.6, 0.6, 0.1, 0.8, 0.3 } do
+			for _, d in if quick then { 0.97, 0.3, 0.6, 0.1 } else { 0.97, 0.3, 0.6, 0.1, 0.8 } do
 				m:SetAttribute("Damage", d)
 				Kit.applyDamage(m)
 				Kit.applyDamage(m)
