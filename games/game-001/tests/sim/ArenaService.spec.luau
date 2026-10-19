@@ -91,7 +91,7 @@ afterEach(function()
 end)
 
 -- The match in "match" mode with fast phases, players seated, and the arena services. `humans` = userIds to add.
-local function boot(humans: { number }): any
+local function boot(humans: { number }, parties: { [number]: string }?): any
 	MatchConfig.mode = "match"
 	local env = MockEnv.new({
 		seed = 9,
@@ -126,8 +126,8 @@ local function boot(humans: { number }): any
 	world.arena.config = shortConfig()
 	world.placed = {}
 	world.kingdoms.adapter = {
-		partyOf = function()
-			return nil
+		partyOf = function(player: any)
+			return if parties then parties[player.UserId] else nil
 		end,
 		load = function(player: any)
 			env.wait()
@@ -247,6 +247,28 @@ describe("ArenaService: the host", function()
 end)
 
 describe("ArenaService: voting and the loadout", function()
+	it("co-rulers vote for their champion over Arena.Vote, and the vote closes when all have voted", function()
+		local world = boot({ 1, 2, 3 }, { [1] = "crew", [3] = "crew" })
+		reachArena(world)
+		local state = world.arena:state()
+		expect(state.stage).toBe("vote")
+		expect(invoke(world.env, world.players[1], "Arena.Vote", 3)).toBe(true)
+		expect(world.arena:state().stage).toBe("vote") -- one voter has yet to choose
+		expect(invoke(world.env, world.players[3], "Arena.Vote", 3)).toBe(true)
+		world.env.mock:advance(0.5)
+		state = world.arena:state()
+		expect(state.stage).toBe("loadout")
+		expect(state.a.userId == 3 or state.b.userId == 3).toBe(true)
+		expect(invoke(world.env, world.players[2], "Arena.Vote", 3)).toBe(false) -- not a voter, and the vote is over
+	end)
+
+	it("a second arena cannot begin while one is running", function()
+		local world = boot({ 1, 2 })
+		reachArena(world)
+		expect(world.arena:_begin({ world.a, world.b })).toBe(false)
+		expect(world.arena:state().stage).toBe("loadout")
+	end)
+
 	it("refuses a vote outside the vote stage", function()
 		local world = boot({ 1, 2 })
 		reachArena(world)
