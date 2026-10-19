@@ -62,7 +62,7 @@ M = [
  ("FL-0091", F+"Moments.luau", 'count = finiteCount(details.count),', 'count = details.count,', "KingdomFeedback", "ConsequenceChanged: strikes name the job", "game"),
  ("FL-0091", F+"Moments.luau", 'local title = fillAll(line.title, moment) or line.plain', 'local title = fill(line.title, moment) or line.plain', "KingdomFeedback", "ConsequenceChanged: the kingdom's rulers get one notice", "game"),
  ("FL-0091", G+"src/server/Services/AnnouncerService.luau", '"ConsequenceChanged", -- FORGE-01', '-- "ConsequenceChanged", -- FORGE-01', "KingdomFeedback", "ConsequenceChanged reaches that kingdom's rulers", "game"),
- ("FL-0091", G+"src/server/Services/AnnouncerService.luau", 'return model:GetAttribute("Kind")', 'return nil', "KingdomFeedback", "ConsequenceChanged reaches that kingdom's rulers", "game"),
+ ("FL-0091", G+"src/server/Services/AnnouncerService.luau", 'return model and model:GetAttribute("Kind")', 'return nil', "KingdomFeedback", "ConsequenceChanged reaches that kingdom's rulers", "game"),
  # --- #175 FORGE-07 review: M2 a start and its end are separate toasts; L1 one rioter
  ("FL-0091", F+"Lines.luau", 'key = "consequence:riot:off"', 'key = "consequence:riot:on"', "KingdomFeedback", "ConsequenceChanged: the kingdom's rulers get one notice", "game"),
  ("FL-0091", F+"Lines.luau", 'key = "consequence:strike:{jobs}:off"', 'key = "consequence:strike:{jobs}:on"', "KingdomFeedback", "ConsequenceChanged: strikes name the job", "game"),

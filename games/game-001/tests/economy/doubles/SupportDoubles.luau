@@ -34,7 +34,7 @@ local SupportDoubles = {}
 SupportDoubles.REMOTES = {
 	Kingdom = {
 		{ name = "Kingdom.Support", kind = "serverEvent" },
-		{ name = "Kingdom.GetSupport", kind = "function", args = {}, rate = { burst = 5, perSecond = 2 } },
+		{ name = "Kingdom.GetSupport", kind = "function", args = {}, rate = { burst = 3, perSecond = 1 } }, -- FORGE-01 forge/01-arena-service
 	},
 }
 
