@@ -37,7 +37,7 @@ M = [
  ("FL-0125", MATCH, 'local champion = if winner ~= nil and table.find(arena.qualifiers, winner) ~= nil then winner else nil', 'local champion = winner', "sim/Match.spec", "falls back to the Crown Points result when the duel has no winner"),
  ("FL-0125", MATCH, 'if sim.time - arena.startedAt >= self.options.arenaMaxSeconds then', 'if false then', "sim/Match.spec", "cuts off an arena that never reports"),
  ("FL-0125", MATCH, '		self:_cancelArena("conquest")\n', '', "sim/Match.spec", "ends by conquest, not by duel, when a kingdom takes the rest during the arena"),
- ("FL-0125", MATCH, 'local ok, begun = pcall(host.beginArena, qualifiers)\n	if not ok or begun ~= true then', 'local ok, begun = true, host.beginArena(qualifiers)\n	if not ok or begun ~= true then', "sim/Match.spec", "gives the Crown Points result at once when there is no host"),
+ ("FL-0125", MATCH, 'local ok, begun = pcall(host.beginArena, qualifiers)\n	if self._arena == nil then', 'local ok, begun = true, host.beginArena(qualifiers)\n	if self._arena == nil then', "sim/Match.spec", "gives the Crown Points result at once when there is no host"),
  ("FL-0125", MATCH, 'if #qualifiers < 2 then', 'if #qualifiers < 0 then', "sim/Match.spec", "never asks for a duel with fewer than two kingdoms standing"),
  # --- restart, the debug phase jump
  ("FL-0125", MATCH, '			self.sim.diplomacy.graceSeconds = self.phaseEnds.Expansion', '			local _ = self.phaseEnds.Expansion', "sim/Match.spec", "moves Diplomacy's war grace with the phase jump"),
