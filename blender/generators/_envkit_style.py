@@ -38,7 +38,7 @@ ROCK_WARM = rgb(158, 150, 138)
 MOSS = rgb(96, 132, 62)
 STONE_LIGHT = rgb(184, 178, 168)
 IRON_ORE = rgb(160, 86, 58)
-GOLD_ORE = rgb(242, 194, 48)
+GOLD_ORE = rgb(238, 172, 22)
 CRYSTAL = rgb(111, 208, 224)
 BERRY = rgb(200, 50, 43)
 FLOWER = {"red": rgb(217, 52, 58), "yellow": rgb(244, 208, 63), "white": rgb(245, 243, 234), "purple": rgb(142, 92, 194)}
@@ -53,7 +53,7 @@ SOIL_RIDGE = rgb(112, 82, 52)
 SOIL_DARK = rgb(78, 56, 36)
 WHEAT = rgb(230, 194, 90)
 
-OAK_RAMP = [rgb(20, 62, 42), rgb(32, 88, 44), rgb(46, 114, 46), rgb(72, 144, 50), rgb(122, 182, 62)]  # blue-green shade up to a sunlit lime
+OAK_RAMP = [rgb(18, 58, 42), rgb(30, 84, 44), rgb(46, 114, 46), rgb(84, 156, 52), rgb(150, 206, 70)]  # blue-green shade up to a sunlit lime
 PINE_RAMP = [rgb(22, 62, 46), PINE, PINE_MID, PINE_LIGHT]
 BIRCH_RAMP = [mul(BIRCH_LEAF, 0.62), mul(BIRCH_LEAF, 0.8), mul(BIRCH_LEAF, 0.96), mix(BIRCH_LEAF, BIRCH_LEAF_LIGHT, 0.7)]
 BUSH_RAMP = [mul(LEAF_DARK, 0.85), mul(LEAF, 0.92), LEAF_LIGHT, mix(LEAF_LIGHT, OAK_SUN, 0.22)]

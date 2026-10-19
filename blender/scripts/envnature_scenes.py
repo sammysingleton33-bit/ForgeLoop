@@ -93,7 +93,7 @@ def plot_items(inv, spec):
             items.append(dict(kind="bld", model=b["model"], x=b["x"], z=b["z"], yaw=b["yaw"], name=b["name"]))
     # two houses beside the yard (the slots' own houses stand 80 studs in front of the keep, under the camera): keep frame (x right, z back), facing the front
     c, s_ = math.cos(kyaw), math.sin(kyaw)
-    for lx, lz in ((64.0, -60.0), (-62.0, -64.0)):
+    for lx, lz in ((50.0, -44.0), (-50.0, -50.0)):
         items.append(dict(kind="bld", model=houses[0]["model"], x=kx + c * lx + s_ * lz, z=kz - s_ * lx + c * lz, yaw=kyaw, name="house"))
     # the camera looks from the yard back at the keep: az so that its forward vector points along -front (towards the keep)
     az = math.degrees(kyaw)

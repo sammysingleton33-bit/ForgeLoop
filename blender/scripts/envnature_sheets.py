@@ -21,8 +21,8 @@ SHEETS = {
     "settlement_crimson": ("A crimson kingdom's starting settlement (keep, houses, farm, storehouse, lumber camp, quarry) with the valley's trees, bushes, rocks, flowers, fields and resource nodes around it; "
                            "four citizens in the yard", ("gameplay82", "aerial170")),
     "settlement_emerald": ("An emerald kingdom's starting settlement, same layout rotated by the plot, with its surroundings and four citizens", ("gameplay82", "aerial170")),
-    "forest_broadleaf": ("A broadleaf forest stand (oaks, birches, bushes, rocks) in the valley's real placement, citizens at its edge for scale", ("gameplay82", "aerial170")),
-    "forest_pine": ("A pine and oak forest stand in the valley's real placement, citizens at its edge", ("gameplay82", "aerial170")),
+    "forest_broadleaf": ("A broadleaf forest stand (oaks, birches, bushes, rocks) in the valley's real placement (the untrimmed density-1.0 plan)", ("gameplay82", "aerial170")),
+    "forest_pine": ("A pine and oak forest stand in the valley's real placement (the untrimmed density-1.0 plan)", ("gameplay82", "aerial170")),
     "trees_lineup": ("Every tree variant the world places: 8 oaks, 6 pines, 6 birches (three citizens in front)", ("gameplay82",)),
     "trees_close": ("Four trees up close", ("close45",)),
     "bushes_lineup": ("The 8 bushes and 6 flower tufts the world places (berry bushes: 03, 06; white blossom: 02, 05, 08)", ("gameplay82", "close45")),
@@ -72,6 +72,18 @@ def subject_box(images, margin=0.04):
     return (int(left), int(top), int(left + bw), int(top + bh))
 
 
+def cam_caption(name, cam, renders):
+    """The camera caption; a lineup that did not fit the frame at the camera's own distance says so (the scene json records it)."""
+    cap = CAM_LABEL[cam]
+    try:
+        c = json.loads((renders / f"{name}.json").read_text()).get("cams", {}).get(cam)
+    except (OSError, ValueError):
+        c = None
+    if c and c.get("widened"):
+        cap = f"{cap.split(':')[0]}: widened to {c['dist']:.0f} studs, {c['pitch']:.0f} degrees down, so the whole row fits the frame"
+    return cap
+
+
 def make_sheet(name, renders, panel_w, flip):
     title, cams = SHEETS[name]
     rows = []
@@ -92,7 +104,7 @@ def make_sheet(name, renders, panel_w, flip):
     y = title_h
     order = ("after", "before") if flip else ("before", "after")
     for cam, ims in rows:
-        d.text((pad, y + 5), CAM_LABEL[cam], fill=(200, 205, 215), font=font(13))
+        d.text((pad, y + 5), cam_caption(name, cam, renders), fill=(200, 205, 215), font=font(13))
         y += cap_h
         for i, m in enumerate(order):
             im = ims[m].resize((panel_w, panel_h), Image.LANCZOS)

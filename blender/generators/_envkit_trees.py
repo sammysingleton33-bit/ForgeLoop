@@ -69,7 +69,8 @@ def oak(variant, rng, height=25.0):
     """tree_oak_NN: trunk with root flare, one or two limbs, 10-13 faceted canopy lobes in four greens (dark under, sunlit above)."""
     arch = OAK_ARCH[(variant - 1) % len(OAK_ARCH)]
     a0 = rng.uniform(0, math.tau)
-    lobes = [(r * 1.12, a, dy * 1.1, rad * 1.22, limb) for r, a, dy, rad, limb in _oak_lobes(arch, rng, a0)]
+    rs, ds, ks = {"tall": (0.9, 1.08, 0.96), "wide": (1.1, 0.8, 1.08), "twin": (1.18, 1.0, 1.0), "lopsided": (1.0, 1.0, 1.0)}.get(arch, (1.0, 1.0, 1.0))
+    lobes = [(r * 1.12 * rs, a, dy * 1.1 * ds, rad * 1.22 * ks, limb) for r, a, dy, rad, limb in _oak_lobes(arch, rng, a0)]
     if arch in ("tall", "lopsided", "twin"):  # a solid core so the crown reads as one mass, not a cluster of separate lobes
         mid = sum(dy for _, _, dy, _, _ in lobes) / len(lobes)
         lobes.append((0.0, 0.0, mid, 4.3 if arch != "tall" else 3.6, False))
@@ -89,12 +90,14 @@ def oak(variant, rng, height=25.0):
     parts = [S.paint_ramp(S.tube(path, radii, seg=7, color=S.BARK, n=2.5, tag="trunk"), [S.BARK_DARK, S.BARK, S.BARK_LIGHT], rng,
                           0, tip_y, up=0.2, height=0.3, noise=0.12)]
     ccx, ccz = tip[0] + ldir[0] * 1.2, tip[2] + ldir[2] * 1.2
+    if arch == "lopsided":  # the crown hangs to one side of its trunk
+        ccx, ccz = ccx + math.cos(a0) * 2.2, ccz + math.sin(a0) * 2.2
     # canopy lobes
     lobe_pts, limb_targets = [], []
     for r, a, dy, rad, limb in lobes:
         c = (ccx + math.cos(a) * r, cy + dy, ccz + math.sin(a) * r)
         pts = max(16, min(24, int(round(rad * 4.2))))
-        b = S.blob(rng, pts, rad * 1.04, rad * 0.98, rad * 1.04, c[0], c[1], c[2], jitter=0.12, squash_bottom=0.18, color=S.LEAF, tag="canopy",
+        b = S.blob(rng, pts, rad * 1.04, rad * (0.74 if arch == "wide" else 1.1 if arch == "tall" else 0.98), rad * 1.04, c[0], c[1], c[2], jitter=0.12, squash_bottom=0.18, color=S.LEAF, tag="canopy",
                    yaw=rng.uniform(0, math.tau))
         lobe_pts.append(b)
         if limb:
@@ -102,7 +105,7 @@ def oak(variant, rng, height=25.0):
     ymin = min(b.bounds()[0][1] for b in lobe_pts)
     ymax = max(b.bounds()[1][1] for b in lobe_pts)
     for b in lobe_pts:
-        S.paint_ramp(b, S.OAK_RAMP, rng, ymin, ymax, up=0.30, height=0.48, noise=0.10)
+        S.paint_ramp(b, S.OAK_RAMP, rng, ymin, ymax, up=0.42, height=0.42, noise=0.13)
     parts += lobe_pts
     # leaf clumps on the crown's rim: small 20-facet lumps that break the silhouette up (a crown is bumpy, not a smooth cloud); lit like the lobe they sit on
     ncl = 5 + (variant % 3)
@@ -116,7 +119,7 @@ def oak(variant, rng, height=25.0):
         py = cy + dy + math.sin(el) * rad * 0.9
         pz = ccz + math.sin(a) * r + math.sin(ang) * math.cos(el) * rad * 0.92
         cl = S.ico(rng, cr, cr * 0.85, cr, px, py, pz, jitter=0.12, subdiv=0, color=S.LEAF, tag="clump")
-        S.paint_ramp(cl, S.OAK_RAMP, rng, ymin, ymax, up=0.30, height=0.48, noise=0.10)
+        S.paint_ramp(cl, S.OAK_RAMP, rng, ymin, ymax, up=0.42, height=0.50, noise=0.13)
         parts.append(cl)
     # limbs: thick tapered boughs from the stem to the lobes that need one
     forked = arch in ("twin", "lopsided")

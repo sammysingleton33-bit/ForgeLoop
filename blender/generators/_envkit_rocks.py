@@ -241,10 +241,10 @@ def ore(variant, rng):
         for i in range(len(m.f)):
             m.c[i] = S.mul(m.c[i], 0.78)
     parts = list(lumps)
-    for i in range(5):
-        a = yaw + (i + 1) * 1.25 + rng.uniform(-0.2, 0.2)
-        r = 2.6 + (i % 2) * 0.5
-        y = 2.6 + (i % 3) * 1.1
+    for i in range(7 if kind != "crystal" else 5):
+        a = yaw + (i + 1) * (6.28 / (7 if kind != "crystal" else 5)) + rng.uniform(-0.2, 0.2)
+        r = 2.5 + (i % 2) * 0.6
+        y = 2.4 + (i % 3) * 1.15
         px, pz = math.cos(a) * r, math.sin(a) * r
         if kind == "crystal":
             hgt = rng.uniform(2.6, 4.2)
@@ -261,10 +261,10 @@ def ore(variant, rng):
             cr.rot(rng.uniform(-30, 30), "x").rot(rng.uniform(-30, 30), "z").move(px, y - 0.6, pz)
             parts.append(S.flat(cr))
         else:
-            nug = S.blob(rng, 10, 1.65, 1.2, 1.45, px, y, pz, jitter=0.14, color=col, tag="ore", yaw=rng.uniform(0, math.tau))
+            nug = S.blob(rng, 10, 1.95, 1.4, 1.7, px, y, pz, jitter=0.14, color=col, tag="ore", yaw=rng.uniform(0, math.tau))
             for fi, face in enumerate(nug.f):
                 n = S.face_normal(nug, face)
-                nug.c[fi] = S.mix(S.mul(col, 0.72), S.mix(col, (1, 1, 1), 0.28 if kind == "gold" else 0.18), min(1.0, 0.5 + 0.5 * n[1] + rng.uniform(-0.15, 0.15)))
+                nug.c[fi] = S.mix(S.mul(col, 0.7), S.mix(col, (1, 1, 1), 0.05 if kind == "gold" else 0.14), min(1.0, 0.45 + 0.5 * n[1] + rng.uniform(-0.15, 0.15)))
             parts.append(nug)
     return S.assemble(parts), {"kind": kind}
 
