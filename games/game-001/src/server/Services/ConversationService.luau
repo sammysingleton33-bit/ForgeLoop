@@ -1125,14 +1125,17 @@ function ConversationService:start()
 		end)
 	)
 	self._remotes:handle("Kingdom.Converse", function(player: any, entityId: number)
+		self:_sim():touchRuler(player.UserId) -- an input, not a passive poll (D-054 idle senior)
 		return self:converse(player, entityId)
 	end)
 	self._remotes:handle("Kingdom.EndConversation", function(player: any, entityId: number)
+		self:_sim():touchRuler(player.UserId)
 		return self:endConversation(player, entityId)
 	end)
 	self._remotes:handle(
 		"Kingdom.Choose",
 		function(player: any, entityId: number, scenarioId: string, responseId: string)
+			self:_sim():touchRuler(player.UserId)
 			return self:choose(player, entityId, scenarioId, responseId)
 		end
 	)
