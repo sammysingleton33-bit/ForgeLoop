@@ -139,6 +139,20 @@ describe("LeadershipService.record", function()
 		expect(warnings).toBe(1)
 	end)
 
+	it("refuses a ruler act with no ruler named, logging it once per kingdom and act", function()
+		local w = boot()
+		expect(w.service:record("crimson", nil, "fedRatioKept", 1)).toBeNil()
+		expect(w.service:record("crimson", nil, "fedRatioKept", 1)).toBeNil()
+		expect(w.service:record("crimson", nil, "starvation", 1)).toBeNil() -- another act: its own line
+		local warnings = 0
+		for _, entry in w.env.mock.logs do
+			if entry.level == "warn" and entry.message == "LeadershipService: ruler act without a ruler" then
+				warnings += 1
+			end
+		end
+		expect(warnings).toBe(2)
+	end)
+
 	it("refuses an act for a ruler who is not seated in that kingdom, logging it once", function()
 		local w = boot()
 		expect(w.service:record("crimson", 99, "fedRatioKept", 1)).toBe(nil)

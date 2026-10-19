@@ -22,9 +22,9 @@ M = [
  ("FL-0075", A, 'end, false, high, table.unpack(binding.keys))', 'end, false, 1, table.unpack(binding.keys))', "DuelInput", "binds the five actions at High priority", "game"),
  ("FL-0075", A, 'actions:UnbindAction(name)', 'local _ = name', "DuelInput", "binds the five actions at High priority only while in arena mode, and unbinds them after", "game"),
  ("FL-0075", A, 'dodge = { name = "ForgeDuelDodge", keys = { Enum.KeyCode.Q, Enum.KeyCode.ButtonB } },', 'dodge = { name = "ForgeDuelDodge", keys = { Enum.KeyCode.Q, Enum.KeyCode.ButtonA } },', "DuelInput", "binds the five actions", "game"),
- ("FL-0075", A, 'return down == true and self:_send(action)', 'return self:_send(action)', "DuelInput", "never on the release", "game"),
- ("FL-0075", A, 'return not wasHeld and self:_send(action)', 'return self:_send(action)', "DuelInput", "block is held", "game"),
- ("FL-0075", A, 'return next(held) == nil and self:_send(release)', 'return self:_send(release)', "DuelInput", "block is held", "game"),
+ ("FL-0075", A, 'return down == true and (self:_send(action))', 'return (self:_send(action))', "DuelInput", "never on the release", "game"),
+ ("FL-0075", A, 'return not wasHeld and (self:_send(action))', 'return (self:_send(action))', "DuelInput", "block is held", "game"),
+ ("FL-0075", A, 'return next(held) == nil and self:_release(release)', 'return self:_release(release)', "DuelInput", "block is held", "game"),
  ("FL-0075", A, '\t\tself:_releaseAll()\n', '', "DuelInput", "leaving mid-block ends it", "game"),
  ("FL-0075", A, 'if not self.active or type(action) ~= "string" or not table.find(Def.ACTIONS, action) then', 'if type(action) ~= "string" then', "DuelInput", "press() sends nothing outside arena mode", "game"),
  ("FL-0075", A, 'if not self._warned[key] then', 'if true then', "DuelInput", "without a DuelController it sends nothing and logs once", "game"),
@@ -48,4 +48,10 @@ M = [
  ("FL-0075", A, '\tif self._gui == nil then\n\t\treturn nil\n\tend\n\treturn Def.extent', '\treturn Def.extent', "DuelInput", "a touch device gets the buttons under PlayerGui only in arena mode", "game"),
  ("FL-0075", A, '\t\tself._small = small\n', '', "DuelInput", "a touch device gets the buttons under PlayerGui only in arena mode", "game"),
  ("FL-0075", A, 'left = math.max(left, math.abs(button.x) + button.size / 2)', 'left = math.max(left, math.abs(button.x))', "DuelInput", "a touch device gets the buttons under PlayerGui only in arena mode", "game"),
+ # FORGE-00 (#249 verification): press() reports act()'s answer; a refused blockEnd is retried until sent
+ ("FL-0075", A, 'return result == true, result ~= true', 'return ok, false', "DuelInput", "a blockEnd the real DuelController's empty bucket refuses", "game"),
+ ("FL-0075", A, 'if sent or not refused or self._retrying[release] then', 'if true then', "DuelInput", "a blockEnd the real DuelController's empty bucket refuses", "game"),
+ ("FL-0075", A, '\t\t\tif self:_send(release) then\n\t\t\t\tbreak', '\t\t\tif false then\n\t\t\t\tbreak', "DuelInput", "a blockEnd the real DuelController's empty bucket refuses", "game"),
+ ("FL-0075", A, 'self._retrying[release] = nil -- held again', '-- held again', "DuelInput", "a blockEnd the real DuelController's empty bucket refuses", "game"),
+ ("FL-0075", A, 'return next(held) == nil and self:_release(release)', 'return next(held) == nil and (self:_send(release))', "DuelInput", "a blockEnd the real DuelController's empty bucket refuses", "game"),
 ]

@@ -30,6 +30,12 @@ Studio session and place can import both kits: do the citizens first, then this 
 5. Delete the leftover `env_kit` model from Workspace, **File > Save**, and Publish if you play from Roblox.
 
 ## 3. Look at it (Play, F5) and measure
+**First, the Play-test check (a game script has fewer rights than the command bar, so a smoke test that passes in the command bar can still fall back
+in Play):** in the **server** Output there must be **no** line `Kit.prop: the imported ... is not used (...)`, and in the server command bar
+`print(require(game.ReplicatedStorage.Game.Kit.Kit).envMeshStatus())` must show `accepted` equal to the number of props (56 with the dressing) and an empty `rejected`.
+(CollisionFidelity is set by the import script, not by the Kit: a game script cannot write it. Hull on each `Body` is in the saved `EnvKit.rbxm`.)
+If the Output has `not used` lines, stop and send them to FORGE-02: those ids are still the part-built stand-ins.
+
 Forests, lone trees, bushes, rocks, flowers and the farm fields from the **aerial camera** and the **82-stud gameplay camera**, next to the kingdom buildings and the
 citizens (does it look like one world? are trunks and rocks solid for the ruler? do the resource nodes sit where the stand-ins did?). In Explorer, `Workspace.World.Props`
 holding Models with a `Body` MeshPart are the mesh props; the old multi-part Models are the stand-ins (the Kit falls back per id). Then the **300-citizen phone stress

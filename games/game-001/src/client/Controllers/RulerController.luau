@@ -10,6 +10,11 @@
 		  sprint ends when the ruler stops.
 		- Eased speed. WalkSpeed moves toward the walk or sprint speed at `accel` studs/s², so starting
 		  or stopping a sprint never lurches.
+		- The Crown Arena duel (FL-0139, FORGE-07 #255 M1): while DuelController:isChampion() is true,
+		  WalkSpeed is held at config Arena's ring.walkSpeed (the speed ArenaService holds on the
+		  server; the controller's own walkSpeed if that config is missing) and sprint is ignored, so
+		  neither champion outruns the other. A client write on its own character wins for movement,
+		  so this must be the client's too. After the duel (crowning, cancel) sprint works again.
 		- Smooth turning (turn.mode = "align"). Humanoid.AutoRotate is off, and an AlignOrientation
 		  on the root turns the ruler toward its move direction at most turn.maxAngularVelocity rad/s.
 		  turn.mode = "engine" restores Roblox's own AutoRotate (the fallback if Studio shows a problem).
@@ -31,6 +36,7 @@
 ]]
 
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+local ArenaConfig = require("@game/ReplicatedStorage/Forge/Config/Arena")
 
 local Def = {
 	name = "RulerController",
@@ -100,13 +106,15 @@ local function find(character: any, method: string, arg: string): any
 	return if ok then result else nil
 end
 
--- opts (specs): { config, player, actions (ContextActionService-like), runService }
+-- opts (specs): { config, player, actions (ContextActionService-like), runService, arena (config Arena) }
 function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 	local options = opts or {}
 	return setmetatable({
 		_env = env,
 		_registry = registry,
 		_config = options.config or Def.DEFAULTS,
+		_arena = options.arena or ArenaConfig,
+		_duel = nil :: any,
 		_playerOverride = options.player,
 		_actionsOverride = options.actions,
 		_runServiceOverride = options.runService,
@@ -238,9 +246,15 @@ function Controller:update(dt: number)
 	local moving = direction.Magnitude >= config.moveDeadzone
 	local state, sprinting = Def.sprintStep(self._sprint, moving)
 	self._sprint = state
-	self.sprinting = sprinting
-	local target = if sprinting then config.sprintSpeed else config.walkSpeed
-	humanoid.WalkSpeed = Def.approach(humanoid.WalkSpeed, target, config.accel * dt)
+	local ring = self:_ringSpeed()
+	if ring ~= nil then
+		self.sprinting = false -- a champion never sprints (FL-0139)
+		humanoid.WalkSpeed = ring -- held, not eased: the server holds the same value
+	else
+		self.sprinting = sprinting
+		local target = if sprinting then config.sprintSpeed else config.walkSpeed
+		humanoid.WalkSpeed = Def.approach(humanoid.WalkSpeed, target, config.accel * dt)
+	end
 	local align = self._align
 	if align ~= nil then
 		local facing = Def.facing(direction, config.moveDeadzone)
@@ -248,6 +262,28 @@ function Controller:update(dt: number)
 			align.CFrame = facing
 		end
 	end
+end
+
+-- The duel's walk speed while this player is a Crown Arena champion, else nil (FL-0139).
+function Controller:_ringSpeed(): number?
+	local duel = self._duel
+	if duel == nil then
+		duel = self._registry:find("DuelController")
+		self._duel = duel
+	end
+	if duel == nil or type(duel.isChampion) ~= "function" then
+		return nil
+	end
+	local ok, champion = pcall(duel.isChampion, duel)
+	if not ok or champion ~= true then
+		return nil
+	end
+	local ring = if type(self._arena) == "table" then self._arena.ring else nil
+	local speed = if type(ring) == "table" then ring.walkSpeed else nil
+	if type(speed) == "number" and speed == speed and speed > 0 and speed ~= math.huge then
+		return speed
+	end
+	return self._config.walkSpeed -- no ring config: still no sprint for a champion
 end
 
 function Controller:_onCharacter(character: any)

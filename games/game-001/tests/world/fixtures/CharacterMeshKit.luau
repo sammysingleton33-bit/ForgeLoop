@@ -73,6 +73,7 @@ function MeshKit.assets(data: any, opts: any?): Folder
 				end
 				piece.Size = Vector3.new(def.size[1], def.size[2], def.size[3])
 				piece.Anchored = true -- an imported piece sits anchored in Workspace
+				piece.CollisionFidelity = Enum.CollisionFidelity.Hull -- what the Studio import left; the Kit must not write it (Plugin security)
 				piece.Color = Color3.fromRGB(0, 255, 0) -- the Kit must paint it, not inherit it
 				piece.Material = Enum.Material.Neon
 			elseif piece:IsA("BasePart") then

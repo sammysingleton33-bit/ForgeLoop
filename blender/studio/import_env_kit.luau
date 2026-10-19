@@ -248,6 +248,9 @@ local function importEnvKit(world, settings)
 		mesh.Massless = true
 		mesh.CastShadow = true
 		mesh.Transparency = 0
+		-- the physics shape of the Body: set here (the command bar has plugin rights); a game script cannot write it, so the
+		-- Kit does not, and the saved Forge.Assets Model carries it
+		mesh.CollisionFidelity = Enum.CollisionFidelity.Hull
 		mesh.Parent = model
 		model.PrimaryPart = rootPart
 		return model
