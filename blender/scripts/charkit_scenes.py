@@ -93,6 +93,17 @@ def main(argv):
             else:
                 kit.spawn(job, ckit_rigload.job_look(i), "crimson", x, 0, a.yaw, tag=f"{job}_")
         ckit_scene.gameplay(cam, (0, 2.8, 0), a.dist or 46.0, a.pitch or 12.0, fov=70)
+        # pixel position of every identity's feet (preview axes: x mirrored), for labelled lineup sheets
+        from bpy_extras.object_utils import world_to_camera_view
+        from mathutils import Vector
+
+        bpy.context.view_layer.update()
+        pts = {}
+        for i, job in enumerate(JOBS):
+            x = ((n - 1) / 2 - i) * 6.2
+            co = world_to_camera_view(sc, cam, Vector((-x, 0.0, 0.0)))
+            pts[job] = [round(co.x * w, 1), round((1 - co.y) * h, 1)]
+        Path(str(a.out) + ".labels.json").write_text(json.dumps(pts))
     elif scene == "looks":
         grid = look_grid()
         jobs = ["idle", "idle", "idle", "idle", "farmer", "builder"]
