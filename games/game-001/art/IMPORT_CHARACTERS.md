@@ -45,9 +45,10 @@ back in Play):** only the **client** builds citizen rigs, so look there, not at 
 2. In the **client** Output (View > Output, Client) there is no line starting `Kit.character: mesh rig not used` (the Kit says it once for each reason a rig fell back).
 3. In the **client** command bar (Test tab > Current: Client), `local s = require(game.ReplicatedStorage.Game.Kit.Kit).characterMeshStatus(); print(s.source, s.meshBuilds, s.fallbackBuilds, s.lastFallback)`
    must print `source` true, `meshBuilds` above 0 and no `lastFallback`. If `source` is false the command bar gave you a fresh copy of the module: trust step 1 and tell FORGE-02 both.
-4. **CollisionFidelity (expected to be Default after saving).** The import script sets Box on every piece in the open place (scripts cannot manipulate the property at runtime, the API reference says; the
-   API dump lists it as not saved and not replicated). So `CitizenKit.rbxm` and a `rojo build` will show **Default**: that is expected and nothing depends on it (the pieces do not collide or take queries).
-   If you want to look, select a piece right after the import: Box. Tell FORGE-02 only if the Output says the script could not set it.
+4. **CollisionFidelity (UNVERIFIED: please check and report).** The import script sets Box on every piece in the open place. Scripts cannot manipulate the property at runtime (API reference), and the API dump lists it as
+   not saved and not replicated, so **we expect `CitizenKit.rbxm` and a `rojo build` to show Default instead of Box; that is a guess from the dump, nobody has looked.** Check it: save `CitizenKit.rbxm`, **close the
+   place and reopen the saved file** (or the `rojo build` output), select one piece and read **CollisionFidelity** in Properties, and tell FORGE-02 what it says. The pieces are CanCollide false and CanQuery false, so
+   nothing should depend on it for them.
 5. **Imported with an earlier build?** Nothing to redo for CollisionFidelity (it is not saved either way). Re-import only if Explorer shows plain Parts (step 1).
 If any of this fails, stop and send the Output and what Explorer shows to FORGE-02: those citizens are still the part-built ones.
 
