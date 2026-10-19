@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "building_smithy_01": {
+      "geometry_hash": "fdc9aee6816a51e2",
+      "verdict": "PASS"
+    },
+    "building_smithy_02": {
+      "geometry_hash": "83c4f7ee5b59ce02",
+      "verdict": "PASS"
+    },
+    "building_smithy_03": {
+      "geometry_hash": "2ceaf8e487e54776",
+      "verdict": "PASS"
+    },
+    "building_smithy_04": {
+      "geometry_hash": "29ae2c8c91ca9f78",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_smithy_05": {
+      "geometry_hash": "2f5a168ca6cfcc69",
+      "verdict": "PASS"
+    },
+    "building_smithy_06": {
+      "geometry_hash": "6c5239ab4e2a6031",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "building_smithy",
+  "generator_version": 1,
+  "notes": "01, 02, 03, 05, 06 pass; 04 NEEDS-WORK. All six read as smithies (chimney, forge glow, anvil sign) and each can be told apart in grayscale at 85 studs; closest pairs are 01/02 (single-storey sheds) and 03/06 (two-storey plus lean-to), separated by chimney position, gable end and stone wing. 04 fails readability: its only emblem is a tiny gold sun on a small cream disc on a gold banner; in grayscale at gameplay distance it reads as a light dot or rosette, not a sun (effectively gold on gold). Fix: large dark-ochre sun with pointed rays on a cream field, no ring, and/or a gable sun plaque like the 05 crown. Kit notes: crowns here are plain cream vs gold with band on soldier/banner, unify; emblem presence is thin on all variants (one small banner), consider a gable plaque on each. No flame. Tris 6512-7760 of 8000 (06 at 97%).",
+  "reviewer": "fresh-context subagent",
+  "round": 6,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

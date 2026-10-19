@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "plant_flowers_01": {
+      "geometry_hash": "46744b18a65536df",
+      "verdict": "PASS"
+    },
+    "plant_flowers_02": {
+      "geometry_hash": "98f88f3e75ae4720",
+      "verdict": "PASS"
+    },
+    "plant_flowers_03": {
+      "geometry_hash": "69692887bcb7b241",
+      "verdict": "PASS"
+    },
+    "plant_flowers_04": {
+      "geometry_hash": "8ffc9ce3ac8af636",
+      "verdict": "PASS"
+    },
+    "plant_flowers_05": {
+      "geometry_hash": "30843e52dcfafe20",
+      "verdict": "PASS"
+    },
+    "plant_flowers_06": {
+      "geometry_hash": "41b4907fcdf89878",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "plant_flowers",
+  "generator_version": 1,
+  "notes": "Six clearly different species (wildflower, tulip, daisy, sunflower, lavender, poppy), and most read by colour at 40 studs. Every variant sits on a raised hard-edged green turf disc that will clash with terrain, flowers_01 stems are spindly against the chunky kit, flowers_03 white daisies nearly vanish, and 01 is 788 of 800 tris.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 3,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 5
+  },
+  "verdict": "PASS"
+}

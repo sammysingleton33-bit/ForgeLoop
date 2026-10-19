@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "building_tavern_01": {
+      "geometry_hash": "9e919989676e9aa9",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_tavern_02": {
+      "geometry_hash": "a8fce00670f0bfcd",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_tavern_03": {
+      "geometry_hash": "8268b584a166d726",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_tavern_04": {
+      "geometry_hash": "b1f85ae88d1cf9a3",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_tavern_05": {
+      "geometry_hash": "1b5ba371f731c6f0",
+      "verdict": "NEEDS-WORK"
+    },
+    "building_tavern_06": {
+      "geometry_hash": "124e2faf926cdbb7",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "building_tavern",
+  "generator_version": 1,
+  "notes": "Same 3-storey box x6; thatch makes blue/green/red read yellow; sign too small to identify a tavern.",
+  "reviewer": "fresh-context subagent (images + rubric only)",
+  "round": 4,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 3,
+    "proportions": 3,
+    "readability": 2,
+    "silhouette": 3,
+    "triangle_cost": 3,
+    "variation": 3
+  },
+  "verdict": "NEEDS-WORK"
+}

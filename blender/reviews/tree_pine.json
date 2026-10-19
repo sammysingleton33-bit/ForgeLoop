@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "tree_pine_01": {
+      "geometry_hash": "53de0abb67a646b5",
+      "verdict": "PASS"
+    },
+    "tree_pine_02": {
+      "geometry_hash": "408d34a462c22a47",
+      "verdict": "PASS"
+    },
+    "tree_pine_03": {
+      "geometry_hash": "6301b1b6533d55d3",
+      "verdict": "PASS"
+    },
+    "tree_pine_04": {
+      "geometry_hash": "c9192d1f06b9d245",
+      "verdict": "PASS"
+    },
+    "tree_pine_05": {
+      "geometry_hash": "8ad9c5f7dc7d4212",
+      "verdict": "PASS"
+    },
+    "tree_pine_06": {
+      "geometry_hash": "5e98e6b589944891",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "tree_pine",
+  "generator_version": 1,
+  "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+  "reviewer": "fresh-context subagent",
+  "round": 1,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 4,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

@@ -1,0 +1,550 @@
+{
+  "assets": [
+    {
+      "budget_class": "rock",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 14.556,
+        "y": 7.855,
+        "z": 14.345
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_boulder_l_01.fbx",
+        "validation": "exports/rock_boulder_l_01.validation.json"
+      },
+      "generator": "rock_boulder",
+      "generator_version": 2,
+      "geometry_hash": "5b99062938815a12",
+      "id": "rock_boulder_l_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "moss": true,
+        "shape": "dome",
+        "size": "l",
+        "stone": "warm",
+        "variant": 1
+      },
+      "preview": "previews/rock_boulder.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Faceted, chunky boulders with a good size/shape spread that read clearly at 58 studs, all under the 1000-tri budget. Polish only: s_03 moss is two flat hexagon stickers, m_03 moss is close to a lid-cap, l_02 sits top-heavy on a narrow base, and m_02 (540) / l_02 (920) spend many tris on few visible facets.",
+        "review_file": "reviews/rock_boulder.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7306,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1000,
+        "lod0": 832,
+        "lod1": 290
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "rock",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 16.857,
+        "y": 20.324,
+        "z": 14.723
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_boulder_l_02.fbx",
+        "validation": "exports/rock_boulder_l_02.validation.json"
+      },
+      "generator": "rock_boulder",
+      "generator_version": 2,
+      "geometry_hash": "2759a8863346f365",
+      "id": "rock_boulder_l_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "moss": true,
+        "shape": "tall",
+        "size": "l",
+        "stone": "granite",
+        "variant": 2
+      },
+      "preview": "previews/rock_boulder.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Faceted, chunky boulders with a good size/shape spread that read clearly at 58 studs, all under the 1000-tri budget. Polish only: s_03 moss is two flat hexagon stickers, m_03 moss is close to a lid-cap, l_02 sits top-heavy on a narrow base, and m_02 (540) / l_02 (920) spend many tris on few visible facets.",
+        "review_file": "reviews/rock_boulder.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7307,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1000,
+        "lod0": 920,
+        "lod1": 322
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "rock",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 14.122,
+        "y": 5.938,
+        "z": 15.297
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_boulder_l_03.fbx",
+        "validation": "exports/rock_boulder_l_03.validation.json"
+      },
+      "generator": "rock_boulder",
+      "generator_version": 2,
+      "geometry_hash": "4825917bd069027e",
+      "id": "rock_boulder_l_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "moss": false,
+        "shape": "table",
+        "size": "l",
+        "stone": "stone",
+        "variant": 3
+      },
+      "preview": "previews/rock_boulder.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Faceted, chunky boulders with a good size/shape spread that read clearly at 58 studs, all under the 1000-tri budget. Polish only: s_03 moss is two flat hexagon stickers, m_03 moss is close to a lid-cap, l_02 sits top-heavy on a narrow base, and m_02 (540) / l_02 (920) spend many tris on few visible facets.",
+        "review_file": "reviews/rock_boulder.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7308,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1000,
+        "lod0": 694,
+        "lod1": 242
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "rock",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 7.281,
+        "y": 4.239,
+        "z": 7.87
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_boulder_m_01.fbx",
+        "validation": "exports/rock_boulder_m_01.validation.json"
+      },
+      "generator": "rock_boulder",
+      "generator_version": 2,
+      "geometry_hash": "f77c76709f111b53",
+      "id": "rock_boulder_m_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "moss": true,
+        "shape": "dome",
+        "size": "m",
+        "stone": "stone",
+        "variant": 1
+      },
+      "preview": "previews/rock_boulder.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Faceted, chunky boulders with a good size/shape spread that read clearly at 58 studs, all under the 1000-tri budget. Polish only: s_03 moss is two flat hexagon stickers, m_03 moss is close to a lid-cap, l_02 sits top-heavy on a narrow base, and m_02 (540) / l_02 (920) spend many tris on few visible facets.",
+        "review_file": "reviews/rock_boulder.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7303,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1000,
+        "lod0": 736,
+        "lod1": 256
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "rock",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 8.911,
+        "y": 9.168,
+        "z": 9.03
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_boulder_m_02.fbx",
+        "validation": "exports/rock_boulder_m_02.validation.json"
+      },
+      "generator": "rock_boulder",
+      "generator_version": 2,
+      "geometry_hash": "e5d6f2d27b870c3a",
+      "id": "rock_boulder_m_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "moss": false,
+        "shape": "tall",
+        "size": "m",
+        "stone": "warm",
+        "variant": 2
+      },
+      "preview": "previews/rock_boulder.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Faceted, chunky boulders with a good size/shape spread that read clearly at 58 studs, all under the 1000-tri budget. Polish only: s_03 moss is two flat hexagon stickers, m_03 moss is close to a lid-cap, l_02 sits top-heavy on a narrow base, and m_02 (540) / l_02 (920) spend many tris on few visible facets.",
+        "review_file": "reviews/rock_boulder.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7304,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1000,
+        "lod0": 540,
+        "lod1": 188
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "rock",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 9.456,
+        "y": 3.396,
+        "z": 8.124
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_boulder_m_03.fbx",
+        "validation": "exports/rock_boulder_m_03.validation.json"
+      },
+      "generator": "rock_boulder",
+      "generator_version": 2,
+      "geometry_hash": "888d1c4cae738c9d",
+      "id": "rock_boulder_m_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "moss": true,
+        "shape": "table",
+        "size": "m",
+        "stone": "granite",
+        "variant": 3
+      },
+      "preview": "previews/rock_boulder.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Faceted, chunky boulders with a good size/shape spread that read clearly at 58 studs, all under the 1000-tri budget. Polish only: s_03 moss is two flat hexagon stickers, m_03 moss is close to a lid-cap, l_02 sits top-heavy on a narrow base, and m_02 (540) / l_02 (920) spend many tris on few visible facets.",
+        "review_file": "reviews/rock_boulder.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7305,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1000,
+        "lod0": 686,
+        "lod1": 240
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "rock",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 3.993,
+        "y": 2.303,
+        "z": 4.245
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_boulder_s_01.fbx",
+        "validation": "exports/rock_boulder_s_01.validation.json"
+      },
+      "generator": "rock_boulder",
+      "generator_version": 2,
+      "geometry_hash": "51850113dc88710c",
+      "id": "rock_boulder_s_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "moss": false,
+        "shape": "dome",
+        "size": "s",
+        "stone": "granite",
+        "variant": 1
+      },
+      "preview": "previews/rock_boulder.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Faceted, chunky boulders with a good size/shape spread that read clearly at 58 studs, all under the 1000-tri budget. Polish only: s_03 moss is two flat hexagon stickers, m_03 moss is close to a lid-cap, l_02 sits top-heavy on a narrow base, and m_02 (540) / l_02 (920) spend many tris on few visible facets.",
+        "review_file": "reviews/rock_boulder.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7300,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1000,
+        "lod0": 140,
+        "lod1": 48
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "rock",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 3.419,
+        "y": 4.239,
+        "z": 3.674
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_boulder_s_02.fbx",
+        "validation": "exports/rock_boulder_s_02.validation.json"
+      },
+      "generator": "rock_boulder",
+      "generator_version": 2,
+      "geometry_hash": "684bebcc0b19f9c2",
+      "id": "rock_boulder_s_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "moss": false,
+        "shape": "tall",
+        "size": "s",
+        "stone": "stone",
+        "variant": 2
+      },
+      "preview": "previews/rock_boulder.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Faceted, chunky boulders with a good size/shape spread that read clearly at 58 studs, all under the 1000-tri budget. Polish only: s_03 moss is two flat hexagon stickers, m_03 moss is close to a lid-cap, l_02 sits top-heavy on a narrow base, and m_02 (540) / l_02 (920) spend many tris on few visible facets.",
+        "review_file": "reviews/rock_boulder.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7301,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1000,
+        "lod0": 144,
+        "lod1": 50
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "rock",
+      "category": "rock",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 3.441,
+        "y": 1.658,
+        "z": 4.488
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/rock_boulder_s_03.fbx",
+        "validation": "exports/rock_boulder_s_03.validation.json"
+      },
+      "generator": "rock_boulder",
+      "generator_version": 2,
+      "geometry_hash": "c9a7ae1dfb201dc7",
+      "id": "rock_boulder_s_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "moss": true,
+        "shape": "table",
+        "size": "s",
+        "stone": "warm",
+        "variant": 3
+      },
+      "preview": "previews/rock_boulder.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Faceted, chunky boulders with a good size/shape spread that read clearly at 58 studs, all under the 1000-tri budget. Polish only: s_03 moss is two flat hexagon stickers, m_03 moss is close to a lid-cap, l_02 sits top-heavy on a narrow base, and m_02 (540) / l_02 (920) spend many tris on few visible facets.",
+        "review_file": "reviews/rock_boulder.md",
+        "reviewer": "fresh-context subagent",
+        "round": 2,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7302,
+      "sockets": {},
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1000,
+        "lod0": 238,
+        "lod1": 82
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 9
+  },
+  "generator": "rock_boulder",
+  "variation": {
+    "closest_pair": [
+      "rock_boulder_s_01",
+      "rock_boulder_s_03"
+    ],
+    "mean_pair_diff": 0.6933,
+    "min_pair_diff": 0.2191,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

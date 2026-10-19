@@ -1,0 +1,511 @@
+{
+  "assets": [
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.54,
+              15.991,
+              0.585
+            ],
+            "name": "trunk",
+            "size": [
+              2.014,
+              31.982,
+              2.014
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 19.932,
+        "y": 40.178,
+        "z": 19.564
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_pine_01.fbx",
+        "validation": "exports/tree_pine_01.validation.json"
+      },
+      "generator": "tree_pine",
+      "generator_version": 1,
+      "geometry_hash": "53de0abb67a646b5",
+      "id": "tree_pine_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "pine",
+        "snow": false,
+        "style": "classic"
+      },
+      "preview": "previews/tree_pine.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7003,
+      "sockets": {
+        "canopy_top": [
+          0.652,
+          39.778,
+          0.946
+        ],
+        "harvest": [
+          0.54,
+          0.0,
+          -0.925
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3864,
+        "lod1": 1352
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.481,
+              12.904,
+              -0.25
+            ],
+            "name": "trunk",
+            "size": [
+              2.186,
+              25.807,
+              2.186
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 20.828,
+        "y": 32.459,
+        "z": 21.361
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_pine_02.fbx",
+        "validation": "exports/tree_pine_02.validation.json"
+      },
+      "generator": "tree_pine",
+      "generator_version": 1,
+      "geometry_hash": "408d34a462c22a47",
+      "id": "tree_pine_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "pine",
+        "snow": false,
+        "style": "broad"
+      },
+      "preview": "previews/tree_pine.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7050,
+      "sockets": {
+        "canopy_top": [
+          -0.902,
+          32.059,
+          -0.331
+        ],
+        "harvest": [
+          -0.481,
+          0.0,
+          -1.889
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3838,
+        "lod1": 1342
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.141,
+              18.079,
+              0.027
+            ],
+            "name": "trunk",
+            "size": [
+              2.021,
+              36.157,
+              2.021
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 16.089,
+        "y": 45.396,
+        "z": 16.334
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_pine_03.fbx",
+        "validation": "exports/tree_pine_03.validation.json"
+      },
+      "generator": "tree_pine",
+      "generator_version": 1,
+      "geometry_hash": "6301b1b6533d55d3",
+      "id": "tree_pine_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "pine",
+        "snow": false,
+        "style": "spruce"
+      },
+      "preview": "previews/tree_pine.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7097,
+      "sockets": {
+        "canopy_top": [
+          -0.622,
+          44.996,
+          -0.14
+        ],
+        "harvest": [
+          -0.141,
+          0.0,
+          -1.489
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3734,
+        "lod1": 1306
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              0.606,
+              14.479,
+              0.201
+            ],
+            "name": "trunk",
+            "size": [
+              2.088,
+              28.959,
+              2.088
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 18.949,
+        "y": 36.399,
+        "z": 18.433
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_pine_04.fbx",
+        "validation": "exports/tree_pine_04.validation.json"
+      },
+      "generator": "tree_pine",
+      "generator_version": 1,
+      "geometry_hash": "c9192d1f06b9d245",
+      "id": "tree_pine_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "pine",
+        "snow": true,
+        "style": "snowy"
+      },
+      "preview": "previews/tree_pine.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7144,
+      "sockets": {
+        "canopy_top": [
+          0.823,
+          35.999,
+          0.215
+        ],
+        "harvest": [
+          0.606,
+          0.0,
+          -1.365
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3864,
+        "lod1": 1352
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.644,
+              16.787,
+              -0.35
+            ],
+            "name": "trunk",
+            "size": [
+              2.097,
+              33.573,
+              2.097
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 17.279,
+        "y": 42.167,
+        "z": 18.021
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_pine_05.fbx",
+        "validation": "exports/tree_pine_05.validation.json"
+      },
+      "generator": "tree_pine",
+      "generator_version": 1,
+      "geometry_hash": "8ad9c5f7dc7d4212",
+      "id": "tree_pine_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "pine_blue",
+        "snow": false,
+        "style": "blue"
+      },
+      "preview": "previews/tree_pine.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7191,
+      "sockets": {
+        "canopy_top": [
+          -0.772,
+          41.767,
+          0.147
+        ],
+        "harvest": [
+          -0.644,
+          0.0,
+          -1.923
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3572,
+        "lod1": 1250
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "tree",
+      "category": "tree",
+      "collision": {
+        "boxes": [
+          {
+            "center": [
+              -0.112,
+              11.687,
+              0.285
+            ],
+            "name": "trunk",
+            "size": [
+              1.321,
+              23.374,
+              1.321
+            ]
+          }
+        ],
+        "fidelity": "None"
+      },
+      "dimensions_studs": {
+        "x": 15.941,
+        "y": 29.418,
+        "z": 14.243
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/tree_pine_06.fbx",
+        "validation": "exports/tree_pine_06.validation.json"
+      },
+      "generator": "tree_pine",
+      "generator_version": 1,
+      "geometry_hash": "5e98e6b589944891",
+      "id": "tree_pine_06",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "leaves": "pine",
+        "snow": false,
+        "style": "young"
+      },
+      "preview": "previews/tree_pine.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Drooping tiered clumps give a clear stylized conifer silhouette with useful snow (04) and teal (05) variants. Minor: 01, 02 and 06 are near-identical cones, and 3166-3864 tris (01 and 04 at 97 percent of budget) is heavy for a simple cone that will be massed in forests.",
+        "review_file": "reviews/tree_pine.md",
+        "reviewer": "fresh-context subagent",
+        "round": 1,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 4,
+          "triangle_cost": 3,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7238,
+      "sockets": {
+        "canopy_top": [
+          -0.032,
+          29.018,
+          -0.005
+        ],
+        "harvest": [
+          -0.112,
+          0.0,
+          -0.706
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 3166,
+        "lod1": 1108
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "tree_pine",
+  "variation": {
+    "closest_pair": [
+      "tree_pine_02",
+      "tree_pine_04"
+    ],
+    "mean_pair_diff": 0.4396,
+    "min_pair_diff": 0.2769,
+    "pass": true,
+    "threshold": 0.08
+  }
+}
