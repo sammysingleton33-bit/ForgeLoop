@@ -470,8 +470,11 @@ kingdom (Studio "Start" with 2 players, both seated rulers of the same kingdom),
 3. When both have voted, or the time runs out, the panel closes as the loadout opens, and each voter sees one toast:
    "<name> fights for <kingdom> in the Crown Arena" (or "You fight…"). The champion is the one most voted for; with a
    tie, the higher leadership.
-4. Phone emulator (667 × 375): the panel sits below the Roblox top bar; the candidate buttons are thumb-sized.
-5. How to play → card 5 says co-rulers vote in 10 seconds and a tie goes to the higher leadership.
+4. Phone emulator (667 × 375): the panel sits below the Roblox top bar; the candidate buttons are thumb-sized. A long
+   display name ends with "…" inside its button.
+5. Tap each candidate ten times in a row, quickly, while the clock runs: every tap answers (the gold moves or the
+   line says "Sending your vote…"); the buttons are not rebuilt by the countdown (FORGE-07 M1 on #265).
+6. How to play → card 5 says co-rulers vote in 10 seconds and a tie goes to the higher leadership.
 
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.

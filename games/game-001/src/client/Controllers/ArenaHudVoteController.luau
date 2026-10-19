@@ -183,8 +183,14 @@ function ArenaHudVoteController:render(metrics: any?)
 		return
 	end
 	local m = metrics or hud:metrics()
-	local key = Signature.of({ model = model, breakpoint = m.breakpoint, width = m.width, height = m.height })
+	-- the countdown is left out of the key: it moves in place (view:tick), and the buttons are only rebuilt when the
+	-- candidates, the votes, the status or the screen change (FORGE-07 M1 on #265)
+	local structure = table.clone(model)
+	structure.seconds = nil
+	structure.clock = nil
+	local key = Signature.of({ model = structure, breakpoint = m.breakpoint, width = m.width, height = m.height })
 	if key == self._key and self.view.instance ~= nil then
+		self.view:tick(model)
 		return
 	end
 	self._key = key

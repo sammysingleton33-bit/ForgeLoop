@@ -59,6 +59,9 @@ function ArenaVoteModel.view(state: any, lookup: any, me: number?, now: number, 
 	if side == nil then
 		return nil
 	end
+	if pick ~= nil and not contains(e.candidates, pick.candidate) then
+		pick = nil -- the ruler voted for has left (ArenaFlow:forfeit drops them and the votes for them)
+	end
 	local candidates = {}
 	local voted = 0
 	for _, id in e.candidates do

@@ -4,7 +4,9 @@
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
+local ArenaConfig = require("@game/ReplicatedStorage/Forge/Config/Arena")
 local ArenaDoubles = require("./doubles/ArenaDoubles")
+local ArenaVote = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaVote")
 local ArenaHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ArenaHudController")
 local ArenaVoteModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaVoteModel")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
@@ -44,9 +46,11 @@ local function newWorld(opts)
 	world.arenaServer = world.server:get("ArenaDouble")
 	world.voteServer = if o.noVote then nil else world.server:get("VoteDouble")
 	world.toasts = {}
+	world.toastKinds = {}
 	local notify = world.hud.notify
 	world.hud.notify = function(self, spec)
 		table.insert(world.toasts, spec.title)
+		table.insert(world.toastKinds, spec.kind)
 		return notify(self, spec)
 	end
 	world.hud:setViewport(o.width or 1920, o.height or 1022)
@@ -96,6 +100,7 @@ describe("ArenaVoteModel (FL-0142)", function()
 		expect(v.votedText).toBe("1 of 3 voted")
 		expect(v.statusKind).toBe("hint")
 		expect(v.status).toContain("Emberhold")
+		expect(v.status).toContain("A tie goes to the higher leadership") -- ArenaFlow._pickChampions
 		local pending = ArenaVoteModel.view(st, lookup, 1, 100, { candidate = 3, status = "pending" })
 		expect(pending.statusKind).toBe("pending")
 		expect(pending.candidates[3].picked).toBe(true)
@@ -106,6 +111,25 @@ describe("ArenaVoteModel (FL-0142)", function()
 		expect(failed.candidates[3].picked).toBe(false)
 		expect(ArenaVoteModel.view(VoteDoubles.state("crimson", { 1, 2 }, 90), lookup, 1, 100).clock).toBe("0 s")
 	end)
+
+	it(
+		"the second kingdom (side b) votes too; a vote for a ruler who left counts as no vote (FORGE-07 M3, L2)",
+		function()
+			local st = VoteDoubles.state("azure", { 7, 1 }, 110, {}, "b")
+			local v = ArenaVoteModel.view(st, lookup, 1, 100)
+			expect(v.side).toBe("b")
+			expect(v.kingdomId).toBe("azure")
+			local both = VoteDoubles.state("crimson", { 2, 3 }, 110)
+			both.vote.b = { kingdom = "azure", candidates = { 1, 7 }, voted = {} }
+			expect(ArenaVoteModel.view(both, lookup, 1, 100).side).toBe("b")
+			expect(ArenaVoteModel.view(both, lookup, 3, 100).side).toBe("a")
+			local left = ArenaVoteModel.view(st, lookup, 1, 100, { candidate = 3, status = "ok" })
+			expect(left.statusKind).toBe("hint")
+			for _, c in left.candidates do
+				expect(c.picked).toBe(false)
+			end
+		end
+	)
 
 	it("the result names the champion once the champions are known", function()
 		local d = ArenaDoubles.duellist(2, "crimson", "loyal")
@@ -281,6 +305,7 @@ describe("Arena vote panel (FL-0142)", function()
 		expect(panel(world)).toBeNil()
 		expect(#world.toasts).toBe(1)
 		expect(world.toasts[1]).toBe("Mira fights for Emberhold in the Crown Arena")
+		expect(world.toastKinds[1]).toBe("info")
 		world.arenaServer:setState({
 			stage = "intro",
 			endsAt = world.env.serverTimeNow() + 12,
@@ -316,6 +341,79 @@ describe("Arena vote panel (FL-0142)", function()
 			end
 		end
 	)
+
+	it("the countdown moves in place: the buttons are not rebuilt while nothing else changes (FORGE-07 M1)", function()
+		world = newWorld()
+		open(world, { 1, 2 }, 9.5)
+		local button = find(panel(world), "Candidate_2")
+		world:advance(3)
+		expect(find(panel(world), "Candidate_2")).toBe(button)
+		expect(button.Parent).toBeTruthy()
+		expect(find(panel(world), "VoteClock"):FindFirstChildWhichIsA("TextLabel").Text).toBe("7 s")
+		world.hud:setViewport(667, 375) -- a new screen rebuilds it
+		world:advance(0.3)
+		expect(find(panel(world), "Candidate_2") ~= button).toBe(true)
+	end)
+
+	it("the second kingdom's rulers get the panel too (side b) and their vote is sent (FORGE-07 M3)", function()
+		world = newWorld()
+		world.voteServer:open("crimson", { 1, 2 }, world.env.serverTimeNow() + 10, "b")
+		world:advance(0.3)
+		expect(panel(world):GetAttribute("side")).toBe("b")
+		tap(find(panel(world), "Candidate_2"))
+		world:advance(0.3)
+		expect(world.voteServer.votes[1]).toBe(2)
+	end)
+
+	it("long names are cut to fit their buttons; the full name stays on the button (FORGE-07 M2)", function()
+		world = newWorld({ width = 667, height = 375 })
+		local names = { [3] = "Maximiliano_The_Great", [4] = "WWWWWWWWWWWWWWWWWWWW" }
+		local nameOf = world.hud._nameOf
+		world.hud._nameOf = function(self, id)
+			return names[id] or nameOf(self, id)
+		end
+		open(world, { 1, 2, 3, 4 })
+		for _, id in { 3, 4 } do
+			local b = find(panel(world), `Candidate_{id}`)
+			expect(b:GetAttribute("fullName")).toBe(names[id])
+			local label = b:FindFirstChildWhichIsA("TextLabel", true)
+			expect(string.sub(label.Text, -3)).toBe("…")
+			expect(ArenaVote.textWidth(label.Text)).toBeLessThan(b.Size.X.Offset - ArenaVote.PAD + 1)
+			expect(label.TextTruncate).toBe(Enum.TextTruncate.AtEnd) -- Roblox ends it with "…" at the button's edge
+			expect(label.Size.X.Offset).toBe(b.Size.X.Offset - ArenaVote.PAD)
+		end
+		expect(ArenaVote.shorten("Mira", 120)).toBe("Mira")
+		expect(ArenaVote.textWidth("WWW")).toBeGreaterThan(ArenaVote.textWidth("iii") * 3)
+	end)
+
+	it(
+		"everything fits inside the panel on desktop and phone, buttons and gaps within the row (FORGE-07 L1)",
+		function()
+			for _, size in { { 1920, 1022 }, { 667, 375 } } do
+				world = newWorld({ width = size[1], height = size[2] })
+				open(world, { 1, 2, 3, 4 })
+				local box = panel(world):FindFirstChildWhichIsA("Frame")
+				local content = box:FindFirstChild("Content", true)
+				local contentHeight = box.Size.Y.Offset + content.Size.Y.Offset
+				local row = find(box, "Candidates")
+				expect(row.Position.Y.Offset + 44 + 18 + 2).toBeLessThan(contentHeight + 1)
+				local contentWidth = box.Size.X.Offset + content.Size.X.Offset
+				local used = (4 - 1) * ArenaVote.GAP
+				for _, id in { 1, 2, 3, 4 } do
+					used += find(box, `Candidate_{id}`).Size.X.Offset
+				end
+				expect(used).toBeLessThan(contentWidth + 1)
+				expect(panel(world).ZIndex).toBeGreaterThan(9)
+				world:destroy()
+				world = nil
+			end
+		end
+	)
+
+	it("a vote never waits longer than the vote stage lasts (FORGE-07 L1)", function()
+		expect(VoteDef.VOTE_TIMEOUT_SEC).toBeLessThan(ArenaConfig.voteSeconds)
+		expect(VoteDef.VOTE_TIMEOUT_SEC).toBeGreaterThan(1)
+	end)
 
 	it("destroy removes the panel and stops listening, even with a vote on its way", function()
 		world = newWorld()
