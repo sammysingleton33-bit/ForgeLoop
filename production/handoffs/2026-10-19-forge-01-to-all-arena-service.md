@@ -21,18 +21,21 @@ Stacked on #224 (DuelRunner), #223 (ArenaFlow, DuelAI), #222 (acts). The Crown A
 `SupportView = { kingdom, userId (0 for AI-held), score, tier, trend, breakdown, moments (latest 5), offers, slots }`.
 - `ArenaState.a/b.citizens` (additive, FORGE-00's ask): the kingdom's living citizens when the arena starts, whole number, nil when unknown (the stands fill from it, G12.6).
 
+## Switched off until it can be played (FORGE-07's B1)
+`config/Arena.luau` ships `enabled = false`: the host answers `beginArena` with false, so the match goes to the Crown Points result at once, exactly as with no host. The PR that lands the `DuelController`, the ring bounds / WalkSpeed / Reset lock and the Studio gate flips it to true.
+
 ## How it behaves
 - The sender is always `player.UserId`; arguments are never trusted for identity. The server builds the offers, the power of each perk comes from the offer, and every duellist's modifier list goes through `Caps` in DuelRunner.
-- Champions are placed on the ring (config Arena `site`) at the start of the intro; `inRange` and `facing` come from the server's reading of the characters (`poseOf`, HumanoidRootPart).
+- Champions are placed on the marks of `WorldLayout.arena` (position, height from the mark, facing each other) at the start of the intro; a config `site` overrides it for specs and a fallback at the origin serves a bare world; `inRange` and `facing` come from the server's reading of the characters (`poseOf`, HumanoidRootPart).
 - A leaver in the duel stage goes through `DuelRunner:forfeit` (settles over `simultaneousSeconds`, one `ended`), in other stages through `ArenaFlow:forfeit`. The flow ends when `runner:finished()` turns true on a later `step`.
 - Clocks: everything handed to the flow and runner is `serverTimeNow()` seconds (clients compare `endsAt` with it); the runner only steps forward.
 
 ## What I rely on, and what is NOT done (Studio / later slices)
-- **Not in code, needs Studio or the world layout:** ring walls / bounds, WalkSpeed and Reset for champions during the duel, a speed/teleport sanity bound on the pose the server reads (`HumanoidRootPart` is client-owned physics), teleporting onto `WorldLayout.arena` (FORGE-02) instead of the config `site`. Without them an HP leader could run for the whole time cap; the pose-loss pause and forfeit only cover a champion the server cannot find.
+- **Not in code, needs Studio or the world layout:** ring walls / bounds, WalkSpeed and Reset for champions during the duel, a speed/teleport sanity bound on the pose the server reads (`HumanoidRootPart` is client-owned physics), re-placing a champion who resets. Without them an HP leader could run for the whole time cap; the pose-loss pause and forfeit only cover a champion the server cannot find.
 - `LeadershipService:keyCitizens()` returns `{}`: until the key-citizen slice lands the arena offers no pledged perks (only the tier's blessing, e.g. Crowd Rally for Adoring).
 - No `DuelController` client yet, no `MatchPhase "Arena"` (G12.1, additive), no petitions / `Kingdom.FulfilPetition`.
 - The `LeadershipAct` / `KeyCitizenChanged` bus events wait for FORGE-05 to declare them.
 
 ## Evidence (headless only; nothing here was seen in Studio)
-- `sim/ArenaService` 24 specs: host + `closeOut`, GetState/State pushes (none while nothing changed), co-ruler vote over `Arena.Vote`, Choose from the sender, spectator refused, placement, relay shares only, Action from a stranger dropped, KO → crowning → `MatchEnded` for the Crown-Points leader and for the trailing champion, leaver forfeit (settling window), draw by the clock, cancel, second begin refused, AI-only arena, `Duellist.citizens`, SupportService views and reasons.
+- `sim/ArenaService` 27 specs (switched off by default, venue marks, support into the duel, and): host + `closeOut`, GetState/State pushes (none while nothing changed), co-ruler vote over `Arena.Vote`, Choose from the sender, spectator refused, placement, relay shares only, Action from a stranger dropped, KO → crowning → `MatchEnded` for the Crown-Points leader and for the trailing champion, leaver forfeit (settling window), draw by the clock, cancel, second begin refused, AI-only arena, `Duellist.citizens`, SupportService views and reasons.
 - Mutation rows `FL-0071S.py` (ArenaService, SupportService) and the added `FL-0071F.py` rows: see the PR for the last run.
