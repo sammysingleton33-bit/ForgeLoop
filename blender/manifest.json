@@ -7306,22 +7306,22 @@
       },
       "generator": "char_kit",
       "generator_version": 1,
-      "geometry_hash": "749aaae0c1965260",
+      "geometry_hash": "b5db009f5490438d",
       "id": "char_kit_01",
       "kingdom": null,
       "kit": {
         "jobs": {
           "blacksmith": {
             "pieces_max": 14,
-            "tris_max": 852
+            "tris_max": 862
           },
           "builder": {
             "pieces_max": 16,
-            "tris_max": 892
+            "tris_max": 902
           },
           "farmer": {
             "pieces_max": 16,
-            "tris_max": 930
+            "tris_max": 940
           },
           "governor": {
             "pieces_max": 16,
@@ -7329,7 +7329,7 @@
           },
           "hauler": {
             "pieces_max": 16,
-            "tris_max": 942
+            "tris_max": 952
           },
           "healer": {
             "pieces_max": 15,
@@ -7341,11 +7341,11 @@
           },
           "merchant": {
             "pieces_max": 16,
-            "tris_max": 980
+            "tris_max": 990
           },
           "miner": {
             "pieces_max": 16,
-            "tris_max": 920
+            "tris_max": 930
           },
           "soldier": {
             "pieces_max": 15,
@@ -7364,11 +7364,11 @@
             "tris_max": 910
           }
         },
-        "max_citizen_tris": 986,
+        "max_citizen_tris": 990,
         "max_ruler_tris": 978,
         "pieces": 118,
         "style": "B",
-        "total_piece_tris": 7488
+        "total_piece_tris": 7518
       },
       "license": "project-original",
       "material": "M_charkit_vc",
@@ -7442,7 +7442,7 @@
       "texture": "none (vertex colours, 0 bytes of texture memory)",
       "triangles": {
         "budget_lod0": 1000,
-        "lod0": 986,
+        "lod0": 990,
         "lod1": 12
       },
       "validation_pass": true

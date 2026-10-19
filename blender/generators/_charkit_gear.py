@@ -601,7 +601,7 @@ def _head_arc(y, a0, a1, grow, n, droop=0.0):
 def _short_locks(color, sm):
     """Two short locks beside the cheeks (8 triangles each), so that every tuft style shows in the front view."""
     rx, rz, cz = head_radius_at(4.55)
-    return [tube([(sx * (rx + 0.02), 4.72, -0.2), (sx * (rx + 0.1), 4.4, -0.12)], [0.11, 0.07], seg=3, color=color, smooth=sm, tag="hair") for sx in (-1, 1)]
+    return [tube([(sx * (rx + 0.03), 4.74, -0.22), (sx * (rx + 0.12), 4.34, -0.12)], [0.14, 0.09], seg=3, color=color, smooth=sm, tag="hair") for sx in (-1, 1)]
 
 
 def tuft_mesh(S, style, color, max_tris=60):
@@ -614,7 +614,8 @@ def tuft_mesh(S, style, color, max_tris=60):
     if style == 1:  # sideburns in front of the ears + a fringe across the nape
         for sx in (-1, 1):
             rx, rz, cz = head_radius_at(4.5)
-            parts.append(box(0.15, 0.56, 0.2, color=color, smooth=False, tag="hair").rot(sx * 6, "z").move(sx * (rx + 0.04), 4.5, -0.3))
+            parts.append(box(0.18, 0.62, 0.24, color=color, smooth=False, tag="hair").rot(sx * 6, "z").move(sx * (rx + 0.05), 4.48, -0.3))
+        parts.append(tube(_head_arc(4.52, -60, 60, 0.1, 3), 0.15, seg=3, color=color, smooth=sm, tag="hair"))
     elif style == 2:  # a roll of hair round the nape, ear to ear
         parts.append(tube(_head_arc(4.6, -98, 98, 0.15, 5, 0.1), 0.22, seg=3, color=color, smooth=sm, tag="hair"))
     elif style == 3:  # a short ponytail out of the nape
@@ -624,13 +625,13 @@ def tuft_mesh(S, style, color, max_tris=60):
         parts.extend(_short_locks(color, sm))
     elif style == 4:  # locks down both sides of the head to the shoulders
         for sx in (-1, 1):
-            parts.append(tube([(sx * 0.84, 4.8, 0.0), (sx * 1.0, 4.45, 0.06), (sx * 1.02, 4.05, 0.08)], [0.17, 0.2, 0.08], seg=3, color=color,
+            parts.append(tube([(sx * 0.84, 4.8, 0.0), (sx * 1.02, 4.4, 0.06), (sx * 1.04, 3.98, 0.08)], [0.2, 0.24, 0.1], seg=3, color=color,
                               smooth=sm, tag="hair"))
     elif style == 5:  # a ring of curls under the brim at the back and sides
-        for ang in (-62, 0, 62):
+        for ang in (-72, -36, 0, 36, 72):
             a = math.radians(ang)
             rx, rz, cz = head_radius_at(4.68)
-            parts.append(sphere(0.36, 0.34, 0.36, seg=sg, rings=2, color=color, smooth=sm, tag="hair").move(
+            parts.append(sphere(0.33, 0.31, 0.33, seg=sg, rings=2, color=color, smooth=sm, tag="hair").move(
                 math.sin(a) * (rx + 0.1), 4.64, math.cos(a) * (rz + 0.1) + cz))
     else:  # a curtain of hair down the back of the head
         parts.append(loft([(4.14, 0.55, 0.14, 0.0, 0.82), (4.5, 0.84, 0.22, 0.0, 0.74), (4.88, 0.8, 0.18, 0.0, 0.66)],

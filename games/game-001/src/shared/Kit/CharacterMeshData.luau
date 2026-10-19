@@ -2,7 +2,7 @@
 --[[
 	Kit/CharacterMeshData — the imported-mesh citizen kit as data (FL-0135, D-057). GENERATED, do not edit by hand:
 		python3 games/game-001/art/char_kit/rig_to_luau.py
-	source games/game-001/art/char_kit/rig.json  sha256 77e9ec17c72232c8523ccc349932c104043d89fe3bc9119ce900fa2683dc5e9d
+	source games/game-001/art/char_kit/rig.json  sha256 80b90a308935e50a703079c6bfd57a189d6c146d59f28a4cfa0e6a06ec50f0c5
 	126 pieces (118 with a mesh), 13 assemblies, 8 joints.
 	Kit/CharacterMesh.luau reads it; with no pieces (or a CitizenKit folder that lacks one) Kit.character falls back.
 ]]
@@ -143,12 +143,12 @@ return table.freeze({
 		torso_smock = { joint = "Torso", bbox_center = { 0, 3.04, -0.0372 }, size = { 1.8773, 1.68, 1.2655 }, tris = 104, tint = "fixed", slot = "torso", tags = { "smock" } },
 		torso_tabard = { joint = "Torso", bbox_center = { 0, 3.04, 0 }, size = { 1.9899, 1.68, 1.1508 }, tris = 108, tint = "kingdom", tint_factor = 1, slot = "torso", tags = { "soldier", "tabard" } },
 		trim_regal = { joint = "Torso", weld_to = "Torso", bbox_center = { 0, 2.84, 0 }, size = { 2.478, 2.36, 1.5957 }, tris = 100, tint = "fixed", slot = "acc", tags = { "ermine", "governor" } },
-		tuft_01 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.5, -0.3 }, size = { 1.8414, 0.5726, 0.2 }, tris = 24, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
+		tuft_01 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.48, 0.2768 }, size = { 1.8975, 0.6354, 1.3936 }, tris = 38, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
 		tuft_02 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.6044, 0.4597 }, size = { 2.2006, 0.4303, 1.2835 }, tris = 26, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
-		tuft_03 = { joint = "Head", weld_to = "Head", bbox_center = { -0.0152, 4.3681, 0.5156 }, size = { 1.8695, 1.1039, 1.6163 }, tris = 44, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
-		tuft_04 = { joint = "Head", weld_to = "Head", bbox_center = { -0.0444, 4.4576, 0.0446 }, size = { 2.2998, 0.8261, 0.3802 }, tris = 28, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
-		tuft_05 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.64, 0.6351 }, size = { 2.3019, 0.68, 1.1793 }, tris = 24, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
-		tuft_06 = { joint = "Head", weld_to = "Head", bbox_center = { -0.0152, 4.51, 0.3303 }, size = { 1.8695, 0.74, 1.2457 }, tris = 42, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
+		tuft_03 = { joint = "Head", weld_to = "Head", bbox_center = { -0.0199, 4.3681, 0.493 }, size = { 1.94, 1.1039, 1.6615 }, tris = 44, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
+		tuft_04 = { joint = "Head", weld_to = "Head", bbox_center = { -0.0538, 4.4278, 0.0489 }, size = { 2.3984, 0.9085, 0.441 }, tris = 28, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
+		tuft_05 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.64, 0.5656 }, size = { 2.3639, 0.62, 1.2582 }, tris = 40, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
+		tuft_06 = { joint = "Head", weld_to = "Head", bbox_center = { -0.0199, 4.51, 0.3077 }, size = { 1.94, 0.74, 1.2909 }, tris = 42, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
 	},
 	assemblies = {
 		blacksmith = {

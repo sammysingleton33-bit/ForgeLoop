@@ -2485,16 +2485,16 @@
    "weld_to": "Head",
    "bbox_center": [
     0.0,
-    4.5,
-    -0.3
+    4.48,
+    0.2768
    ],
    "size": [
-    1.8414,
-    0.5726,
-    0.2
+    1.8975,
+    0.6354,
+    1.3936
    ],
-   "tris": 24,
-   "verts": 16,
+   "tris": 38,
+   "verts": 25,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -2528,14 +2528,14 @@
    "joint": "Head",
    "weld_to": "Head",
    "bbox_center": [
-    -0.0152,
+    -0.0199,
     4.3681,
-    0.5156
+    0.493
    ],
    "size": [
-    1.8695,
+    1.94,
     1.1039,
-    1.6163
+    1.6615
    ],
    "tris": 44,
    "verts": 30,
@@ -2550,14 +2550,14 @@
    "joint": "Head",
    "weld_to": "Head",
    "bbox_center": [
-    -0.0444,
-    4.4576,
-    0.0446
+    -0.0538,
+    4.4278,
+    0.0489
    ],
    "size": [
-    2.2998,
-    0.8261,
-    0.3802
+    2.3984,
+    0.9085,
+    0.441
    ],
    "tris": 28,
    "verts": 18,
@@ -2574,15 +2574,15 @@
    "bbox_center": [
     0.0,
     4.64,
-    0.6351
+    0.5656
    ],
    "size": [
-    2.3019,
-    0.68,
-    1.1793
+    2.3639,
+    0.62,
+    1.2582
    ],
-   "tris": 24,
-   "verts": 18,
+   "tris": 40,
+   "verts": 30,
    "tint": "hair",
    "slot": "hair",
    "tags": [
@@ -2594,14 +2594,14 @@
    "joint": "Head",
    "weld_to": "Head",
    "bbox_center": [
-    -0.0152,
+    -0.0199,
     4.51,
-    0.3303
+    0.3077
    ],
    "size": [
-    1.8695,
+    1.94,
     0.74,
-    1.2457
+    1.2909
    ],
    "tris": 42,
    "verts": 27,
@@ -3466,11 +3466,11 @@
  "measured": {
   "farmer": {
    "pieces_default": 15,
-   "tris_default": 854,
+   "tris_default": 868,
    "pieces_max": 16,
-   "tris_max": 930,
+   "tris_max": 940,
    "tool_tris": 72,
-   "body_tris": 858,
+   "body_tris": 868,
    "budget": 1000,
    "draw_calls_est": 16,
    "texture_bytes": 0,
@@ -3490,11 +3490,11 @@
   },
   "miner": {
    "pieces_default": 15,
-   "tris_default": 844,
+   "tris_default": 858,
    "pieces_max": 16,
-   "tris_max": 920,
+   "tris_max": 930,
    "tool_tris": 68,
-   "body_tris": 852,
+   "body_tris": 862,
    "budget": 1000,
    "draw_calls_est": 16,
    "texture_bytes": 0,
@@ -3502,11 +3502,11 @@
   },
   "builder": {
    "pieces_default": 15,
-   "tris_default": 816,
+   "tris_default": 830,
    "pieces_max": 16,
-   "tris_max": 892,
+   "tris_max": 902,
    "tool_tris": 56,
-   "body_tris": 836,
+   "body_tris": 846,
    "budget": 1000,
    "draw_calls_est": 16,
    "texture_bytes": 0,
@@ -3514,11 +3514,11 @@
   },
   "hauler": {
    "pieces_default": 15,
-   "tris_default": 866,
+   "tris_default": 880,
    "pieces_max": 16,
-   "tris_max": 942,
+   "tris_max": 952,
    "tool_tris": 94,
-   "body_tris": 848,
+   "body_tris": 858,
    "budget": 1000,
    "draw_calls_est": 16,
    "texture_bytes": 0,
@@ -3526,11 +3526,11 @@
   },
   "blacksmith": {
    "pieces_default": 14,
-   "tris_default": 820,
+   "tris_default": 834,
    "pieces_max": 14,
-   "tris_max": 852,
+   "tris_max": 862,
    "tool_tris": 44,
-   "body_tris": 808,
+   "body_tris": 818,
    "budget": 1000,
    "draw_calls_est": 14,
    "texture_bytes": 0,
@@ -3538,11 +3538,11 @@
   },
   "merchant": {
    "pieces_default": 16,
-   "tris_default": 948,
+   "tris_default": 962,
    "pieces_max": 16,
-   "tris_max": 980,
+   "tris_max": 990,
    "tool_tris": 114,
-   "body_tris": 866,
+   "body_tris": 876,
    "budget": 1000,
    "draw_calls_est": 16,
    "texture_bytes": 0,
@@ -3621,6 +3621,6 @@
    "pass": true
   }
  },
- "geometry_hash": "749aaae0c1965260",
- "fbx_bytes": 542012
+ "geometry_hash": "b5db009f5490438d",
+ "fbx_bytes": 542732
 }

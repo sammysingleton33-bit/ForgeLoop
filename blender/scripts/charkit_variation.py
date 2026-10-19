@@ -126,7 +126,7 @@ def sheet_for(group, before, after, n):
     from PIL import Image, ImageDraw
 
     W, half = 1400, 700
-    tile = 200
+    tile = 350 if n <= 4 else 200
     cols = W // tile
     rows = []
     # portraits: BEFORE and AFTER each as a grid of tiles
@@ -150,10 +150,30 @@ def sheet_for(group, before, after, n):
 
     nrow = 46 if n > 5 else 24  # studs wide
     px40 = 16.0  # pixels per stud at 40 studs on the 2400 x 900 render (the 56-stud tall frame)
-    hw40 = int(nrow * px40 / 2 + 70)
-    rows.append(("BEFORE (left) | AFTER (right): 40 studs from the front", pair("", "", "row40_front", lambda im: (im.width // 2 - hw40, im.height // 2 - 130, im.width // 2 + hw40, im.height // 2 + 100), half)))
-    rows.append(("BEFORE (left) | AFTER (right): 40 studs from behind", pair("", "", "row40_back", lambda im: (im.width // 2 - hw40, im.height // 2 - 130, im.width // 2 + hw40, im.height // 2 + 100), half)))
-    hw170 = int(nrow * 3.0 / 2 + 26)
+    hw40 = int(nrow * px40 / 2 + 40)
+    def full(name, box, tag):
+        d = before if tag == "BEFORE" else after
+        im = Image.open(Path(d) / f"{group}_{name}.png").convert("RGB").crop(box(Image.open(Path(d) / f"{group}_{name}.png")))
+        return im.resize((W, round(im.height * W / im.width)), Image.LANCZOS)
+
+    box40 = lambda im: (im.width // 2 - hw40, im.height // 2 - 130, im.width // 2 + hw40, im.height // 2 + 100)  # noqa: E731
+    if n > 5:  # a long row: BEFORE above AFTER, full width
+        for name, label in (("row40_front", "from the front"), ("row40_back", "from behind")):
+            for tag in ("BEFORE", "AFTER"):
+                rows.append((f"{tag}: 40 studs {label}", full(name, box40, tag)))
+    else:  # a short row: front and behind side by side
+        for tag in ("BEFORE", "AFTER"):
+            d = before if tag == "BEFORE" else after
+            ims = []
+            for name in ("row40_front", "row40_back"):
+                im = Image.open(Path(d) / f"{group}_{name}.png").convert("RGB")
+                c = im.crop(box40(im))
+                ims.append(c.resize((half, round(c.height * half / c.width)), Image.LANCZOS))
+            both = Image.new("RGB", (W, ims[0].height), BG)
+            both.paste(ims[0], (0, 0))
+            both.paste(ims[1], (half, 0))
+            rows.append((f"{tag}: 40 studs from the front (left) and from behind (right)", both))
+    hw170 = max(int(nrow * 3.0 / 2 + 26), 93)
     rows.append(("BEFORE (left) | AFTER (right): 170 studs, 50 degrees down, every citizen turned a different way (enlarged)", pair("", "", "row170", lambda im: (im.width // 2 - hw170, im.height // 2 - 46, im.width // 2 + hw170, im.height // 2 + 30), half)))
     # the same at actual pixels
     ims = []
