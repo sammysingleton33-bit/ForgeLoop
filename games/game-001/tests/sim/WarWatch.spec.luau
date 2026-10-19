@@ -141,4 +141,22 @@ describe("Sim/WarWatch: raids (G9 RaidChanged)", function()
 		sim:advance(30)
 		expect(#named(sim, "RaidChanged")).toBe(0)
 	end)
+	it("names the attacker even when the intruder dies in the tick it arrives (FORGE-07 L1)", function()
+		local sim, k1, k2 = world()
+		Diplomacy.setRelation(sim, "crimson", "azure", "War")
+		local intruder = Military.spawnUnit(sim, k2, "soldier", 60, 0)
+		intruder.order = { kind = "Hold" }
+		intruder.hp = 1
+		local defender = Military.spawnUnit(sim, k1, "soldier", 58, 0)
+		defender.order = { kind = "Attack", kingdomId = "azure" }
+		F.events(sim)
+		for _ = 1, 4 do
+			sim:advance(0.0625)
+		end
+		local raids = named(sim, "RaidChanged")
+		expect(intruder.alive).toBe(false)
+		expect(#raids >= 1).toBe(true)
+		expect(raids[1].on).toBe(true)
+		expect(raids[1].byKingdomIds).toEqual({ "azure" })
+	end)
 end)
