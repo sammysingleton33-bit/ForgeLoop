@@ -1,0 +1,247 @@
+--!strict
+--[[
+	ArenaHudController (FORGE-03, game-001 client, FL-0073) — the Crown Arena's state on the client, and the duel HUD
+	(design crown-arena.md §4-§5; CONTRACTS G12.4, G12.6).
+
+	The feed (LoadoutController and ArenaIntroController read it):
+		Arena.State / Arena.GetState   the public ArenaState (G12.4), followed once the server declares them
+		Arena.Events                   the duel's batched events; through FORGE-01's DuelController.events (G12.6) when
+		                               that controller exists, else straight from the remote
+		Kingdom.Support / GetSupport   the local ruler's SupportView (asked again when the loadout stage starts)
+	Until FORGE-01's ArenaService and SupportService land (FL-0070 / FL-0071) nothing is declared and nothing shows;
+	the specs and scenes use tests/economy/doubles/ArenaDoubles.
+
+	The HUD (UI/ArenaHud over UI/ArenaHudModel) shows in the "duel" stage, for the champions and for everyone
+	watching. During the intro and the duel (and the loadout, for a champion) the kingdom HUD steps aside
+	(KingdomHudController:setArenaFocus), so the crest and pills never sit under the duel strip.
+
+	Depends on KingdomHudController (remotes, store, modal layer, layout).
+	API (specs, scenes, LoadoutController, ArenaIntroController)
+		arena.state (ArenaState?)   arena.support (SupportView?)   arena.track   arena.view
+		arena.changed: Signal<(ArenaState?)>   arena.supportChanged: Signal<(SupportView?)>
+		arena:setState(state)   arena:setSupport(view)   arena:onEvents(batch)   arena:fetchSupport()
+		arena:lookup() -> { kingdom(id), name(userId) }   arena:userId()   arena:focus() -> boolean
+		ArenaHudController.POLL_SEC   .FOCUS
+]]
+
+local ArenaHud = require("../UI/ArenaHud")
+local ArenaHudModel = require("../UI/ArenaHudModel")
+local LoadoutModel = require("../UI/LoadoutModel")
+local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
+
+local ArenaHudController = {}
+ArenaHudController.__index = ArenaHudController
+
+local Def = { name = "ArenaHudController", dependencies = { "KingdomHudController" } }
+
+ArenaHudController.POLL_SEC = 0.25 -- the clocks and a fired perk's glow
+ArenaHudController.FOCUS = table.freeze({ intro = true, duel = true }) -- the kingdom HUD steps aside for everyone
+ArenaHudController.DUEL = "DuelController"
+
+function Def.new(env: any, registry: any)
+	return setmetatable({
+		_env = env,
+		_registry = registry,
+		hud = registry:get("KingdomHudController"),
+		state = nil :: any,
+		support = nil :: any,
+		track = ArenaHudModel.new(),
+		view = nil :: any,
+		changed = Signal.new(),
+		supportChanged = Signal.new(),
+		_connections = {} :: { any },
+		_focus = false,
+	}, ArenaHudController)
+end
+
+local function disconnect(connection: any)
+	pcall(function()
+		if connection.disconnect then
+			connection:disconnect()
+		else
+			connection:Disconnect()
+		end
+	end)
+end
+
+function ArenaHudController:_listen(name: string, fn: (...any) -> ())
+	local hud = self.hud
+	if not hud:hasRemote(name) then
+		return false
+	end
+	local ok, err = pcall(function()
+		table.insert(self._connections, hud.remotes:on(name, fn))
+	end)
+	if not ok then
+		self._env.log("warn", "ArenaHudController: cannot listen to " .. name, { error = tostring(err) })
+	end
+	return ok
+end
+
+function ArenaHudController:start()
+	local env = self._env
+	table.insert(
+		self._connections,
+		self.hud.rendered:connect(function(metrics)
+			self:render(metrics)
+		end)
+	)
+	self:_listen("Arena.State", function(state)
+		self:setState(state)
+	end)
+	self:_listen("Kingdom.Support", function(view)
+		self:setSupport(view)
+	end)
+	-- the duel's events: FORGE-01's DuelController when it exists (G12.6), else the remote itself
+	local duel = self._registry:find(ArenaHudController.DUEL)
+	local viaController = false
+	if duel ~= nil and type(duel.events) == "table" and duel.events.connect then
+		viaController = pcall(function()
+			table.insert(
+				self._connections,
+				duel.events:connect(function(event)
+					self:onEvents({ event })
+				end)
+			)
+		end)
+	end
+	if not viaController then
+		self:_listen("Arena.Events", function(batch)
+			self:onEvents(batch)
+		end)
+	end
+	if self.hud:hasRemote("Arena.GetState") then
+		env.spawn(function()
+			local ok, state = pcall(function()
+				return self.hud.remotes:invoke("Arena.GetState")
+			end)
+			if ok and type(state) == "table" and not self._destroyed then
+				self:setState(state)
+			end
+		end)
+	end
+	self._running = true
+	env.spawn(function()
+		while self._running do
+			env.wait(ArenaHudController.POLL_SEC)
+			if self._running and self.state ~= nil and self.state.stage == "duel" then
+				self:render()
+			end
+		end
+	end)
+end
+
+function ArenaHudController:destroy()
+	self._destroyed = true
+	self._running = false
+	for _, connection in self._connections do
+		disconnect(connection)
+	end
+	self._connections = {}
+	if self.view then
+		self.view:destroy()
+	end
+	if self._focus and type(self.hud.setArenaFocus) == "function" then
+		self.hud:setArenaFocus(false)
+	end
+end
+
+function ArenaHudController:userId(): number?
+	local ok, id = pcall(function()
+		return self._env.Players.LocalPlayer.UserId
+	end)
+	return if ok then id else nil
+end
+
+function ArenaHudController:lookup(): any
+	local hud = self.hud
+	return {
+		kingdom = function(id)
+			return hud.store:kingdom(id)
+		end,
+		name = function(userId)
+			return hud:_nameOf(userId)
+		end,
+	}
+end
+
+function ArenaHudController:fetchSupport()
+	if not self.hud:hasRemote("Kingdom.GetSupport") then
+		return
+	end
+	self._env.spawn(function()
+		local ok, view = pcall(function()
+			return self.hud.remotes:invoke("Kingdom.GetSupport")
+		end)
+		if ok and not self._destroyed then
+			self:setSupport(if type(view) == "table" then view else nil)
+		end
+	end)
+end
+
+function ArenaHudController:setState(state: any)
+	if self._destroyed then
+		return
+	end
+	local before = if self.state then self.state.stage else nil
+	self.state = if type(state) == "table" then state else nil
+	local stage = if self.state then self.state.stage else nil
+	if stage == "loadout" and before ~= "loadout" then
+		self:fetchSupport() -- the offers and slots as they stand when the pick starts
+	end
+	self.changed:fire(self.state)
+	self:render()
+end
+
+function ArenaHudController:setSupport(view: any)
+	if self._destroyed then
+		return
+	end
+	self.support = if type(view) == "table" then view else nil
+	self.supportChanged:fire(self.support)
+end
+
+function ArenaHudController:onEvents(batch: any)
+	if self._destroyed or type(batch) ~= "table" then
+		return
+	end
+	local now = self._env.serverTimeNow()
+	for _, event in batch do
+		ArenaHudModel.apply(self.track, event, now)
+	end
+	self:render()
+end
+
+-- The kingdom HUD steps aside during the intro and the duel, and for a champion during the loadout.
+function ArenaHudController:focus(): boolean
+	local stage = if self.state then self.state.stage else nil
+	if stage == nil then
+		return false
+	end
+	if ArenaHudController.FOCUS[stage] then
+		return true
+	end
+	return stage == "loadout" and LoadoutModel.side(self.state, self:userId()) ~= nil
+end
+
+function ArenaHudController:render(metrics: any?)
+	local hud = self.hud
+	if self._destroyed or hud.roots.modals == nil then
+		return
+	end
+	local focus = self:focus()
+	if focus ~= self._focus and type(hud.setArenaFocus) == "function" then
+		self._focus = focus
+		hud:setArenaFocus(focus) -- re-renders the HUD, which calls back here through rendered
+		return
+	end
+	self.view = self.view or ArenaHud.new(hud.roots.modals)
+	local model = ArenaHudModel.view(self.track, self.state, self:lookup(), self:userId(), self._env.serverTimeNow())
+	if model == nil then
+		self.view:destroy()
+		return
+	end
+	self.view:render(model, metrics or hud:metrics())
+end
+
+return Def

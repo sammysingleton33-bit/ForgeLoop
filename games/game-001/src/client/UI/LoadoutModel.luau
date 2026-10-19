@@ -108,7 +108,10 @@ end
 local function rows(list: { any }, selected: string): { any }
 	local out = {}
 	for _, r in list do
-		table.insert(out, { id = r.id, name = r.name, icon = r.icon, blurb = r.blurb, selected = r.id == selected })
+		table.insert(
+			out,
+			{ id = r.id, name = r.name, short = r.short, icon = r.icon, blurb = r.blurb, selected = r.id == selected }
+		)
 	end
 	return out
 end

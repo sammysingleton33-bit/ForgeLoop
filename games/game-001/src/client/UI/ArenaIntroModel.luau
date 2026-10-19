@@ -56,7 +56,7 @@ local function card(side: string, d: any, lookup: any): any
 	local armour = ArenaText.armour(d.armour)
 	return {
 		side = side,
-		champion = champion or "Champion",
+		champion = champion or `{kingdomName}'s champion`,
 		kingdomId = d.kingdom,
 		kingdomName = kingdomName,
 		color = if k then HudModel.color(k) else Theme.tincture(tostring(d.kingdom)),

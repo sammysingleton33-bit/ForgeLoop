@@ -26,7 +26,13 @@ end
 
 -- Order: the default first (DuelModel's own defaults are swordShield and medium).
 ArenaText.WEAPONS = table.freeze({
-	row("swordShield", "Sword and shield", "Sword", "weapon_swordShield", "Quick strikes, the steadiest block"),
+	row(
+		"swordShield",
+		"Sword and shield",
+		"Sword & shield",
+		"weapon_swordShield",
+		"Quick strikes, the steadiest block"
+	),
 	row("greatsword", "Greatsword", "Greatsword", "weapon_greatsword", "The heaviest blows, slower swings"),
 	row("spear", "Spear", "Spear", "weapon_spear", "The fastest light attack"),
 	row("mace", "Mace", "Mace", "weapon_mace", "Breaks guards: blocked hits cost more stamina"),

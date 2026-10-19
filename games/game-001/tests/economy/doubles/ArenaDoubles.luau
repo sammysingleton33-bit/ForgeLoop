@@ -19,13 +19,27 @@
 		ArenaDoubles.REASONS      three pre-authored moment texts
 ]]
 
+local Validate = require("@game/ReplicatedStorage/Forge/Core/Validate")
+
 local ArenaDoubles = {}
 
+local TRIGGERS =
+	{ "reforge", "fieldRemedy", "calledWarning", "heartyRations", "rallyingHymn", "fineWares", "crowdRally" }
+
+-- G12.4 argument shapes: (weapon: enum Weapon, armour: enum Armour, triggers: array(enum TriggerId, 3))
 ArenaDoubles.REMOTES = {
 	Arena = {
 		{ name = "Arena.State", kind = "serverEvent" },
 		{ name = "Arena.GetState", kind = "function" },
-		{ name = "Arena.Choose", kind = "function" },
+		{
+			name = "Arena.Choose",
+			kind = "function",
+			args = {
+				Validate.enum({ "swordShield", "greatsword", "spear", "mace" }),
+				Validate.enum({ "light", "medium", "heavy" }),
+				Validate.array(Validate.enum(TRIGGERS), 3),
+			},
+		},
 		{ name = "Arena.Events", kind = "serverEvent" },
 	},
 	Kingdom = {

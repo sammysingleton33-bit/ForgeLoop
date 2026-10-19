@@ -159,6 +159,10 @@ describe("UI/ArenaHudModel (FL-0073)", function()
 		expect(view.left.hp).toBe(1)
 		expect(view.left.stamina).toBeNil() -- unknown until a snapshot
 		ArenaHudModel.apply(track, { t = 3, kind = "hit", side = "b", data = { targetHpShare = 0.72 } }, 3)
+		-- the hit alone moves the struck side (b hit a), before any snapshot
+		local afterHit = ArenaHudModel.view(track, st, LOOKUP, 1, 3)
+		expect(afterHit.left.hp).toBe(0.72)
+		expect(afterHit.right.hp).toBe(1)
 		ArenaHudModel.apply(track, {
 			t = 3.2,
 			kind = "snapshot",

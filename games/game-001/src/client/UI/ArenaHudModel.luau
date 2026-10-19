@@ -114,9 +114,10 @@ local function sideView(track: any, id: string, d: any, lookup: any, now: number
 	end
 	return {
 		side = id,
-		name = name or "Champion",
+		name = name or `{kingdomName}'s champion`,
 		kingdomName = kingdomName,
 		color = if k then HudModel.color(k) else Theme.tincture(tostring(d.kingdom)),
+		emblem = HudModel.EMBLEMS[d.kingdom] or "crest",
 		tier = { name = tier.name, color = Theme.color(tier.color) },
 		hp = t.hp,
 		hpText = `{math.floor(t.hp * 100 + 0.5)}%`,
