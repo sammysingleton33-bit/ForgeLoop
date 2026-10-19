@@ -288,6 +288,7 @@ describe("Crowd config (FL-0074)", function()
 		expect(arena.loadout).toBe(Arena.loadoutSeconds)
 		expect(arena.intro).toBe(Arena.introSeconds)
 		expect(arena.crowning).toBe(Arena.crowningSeconds)
+		expect(arena.qualify).toBe(5) -- the design's own number (FORGE-07 #237 optional L1)
 		expect(arena.intro <= 15).toBe(true) -- design §2: the intro pass fits
 		expect(arena.duel).toBe(120) -- the expected duel, under config Arena's safety ceiling
 		expect(arena.duel < Arena.duelMaxSeconds).toBe(true)
