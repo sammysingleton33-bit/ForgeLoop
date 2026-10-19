@@ -361,6 +361,9 @@ function WorldService:_build()
 		placeModel(model, CFrame.new(p.X, y, p.Z) * (arena.cframe - arena.cframe.Position))
 		model:SetAttribute("RegionId", arena.regionId)
 		decorate(model, y)
+		-- Kit.arenaDress rebuilds the two sides' dress later (the Arena phase): it applies the same physics from these
+		model:SetAttribute("KitDecorBase", y)
+		model:SetAttribute("KitCollideHeight", WorldService.COLLIDE_HEIGHT)
 		model.Parent = arenaFolder
 		CollectionService:AddTag(model, "CrownArena")
 		local before = parts

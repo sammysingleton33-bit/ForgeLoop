@@ -82,7 +82,8 @@ def test_kit_pieces_and_assemblies_are_consistent():
     for n in ("hat_straw", "hat_beanie", "hat_miner", "hat_builder", "hair_10", "hat_merchant", "hat_coif", "acc_02", "hat_helm",
               "hat_smith", "tool_hoe", "tool_axe", "tool_pick", "tool_mallet", "tool_hammer", "tool_scale", "tool_staff_healer", "tool_sack",
               "tool_spear", "tool_sword", "tool_bow", "hat_crown", "cape", "crest_crimson", "crest_azure", "crest_emerald",
-              "crest_gold", "crest_neutral", "shield_crimson", "shield_gold", "shield_neutral", "quiver", "mantle_kingdom"):
+              "crest_gold", "crest_neutral", "shield_crimson", "shield_gold", "shield_neutral", "quiver", "mantle_kingdom",
+              "tuft_01", "tuft_06", "acc_03", "pack_03", "pack_04"):
         assert n in names, n
 
 

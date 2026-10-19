@@ -35,24 +35,24 @@ _CITIZEN = dict(head="head_%look.face%", boot=_sided("boot_%look.boots%"))
 # the six interchangeable torso cuts; number 06 is a long robe whose hem is the separate skirt_06 (01..05 have no skirt: empty variants)
 _CUTS = dict(_CITIZEN, torso="torso_%look.outfit%", skirt="skirt_%look.outfit%")
 ASSEMBLIES = {
-    "farmer": dict(_CUTS, hat="hat_straw", hatband="hat_ribbon", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"),
+    "farmer": dict(_CUTS, hat="hat_straw", hair="tuft_%look.hair%", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"),
                    leg=_sided("leg_trousers"), tool="tool_hoe", extras=["gear_farmer", "mantle_kingdom"]),
     "woodcutter": dict(_CUTS, hat="hat_beanie", hatband="hat_pompom", arm=_sided("arm_bare"), sleeve=_sided("sleeve_long"),
                        leg=_sided("leg_trousers"), tool="tool_axe", extras=["gear_woodcutter", "mantle_kingdom"]),
-    "miner": dict(_CUTS, hat="hat_miner", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"), leg=_sided("leg_trousers"),
+    "miner": dict(_CUTS, hat="hat_miner", hair="tuft_%look.hair%", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"), leg=_sided("leg_trousers"),
                   tool="tool_pick", extras=["gear_miner", "mantle_kingdom"]),
-    "builder": dict(_CUTS, hat="hat_builder", arm=_sided("arm_hand"), sleeve=_sided("sleeve_long"), leg=_sided("leg_breeches"),
+    "builder": dict(_CUTS, hat="hat_builder", hair="tuft_%look.hair%", arm=_sided("arm_hand"), sleeve=_sided("sleeve_long"), leg=_sided("leg_breeches"),
                     tool="tool_mallet", extras=["gear_builder", "mantle_kingdom"]),
-    "hauler": dict(_CUTS, hat="hat_hauler", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"), leg=_sided("leg_trousers"),
+    "hauler": dict(_CUTS, hat="hat_hauler", hair="tuft_%look.hair%", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"), leg=_sided("leg_trousers"),
                    tool="tool_sack", extras=["strap_kingdom", "mantle_kingdom"]),
-    "blacksmith": dict(_CITIZEN, torso="torso_smith", hair="hair_beard", hat="hat_smith", arm=_sided("arm_bare"),
+    "blacksmith": dict(_CITIZEN, torso="torso_smith", hair="hair_beard", tuft="tuft_%look.hair%", hat="hat_smith", arm=_sided("arm_bare"),
                        leg=_sided("leg_trousers"), tool="tool_hammer", extras=["gear_smith", "mantle_kingdom"]),
-    "merchant": dict(_CITIZEN, torso="torso_merchant", skirt="skirt_merchant", hat="hat_merchant", hatband="hat_feather", arm=_sided("arm_hand"),
+    "merchant": dict(_CITIZEN, torso="torso_merchant", skirt="skirt_merchant", hat="hat_merchant", hair="tuft_%look.hair%", arm=_sided("arm_hand"),
                      sleeve=_sided("sleeve_long"), leg=_sided("leg_breeches"), tool="tool_scale",
                      extras=["gear_merchant", "mantle_kingdom"]),
     "healer": dict(_CITIZEN, torso="torso_smock", skirt="skirt_smock", hat="hat_coif", arm=_sided("arm_hand"), sleeve=_sided("sleeve_long"),
                    leg=_sided("leg_trousers"), tool="tool_staff_healer", extras=["gear_healer", "mantle_kingdom"]),
-    "idle": dict(_CUTS, hair="hair_%look.hair%", acc="acc_%look.acc%", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"),
+    "idle": dict(_CUTS, hair="hair_%look.hair%", acc="acc_%look.acc%", pack="pack_%look.weapon%", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"),
                  leg=_sided("leg_trousers"), extras=["mantle_kingdom"]),
     "soldier": dict(torso="torso_tabard", skirt="skirt_tabard", head="head_%look.face%", hat="hat_helm", crest="crest_%kingdom%", arm=_sided("arm_gauntlet"),
                     sleeve=_sided("sleeve_soldier"), leg=_sided("leg_mail"), boot=_sided("boot_plate"), tool="tool_spear",
@@ -70,6 +70,7 @@ ASSEMBLIES = {
 
 # Pieces with no mesh (variants that mean "none"): they exist only in rig.json (`empty: true`), never in the FBX.
 EMPTY_PIECES = {"acc_01": dict(joint="Head", slot="acc", tint="fixed", tags=["idle", "none"]),
+                **{f"pack_0{i}": dict(joint="Torso", slot="acc", tint="fixed", tags=["idle", "none"]) for i in (1, 2)},
                 **{f"skirt_0{i}": dict(joint="Torso", slot="acc", tint="fixed", tags=["skirt", "none"]) for i in range(1, 6)}}
 
 # Colours of `cloth` pieces: Kit/Character.clothColor (the job's panel, trousers for slot "leg", x the hair colour's dye). Jobs
