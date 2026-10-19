@@ -5,14 +5,16 @@
 	Crown Arena's two stands. Client only: the server sends no crowd data.
 
 	When
-		- FeedbackCrowdController makes a CrowdDirector for a duel (Arena.State names both duellists at
-		  intro or duel; or its Studio preview): the stands fill. A new director (a new pair) refills
-		  them; no director (done, Results, Lobby) empties them.
+		- FeedbackCrowdController makes a CrowdDirector for a duel (DuelController's arena state names
+		  both duellists at intro or duel; or its Studio preview): the stands fill. A new director (a new
+		  pair) refills them; no director (done, Results, Lobby) empties them.
 		- Without FORGE-02's CrownArena model (tag CrownArena) on this client, nothing is built yet: the
 		  place streams (Workspace.StreamingEnabled), so the arena may arrive after the director; every
 		  step retries until it is there (FORGE-07 #237 M1), then the stands fill once.
 		- The stands are built Def.BUILD_PER_STEP figures a step, both stands in turn, front rows first
-		  (FORGE-00's B22 note: never 480 parts in one frame); a full arena takes 5 steps.
+		  (FORGE-00's B22 note: never 480 parts in one frame); a full arena takes 5 steps. Only step
+		  builds: a reaction (onReaction) follows a new director but seats nobody, so a batch of
+		  reactions in one frame never adds a second batch (FORGE-00's g11k note).
 		- Each side's citizens come from FORGE-01's DuelController (a dependency; stateChanged and
 		  getState: it asks Arena.GetState once, so a client that joins or reloads mid-duel still
 		  gets them). This controller never asks itself.
@@ -20,8 +22,9 @@
 		- Stand A holds side a's kingdom, stand B side b's (Kit.arena: Stand A at -Z, as the dress and
 		  the intro camera). Figures: CrowdDirector.stands(citizensA, citizensB) (one per two citizens,
 		  <= 60 a stand, <= 120 in all), then CrowdDirector.seated(figures, tier) of them sit (the tier's
-		  fill: a hostile crowd leaves half its seats empty). Citizens come from Arena.State's duellist
-		  `citizens` field when the server sends it; until then a stand counts as full (60 figures).
+		  fill: a hostile crowd leaves half its seats empty). Citizens come from the duellist `citizens`
+		  field of DuelController's arena state (FORGE-01, #241); a stand whose count is missing or
+		  invalid counts as full (60 figures).
 		- Seats fill from the centre outwards, the front row first (Def.order), so a thin crowd still
 		  sits where the camera looks. The grid is FORGE-02's (Kit.ARENA.SEAT_ROWS, SEATS_PER_STAND);
 		  a seat attachment the model lacks stays empty, with one warning. Figure i is
@@ -44,7 +47,7 @@
 		a stand is always the same third. Every motion ends with each figure back on its seat.
 	API
 		controller.figures                      -- { a: { Figure }, b: { Figure } }, Figure = { model, seat: CFrame, row, seat# }
-		controller:refresh()                    -- follows the crowd controller's director (step calls it)
+		controller:refresh()                    -- follows the director, then builds one batch (step calls it)
 		controller:onReaction(reaction, kingdom?)
 		controller:step(now?)                   -- refresh, then advance the motions
 		Def.order(rows, seats) -> { { row, seat } }   Def.variant(row, seat) -> number
@@ -181,14 +184,11 @@ end
 
 -- The arena state comes from FORGE-01's DuelController, the client's one door to the arena (G12.6;
 -- FORGE-00's ruling on FORGE-07's #256 M1): it asks Arena.GetState once and fires stateChanged for
--- the reply and every push, so this controller never asks itself (the remote answers 3 asks a second).
--- getState() at start seeds a client that joins or reloads mid-duel.
+-- the reply and every push, so this controller never asks itself (the remote allows a burst of 3
+-- asks, then 1 a second). getState() at start seeds a client that joins or reloads mid-duel. The
+-- Loader errors at load without the dependency, so there is no fallback here.
 function Controller:_followDuel()
 	local duel = self._registry:find("DuelController")
-	if duel == nil or type(duel.getState) ~= "function" or type(duel.stateChanged) ~= "table" then
-		self._env.log("warn", `{Def.name}: no DuelController; the arena crowd stays idle`)
-		return
-	end
 	table.insert(
 		self._connections,
 		duel.stateChanged:connect(function(state)
@@ -239,7 +239,7 @@ function Controller:destroy()
 	self:_clear()
 end
 
--- Arena.State: remember each side's citizens when the server sends them (an additive field).
+-- DuelController's arena state: remember each side's citizens (the duellist `citizens` field).
 function Controller:onArenaState(state: any)
 	if type(state) ~= "table" then
 		return
@@ -297,8 +297,9 @@ function Controller:_workspace(): any
 	return self._opts.workspace or self._env.Workspace
 end
 
--- Follows the crowd controller: a new director fills the stands, none empties them.
-function Controller:refresh()
+-- Follows the crowd controller's director: a new one clears the stands for refilling, none empties
+-- them. Builds nothing.
+function Controller:_follow(): any
 	local crowd = self._registry:find("FeedbackCrowdController")
 	local director = if crowd ~= nil then crowd.director else nil
 	if director ~= self._director then
@@ -306,6 +307,12 @@ function Controller:refresh()
 		self:_clear()
 		self._pending = director ~= nil and director.side ~= nil
 	end
+	return director
+end
+
+-- Follows the director, then builds the next batch of seats (step calls it).
+function Controller:refresh()
+	local director = self:_follow()
 	if self._pending then
 		self._pending = not self:_seat(director) -- retried each step until the arena has streamed in
 	end
@@ -423,7 +430,7 @@ function Controller:onReaction(reaction: any, _kingdom: any?)
 	if type(reaction) ~= "table" or Def.STANDS[reaction.stand] == nil then
 		return
 	end
-	self:refresh() -- the director may be new since the last step
+	self:_follow() -- the director may be new since the last step; only step seats (one batch a frame)
 	local spec = Def.MOTIONS[reaction.kind]
 	if spec == nil or (spec.motion == "hop" and self:_reducedMotion()) then
 		return
