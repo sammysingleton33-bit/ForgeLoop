@@ -211,15 +211,47 @@ describe("FeedbackController: building damage follows HP (FL-0143, FL-0128 war k
 		expect(keep:GetAttribute("KitDamageState")).toBe(3)
 		expect(math.abs(keep:GetAttribute("Damage") - 0.8) < 1e-9).toBe(true)
 		expect(marksOnTheKeep() > 0).toBe(true)
-		-- turned in place (a quarter turn about its root): dressed again too. Where the marks then sit is
-		-- FORGE-02's Kit/Damage fix (FORGE-00's g11l (a): today the kit works in world axes)
+		-- turned in place (a quarter turn about its root): dressed again on its own walls (the kit works in
+		-- the model's own frame since FORGE-02's #277)
 		local at = CFrame.new(root.CFrame.Position)
-		serverMoves(at * CFrame.Angles(0, math.rad(90), 0) * at:Inverse())
+		local turn = at * CFrame.Angles(0, math.rad(90), 0) * at:Inverse()
+		serverMoves(turn)
 		expect(feedback:refreshDamage()).toBe(1)
 		expect(#calls).toBe(5)
 		expect(keep:GetAttribute("KitDamageState")).toBe(3)
+		expect(marksOnTheKeep() > 0).toBe(true)
 		expect(feedback:refreshDamage()).toBe(0) -- standing still: nothing more
 		expect(#calls).toBe(5)
+		-- repaired where it stands now: every part back in place, as on an undamaged keep moved the same way
+		keep:SetAttribute("Hp", 100)
+		expect(feedback:refreshDamage()).toBe(1)
+		local pristine = Kit.build("keep", 3, "complete", CRIMSON)
+		for _, d in pristine:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.CFrame = turn * CFrame.new(44, 0, 0) * d.CFrame
+			end
+		end
+		local function parts(model)
+			local out = {}
+			for _, d in model:GetDescendants() do
+				if d:IsA("BasePart") then
+					table.insert(out, d)
+				end
+			end
+			return out
+		end
+		local got, want = parts(keep), parts(pristine)
+		expect(#got).toBe(#want)
+		for _, w in want do
+			local found = false
+			for _, g in got do
+				if g.Name == w.Name and (g.CFrame.Position - w.CFrame.Position).Magnitude < 1e-3 then
+					found = true
+					break
+				end
+			end
+			assert(found, `{w.Name} is not back at {w.CFrame.Position}`)
+		end
 	end)
 
 	it("an error in the damage pass is logged and the poll (and the fires) go on", function()
