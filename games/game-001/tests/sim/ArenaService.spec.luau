@@ -231,6 +231,22 @@ describe("ArenaService: the host", function()
 		expect(kept).toBe(1)
 	end)
 
+	it("shows each kingdom's living citizens to the stands", function()
+		local world = boot({ 1, 2 })
+		reachArena(world)
+		local state = world.arena:state()
+		local living = 0
+		for _, id in world.sim.kingdoms[world.a].citizenIds do
+			local citizen = world.sim.citizens[id]
+			if citizen and citizen.alive ~= false then
+				living += 1
+			end
+		end
+		expect(living > 0).toBe(true)
+		expect(state.a.citizens).toBe(living)
+		expect(state.b.citizens > 0).toBe(true)
+	end)
+
 	it("publishes the state to everyone on every change, and answers Arena.GetState", function()
 		local world = boot({ 1, 2 })
 		reachArena(world)
@@ -243,6 +259,17 @@ describe("ArenaService: the host", function()
 		local spectator = boot({ 1, 2 })
 		local idle = invoke(spectator.env, spectator.players[1], "Arena.GetState")
 		expect(idle.stage).toBe("done") -- no arena yet
+	end)
+end)
+
+describe("ArenaService: pushes", function()
+	it("does not push the state again while nothing has changed", function()
+		local world = boot({ 1, 2 })
+		reachArena(world)
+		local before = #received(world.env, "Arena.State")
+		world.env.mock:advance(0.5)
+		world.env.mock:advance(0.5)
+		expect(#received(world.env, "Arena.State")).toBe(before)
 	end)
 end)
 
@@ -387,6 +414,23 @@ describe("ArenaService: the duel", function()
 		expect(phases.Results).toBe(true)
 		expect(#ended).toBe(1)
 		expect(ended[1].winner).toBe(world.a)
+	end)
+
+	it("the champion with fewer Crown Points can win the match by the duel", function()
+		local world = boot({ 1, 2 })
+		local ended = {}
+		GameEvents.MatchEnded:connect(function(payload)
+			table.insert(ended, payload)
+		end)
+		toDuel(world)
+		world.arena._runner._model.a.hp = 1
+		fire(world.env, world.players[2], "Arena.Action", "light")
+		world.env.mock:advance(1.5)
+		expect(world.arena:state().winner).toBe(2)
+		advanceTo(world, "done")
+		world.env.mock:advance(MatchConfig.tickSeconds * 3)
+		expect(#ended).toBe(1)
+		expect(ended[1].winner).toBe(world.b) -- a led on Crown Points
 	end)
 
 	it("a player who leaves during the duel forfeits: the other champion's kingdom wins", function()

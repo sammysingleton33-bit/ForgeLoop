@@ -69,6 +69,7 @@ export type Duellist = {
 	triggers: { TriggerId },
 	reasons: { string }, -- the top 3 moment texts
 	triggerCitizens: { [string]: { name: string, role: string } }?, -- TriggerId -> the key citizen behind it (not the Crowd Rally)
+	citizens: number?, -- the kingdom's living citizens when the arena began (the stands fill from it, G12.6)
 }
 
 export type ArenaStage = "qualify" | "vote" | "loadout" | "intro" | "duel" | "crowning" | "done"

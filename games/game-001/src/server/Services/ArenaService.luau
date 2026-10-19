@@ -164,6 +164,17 @@ function ArenaService:_begin(qualifiers: { string }): boolean
 			local k = sim.kingdoms[kingdom]
 			return if k then table.clone(k.rulers) else {}
 		end,
+		citizens = function(kingdom: string): number
+			local k = sim.kingdoms[kingdom]
+			local living = 0
+			for _, id in if k then k.citizenIds else {} do
+				local citizen = sim.citizens[id]
+				if citizen and citizen.alive ~= false then
+					living += 1
+				end
+			end
+			return living
+		end,
 		leadership = function(userId: number, kingdom: string): number
 			return leadership:leadership(kingdom, userId)
 		end,
