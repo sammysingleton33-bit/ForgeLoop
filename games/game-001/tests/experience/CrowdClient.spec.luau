@@ -83,6 +83,15 @@ local function boot(opts)
 			})
 		end,
 	})
+	if opts.duel ~= nil then -- FORGE-01's DuelController (a double)
+		table.insert(defs, {
+			name = "DuelController",
+			dependencies = {},
+			new = function()
+				return opts.duel
+			end,
+		})
+	end
 	if opts.beforeStart then
 		opts.beforeStart(env) -- remotes that exist before the controller starts (a client joining late)
 	end
@@ -98,7 +107,7 @@ end
 
 -- ForgeRemotes/Arena: GetState answers `answer` (after `delay` seconds, if given); `pushed`, when given,
 -- is an Arena.State fired before anyone listens (MockRemotes queues it for the first handler).
-local function arenaRemotes(env, answer, pushed, delay)
+local function arenaRemotes(env, answer, pushed, delay, asks)
 	local root = env.newInstance("Folder")
 	root.Name = "ForgeRemotes"
 	root.Parent = env.ReplicatedStorage
@@ -109,6 +118,9 @@ local function arenaRemotes(env, answer, pushed, delay)
 	get.Name = "GetState"
 	get.Parent = area
 	get.OnServerInvoke = function()
+		if asks then
+			asks.n += 1
+		end
 		if delay then
 			env.wait(delay) -- a slow server: the reply comes after the caller moved on
 		end
@@ -183,6 +195,33 @@ describe("FeedbackCrowdController: the duel's director (FL-0074 part 2a)", funct
 		w.env.mock:advance(1)
 		expect(w.crowd.director).toBeNil()
 	end)
+
+	it(
+		"with FORGE-01's DuelController it follows that state and never asks Arena.GetState (FORGE-07 #256 M1)",
+		function()
+			local duel = { stateChanged = Signal.new(), state = state("duel") }
+			function duel.getState(self)
+				return self.state
+			end
+			local asks = { n = 0 }
+			local t = boot({
+				duel = duel,
+				beforeStart = function(env)
+					arenaRemotes(env, state("duel"), nil, nil, asks)
+				end,
+			})
+			t.env.mock:advance(1)
+			expect(asks.n).toBe(0) -- one asker on the client: DuelController
+			assert(t.crowd.director ~= nil, "a director from DuelController:getState()")
+			expect(t.crowd.director:side("a").kingdom).toBe("crimson")
+			local other = state("duel")
+			other.b = duellist(7600, "loyal", "gold")
+			duel.stateChanged:fire(other)
+			expect(t.crowd.director:side("b").kingdom).toBe("gold")
+			duel.stateChanged:fire(state("done"))
+			expect(t.crowd.director).toBeNil()
+		end
+	)
 
 	it("Results and Lobby drop the director and clear the subtitles; events before a director are dropped", function()
 		local t = boot()

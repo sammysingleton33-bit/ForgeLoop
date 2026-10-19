@@ -8,9 +8,10 @@
 
 	When
 		- A director is made when Arena.State first names both duellists (a and b) at the intro or duel
-		  stage; a different pair starts a new one. start() also asks Arena.GetState once, since the
-		  server pushes Arena.State only on a change: a client that joins or reloads mid-duel still
-		  gets its crowd (a push that came first is newer and wins). Tiers, kingdoms and ruler names come from the state
+		  stage; a different pair starts a new one. The state comes from FORGE-01's DuelController
+		  (stateChanged, getState: it asks Arena.GetState once, so a client that joins or reloads
+		  mid-duel still gets its crowd). Without a DuelController, start() listens to Arena.State and
+		  asks Arena.GetState itself (a push that came first is newer and wins). Tiers, kingdoms and ruler names come from the state
 		  (an AI duellist has no name to chant, so its stand uses a line without one).
 		- Arena.Events (batched) feed it during the duel; events with no director are dropped.
 		- Crowning ends it: finish(the winner's side), or finish(nil) when `winner` names nobody. The
@@ -132,22 +133,51 @@ function Def.new(env: any, registry: any)
 	return Def.create(env, registry, nil)
 end
 
+-- FORGE-01's DuelController is the client's one door to the arena: it asks Arena.GetState once and
+-- fires stateChanged for every state, the reply and each push. Following it keeps the client to two
+-- askers of a remote that answers three a second (FORGE-07 #256 M1). False without it (specs, a
+-- build without the duel): then this controller listens and asks for itself.
+function Controller:_followDuel(): boolean
+	local duel = self._registry:find("DuelController")
+	if duel == nil or type(duel.getState) ~= "function" or type(duel.stateChanged) ~= "table" then
+		return false
+	end
+	local ok = pcall(function()
+		table.insert(
+			self._connections,
+			duel.stateChanged:connect(function(state)
+				self:onArenaState(state)
+			end)
+		)
+	end)
+	if not ok then
+		return false
+	end
+	local got, state = pcall(duel.getState, duel)
+	if got and state ~= nil then
+		self:onArenaState(state)
+	end
+	return true
+end
+
 function Controller:start()
 	local env = self._env
-	table.insert(
-		self._links,
-		RemoteLink.on(env, "Arena.State", function(state)
-			self._arenaSeen = true
-			self:onArenaState(state)
+	if not self:_followDuel() then
+		table.insert(
+			self._links,
+			RemoteLink.on(env, "Arena.State", function(state)
+				self._arenaSeen = true
+				self:onArenaState(state)
+			end)
+		)
+		-- Arena.State is pushed only on a change: a client that joins or reloads mid-duel asks once
+		-- (FORGE-00's B22 verifier note); a push that came first is newer and wins.
+		RemoteLink.request(env, "Arena.GetState", function(state)
+			if not self._destroyed and not self._arenaSeen then
+				self:onArenaState(state)
+			end
 		end)
-	)
-	-- Arena.State is pushed only on a change: a client that joins or reloads mid-duel asks once
-	-- (FORGE-00's B22 verifier note); a push that came first is newer and wins.
-	RemoteLink.request(env, "Arena.GetState", function(state)
-		if not self._destroyed and not self._arenaSeen then
-			self:onArenaState(state)
-		end
-	end)
+	end
 	table.insert(
 		self._links,
 		RemoteLink.on(env, "Arena.Events", function(batch)
