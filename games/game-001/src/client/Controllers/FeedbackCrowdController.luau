@@ -77,20 +77,21 @@ Def.DUEL_STAGES = table.freeze({ intro = true, duel = true })
 Def.END_PHASES = table.freeze({ Results = true, Lobby = true })
 Def.PREVIEW_ATTRIBUTE = "ForgeCrowdPreview"
 Def.PREVIEW_STEP_SEC = 3.5
--- a short duel for the Studio preview: every kind of moment once, then the ending
+-- a short duel for the Studio preview: every kind of moment once, then the ending. The data is
+-- DuelService's Arena.Events relay (shares only; see Feedback/CrowdDirector).
 Def.PREVIEW = table.freeze({
 	{ kind = "heavyWindup", side = "a" },
-	{ kind = "hit", side = "a", data = { heavy = true, damage = 0.2, hp = 0.8 } },
+	{ kind = "hit", side = "a", data = { heavy = true, damageShare = 0.2, hpShare = 0.8 } },
 	{ kind = "parry", side = "b" },
 	{
 		kind = "triggerFired",
 		side = "a",
-		data = { trigger = "reforge", triggerName = "Reforge", citizenName = "Mara" },
+		data = { source = "perk:reforge", trigger = "reforge", citizenName = "Mara" },
 	},
-	{ kind = "hit", side = "b", data = { damage = 0.3, hp = 0.15 } },
-	{ kind = "hype", side = "a", data = { full = true } },
-	{ kind = "hit", side = "a", data = { damage = 0.7, hp = 0.1 } },
-	{ kind = "ended", side = "a" },
+	{ kind = "hit", side = "b", data = { damageShare = 0.3, hpShare = 0.15 } },
+	{ kind = "hype", side = "a" },
+	{ kind = "hit", side = "a", data = { damageShare = 0.7, hpShare = 0.1 } },
+	{ kind = "ended", side = "a", data = { reason = "ko" } },
 })
 
 local NAMES: { [string]: string } = {}

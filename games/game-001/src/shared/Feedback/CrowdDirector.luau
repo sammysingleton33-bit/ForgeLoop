@@ -14,24 +14,31 @@
 		director:onEvent(event, now) -> { Reaction }           -- an Arena.Events entry (G12.4)
 		director:idle(stand) -> Reaction                       -- between moments
 		director:finish(winner?, now) -> { Reaction }          -- both stands' endings; always plays;
-		                                                       -- nil = no winner: both stands go quiet
+		                                                       -- nil = no winner: "called off" 
 		director:duck(now, seconds)  /  director:volume(now) -> number   -- under the announcer
 		Reaction = { stand: "a" | "b", kind: string, major: boolean, priority: boolean,
 		             sound: string?, caption: string?, data: { [string]: any }? }
 
-	Events (Arena.Events kinds; `side` is the champion the event is about):
-		hit          side landed it. Major when data.heavy or data.damage >= moments.bigHit (a share of
-		             max HP), else minor (only the hitter's stand reacts). data.hp, the target's HP share
-		             after the hit, drives near-death and comeback.
+	Events (Arena.Events kinds; `side` is the champion the event is about). The data fields are
+	DuelService's relay of DuelModel's events, shares only (FORGE-01, 2026-10-19), not the raw
+	DuelModel data:
+		hit          side landed it; data { damageShare, hpShare, heavy? }. Major when data.heavy or
+		             data.damageShare >= moments.bigHit (a share of max HP), else minor (only the
+		             hitter's stand reacts). data.hpShare, the target's HP share after the hit, drives
+		             near-death and comeback.
 		parry        side parried: major.
 		stagger      side is staggered: major, bad for side.
 		staminaOut   side ran out of stamina: minor, bad for side.
 		heavyWindup  side winds up a heavy: minor murmur in side's stand.
-		triggerFired side's perk fired (data.trigger, data.citizenName): a priority perk moment in side's
-		             stand ("rally" for crowdRally); it ducks the crowd for duck.perkSec.
-		hype         data.full: side's stand chants when its tier chants (a major).
-		ended        side won: the same as finish(side). No side (no winner: a disconnect, the Crown
-		             Points fallback) is finish(nil): both stands go quiet and the crowd stops.
+		triggerFired side's perk fired; data { source, trigger?, citizenName? }: a priority perk moment
+		             in side's stand ("rally" for crowdRally), named by config triggerNames[trigger]
+		             (trigger, else source without its "perk:" prefix); it ducks the crowd for
+		             duck.perkSec.
+		hype         side's crowd meter filled (sent only when full): side's stand chants when its tier
+		             chants (a major).
+		ended        side won: the same as finish(side). Side "draw" (cancelled or both champions
+		             dropped) or no side is finish(nil): both stands show "called off", no payoff, and
+		             the crowd stops.
 		A major reaction has both stands react: side's stand by its tier's good (or bad), the other
 		stand by the opposite. Derived majors: near-death (a champion's HP share first falls below
 		moments.nearDeath: bad for them) and comeback (a champion who trailed by moments.comeback or
@@ -59,6 +66,14 @@ local SIDES = { a = "b", b = "a" }
 
 local function count(value: any): number
 	return if type(value) == "number" and value > 0 then value else 0 -- NaN > 0 is false
+end
+
+-- The TriggerId of a triggerFired event: data.trigger, else data.source without "perk:".
+local function triggerOf(data: any): string?
+	if type(data.trigger) == "string" then
+		return data.trigger
+	end
+	return if type(data.source) == "string" then (string.gsub(data.source, "^perk:", "")) else nil
 end
 
 function CrowdDirector.figures(citizens: any, config: any): number
@@ -220,7 +235,7 @@ function Director:onEvent(event: any, now: number): { Reaction }
 	if self._ended or type(event) ~= "table" then
 		return {}
 	end
-	if event.kind == "ended" and event.side == nil then
+	if event.kind == "ended" and (event.side == nil or event.side == "draw") then
 		return self:finish(nil, now) -- no winner
 	end
 	if SIDES[event.side] == nil then
@@ -231,13 +246,13 @@ function Director:onEvent(event: any, now: number): { Reaction }
 	local kind = event.kind
 	local config = self._config
 	if kind == "hit" then
-		local moment, who = self:_track(SIDES[side] :: Stand, data.hp)
+		local moment, who = self:_track(SIDES[side] :: Stand, data.hpShare)
 		if moment == "comeback" and who ~= nil then
 			return self:_major(now, who, true)
 		elseif moment == "nearDeath" and who ~= nil then
 			return self:_major(now, who, false)
 		end
-		if data.heavy == true or count(data.damage) >= config.moments.bigHit then
+		if data.heavy == true or count(data.damageShare) >= config.moments.bigHit then
 			return self:_major(now, side, true)
 		end
 		return self:_minor(now, side, tierOf(self._sides[side].tier, config).good)
@@ -252,15 +267,15 @@ function Director:onEvent(event: any, now: number): { Reaction }
 	elseif kind == "triggerFired" then
 		self._lastMajor = now
 		self:duck(now, config.duck.perkSec)
-		local rally = data.trigger == "crowdRally"
+		local trigger = triggerOf(data)
 		return {
-			self:_reaction(side, if rally then "rally" else "perk", true, true, {
-				trigger = data.triggerName or data.trigger,
-				citizen = data.citizenName or "A citizen",
+			self:_reaction(side, if trigger == "crowdRally" then "rally" else "perk", true, true, {
+				trigger = config.triggerNames[trigger] or "their pledge",
+				citizen = if type(data.citizenName) == "string" then data.citizenName else "A citizen",
 			}),
 		}
 	elseif kind == "hype" then
-		if data.full ~= true or not tierOf(self._sides[side].tier, config).chants then
+		if not tierOf(self._sides[side].tier, config).chants then
 			return {}
 		end
 		if now - self._lastMajor < config.majorGapSec then
@@ -289,12 +304,12 @@ function Director:finish(winner: any, now: number): { Reaction }
 	end
 	self._ended = true
 	self._lastMajor = now
-	if winner == nil then -- no winner (FORGE-07's #193 L1): a neutral close, then nothing more
-		return { self:_reaction("a", "quiet", true, true), self:_reaction("b", "quiet", true, true) }
-	end
 	local out = {}
 	for _, stand in { "a", "b" } :: { Stand } do
-		local ending = CrowdDirector.ending(stand == winner, self._sides[stand].tier, self._config)
+		-- no winner (FORGE-07's #193 L1; a draw, FORGE-00 2026-10-19): a neutral close, no payoff
+		local ending = if winner == nil
+			then "calledOff"
+			else CrowdDirector.ending(stand == winner, self._sides[stand].tier, self._config)
 		local entry = self._config.endings[ending]
 		table.insert(out, {
 			stand = stand,

@@ -15,7 +15,8 @@ M = [
  ("FL-0074", D, 'return config.tiers[tier] or config.tiers.divided', 'return config.tiers[tier] or config.tiers.adoring', "CrowdDirector", "an unknown tier counts as divided", "game"),
  # reactions by tier
  ("FL-0074", D, 'self:_reaction(other, if good then theirs.bad else theirs.good, true, priority),', 'self:_reaction(other, if good then theirs.good else theirs.bad, true, priority),', "CrowdDirector", "a big hit", "game"),
- ("FL-0074", D, 'if data.heavy == true or count(data.damage) >= config.moments.bigHit then', 'if data.heavy == true then', "CrowdDirector", "a big hit", "game"),
+ ("FL-0074", D, 'count(data.damageShare) >= config.moments.bigHit', 'count(data.damage) >= config.moments.bigHit', "CrowdDirector", 'a big hit', "game"),
+ ("FL-0074", D, 'self:_track(SIDES[side] :: Stand, data.hpShare)', 'self:_track(SIDES[side] :: Stand, data.hp)', "CrowdDirector", 'near-death once per champion', "game"),
  ("FL-0074", K, 'hostile = table.freeze({ fill = 0.5, idle = "boo", good = "silence", bad = "turnBack", chants = false }),', 'hostile = table.freeze({ fill = 0.5, idle = "boo", good = "cheer", bad = "turnBack", chants = false }),', "CrowdDirector", "a hostile stand boos", "game"),
  # rationing and priority
  ("FL-0074", D, 'if now - self._lastMajor < self._config.majorGapSec then', 'if false then', "CrowdDirector", "at most one major reaction every 3 s", "game"),
@@ -23,7 +24,9 @@ M = [
  ("FL-0074", D, 'if now - self._lastMinor[stand] < self._config.minorGapSec then', 'if false then', "CrowdDirector", "small hits are minor", "game"),
  ("FL-0074", D, '\t\tself._lastMajor = now\n\t\tself:duck(now, config.duck.perkSec)', '\t\tself:duck(now, config.duck.perkSec)', "CrowdDirector", "perk moments always win", "game"),
  ("FL-0074", D, 'self:duck(now, config.duck.perkSec)', 'local _ = config.duck.perkSec', "CrowdDirector", "perk moments always win", "game"),
- ("FL-0074", D, 'self:_reaction(side, if rally then "rally" else "perk", true, true, {', 'self:_reaction(side, "perk", true, true, {', "CrowdDirector", "perk moments always win", "game"),
+ ("FL-0074", D, 'if trigger == "crowdRally" then "rally" else "perk", true, true, {', '"perk", true, true, {', "CrowdDirector", 'perk moments always win', "game"),
+ ("FL-0074", D, 'then (string.gsub(data.source, "^perk:", "")) else nil', 'then nil else nil', "CrowdDirector", 'a triggerFired names its perk', "game"),
+ ("FL-0074", D, 'trigger = config.triggerNames[trigger] or "their pledge",', 'trigger = trigger or "their pledge",', "CrowdDirector", 'a triggerFired names its perk', "game"),
  ("FL-0074", D, 'return if type(value) == "string" then value else nil', 'return nil', "CrowdDirector", "perk moments always win", "game"),
  ("FL-0074", D, 'return if now < self._duckUntil then self._config.duck.volume else 1', 'return 1', "CrowdDirector", "perk moments always win", "game"),
  # near-death and comeback
@@ -31,8 +34,8 @@ M = [
  ("FL-0074", D, 'if self._trailed[hitter] and self._hp[hitter] > self._hp[target] then', 'if false then', "CrowdDirector", "a comeback when the trailing champion takes the lead", "game"),
  ("FL-0074", D, 'self._trailed[stand] = true', 'local _ = stand', "CrowdDirector", "a comeback when the trailing champion takes the lead", "game"),
  # chants
- ("FL-0074", D, 'if data.full ~= true or not tierOf(self._sides[side].tier, config).chants then', 'if data.full ~= true then', "CrowdDirector", "full hype chants for a chanting tier only", "game"),
- ("FL-0074", D, 'line = config.chants.any[1] -- no name to chant', 'local _ = 0 -- no name to chant', "CrowdDirector", "full hype chants for a chanting tier only", "game"),
+ ("FL-0074", D, 'if not tierOf(self._sides[side].tier, config).chants then', 'if false then', "CrowdDirector", 'chants for a chanting tier only', "game"),
+ ("FL-0074", D, 'line = config.chants.any[1] -- no name to chant', 'local _ = 0 -- no name to chant', "CrowdDirector", "chants for a chanting tier only", "game"),
  # endings
  ("FL-0074", D, 'return if high then "flood" else "thinCrowning"', 'return "flood"', "CrowdDirector", "four endings", "game"),
  ("FL-0074", D, 'return if high then "salute" else "empty"', 'return "salute"', "CrowdDirector", "four endings", "game"),
@@ -43,10 +46,11 @@ M = [
  # config: sounds and arena timings
  ("FL-0074", G + "config/Sounds.luau", 'id = "crowd.salute",', 'id = "crowd.salutes",', "CrowdDirector", "sounds exist", "game"),
  ("FL-0074", G + "config/Pacing.luau", 'duel = 120,', 'duel = 150,', "CrowdDirector", "arena stage timings in Pacing", "game"),
- # #193 L1: a duel with no winner ends the crowd quietly
- ("FL-0074", D, 'if winner == nil then -- no winner', 'if false then -- no winner', "CrowdDirector", "a duel with no winner ends the crowd quietly", "game"),
- ("FL-0074", D, 'if event.kind == "ended" and event.side == nil then', 'if false then', "CrowdDirector", "a duel with no winner ends the crowd quietly", "game"),
- ("FL-0074", D, '(winner ~= nil and SIDES[winner] == nil)', '(SIDES[winner] == nil)', "CrowdDirector", "a duel with no winner ends the crowd quietly", "game"),
+ # #193 L1 and FORGE-00's draw ruling: a duel with no winner or a draw is called off
+ ("FL-0074", D, 'then "calledOff"', 'then "empty"', "CrowdDirector", 'a duel with no winner or a draw is called off', "game"),
+ ("FL-0074", D, '(event.side == nil or event.side == "draw")', '(event.side == nil)', "CrowdDirector", 'a duel with no winner or a draw is called off', "game"),
+ ("FL-0074", D, '(event.side == nil or event.side == "draw")', '(event.side == "draw")', "CrowdDirector", 'a duel with no winner or a draw is called off', "game"),
+ ("FL-0074", D, '(winner ~= nil and SIDES[winner] == nil)', '(SIDES[winner] == nil)', "CrowdDirector", "a duel with no winner or a draw is called off", "game"),
  # part 2a: FeedbackCrowdController (spec CrowdClient)
  ("FL-0074", K2, 'if Def.DUEL_STAGES[stage] and type(a) == "table" and type(b) == "table" then', 'if stage == "duel" and type(a) == "table" and type(b) == "table" then', "CrowdClient", "is made when Arena.State names both duellists at the intro", "game"),
  ("FL-0074", K2, 'if pair ~= self._pair then', 'if true then', "CrowdClient", "a new pair starts a new one", "game"),
