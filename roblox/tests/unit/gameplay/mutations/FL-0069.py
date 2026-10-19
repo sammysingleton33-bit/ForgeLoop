@@ -32,4 +32,8 @@ M = [
  ("FL-0069", LS, 'components.conduct = Ledger.level(self._ledger, kingdom, userId, "conduct")', 'components.conduct = 50', "sim/LeadershipService", "conduct and valour levels in their own series"),
  ("FL-0069", LS, 'components.valour = Ledger.level(self._ledger, kingdom, userId, "valour")', 'components.valour = Ledger.level(self._ledger, kingdom, userId, "conduct")', "sim/LeadershipService", "conduct and valour levels in their own series"),
  ("FL-0069", LS, 'if match.roundId ~= self._round then', 'if false then', "sim/LeadershipService", "starts a new round with an empty ledger"),
+ ("FL-0069", LG, 'local def = config.components[component]', 'local def = Support.components[component]', "sim/Ledger", "classifies a component by the ledger\'s config"),
+ ("FL-0069", LS, 'if userId ~= nil and table.find(k.rulers, userId) == nil then', 'if false then', "sim/LeadershipService", "not seated in that kingdom"),
+ ("FL-0069", LS, 'if userId ~= nil and table.find(k.rulers, userId) == nil then', 'if table.find(k.rulers, userId) == nil then', "sim/LeadershipService", "the kingdom itself too"),
+ ("FL-0069", LS, '		if not self._warned[key] then\n			self._warned[key] = true', '		if true then\n			self._warned[key] = true', "sim/LeadershipService", "logging it once"),
 ]

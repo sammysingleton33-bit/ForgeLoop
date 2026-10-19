@@ -46,8 +46,8 @@ local function rulerKey(kingdom: string, userId: number?, component: string): st
 	return `{kingdom}|{if userId then tostring(userId) else "-"}|{component}`
 end
 
-local function isRulerComponent(component: string): boolean
-	local def = Support.components[component]
+local function isRulerComponent(config: any, component: string): boolean
+	local def = config.components[component]
 	return def ~= nil and def.scope == "ruler"
 end
 
@@ -104,7 +104,7 @@ function Ledger.record(
 		return nil, "no_effect"
 	end
 	local component: string = def.component
-	if isRulerComponent(component) then
+	if isRulerComponent(ledger.config, component) then
 		local key = rulerKey(kingdom, userId, component)
 		if component == "valour" and delta > 0 then
 			local room = valourRoom(ledger, key, t)

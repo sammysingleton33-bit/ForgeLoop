@@ -133,6 +133,24 @@ describe("LeadershipService.record", function()
 		expect(warnings).toBe(1)
 	end)
 
+	it("refuses an act for a ruler who is not seated in that kingdom, logging it once", function()
+		local w = boot()
+		expect(w.service:record("crimson", 99, "fedRatioKept", 1)).toBe(nil)
+		expect(w.service:record("crimson", 99, "starvation", 1)).toBe(nil)
+		expect(#w.service:getMoments("crimson", 99, 10)).toBe(0)
+		local other = w.service:record("azure", 1, "fedRatioKept", 1) -- seated in crimson, not in azure
+		expect(other).toBe(nil)
+		local warnings = 0
+		for _, entry in w.env.mock.logs do
+			if entry.level == "warn" and entry.message == "LeadershipService: act for a ruler who is not seated" then
+				warnings += 1
+			end
+		end
+		expect(warnings).toBe(2) -- one per kingdom and ruler
+		expect(w.service:record("crimson", 1, "fedRatioKept", 1) ~= nil).toBe(true) -- a seated ruler still records
+		expect(w.service:record("crimson", nil, "keepUpgraded", 1) ~= nil).toBe(true) -- the kingdom itself too
+	end)
+
 	it("starts a new round with an empty ledger", function()
 		local w = boot()
 		w.service:record("crimson", 1, "fedRatioKept", 1)

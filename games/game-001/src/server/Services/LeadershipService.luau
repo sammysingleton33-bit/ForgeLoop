@@ -6,8 +6,9 @@
 	themselves; the score is computed only by Arena/SupportModel from what this service samples.
 
 		LeadershipService:record(kingdom, userId?, act, magnitude?): LeadershipMoment?
-			act is an id of config Support `acts`; an unknown act, a capped valour gain or a kingdom that is not in the
-			match is refused (nil) and logged at most once per act. Fires `acted`.
+			act is an id of config Support `acts`; an unknown act, a capped valour gain, a kingdom that is not in the
+			match or a userId who is not a ruler seated there is refused (nil); an unknown act and an unseated ruler
+			are logged at most once. userId nil records for the kingdom itself. Fires `acted`.
 		LeadershipService:getMoments(kingdom, userId?, limit): { LeadershipMoment }      newest first (Arena/Ledger)
 		LeadershipService:samples(kingdom, userId?): { { t, components } }
 			one sample per `Support.sampling.intervalSeconds` of match time, oldest first, all seven components 0..100
@@ -81,6 +82,20 @@ function LeadershipService:record(kingdom: string, userId: number?, act: string,
 	end
 	local k = sim.kingdoms[kingdom]
 	if k == nil then
+		return nil
+	end
+	-- An act for a ruler who is not seated here would sit in a level no sample reads: refuse it where a producer's
+	-- mistake can be seen (logged once per kingdom and ruler).
+	if userId ~= nil and table.find(k.rulers, userId) == nil then
+		local key = `{kingdom}|{tostring(userId)}`
+		if not self._warned[key] then
+			self._warned[key] = true
+			self._env.log(
+				"warn",
+				"LeadershipService: act for a ruler who is not seated",
+				{ kingdom = kingdom, act = act }
+			)
+		end
 		return nil
 	end
 	local moment, reason = Ledger.record(self._ledger, kingdom, userId, act, magnitude, sim.time)
