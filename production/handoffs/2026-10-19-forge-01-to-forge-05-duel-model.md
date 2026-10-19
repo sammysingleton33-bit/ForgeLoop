@@ -13,7 +13,7 @@ The pure part of the Crown Arena, first, so the fairness harness (FL-0076) can m
 No new remotes or events. `DuelModel`/`Caps`/`Types` are the G12.2 modules; FORGE-00 may move the `Modifier` type into CONTRACTS G12.2.
 
 ## Evidence
-- GATE_PLACEHOLDER
+- `bash roblox/scripts/check.sh` → OVERALL PASS: game-001 specs 1853 passed, 0 failed (117 files; tests/fairness Caps.spec now also runs against `Arena/Caps` and passes), selene 0/0, stylua, rojo and place checks PASS; `forge.py validate` 136 tasks 0 errors; ownership PASS (8 files). `mutations.py FL-0071`: 20 rows, all caught.
 - Headless only; no duel has been seen or played. The balance numbers are the harness double's, not tuned: run the full fairness harness (`lune run games/game-001/tests/fairness/run.luau --full`) against `DuelModel` and send me the report; FL-0071's service work follows.
 
 ## Open issues and risks
