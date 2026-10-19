@@ -1601,6 +1601,32 @@ end
 
 -- ------------------------------------------------------------------ props that dress buildings
 
+-- Brazier (FL-0128 war kit): an iron bowl on three legs heaped with embers, 6 parts. The fire is a fixed colour (never
+-- the kingdom's) in SmoothPlastic (Neon is for crystals only); `s` scales it, `pos` is the foot centre. Returns the
+-- top of the flame. The legs stand on the ground (or a platform) at pos; nothing is kingdom-tinted.
+local EMBER_RED = Color3.fromRGB(214, 70, 38)
+local FLAME_GOLD = Color3.fromRGB(255, 176, 60)
+local function brazier(ctx: Ctx, pos: Vector3, s: number?): number
+	local k = s or 1
+	for i = 0, 2 do
+		local a = i * 2 * PI / 3 + 0.5
+		block(
+			ctx,
+			"BrazierLeg",
+			Vector3.new(0.4, 3.2, 0.4) * k,
+			CFrame.new(pos + Vector3.new(math.cos(a) * 0.95 * k, 1.6 * k, math.sin(a) * 0.95 * k))
+				* CFrame.Angles(math.sin(a) * 0.16, 0, -math.cos(a) * 0.16),
+			C.iron,
+			M.Metal
+		)
+	end
+	column(ctx, "BrazierBowl", 1.5 * k, 0.8 * k, pos + Vector3.new(0, 3.1 * k, 0), C.iron, M.Metal)
+	ball(ctx, "BrazierEmbers", 2.2 * k, pos + Vector3.new(0, 4.0 * k, 0), EMBER_RED, M.SmoothPlastic).CastShadow = false
+	ball(ctx, "BrazierFlame", 1.3 * k, pos + Vector3.new(0.1 * k, 4.7 * k, 0), FLAME_GOLD, M.SmoothPlastic).CastShadow =
+		false
+	return pos.Y + 5.35 * k
+end
+
 local function barrel(ctx: Ctx, pos: Vector3, h: number?)
 	local hh = h or 2.2
 	column(ctx, "Barrel", 0.95, hh, pos, C.wood, M.WoodPlanks)
@@ -1811,6 +1837,7 @@ Pieces.flagpole = flagpole
 Pieces.pennant = pennant
 Pieces.chimney = chimney
 Pieces.gableChimney = gableChimney
+Pieces.brazier = brazier
 Pieces.barrel = barrel
 Pieces.crate = crate
 Pieces.sack = sack
