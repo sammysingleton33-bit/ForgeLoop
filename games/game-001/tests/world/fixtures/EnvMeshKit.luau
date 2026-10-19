@@ -88,7 +88,7 @@ function EnvKit.model(id: string, def: any, opts: any?): Instance
 		body.CFrame = CFrame.new(def.bbox_center[1], def.bbox_center[2], def.bbox_center[3]) + (o.shift or Vector3.zero)
 		body.Anchored = false
 		body.CanCollide = true -- the Kit decides physics
-		body.CollisionFidelity = Enum.CollisionFidelity.Box -- what the Studio import left; the Kit must not write it (Plugin security)
+		body.CollisionFidelity = Enum.CollisionFidelity.Box -- what the Studio import left; the Kit must not touch it (not scriptable at runtime)
 		body.Color = Color3.fromRGB(0, 255, 0)
 		body.Material = Enum.Material.Neon
 		local parent: Instance = model

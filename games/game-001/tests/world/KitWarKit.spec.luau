@@ -9,8 +9,9 @@
 	               up the front that reach the walkway, fuller banners between them) and the brazier sits on a plinth that
 	               rests on the walkway, never in a gap of the crenellation;
 	  1c. gateShape the lintel reaches the tower tops (no saddle), the voussoirs lie flush on the lintel face (nothing floats
-	               in front of the facade), a recessed tympanum fills the arch above the closed leaves of L1 and L2 (no sky
-	               shows through), the passage floor differs clearly in value from the wall of every kingdom;
+	               in front of the facade), a recessed tympanum fills the arch above the closed leaves at every level (no sky
+	               shows through, at L3 behind the portcullis), the passage floor is a MID tone (luminance 0.25 to 0.6, never
+	               near-black) at least 0.15 from the wall of every kingdom;
 	  1d. palisade the L1 palisade is the same dark timber in all four kingdoms (the banner carries the kingdom);
 	  2. gatePose  Kit.setGateOpen moves leaves and portcullis by CFrame alone: no part added or removed, exactly the
 	               movable parts move, the round trip is exact, a moved and turned gate still opens, BOTH open leaves stand
@@ -272,14 +273,7 @@ CHECKS.levels = function()
 					need(out, tag, hs, "GateLeaf", exactly(2), "two leaves")
 					need(out, tag, hs, "GateTower", exactly(2), "two towers")
 					need(out, tag, hs, "Lintel", exactly(1), "the arch")
-					need(
-						out,
-						tag,
-						hs,
-						"Tympanum",
-						exactly(if lv <= 2 then 1 else 0),
-						"the door head fills the arch at L1 and L2"
-					)
+					need(out, tag, hs, "Tympanum", exactly(1), "the door head fills the arch at every level")
 					need(out, tag, hs, "LeafBand", exactly(if lv >= 2 then 4 else 0), "iron bands from L2")
 					need(out, tag, hs, "Banner", exactly(if lv >= 2 then 2 else 0), "tower banners from L2")
 					need(out, tag, hs, "PortcullisBar", exactly(if lv == 3 then 6 else 0), "a portcullis at L3")
@@ -575,18 +569,25 @@ CHECKS.gateShape = function()
 			if stones ~= 8 then
 				table.insert(out, `{tag}: {stones} arch stones (want 8: 3 voussoirs and a keystone each side)`)
 			end
-			-- a light floor in the passage and light leaves (they have to read against the stone when open)
+			-- the passage floor is a MID tone (never near-black: a void at 170 studs; never white), clearly different in value from
+			-- the wall, and the leaves are light enough to read against the stone when open
 			local road = named(m, "GateRoad")[1]
-			if road == nil or math.abs(luminance(road.Color) - luminance(tower.Color)) < 0.22 then
+			if
+				road == nil
+				or luminance(road.Color) < 0.25
+				or luminance(road.Color) > 0.6
+				or math.abs(luminance(road.Color) - luminance(tower.Color)) < 0.15
+			then
 				table.insert(
 					out,
-					`{tag}: the passage floor ({road and r3(luminance(road.Color))}) is too close in value to the wall ({r3(
+					`{tag}: the passage floor ({road and r3(luminance(road.Color))}) is not a mid tone (0.25 to 0.6) at least 0.15 from the wall ({r3(
 						luminance(tower.Color)
 					)})`
 				)
 			end
-			-- closed, L1 and L2 show no sky: every point of the arch above the floor lies behind a leaf or the door head
-			if lv <= 2 then
+			-- closed, every level shows no sky: every point of the arch above the floor lies behind a leaf or the door head (at L3
+			-- the door head stands behind the portcullis bars)
+			do
 				local holes = 0
 				for xi = -13, 13 do
 					local x = xi * 0.5
@@ -1877,6 +1878,29 @@ describe("War kit structure mutants are caught", function()
 		tweakGate("Voussoir", function(p)
 			p.CFrame = p.CFrame - Vector3.new(0, 0, 0.8)
 		end)
+	end)
+	caught("the passage floor is near-black again (a void at 170 studs)", "gateShape", function()
+		tweakGate("GateRoad", function(p)
+			p.Color = Color3.fromRGB(78, 68, 60)
+		end)
+	end)
+	caught("the passage floor is white", "gateShape", function()
+		tweakGate("GateRoad", function(p)
+			p.Color = Color3.fromRGB(235, 228, 214)
+		end)
+	end)
+	caught("the L3 arch shows sky between the portcullis bars (no door head behind them)", "gateShape", function()
+		Kit.build = function(bt, lv, ...)
+			local m = original.build(bt, lv, ...)
+			if bt == "gate" and lv == 3 then
+				for _, p in parts(m) do
+					if p.Name == "Tympanum" then
+						p:Destroy()
+					end
+				end
+			end
+			return m
+		end
 	end)
 	caught("the passage floor is near the wall's value (mid grey on a mid stone)", "gateShape", function()
 		tweakGate("GateRoad", function(p)
