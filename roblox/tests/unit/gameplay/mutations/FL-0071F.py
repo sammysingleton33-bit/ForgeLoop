@@ -51,4 +51,7 @@ M = [
  ("FL-0071F", AI, 'local s = clamp(if type(skill) == "number" and skill == skill then skill else 0.5, 0, 1)', 'local s = if type(skill) == "number" then skill else 0.5', "sim/DuelAI", "clamps its skill"),
  ("FL-0071F", AI, 'self._seeAndAnswer = 0.35 + 0.55 * s', 'self._seeAndAnswer = 0', "sim/DuelAI", "answers a telegraphed heavy"),
  ("FL-0071F", AI, 'self._reaction = 0.30 - 0.18 * s', 'self._reaction = 0.30', "sim/DuelAI", "beats a novice AI clearly"),
+ ("FL-0071F", AF, 'math.max(0, math.floor(citizens))', 'citizens', "sim/ArenaFlow", "shows each kingdom's living citizens"),
+ ("FL-0071F", AF, 'citizens = champion.citizens,', 'citizens = nil,', "sim/ArenaFlow", "shows each kingdom's living citizens"),
+ ("FL-0071F", AF, 'and citizens == citizens\n', '\n', "sim/ArenaFlow", "shows each kingdom's living citizens"),
 ]

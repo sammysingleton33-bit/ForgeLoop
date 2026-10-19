@@ -14,6 +14,11 @@
 			one sample per `Support.sampling.intervalSeconds` of match time, oldest first, all seven components 0..100
 			(SupportModel.score reads exactly this). userId picks which ruler's conduct and valour are in it.
 		LeadershipService:sample()                      -- one round (the loop calls it; specs call it directly)
+		LeadershipService:leadership(kingdom, userId?): number
+			valour + conduct: a ruler's personal leadership, the tie-break for a champion (design §2)
+		LeadershipService:keyCitizens(kingdom): { KeyCitizen }
+			the kingdom's key citizens for SupportModel.offers (none until key citizens exist, FL-0069 later slice)
+		LeadershipService.sampled: Signal<()>      fires after every sample round (SupportService pushes the views)
 		LeadershipService:closeOut()                    -- a final round when the arena begins; credits the open phase
 		LeadershipService.acted: Signal<(kingdom, userId?, act, component, delta)>
 			(the G12.5 `LeadershipAct` event is fired on the GameEvents bus once FORGE-05 declares it)
@@ -57,6 +62,7 @@ function Def.new(env: any, registry: any)
 	self._match = registry:get("MatchService")
 	self.config = Support -- specs may swap in a table of their own
 	self.acted = Signal.new()
+	self.sampled = Signal.new()
 	self._running = false
 	self:_reset(nil)
 	return self
@@ -128,6 +134,16 @@ end
 function LeadershipService:samples(kingdom: string, userId: number?): { any }
 	self:_sim()
 	return self._samples[sampleKey(kingdom, userId)] or {}
+end
+
+function LeadershipService:leadership(kingdom: string, userId: number?): number
+	self:_sim()
+	return Ledger.level(self._ledger, kingdom, userId, "valour")
+		+ Ledger.level(self._ledger, kingdom, userId, "conduct")
+end
+
+function LeadershipService:keyCitizens(_kingdom: string): { any }
+	return {}
 end
 
 -- ---------------------------------------------------------------- sampling
@@ -312,6 +328,7 @@ function LeadershipService:sample(closing: boolean?)
 			end
 		end
 	end
+	self.sampled:fire()
 end
 
 -- The match is about to leave its last phase for the arena (which Endgame waits in): one more sample, taken now,
