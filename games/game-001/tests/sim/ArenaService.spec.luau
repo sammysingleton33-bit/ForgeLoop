@@ -373,6 +373,7 @@ describe("ArenaService: the duel", function()
 		expect(math.abs(second.x - marks.spawnB.Position.X) < 1e-6).toBe(true)
 		expect(math.abs(second.toX - marks.spawnA.Position.X) < 1e-6).toBe(true)
 		expect(math.abs(first.height - marks.spawnA.Position.Y) < 1e-6).toBe(true)
+		expect(math.abs(second.height - marks.spawnB.Position.Y) < 1e-6).toBe(true)
 	end)
 
 	it("takes the champions' support into the duel: the tier's blessing reaches the model", function()
