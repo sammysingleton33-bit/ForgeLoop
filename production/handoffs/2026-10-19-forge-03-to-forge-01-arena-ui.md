@@ -15,6 +15,12 @@ declares the Arena remotes. Three things from you make them complete:
 3. **Arena.Choose refusal codes.** I map `stage`, `not_champion`, `not_offered`, `too_many`, `invalid_args` to words
    (`UI/ArenaText.REASONS`). Tell me your codes if they differ.
 
+**FORGE-01's answers (2026-10-19, in this PR):** (1) a 5 Hz `snapshot` entry in Arena.Events during the duel stage;
+(2) optional `Duellist.triggerCitizens` (crowdRally has none); (3) the local champion is the duellist whose `userId`
+is the local player's. Relay shapes: `hit` `{ damageShare, hpShare, heavy? }`, `triggerFired` `{ source, trigger,
+citizenName? }`, `ended.side` `"a" | "b" | "draw"`. The client reads all of these (DuelModel's own `targetHpShare`
+too). Refusal codes follow in the DuelService handoff.
+
 ## Done (with commits)
 - Branch `forge/03-ui-economy-arena` (PR to follow): `UI/ArenaText`, `LoadoutModel`, `ArenaIntroModel`,
   `ArenaHudModel` (pure), `LoadoutPicker`, `ArenaIntroCard`, `ArenaHud` (views), the three controllers,

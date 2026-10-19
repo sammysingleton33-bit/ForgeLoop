@@ -240,14 +240,19 @@ describe("Crown Arena: intro card and duel HUD (FL-0073)", function()
 		expect(hud).toBeTruthy()
 		expect(find(find(hud, "Side_left"), "Stamina"):GetAttribute("share")).toBeNil()
 		world.arenaServer:events({
-			{ t = 5, kind = "hit", side = "b", data = { targetHpShare = 0.2 } },
+			{ t = 5, kind = "hit", side = "b", data = { damageShare = 0.1, hpShare = 0.2 } },
 			{
 				t = 5.1,
 				kind = "snapshot",
 				side = "a",
 				data = { a = { hpShare = 0.2, staminaShare = 0.5 }, b = { hpShare = 1, staminaShare = 0.9 } },
 			},
-			{ t = 12, kind = "triggerFired", side = "a", data = { source = "perk:reforge" } },
+			{
+				t = 12,
+				kind = "triggerFired",
+				side = "a",
+				data = { source = "perk:reforge", trigger = "reforge", citizenName = "Bram" },
+			},
 		})
 		world:advance(0.3)
 		hud = find(modals(world), "ArenaHud")

@@ -5,13 +5,14 @@
 
 		ArenaHudModel.new() -> Track      what the client has seen of this duel
 		ArenaHudModel.apply(track, event, now)   one Arena.Events entry { t, kind, side, data? }:
-			hit          data.targetHpShare -> the other side's HP
+			hit          data.hpShare (the relay; DuelModel's targetHpShare also read) -> the other side's HP
 			snapshot     data = DuelModel.snapshot (a/b.hpShare, staminaShare, state; suddenDeath; ended): the
 			             periodic picture asked of FORGE-01 (handoff 2026-10-19-forge-03-to-forge-01-arena-ui);
 			             without it stamina is unknown and the bar says so
 			staminaOut   that side's stamina -> 0 (until the next snapshot)
-			triggerFired data.source -> that side's trigger fired (shown active for ACTIVE_SEC, then spent)
-			ended        data { winner, reason, hpA, hpB }
+			triggerFired data.trigger (or data.source "perk:<id>") -> that side's trigger fired (shown active for
+			             ACTIVE_SEC, then spent)
+			ended        side "a" | "b" | "draw"; data { winner, reason, hpA, hpB }
 		ArenaHudModel.reset(track)        a new duel (a different pair of duellists)
 		ArenaHudModel.view(track, arena, lookup, userId, now) -> View?   nil unless the stage is "duel"
 			View = { clock?, urgent, suddenDeath, ended?, left: Side, right: Side, mine }
@@ -63,7 +64,8 @@ function ArenaHudModel.apply(track: any, event: any, now: number)
 	local side = if event.side == "a" or event.side == "b" then event.side else nil
 	local data = if type(event.data) == "table" then event.data else {}
 	if event.kind == "hit" and side then
-		local hp = share(data.targetHpShare)
+		-- the relay sends { damageShare, hpShare, heavy? } (FORGE-01, 2026-10-19); DuelModel's own name is targetHpShare
+		local hp = share(data.hpShare) or share(data.targetHpShare)
 		if hp then
 			track[other(side)].hp = hp
 		end
@@ -79,7 +81,7 @@ function ArenaHudModel.apply(track: any, event: any, now: number)
 	elseif event.kind == "staminaOut" and side then
 		track[side].stamina = 0
 	elseif event.kind == "triggerFired" and side then
-		local id = ArenaText.triggerFromSource(data.source)
+		local id = ArenaText.triggerFromSource(data.trigger) or ArenaText.triggerFromSource(data.source)
 		if id and track[side].fired[id] == nil then
 			track[side].fired[id] = now
 		end

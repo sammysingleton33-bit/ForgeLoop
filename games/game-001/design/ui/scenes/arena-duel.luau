@@ -28,7 +28,7 @@ return function(ctx)
 				data = { a = { hpShare = 0.38, staminaShare = 0.5 }, b = { hpShare = 0.64, staminaShare = 0.2 } },
 			},
 			{ t = 46.5, kind = "staminaOut", side = "b" },
-			{ t = 47, kind = "triggerFired", side = "a", data = { source = "perk:reforge" } },
+			{ t = 47, kind = "triggerFired", side = "a", data = { source = "perk:reforge", trigger = "reforge" } },
 		})
 	end)
 end
