@@ -32,7 +32,7 @@
 	The rig has no Humanoid (Kit.character), so its armour cannot use Humanoid:AddAccessory: each Accessory's Handle holds an
 	Attachment named for the body point it fits (HatAttachment, BodyFrontAttachment, BodyBackAttachment, Left/RightCollar
 	Attachment) and is welded to the rig's Head or Torso at that point, measured from the part's size. The weapon replaces the
-	rig's own spear: it is welded at the right fist, tilted forward. Unverified in Studio: how this looks (the fits are
+	rig's own spear: it is welded at the right fist at the plain Grip rest (the blade square to the arm, as an equipped Tool sits in a human's hand: FORGE-04's wrist poses assume it). Unverified in Studio: how this looks (the fits are
 	computed, not seen).
 ]]
 
@@ -41,8 +41,6 @@ Figures.__index = Figures
 
 -- The venue's marks are a character's root height above the floor (Kit/Arena SPAWN_HEIGHT); a rig's pivot is at its feet.
 Figures.FEET_BELOW_MARK = 3
--- Tilt of the weapon in the fist, radians about X (forward and up from a hanging arm).
-Figures.WEAPON_TILT = math.rad(-60)
 -- Where a colour is unknown (a kingdom the Kingdoms config does not list): Kit.NEUTRAL_COLOR's value.
 Figures.NEUTRAL_COLOR = Color3.fromRGB(208, 200, 184)
 
@@ -113,13 +111,46 @@ local function fitOf(model: any, attachment: string): (any?, CFrame?)
 	return nil, nil
 end
 
-local function weld(new: (string) -> any, part0: any, part1: any, c0: CFrame)
+local function weld(new: (string) -> any, part0: any, part1: any, c0: CFrame, c1: CFrame?)
 	local w = new("Weld")
 	w.Name = "ArenaGearWeld"
 	w.Part0 = part0
 	w.Part1 = part1
 	w.C0 = c0
+	if c1 ~= nil then
+		w.C1 = c1
+	end
 	w.Parent = part1
+end
+
+-- A Kit rig's pivot is the feet: Root.CFrame * Root.PivotOffset (Root stands 3.2 above them). Model:GetPivot and
+-- Model:PivotTo follow that rule in the engine; where a model cannot (the headless mock), the same rule is applied by hand.
+local function pivotOf(model: any): CFrame
+	local ok, pivot = pcall(function()
+		return model:GetPivot()
+	end)
+	if ok and pivot ~= nil then
+		return pivot
+	end
+	local root = model.PrimaryPart
+	local offsetOk, offset = pcall(function()
+		return root.PivotOffset
+	end)
+	return root.CFrame * (if offsetOk and offset ~= nil then offset else CFrame.new())
+end
+
+local function pivotTo(model: any, cframe: CFrame)
+	local placed = pcall(function()
+		model:PivotTo(cframe)
+	end)
+	if placed then
+		return
+	end
+	local root = model.PrimaryPart
+	local offsetOk, offset = pcall(function()
+		return root.PivotOffset
+	end)
+	root.CFrame = cframe * (if offsetOk and offset ~= nil then offset:Inverse() else CFrame.new())
 end
 
 -- Welds an armour Accessory onto a rig at the point its Handle's Attachment names.
@@ -141,20 +172,29 @@ function Figures:_fitArmour(model: any, accessory: any): boolean
 	return false
 end
 
--- Takes the rig's own spear off (the loadout weapon replaces it): its Tool part and the two details welded to it.
-local function dropOwnWeapon(model: any)
+-- Takes the rig's own held item off (the soldier's spear, the governor's staff and orb) but keeps its Tool part: the
+-- rig's `Tool` joint (Sim/Pose.JOINTS) drives that part, so the loadout weapon welded to it follows the pose. The part goes
+-- invisible and every part welded to it (the spearhead, the pennant, the orb) is destroyed. Returns the Tool part, if any.
+local function stripOwnWeapon(model: any): any?
+	local toolPart = partNamed(model, "Tool")
+	if toolPart == nil then
+		return nil
+	end
 	local doomed = {}
 	for _, d in model:GetDescendants() do
-		if d:IsA("BasePart") then
-			local kind = d:GetAttribute("KitDetailKind")
-			if d.Name == "Tool" or kind == "spearhead" or kind == "pennant" then
-				table.insert(doomed, d)
+		if d:IsA("Weld") then
+			if d.Part0 == toolPart and d.Part1 ~= nil then
+				table.insert(doomed, d.Part1)
+			elseif d.Part1 == toolPart and d.Part0 ~= nil then
+				table.insert(doomed, d.Part0)
 			end
 		end
 	end
 	for _, d in doomed do
 		d:Destroy()
 	end
+	toolPart.Transparency = 1
+	return toolPart
 end
 
 function Figures:_fitWeapon(model: any, tool: any): boolean
@@ -163,8 +203,15 @@ function Figures:_fitWeapon(model: any, tool: any): boolean
 	if handle == nil or fist == nil then
 		return false
 	end
-	dropOwnWeapon(model)
-	weld(self._new, fist, handle, CFrame.new(0, -fist.Size.Y / 2, 0) * CFrame.Angles(Figures.WEAPON_TILT, 0, 0))
+	-- the loadout weapon rides the Tool part (the arm if the rig has none), at the fist, at the Grip rest
+	local toolPart = stripOwnWeapon(model)
+	local carrier = toolPart or fist
+	local atFist = fist.CFrame * CFrame.new(0, -fist.Size.Y / 2, 0)
+	-- the Tool is modelled in grip space and `Grip` puts it right in a hand: the weld's C1, as an equipped Tool's RightGrip has it
+	local gripOk, grip = pcall(function()
+		return tool.Grip
+	end)
+	weld(self._new, carrier, handle, carrier.CFrame:Inverse() * atFist, if gripOk then grip else nil)
 	tool.Parent = model
 	return true
 end
@@ -191,12 +238,7 @@ function Figures:spawn(userId: number, spec: Spec): any?
 	end
 	local cframe = spec.cframe
 	if cframe ~= nil then
-		local placed = pcall(function()
-			model:PivotTo(cframe)
-		end)
-		if not placed and model.PrimaryPart ~= nil then
-			model.PrimaryPart.CFrame = cframe -- the Kit puts the pivot at the feet, where the root part is
-		end
+		pivotTo(model, cframe)
 	end
 	model.Parent = self._folder
 	local armourOk, accessories = pcall(kit.armour, spec.armour, spec.color)
@@ -297,7 +339,7 @@ function Figures:approach(
 		return false
 	end
 	local ok, moved = pcall(function()
-		local position = root.CFrame.Position
+		local position = pivotOf(model).Position -- the feet: their height is the figure's height
 		local dx, dz = tx - position.X, tz - position.Z
 		local distance = math.sqrt(dx * dx + dz * dz)
 		if distance < 1e-6 then
@@ -314,12 +356,7 @@ function Figures:approach(
 			end
 		end
 		local cframe = CFrame.lookAt(Vector3.new(x, position.Y, z), Vector3.new(tx, position.Y, tz))
-		local placed = pcall(function()
-			model:PivotTo(cframe)
-		end)
-		if not placed then
-			root.CFrame = cframe
-		end
+		pivotTo(model, cframe)
 		return travel > 0
 	end)
 	return ok and moved == true
@@ -353,6 +390,12 @@ function Figures:clear()
 		end)
 	end
 	table.clear(self._figures)
+	if self._folder ~= nil then
+		pcall(function()
+			self._folder:Destroy()
+		end)
+		self._folder = nil
+	end
 end
 
 return Figures
