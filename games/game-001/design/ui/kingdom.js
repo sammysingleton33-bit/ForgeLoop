@@ -84,8 +84,8 @@
 		{ id: "house", name: "House", cat: "civic", cost: { wood: 40 }, sec: 20, fp: [20, 16], desc: "Homes for your citizens. More houses, more people." },
 		{ id: "barracks", name: "Barracks", cat: "military", cost: { wood: 120, stone: 60 }, sec: 45, fp: [30, 20], desc: "Recruits and trains soldiers for your kingdom." },
 		{ id: "watchtower", name: "Watchtower", cat: "military", cost: { wood: 60, stone: 80 }, sec: 40, fp: [14, 14], desc: "A lookout over your lands." },
-		{ id: "wall", name: "Wall", cat: "military", cost: { stone: 20 }, sec: 15, fp: [32, 8], desc: "A stone wall segment to close your borders." },
-		{ id: "gate", name: "Gate", cat: "military", cost: { wood: 40, stone: 30 }, sec: 25, fp: [32, 12], desc: "A gate in your walls that your people can pass." },
+		{ id: "wall", name: "Wall", cat: "military", cost: { stone: 20 }, sec: 15, fp: [32, 8], desc: "A wall to close your borders: a timber palisade at first, stone as you upgrade it." },
+		{ id: "gate", name: "Gate", cat: "military", cost: { wood: 40, stone: 30 }, sec: 25, fp: [32, 12], desc: "A strong gate that closes the way through your walls." },
 	];
 	const TYPE_NAME = { keep: "Keep", house: "House", farm: "Farm", storehouse: "Storehouse", lumbercamp: "Lumber Camp", quarry: "Quarry", barracks: "Barracks", watchtower: "Watchtower", wall: "Wall", gate: "Gate" };
 	const CAT = { keep: "civic", house: "civic", farm: "economy", storehouse: "economy", lumbercamp: "economy", quarry: "economy", barracks: "military", watchtower: "military", wall: "military", gate: "military" };
