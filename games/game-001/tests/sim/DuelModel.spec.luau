@@ -397,6 +397,36 @@ describe("Arena/DuelModel: support (CONTRACTS G12.3)", function()
 	)
 end)
 
+describe("Arena/DuelModel: unchecked support", function()
+	it("a telegraph without a lead reports warned = 0, never nil", function()
+		local s = duel(nil, {
+			modifiers = {
+				{ source = "perk:warning", kind = "telegraph", uses = 1, duration = 8, condition = "opponentHeavy" },
+			},
+		})
+		idle(s, 10.2)
+		local windup = kinds(act(s, "a", "heavy", 1.2), "heavyWindup")[1]
+		expect(windup.data.warned).toBe(0)
+	end)
+
+	it("a trigger with no condition never fires and never throws (Caps refuses it before a real duel)", function()
+		local s = duel({
+			modifiers = {
+				{ source = "perk:broken", kind = "trigger", stat = "damageReduction", magnitude = 0.05, duration = 5 },
+				{ source = "perk:heal", kind = "heal", magnitude = 0.05, duration = 4 },
+			},
+		})
+		local ok, err = pcall(function()
+			idle(s, 30)
+		end)
+		expect(ok).toBe(true)
+		expect(err).toBeNil()
+		for _, trigger in s.a.triggers do
+			expect(trigger.fired).toBe(false)
+		end
+	end)
+end)
+
 describe("Arena/DuelModel: determinism and bad input", function()
 	local function play(seed: number)
 		local s = DuelModel.new(

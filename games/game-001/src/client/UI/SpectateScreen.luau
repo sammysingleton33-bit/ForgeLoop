@@ -85,7 +85,7 @@ local function buttonRow(state: any, ui: any, order: number, withStay: boolean):
 			LayoutOrder = order_,
 			Parent = row,
 		})
-		local b = Button.new({ text = text, variant = variant, size = "small", onActivated = fn })
+		local b = Button.new({ text = text, variant = variant, size = "regular", onActivated = fn })
 		b.instance.Name = name
 		b.instance.Parent = slot
 	end
@@ -96,7 +96,7 @@ local function buttonRow(state: any, ui: any, order: number, withStay: boolean):
 		add("Stay", "Stay and watch", "primary", 1, ui.onStay)
 		add("Leave", "Leave", "secondary", 2, ui.onLeave)
 	else
-		local b = Button.new({ text = "Leave", variant = "secondary", size = "small", onActivated = ui.onLeave })
+		local b = Button.new({ text = "Leave", variant = "secondary", size = "regular", onActivated = ui.onLeave })
 		b.instance.Name = "Leave"
 		b.instance.Parent = row
 	end
@@ -199,7 +199,7 @@ local function panel(model: any, m: any, state: any, ui: any): Frame
 	-- reaches the construction chips with only a few targets
 	local n = math.max(1, #model.rows)
 	local listHeight = n * SpectateScreen.ROW + (n - 1) * 6 + 8
-	local content = 10 + 38 + listHeight + 6 + (if state.confirmLeave then 62 else 34) + 10
+	local content = 10 + 50 + listHeight + 6 + (if state.confirmLeave then 70 else 44) + 10
 	-- phones: stop above the construction chips (bottom centre reaches under the panel's right edge)
 	local floor = if phone and m.queue and not state.stackHidden then m.queue.bottom + 48 else m.margin
 	local height = math.min(content, math.max(160, m.height - top - floor))
@@ -210,7 +210,7 @@ local function panel(model: any, m: any, state: any, ui: any): Frame
 	local head = Create("Frame", {
 		Name = "Head",
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, 32),
+		Size = UDim2.new(1, 0, 0, 44), -- Prev / Next are 44 px touch targets (L7 audit)
 		Parent = frame,
 	}, {
 		Title = Style.text({
@@ -224,7 +224,7 @@ local function panel(model: any, m: any, state: any, ui: any): Frame
 	local prev = Button.new({
 		text = "Prev",
 		variant = "secondary",
-		size = "small",
+		size = "regular",
 		width = 52,
 		state = if #model.rows > 1 then "default" else "disabled",
 		onActivated = function()
@@ -238,7 +238,7 @@ local function panel(model: any, m: any, state: any, ui: any): Frame
 	local nextButton = Button.new({
 		text = "Next",
 		variant = "secondary",
-		size = "small",
+		size = "regular",
 		width = 52,
 		state = if #model.rows > 1 then "default" else "disabled",
 		onActivated = function()
@@ -249,13 +249,13 @@ local function panel(model: any, m: any, state: any, ui: any): Frame
 	nextButton.instance.AnchorPoint = Vector2.new(1, 0.5)
 	nextButton.instance.Position = UDim2.fromScale(1, 0.5)
 	nextButton.instance.Parent = head
-	local footHeight = if state.confirmLeave then 62 else 34
+	local footHeight = if state.confirmLeave then 70 else 44
 	local list = Create("ScrollingFrame", {
 		Name = "Targets",
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(0, 38),
-		Size = UDim2.new(1, 0, 1, -(38 + footHeight + 6)),
+		Position = UDim2.fromOffset(0, 50),
+		Size = UDim2.new(1, 0, 1, -(50 + footHeight + 6)),
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollingDirection = Enum.ScrollingDirection.Y,

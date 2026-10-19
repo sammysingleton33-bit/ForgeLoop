@@ -39,6 +39,8 @@
 		hud:setStackBottom(y?)              the bottom of a widget hung under the top-left stack (the
 		                                    objective tracker): phone toasts with an open drawer start below it
 		hud:notify({ title, body?, kind? })
+		hud:setArenaFocus(on)               the Crown Arena takes the screen: kingdom HUD, menus and phase bar
+		                                    off (ArenaHudController, FL-0073)
 		hud:hasRemote(name) -> boolean      the server declared this remote (ReplicatedStorage
 		                                    .ForgeRemotes.<Area>.<Action> exists; never yields)
 		hud:setSheet(menu, on?)             this menu is a wide sheet on phones (the conversation):
@@ -405,6 +407,16 @@ end
 -- Non-yielding: RemoteClient:invoke waits up to 10 s for a remote to replicate, which for a remote
 -- the server never declared means a 10 s wait before "Couldn't reach the server" (FORGE-05 L5).
 -- RemoteService creates every declared remote at server start, before any player can tap.
+-- The Crown Arena takes the screen (FL-0073, ArenaHudController): while on, the kingdom HUD, its menus and the
+-- phase bar are off (the arena HUD has its own clock); off brings them back.
+function KingdomHudController:setArenaFocus(on: boolean)
+	if self.arenaFocus == (on == true) then
+		return
+	end
+	self.arenaFocus = on == true
+	self:render()
+end
+
 function KingdomHudController:hasRemote(name: string): boolean
 	local area, action = string.match(name, "^([%w_]+)%.([%w_]+)$")
 	if area == nil or action == nil then
@@ -628,9 +640,13 @@ function KingdomHudController:_placeToasts(m: any)
 		then free.width - 10
 		else m.width - m.rail.right - m.rail.button - 12
 	local top = Layout.toastTop(m, drawerOpen, self._stackBottom)
-	self.toasts:place(UDim2.fromOffset(right, top), Vector2.new(1, 0), m.toast.width)
+	-- left of a phone drawer the free band can be narrower than a toast (a 667-wide phone: ~200 px; L7 audit)
+	local width = if drawerOpen and m.breakpoint == "phone"
+		then math.min(m.toast.width, math.max(160, free.width - 20))
+		else m.toast.width
+	self.toasts:place(UDim2.fromOffset(right, top), Vector2.new(1, 0), width)
 	-- FORGE-04's stack goes to the same spot, in screen px (#74)
-	self:_placeNotifications(right, top, m.toast.width, m.scale)
+	self:_placeNotifications(right, top, width, m.scale)
 end
 
 function KingdomHudController:setPlacing(on: boolean)
@@ -1060,12 +1076,13 @@ function KingdomHudController:render()
 	local store = self.store
 	local s = self.state
 	local banner = HudModel.banner(store)
-	local active = banner ~= nil
+	-- the Crown Arena's intro and duel take the screen (ArenaHudController, FL-0073): the kingdom HUD steps aside
+	local active = banner ~= nil and not self.arenaFocus
 	self.guis.hud.Enabled = active
 	-- The phase bar stays for a ruler without a kingdom while a match runs: a fallen ruler who stays
 	-- to watch still sees the phase and time left (FL-0129; FORGE-07 L3 on #185). Its pill exists once
 	-- the HUD was built for this player's kingdom; refreshTimer keeps it current every tick.
-	self.guis.topbar.Enabled = active or (store.match ~= nil and store.match.phase ~= nil)
+	self.guis.topbar.Enabled = active or (not self.arenaFocus and store.match ~= nil and store.match.phase ~= nil)
 	self.guis.menus.Enabled = active
 	self.guis.backdrop.Enabled = active
 	if not active and s.menu ~= nil then

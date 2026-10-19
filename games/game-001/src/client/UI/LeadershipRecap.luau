@@ -169,7 +169,7 @@ function LeadershipRecap:render(recap: any, metrics: any, ui: { [string]: any })
 	local back = Button.new({
 		text = "Back to results",
 		variant = "secondary",
-		size = if phone then "small" else "regular",
+		size = "regular", -- 44 px, phones too (L7 audit)
 		onActivated = function()
 			if ui.onBack then
 				ui.onBack()
@@ -191,7 +191,7 @@ function LeadershipRecap:render(recap: any, metrics: any, ui: { [string]: any })
 			color = Theme.color("textPrimary"),
 			extra = { Name = "Title", Size = UDim2.new(1, 0, 0, 20), LayoutOrder = 0, Parent = left },
 		})
-		back.instance.Size = UDim2.new(0.5, -8, 0, 32)
+		back.instance.Size = UDim2.new(0.5, -8, 0, 44)
 	else
 		left = column("Body", { Size = UDim2.new(1, 0, 1, -56), Parent = content })
 		right = left

@@ -7,6 +7,7 @@
 
 		Caps.NUMBERS                                   the caps as data (fractions: 0.05 = +5 %)
 		Caps.problems(modifiers): { string }           every broken cap, as a sentence; empty = within the caps
+		                                               (also: an active effect needs a condition the model can evaluate)
 		Caps.check(modifiers): (boolean, string?)      true, or false with the first problem (G12.2)
 
 	A Modifier is one support effect (Arena/Types). One trigger with two effects (Crowd Rally: damage reduction and
@@ -35,6 +36,22 @@ Caps.NUMBERS = table.freeze({
 
 local EPSILON = 1e-9
 local ACTIVE = { trigger = true, heal = true, telegraph = true }
+
+-- The trigger conditions DuelModel knows how to evaluate: an HP threshold (a share of max HP, 0 < x <= 1), the
+-- latches the model sets itself, and the opponent's heavy attack.
+local FIXED_CONDITIONS = { staminaOut = true, hype = true, opponentHeavy = true }
+
+local function validCondition(condition: any): boolean
+	if type(condition) ~= "string" then
+		return false
+	end
+	if FIXED_CONDITIONS[condition] then
+		return true
+	end
+	local threshold = string.match(condition, "^hpBelow:([%d%.]+)$")
+	local share = if threshold then tonumber(threshold) else nil
+	return share ~= nil and share > 0 and share <= 1
+end
 
 local function pct(x: number): string
 	return string.format("%.1f %%", x * 100)
@@ -102,6 +119,9 @@ function Caps.problems(modifiers: { Modifier }): { string }
 			passive[m.stat :: string] = (passive[m.stat :: string] or 0) + mag
 			passiveTotal += mag
 			if m.slot then
+				if slotSources[name] then
+					problem(`{name}: listed twice; a slotted passive counts once per duel`)
+				end
 				takeSlot(name)
 			end
 		elseif ACTIVE[m.kind] then
@@ -111,6 +131,9 @@ function Caps.problems(modifiers: { Modifier }): { string }
 			end
 			seenEffect[effect] = true
 			takeSlot(name)
+			if not validCondition(m.condition) then
+				problem(`{name}: needs a known condition (hpBelow:<share>, staminaOut, hype or opponentHeavy)`)
+			end
 			if not isFinite(m.duration) or (m.duration :: number) <= 0 then
 				problem(`{name}: duration must be a positive number of seconds`)
 			elseif (m.duration :: number) > caps.triggerMaxSeconds + EPSILON then

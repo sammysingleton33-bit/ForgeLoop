@@ -4,7 +4,18 @@ G is games/game-001/.
 """
 DM = G + "src/shared/Arena/DuelModel.luau"
 CAPS = G + "src/shared/Arena/Caps.luau"
+DUEL = G + "config/Duel.luau"
 M = [
+ # --- conditions the model can evaluate (FORGE-00 verifier findings 1, 2, 4)
+ ("FL-0071", CAPS, 'if not validCondition(m.condition) then', 'if false then', "sim/ArenaCaps", "refuses an active effect with no condition"),
+ ("FL-0071", CAPS, 'return share ~= nil and share > 0 and share <= 1', 'return share ~= nil and share >= 0 and share <= 1', "sim/ArenaCaps", "an HP share outside (0, 1]"),
+ ("FL-0071", CAPS, 'return share ~= nil and share > 0 and share <= 1', 'return share ~= nil and share > 0', "sim/ArenaCaps", "an HP share outside (0, 1]"),
+ ("FL-0071", CAPS, 'local FIXED_CONDITIONS = { staminaOut = true, hype = true, opponentHeavy = true }', 'local FIXED_CONDITIONS = { staminaOut = true, hype = true }', "sim/ArenaCaps", "refuses an active effect with no condition"),
+ ("FL-0071", CAPS, 'if type(condition) ~= "string" then\n\t\treturn false\n\tend\n\tif FIXED_CONDITIONS', 'if false then\n\t\treturn false\n\tend\n\tif FIXED_CONDITIONS', "sim/ArenaCaps", "refuses an active effect with no condition"),
+ ("FL-0071", DM, 'if type(condition) ~= "string" then\n\t\treturn false', 'if false then\n\t\treturn false', "sim/DuelModel", "never fires and never throws"),
+ ("FL-0071", DM, 'lead = effect.lead or 0,', 'lead = effect.lead,', "sim/DuelModel", "reports warned = 0, never nil"),
+ ("FL-0071", DUEL, 'quietStart = 10,', 'quietStart = 5,', "sim/ArenaCaps", "quiet start is never earlier"),
+ ("FL-0071", CAPS, 'if slotSources[name] then\n\t\t\t\t\tproblem(`{name}: listed twice; a slotted passive counts once per duel`)', 'if false then\n\t\t\t\t\tproblem(`{name}: listed twice; a slotted passive counts once per duel`)', "sim/ArenaCaps", "a slotted passive listed twice"),
  # --- the duel
  ("FL-0071", DM, 'if not (dt > 0 and dt < math.huge) then', 'if false then', "sim/DuelModel", "a bad step"),
  ("FL-0071", DM, 'if not (dt > 0 and dt < math.huge) then', 'if not (dt < math.huge) then', "sim/DuelModel", "a bad step"),
