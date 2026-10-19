@@ -184,6 +184,13 @@ describe("DuelPoses: Arena.Events → each champion's animation (FL-0141)", func
 		local gone =
 			run(duel.b, NOW + DuelPoses.LENGTH.ko + 1, NOW + DuelPoses.LENGTH.ko + DuelPoses.HOLD.ko + DuelPoses.XFADE)
 		expect(gone.weight).toBe(0)
+		-- after the winner's pose has held and faded, still nothing starts
+		local after = NOW + DuelPoses.LENGTH.victory + DuelPoses.HOLD.victory + 1
+		run(duel.a, NOW, after)
+		expect(duel.a.name).toBeNil()
+		duel:onEvent({ kind = "heavyWindup", side = "a", data = { impactIn = 0.8 } }, after)
+		duel:onEvent({ kind = "parry", side = "a" }, after)
+		expect(duel.a.name).toBeNil()
 		-- time cap: the loser yields; a double KO: both slump; a forfeit: the one who stayed wins
 		local cap = DuelPoses.newDuel()
 		cap:onEvent({ kind = "ended", side = "b", data = { reason = "timeCap" } }, NOW)
@@ -350,6 +357,14 @@ describe("DuelPoses: Arena.Events → each champion's animation (FL-0141)", func
 			local mid = run(duel.a, NOW + 1, NOW + 1 + DuelPoses.XFADE / 2)
 			expect(mid.weight > 0 and mid.weight < 1).toBe(true)
 			expect(run(duel.a, NOW + 1 + DuelPoses.XFADE / 2, NOW + 1.2).weight).toBe(0)
+			-- stopped while an animation holds (the KO, when the stage moves on): it fades too, no jump
+			local held = DuelPoses.newDuel()
+			held:start(NOW)
+			held:onEvent({ kind = "ended", side = "a", data = { reason = "ko" } }, NOW)
+			run(held.b, NOW, NOW + 1)
+			held:stop(NOW + 1)
+			local fading = run(held.b, NOW + 1, NOW + 1 + DuelPoses.XFADE / 2)
+			expect(fading.weight > 0 and fading.weight < 1).toBe(true)
 		end
 	)
 
@@ -599,6 +614,14 @@ describe("DuelRig: the same pose on a Kit rig, an R15 avatar (Motor6D or Animati
 			swing.weight = 0
 			DuelRig.apply(rig, swing)
 			expect(DuelRig.same(shoulder.Transform, animated)).toBe(true)
+			-- ... nor rest over a joint that still holds our own last write
+			swing.weight = 1
+			DuelRig.apply(rig, swing)
+			local ours = shoulder.Transform
+			swing.weight = 0
+			DuelRig.apply(rig, swing)
+			expect(DuelRig.same(shoulder.Transform, ours)).toBe(true)
+			swing.weight = 1
 			-- release: a joint still holding our write goes back to rest; one the Animator wrote is left alone
 			swing.weight = 1
 			DuelRig.apply(rig, swing)
