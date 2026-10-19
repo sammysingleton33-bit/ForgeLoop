@@ -64,7 +64,7 @@ M = [
  ("FL-0130", C2+"RulerSpectateController.luau", 'kingdom.alive ~= false and kingdom.id ~= self._mine', 'kingdom.alive ~= false', "WarFeedback", "ends at Results and Lobby", "game"),
  ("FL-0130", C2+"RulerSpectateController.luau", 'pcall(camera.setMode, camera, "overview") -- no character to walk with any more', '', "WarFeedback", "starts when our kingdom falls", "game"),
  ("FL-0130", C2+"RulerSpectateController.luau", 'local index = ((self._index - 1 + step) % count) + 1', 'local index = math.min(math.max(self._index + step, 1), count)', "WarFeedback", "cycles with . and ,", "game"),
- ("FL-0130", C2+"RulerSpectateController.luau", 'if type(phase) == "string" and Def.END_PHASES[phase] and self.active then', 'if false then', "WarFeedback", "ends at Results and Lobby", "game"),
+ ("FL-0130", C2+"RulerSpectateController.luau", '\t\tif self.active then\n\t\t\tself:setActive(false)\n\t\tend\n\t\tif phase == "Lobby" then', '\t\tif phase == "Lobby" then', "WarFeedback", "ends at Results and Lobby", "game"),
  ("FL-0130", C2+"RulerSpectateController.luau", 'self._mine = nil -- a new match', 'local _ = nil -- a new match', "WarFeedback", "ends at Results and Lobby", "game"),
  # --- #178 review lows, carried in part 2
  ("FL-0130", G+A, 'if match.durationsSource == "defaults" then', 'if false then', "KingdomFeedback", "phase moments carry the Pacing length", "game"),
