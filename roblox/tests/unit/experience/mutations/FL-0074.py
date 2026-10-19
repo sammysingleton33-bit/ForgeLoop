@@ -150,4 +150,9 @@ M = [
  ("FL-0074", C2+"CrowdFiguresController.luau", 'counts.a = math.floor(counts.a * Def.REDUCED_SHARE)', 'counts.a = math.ceil(counts.a * Def.REDUCED_SHARE)', 'CrowdFigures', 'round an odd stand down', 'game'),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'local ok, value = pcall(settings.get, settings, key)', 'local ok, value = true, settings.get(settings, key)', 'CrowdFigures', 'a settings object that throws', 'game'),
  ("FL-0074", G + "config/Pacing.luau", 'intro = Arena.introSeconds,', 'intro = 15,', 'CrowdDirector', 'arena stage timings in Pacing', 'game'),
+ # FORGE-00 08:02: vote, loadout and crowning from config Arena too; duel stays the expected 120
+ ("FL-0074", G + "config/Pacing.luau", 'vote = Arena.voteSeconds,', 'vote = Arena.loadoutSeconds,', 'CrowdDirector', 'arena stage timings in Pacing', 'game'),
+ ("FL-0074", G + "config/Pacing.luau", 'loadout = Arena.loadoutSeconds,', 'loadout = Arena.voteSeconds,', 'CrowdDirector', 'arena stage timings in Pacing', 'game'),
+ ("FL-0074", G + "config/Pacing.luau", 'crowning = Arena.crowningSeconds,', 'crowning = Arena.introSeconds,', 'CrowdDirector', 'arena stage timings in Pacing', 'game'),
+ ("FL-0074", G + "config/Pacing.luau", 'duel = 120, -- the expected duel', 'duel = 195, -- the expected duel', 'CrowdDirector', 'arena stage timings in Pacing', 'game'),
 ]

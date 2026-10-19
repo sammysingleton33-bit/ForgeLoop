@@ -26,11 +26,12 @@
 	idleSec: seconds without a meaningful action (PACING.md §6) before a contextual hint, per MatchPhase
 	(no Arena entry until G12 freezes). For FL-0062's dead-air detector; nothing reads it yet.
 	arena: the Crown Arena's stages (G12.1 ArenaStage; design crown-arena.md §2 and the §11 defaults),
-	seconds each, the design budget (DRAFT until G12 freezes). qualify = the qualifiers are announced;
-	vote = co-rulers pick the champion; loadout = weapon, armour and perks; intro = the versus card and
-	the camera over both stands: FORGE-01's config Arena `introSeconds`, read here so the two cannot
-	drift (FORGE-00 2026-10-19: one source); duel = the cap (at the cap the higher HP share wins; a tie
-	goes to sudden death, which ArenaService times); crowning = the ending (at most). The live stages
+	seconds each (DRAFT until G12 freezes). vote, loadout, intro and crowning are FORGE-01's config
+	Arena (voteSeconds, loadoutSeconds, introSeconds, crowningSeconds), read here so the two cannot
+	drift (FORGE-00 2026-10-19: one source). qualify = the qualifiers are announced; vote = co-rulers
+	pick the champion; loadout = weapon, armour and perks; intro = the versus card and the camera over
+	both stands; duel = the design's expected length (120): the safety ceiling is config Arena
+	duelMaxSeconds (195), and the duel's own caps end it first; crowning = the ending. The live stages
 	run on ArenaService's clock and clients follow ArenaState.endsAt, not these numbers. Read by
 	FORGE-03's How to Play card (the arena's length) and the Crowd config spec.
 ]]
@@ -80,10 +81,10 @@ return table.freeze({
 	limits = table.freeze({ matchMinMinutes = 30, matchMaxMinutes = 45 }),
 	arena = table.freeze({
 		qualify = 5,
-		vote = 10,
-		loadout = 20,
-		intro = Arena.introSeconds, -- one source: FORGE-01's config Arena (FL-0071)
-		duel = 120,
-		crowning = 20,
+		vote = Arena.voteSeconds, -- one source: FORGE-01's config Arena (FL-0071)
+		loadout = Arena.loadoutSeconds,
+		intro = Arena.introSeconds,
+		duel = 120, -- the expected duel; config Arena duelMaxSeconds is the safety ceiling
+		crowning = Arena.crowningSeconds,
 	}),
 })

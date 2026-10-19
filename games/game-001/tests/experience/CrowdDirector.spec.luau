@@ -280,15 +280,17 @@ describe("Crowd config (FL-0074)", function()
 		end
 	end)
 
-	it("arena stage timings in Pacing follow design §2; the intro is config Arena's introSeconds", function()
+	it("arena stage timings in Pacing: vote, loadout, intro and crowning are config Arena's; duel 120", function()
 		local arena = Pacing.arena
 		assert(arena ~= nil, "Pacing.arena")
-		expect(arena.vote).toBe(10)
-		expect(arena.loadout).toBe(20)
-		expect(arena.intro).toBe(Arena.introSeconds) -- one source (FORGE-00 2026-10-19)
-		expect(arena.intro <= 15).toBe(true)
-		expect(arena.duel).toBe(120)
-		expect(arena.crowning <= 20).toBe(true)
+		-- one source (FORGE-00 2026-10-19): FORGE-01's config Arena
+		expect(arena.vote).toBe(Arena.voteSeconds)
+		expect(arena.loadout).toBe(Arena.loadoutSeconds)
+		expect(arena.intro).toBe(Arena.introSeconds)
+		expect(arena.crowning).toBe(Arena.crowningSeconds)
+		expect(arena.intro <= 15).toBe(true) -- design §2: the intro pass fits
+		expect(arena.duel).toBe(120) -- the expected duel, under config Arena's safety ceiling
+		expect(arena.duel < Arena.duelMaxSeconds).toBe(true)
 		local total = arena.qualify + arena.vote + arena.loadout + arena.intro + arena.duel + arena.crowning
 		expect(total <= Pacing.modes.match30.Arena).toBe(true) -- the stages fit the Arena phase
 	end)

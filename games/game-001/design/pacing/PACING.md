@@ -53,18 +53,18 @@ The user prefers about 25 minutes of kingdom play, then a 5-minute final phase, 
 - The default is `match`, the full match (D-053 (1), #187). `slice` stays reachable with the Studio debug command `match.mode slice` (D-053 (7)), so the VS-1 checklists still run. `match30` runs only when deliberately selected. Selecting it needs a FORGE-01 change to `Match.durationsFor` and MatchService, plus an optional FORGE-05 debug preset; both are pending. Until MatchPhase gains Arena (G12.1), a `match30` run ends after Endgame (25 min) without the final phase.
 - Results is 30 s as in `design/living-kingdom.md` §6; BRIEF §3 implies about 60 s for the leadership recap. FORGE-00 settles this with FL-0096.
 
-**Arena stages** (`Pacing.arena`, FL-0074; crown-arena §2 and the §11 defaults; DRAFT until G12 freezes). These are the design's seconds per G12.1 `ArenaStage`. The live stages run on FORGE-01's ArenaService clock (config Arena, FL-0071), and clients follow `ArenaState.endsAt`, not this table. FORGE-03's How to Play card reads it for the arena's length.
+**Arena stages** (`Pacing.arena`, FL-0074; crown-arena §2 and the §11 defaults; DRAFT until G12 freezes). These are the seconds per G12.1 `ArenaStage`. Vote, loadout, intro and crowning are read from FORGE-01's config Arena (FL-0071), so the two cannot drift (FORGE-00's ruling, 2026-10-19: one source). The live stages run on ArenaService's clock, and clients follow `ArenaState.endsAt`, not this table. FORGE-03's How to Play card reads it for the arena's length.
 
 | Stage | Seconds | Meaning |
 |---|---|---|
 | qualify | 5 | the two qualifiers are announced |
-| vote | 10 | co-rulers vote for their champion |
-| loadout | 20 | weapon, armour and perks |
-| intro | config Arena `introSeconds` (12) | the versus card; the camera passes over both stands. Read from FORGE-01's config so the two cannot drift (FORGE-00's ruling, 2026-10-19: one source) |
-| duel | 120 (the cap) | at the cap, the higher HP share wins; ArenaService times a tie's sudden death |
-| crowning | 20 (at most) | the ending (four kinds, crown-arena §7) |
+| vote | config Arena `voteSeconds` (10) | co-rulers vote for their champion |
+| loadout | config Arena `loadoutSeconds` (20) | weapon, armour and perks |
+| intro | config Arena `introSeconds` (12) | the versus card; the camera passes over both stands |
+| duel | 120 (expected) | the design's expected length. The safety ceiling is config Arena `duelMaxSeconds` (195); the duel's own caps end it first |
+| crowning | config Arena `crowningSeconds` (15) | the ending (four kinds, crown-arena §7) |
 
-They add up to 187 s, which fits match30's 270 s Arena phase and BRIEF §3's 360 s. The spare time covers sudden death and the walk to the ring.
+They add up to 182 s, which fits match30's 270 s Arena phase and BRIEF §3's 360 s. The spare time covers sudden death and the walk to the ring.
 
 ## 3. VS-1 slice, minute by minute (*targets*, from spawn; onboarding v2, D-030)
 EXPERIENCE.md §2 cites these numbers; this section holds them.
