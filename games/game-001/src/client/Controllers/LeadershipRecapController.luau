@@ -9,14 +9,21 @@
 	the recap opens over it on the modal layer and Back returns to the results. It closes with the
 	summary when a new match starts.
 
+	Arena & support (FL-0073, UI/ArenaRecapModel): each poll also looks at ArenaHudController (optional; its support
+	view, ArenaState and duel track) and keeps every support moment, my champion's perks and which fired, and the
+	duel's result. recap().arena is set once a SupportView or my kingdom's duel was seen; the recap then has a second
+	page ("Arena & support": the five biggest moments, perks fired, the crowd's reaction) behind the Page button.
+
 	Depends on KingdomHudController (store, modal layer, layout); ReputationPanelController is optional
-	(no recap without it).
+	(no recap without it); ArenaHudController is optional (no arena page without it).
 	API (specs, scenes and SliceSummaryController)
 		recap:recap() -> UI/RecapModel Recap?      recap:observe()   what each poll does
-		recap:open()  recap:close()  recap.isOpen  recap.track  recap.view
+		recap:open()  recap:close()  recap:setPage("reign" | "arena")  recap.page
+		recap.isOpen  recap.track  recap.arenaTrack  recap.view
 		LeadershipRecapController.POLL_SEC
 ]]
 
+local ArenaRecapModel = require("../UI/ArenaRecapModel")
 local LeadershipRecap = require("../UI/LeadershipRecap")
 local RecapModel = require("../UI/RecapModel")
 local Signature = require("../UI/Signature")
@@ -34,6 +41,9 @@ function Def.new(env: any, registry: any)
 		_registry = registry,
 		hud = registry:get("KingdomHudController"),
 		track = RecapModel.new(),
+		arenaTrack = ArenaRecapModel.new(),
+		page = "reign",
+		_lastKingdom = nil :: string?,
 		isOpen = false,
 		view = nil :: any,
 		_key = nil :: string?,
@@ -87,14 +97,42 @@ function LeadershipRecapController:observe()
 	local store = self.hud.store
 	local before = self.track.key
 	RecapModel.observe(self.track, store.match, self:_reputation(), store:population())
+	local arena = self._registry:find("ArenaHudController")
+	if arena ~= nil then
+		local kingdom = store:mine()
+		ArenaRecapModel.observe(
+			self.arenaTrack,
+			if type(store.match) == "table" then store.match.startedAt else nil,
+			arena.support,
+			arena.state,
+			arena.track,
+			if kingdom then kingdom.id else self._lastKingdom
+		)
+		if kingdom then
+			self._lastKingdom = kingdom.id -- a ruler whose kingdom fell keeps their champion's story
+		end
+	end
 	if self.isOpen and self.track.key ~= before then
 		self:close() -- a new match began: last match's recap goes with its summary
 	end
 end
 
+function LeadershipRecapController:_build(): any
+	local recap = RecapModel.build(self.track)
+	if recap ~= nil then
+		recap.arena = ArenaRecapModel.build(self.arenaTrack)
+	end
+	return recap
+end
+
 function LeadershipRecapController:recap(): any
 	self:observe()
-	return RecapModel.build(self.track)
+	return self:_build()
+end
+
+function LeadershipRecapController:setPage(page: string)
+	self.page = if page == "arena" then "arena" else "reign"
+	self:render()
 end
 
 function LeadershipRecapController:open()
@@ -102,6 +140,7 @@ function LeadershipRecapController:open()
 		return
 	end
 	self.isOpen = true
+	self.page = "reign"
 	self:render()
 end
 
@@ -121,19 +160,29 @@ function LeadershipRecapController:render(metrics: any?)
 		self._key = nil
 		return
 	end
-	local recap = RecapModel.build(self.track)
+	local recap = self:_build()
 	if recap == nil then
 		self.view:destroy()
 		self._key = nil
 		return
 	end
 	local m = metrics or hud:metrics()
-	local key = Signature.of({ recap = recap, breakpoint = m.breakpoint, width = m.width, height = m.height })
+	local key = Signature.of({
+		recap = recap,
+		page = self.page,
+		breakpoint = m.breakpoint,
+		width = m.width,
+		height = m.height,
+	})
 	if key == self._key and self.view.instance ~= nil then
 		return
 	end
 	self._key = key
 	self.view:render(recap, m, {
+		page = self.page,
+		onPage = function(page)
+			self:setPage(page)
+		end,
 		onBack = function()
 			self:close()
 		end,

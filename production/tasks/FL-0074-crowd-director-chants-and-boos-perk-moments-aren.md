@@ -7,11 +7,12 @@ status: BUILDING
 priority: P2
 game: game-001
 created: 2026-10-12
-updated: 2026-10-18
+updated: 2026-10-19
 depends_on: [FL-0071, FL-0072]
 context: [games/game-001/design/crown-arena.md, games/game-001/CONTRACTS.md, games/game-001/BRIEF.md]
 estimate_h: 16
-evidence: []
+evidence:
+  - "part 2b: check.sh all PASS except 1 selene shadowing warning in a spec, fixed (selene 0 warnings, KingdomFeedback 49/49); mutations.py FL-0074 84/84 CAUGHT; unverified: Studio E18"
 ---
 
 # Crowd director, chants and boos, perk moments, arena camera and music, emotional payoff
@@ -41,3 +42,4 @@ Lune specs for director rationing and tier mapping. Studio video or screenshots 
 - 2026-10-18 forge-00: SPECIFIED → READY. Operation Crownfall (D-053): arena work starts now; FORGE-01 order FL-0125 → FL-0069 → FL-0070 → FL-0071; defaults from crown-arena.md §11 apply
 - 2026-10-18 forge-04: READY → BUILDING. Part 1 (pure, before FL-0071/FL-0072): Feedback/CrowdDirector (figures one per two citizens <= 60 a stand, <= 120 total; seats by tier; tier reactions per design §3; one major every 3 s, minor per stand every 0.75 s; perk moments and the ending always win and duck the crowd; near-death and comeback; full-hype chants for chanting tiers; four endings), config/Crowd.luau DRAFT (tiers, subtitles for every reaction, pre-written chants per kingdom, endings), Pacing.arena stage seconds (qualify 5, vote 10, loadout 20, intro 15, duel 120, crowning 20), 13 crowd sounds (P2, handoff 2026-10-18-forge-04-to-user-crowd-sounds.md). Part 2 (client crowd controller, intro camera, music) waits for FL-0071 and FL-0072.
 - 2026-10-18 forge-04: BUILDING → BUILDING. Part 2a: FeedbackCrowdController feeds the crowd director from Arena.State / Arena.Events, plays the crowd sounds with the director's duck factor (announcer moments and perk stingers), shows a subtitle line per stand (ForgeCrowdCaptions; a perk or the ending holds its line), plays the ending once at crowning (no winner: quiet), drops it at done / Results / Lobby, and fires reacted(reaction, kingdom) for the stand figures (part 2b, after FL-0071 and FL-0072). Studio-only preview ForgeCrowdPreview = 'tierA,tierB' plays a scripted duel for E17.
+- 2026-10-19 forge-04: BUILDING → BUILDING. Part 2b (progress log, still BUILDING): CrowdStageController plays the intro pass over the stands (away stand, home stand, then the ring; from the Root attachments of FORGE-02's CrownArena model, else Layout.arena ± 30 studs; capped by the intro's time left), the arena music scene (MusicDirector scene: over battle music, the result still wins; Results ends it), the herald horn at intro and the fanfare at a crowning with a winner (never when called off). RulerCamera gains playShots/stopShots (overview only; any player input takes over). Studio preview ForgeArenaPreview = a | b | neutral for E18. 3 sounds P2 (handoff 2026-10-19-forge-04-to-user-arena-sounds.md). Part 2c (stand figures) after #217.
