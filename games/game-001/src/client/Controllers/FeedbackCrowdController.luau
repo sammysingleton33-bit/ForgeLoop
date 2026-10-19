@@ -8,7 +8,9 @@
 
 	When
 		- A director is made when Arena.State first names both duellists (a and b) at the intro or duel
-		  stage; a different pair starts a new one. Tiers, kingdoms and ruler names come from the state
+		  stage; a different pair starts a new one. start() also asks Arena.GetState once, since the
+		  server pushes Arena.State only on a change: a client that joins or reloads mid-duel still
+		  gets its crowd (a push that came first is newer and wins). Tiers, kingdoms and ruler names come from the state
 		  (an AI duellist has no name to chant, so its stand uses a line without one).
 		- Arena.Events (batched) feed it during the duel; events with no director are dropped.
 		- Crowning ends it: finish(the winner's side), or finish(nil) when `winner` names nobody. The
@@ -119,6 +121,8 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_gui = nil :: any,
 		_preview = nil :: any,
 		_previewOwned = false, -- the director was made by the preview, not by a duel
+		_arenaSeen = false, -- an Arena.State push arrived (newer than a GetState reply)
+		_destroyed = false,
 		director = nil :: any,
 		reacted = Signal.new(),
 	}, Controller)
@@ -133,9 +137,17 @@ function Controller:start()
 	table.insert(
 		self._links,
 		RemoteLink.on(env, "Arena.State", function(state)
+			self._arenaSeen = true
 			self:onArenaState(state)
 		end)
 	)
+	-- Arena.State is pushed only on a change: a client that joins or reloads mid-duel asks once
+	-- (FORGE-00's B22 verifier note); a push that came first is newer and wins.
+	RemoteLink.request(env, "Arena.GetState", function(state)
+		if not self._destroyed and not self._arenaSeen then
+			self:onArenaState(state)
+		end
+	end)
 	table.insert(
 		self._links,
 		RemoteLink.on(env, "Arena.Events", function(batch)
@@ -171,6 +183,7 @@ end
 
 function Controller:destroy()
 	self._running = false
+	self._destroyed = true
 	for _, link in self._links do
 		pcall(function()
 			link:disconnect()

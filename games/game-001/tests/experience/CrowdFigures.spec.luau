@@ -88,6 +88,9 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 	local function boot(opts)
 		opts = opts or {}
 		crowd = { director = nil, reacted = Signal.new() }
+		if opts.beforeStart then
+			opts.beforeStart(env) -- remotes that exist before the controller starts (a client joining late)
+		end
 		local values = opts.settings or {}
 		controller = Loader.load(env, {
 			{
@@ -125,6 +128,17 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 		}):get("CrowdFiguresController")
 	end
 
+	-- The stands build Def.BUILD_PER_STEP figures a step: step until the build is done (or 20 steps).
+	local function fill(t)
+		controller:step(t or 0)
+		for _ = 1, 20 do
+			if not controller._pending then
+				break
+			end
+			controller:step(t or 0)
+		end
+	end
+
 	local function seatOf(name)
 		local root = arena:FindFirstChild("Root")
 		return root.CFrame * root:FindFirstChild(name).CFrame
@@ -135,11 +149,102 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 		arena = Kit.arena()
 	end)
 
+	it("builds BUILD_PER_STEP figures a step, both stands in turn, front-row centre first (FORGE-00 B22)", function()
+		expect(FiguresDef.ROWS).toBe(Kit.ARENA.SEAT_ROWS) -- FORGE-02's grid, not a copy
+		expect(FiguresDef.ROWS * FiguresDef.SEATS).toBe(Kit.ARENA.SEATS_PER_STAND)
+		boot({ model = arena })
+		crowd.director = director("loyal", "crimson", "loyal", "azure") -- 60 + 60
+		controller:step(0)
+		local half = FiguresDef.BUILD_PER_STEP / 2
+		expect(#controller.figures.a).toBe(half)
+		expect(#controller.figures.b).toBe(half)
+		expect(controller._pending).toBe(true)
+		expect(controller.figures.a[1].row).toBe(1)
+		expect(controller.figures.a[1].seatIndex).toBe(9)
+		local steps = 1
+		while controller._pending and steps < 20 do
+			controller:step(0)
+			steps += 1
+		end
+		expect(steps).toBe(math.ceil(120 / FiguresDef.BUILD_PER_STEP))
+		expect(#controller.figures.a).toBe(60)
+		expect(#controller.figures.b).toBe(60)
+		controller:step(0) -- done: nothing more is built
+		expect(#env.Workspace:FindFirstChild(FiguresDef.FOLDER):GetChildren()).toBe(120)
+	end)
+
+	it("a seat attachment the arena lacks stays empty, with one warning per controller (FORGE-00 B22)", function()
+		arena.Root:FindFirstChild("StandA_Row1_Seat9"):Destroy()
+		boot({ model = arena })
+		crowd.director = director("loyal", "crimson", "loyal", "azure")
+		fill()
+		expect(#controller.figures.a).toBe(59)
+		expect(#controller.figures.b).toBe(60)
+		local function warnings()
+			local n = 0
+			for _, entry in env.mock.logs do
+				if entry.level == "warn" and string.find(entry.message, "seat attachment is missing", 1, true) then
+					n += 1
+				end
+			end
+			return n
+		end
+		expect(warnings()).toBe(1)
+		crowd.director = director("loyal", "emerald", "loyal", "gold") -- a refill: no second warning
+		fill()
+		expect(#controller.figures.a).toBe(59)
+		expect(warnings()).toBe(1)
+	end)
+
+	it("a client that joins mid-duel asks Arena.GetState once for the citizens; a push wins (FORGE-00 B22)", function()
+		local function remotes(answer, pushed)
+			return function(e)
+				local root = e.newInstance("Folder")
+				root.Name = "ForgeRemotes"
+				root.Parent = e.ReplicatedStorage
+				local area = e.newInstance("Folder")
+				area.Name = "Arena"
+				area.Parent = root
+				local get = e.newInstance("RemoteFunction")
+				get.Name = "GetState"
+				get.Parent = area
+				get.OnServerInvoke = function()
+					return answer
+				end
+				local push = e.newInstance("RemoteEvent")
+				push.Name = "State"
+				push.Parent = area
+				if pushed ~= nil then
+					push:FireAllClients(pushed)
+				end
+			end
+		end
+		boot({ model = arena, beforeStart = remotes({ stage = "duel", a = { citizens = 40 }, b = { citizens = 20 } }) })
+		env.mock:advance(1)
+		crowd.director = director("loyal", "crimson", "loyal", "azure")
+		fill()
+		expect(#controller.figures.a).toBe(20) -- 40 citizens, one figure per two
+		expect(#controller.figures.b).toBe(10)
+		env = MockEnv.new({ isServer = false, localPlayer = { userId = 1001 } })
+		boot({
+			model = Kit.arena(),
+			beforeStart = remotes(
+				{ stage = "duel", a = { citizens = 40 }, b = { citizens = 20 } },
+				{ stage = "duel", a = { citizens = 100 }, b = { citizens = 80 } }
+			),
+		})
+		env.mock:advance(1)
+		crowd.director = director("loyal", "crimson", "loyal", "azure")
+		fill()
+		expect(#controller.figures.a).toBe(50) -- the push's 100 citizens, not the reply's 40
+		expect(#controller.figures.b).toBe(40)
+	end)
+
 	it("a duel fills both stands: each figure on its seat, Stand A for side a, the tier's fill", function()
 		boot({ model = arena })
 		controller:onArenaState({ stage = "duel", a = { citizens = 40 }, b = { citizens = 120 } })
 		crowd.director = director("loyal", "crimson", "hostile", "azure")
-		controller:step(0)
+		fill()
 		expect(#controller.figures.a).toBe(20)
 		expect(#controller.figures.b).toBe(30)
 		local first = controller.figures.a[1]
@@ -164,15 +269,15 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 	it("a new pair refills the stands; no director (done, Results, Lobby) empties them", function()
 		boot({ model = arena })
 		crowd.director = director("adoring", "emerald", "loyal", "gold")
-		controller:step(0)
+		fill()
 		local old = controller.figures.a[1].model
 		expect(#controller.figures.a).toBe(60) -- citizens unknown: a full stand
 		crowd.director = director("hostile", "crimson", "hostile", "azure")
-		controller:step(0)
+		fill()
 		expect(old.Parent).toBeNil()
 		expect(#controller.figures.a).toBe(30)
 		crowd.director = nil
-		controller:step(0)
+		fill()
 		expect(#controller.figures.a + #controller.figures.b).toBe(0)
 		expect(env.Workspace:FindFirstChild(FiguresDef.FOLDER)).toBeNil()
 	end)
@@ -180,30 +285,30 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 	it("the arena streams in after the director: the stands fill once it is there, once (FORGE-07 #237 M1)", function()
 		boot({}) -- no model option: the live tag lookup
 		crowd.director = director("loyal", "crimson", "hostile", "azure")
-		controller:step(0)
+		fill()
 		expect(#controller.figures.a + #controller.figures.b).toBe(0)
-		controller:step(0)
+		fill()
 		expect(#controller.figures.a).toBe(0) -- still waiting, nothing half-built
 		arena.Parent = env.Workspace
 		env.CollectionService:AddTag(arena, FiguresDef.TAG)
-		controller:step(0)
+		fill()
 		expect(#controller.figures.a).toBe(60)
 		expect(#controller.figures.b).toBe(30)
 		local first = controller.figures.a[1].model
-		controller:step(0)
-		controller:step(0)
+		fill()
+		fill()
 		expect(controller.figures.a[1].model).toBe(first) -- seated once, not rebuilt every step
 		expect(#env.Workspace:FindFirstChild(FiguresDef.FOLDER):GetChildren()).toBe(90)
 		-- the director goes before the arena ever came: nothing left waiting
 		crowd.director = nil
-		controller:step(0)
+		fill()
 		expect(controller._pending).toBe(false)
 	end)
 
 	it("without the arena model, or for a kingdom the config lacks, nothing is built", function()
 		boot({})
 		crowd.director = director("loyal", "crimson", "loyal", "azure")
-		controller:step(0)
+		fill()
 		expect(#controller.figures.a + #controller.figures.b).toBe(0)
 		-- a Kit that would build a neutral figure for a missing colour: still no figure for that stand
 		local lenient = {
@@ -213,7 +318,7 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 		}
 		boot({ model = arena, kit = lenient })
 		crowd.director = director("loyal", "nowhere", "loyal", "azure")
-		controller:step(0)
+		fill()
 		expect(#controller.figures.a).toBe(0)
 		expect(#controller.figures.b).toBe(60)
 	end)
@@ -221,7 +326,7 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 	it("low-end clients: reduced effects seat half of each stand; reduced motion skips the hops only", function()
 		boot({ model = arena, settings = { effectsQuality = "reduced", reducedMotion = true } })
 		crowd.director = director("loyal", "crimson", "hostile", "azure")
-		controller:step(0)
+		fill()
 		expect(#controller.figures.a).toBe(30) -- 60 * 0.5
 		expect(#controller.figures.b).toBe(15) -- 30 * 0.5
 		local t0 = env.clock()
@@ -243,7 +348,7 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 	it("the platform's Reduce Motion skips the hops with the in-game toggle off (FORGE-07 #237 M2)", function()
 		boot({ model = arena, settings = { reducedMotion = false }, platformReduced = true })
 		crowd.director = director("loyal", "crimson", "loyal", "azure")
-		controller:step(0)
+		fill()
 		expect(#controller.figures.a).toBe(60)
 		local t0 = env.clock()
 		crowd.reacted:fire({ stand = "a", kind = "roar" }, "crimson")
@@ -253,7 +358,7 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 		end
 		boot({ model = arena, settings = { reducedMotion = false }, platformReduced = false }) -- neither: hops
 		crowd.director = director("loyal", "crimson", "loyal", "azure")
-		controller:step(0)
+		fill()
 		crowd.reacted:fire({ stand = "a", kind = "roar" }, "crimson")
 		controller:step(env.clock() + 0.2)
 		local lifted = 0
@@ -267,7 +372,7 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 		boot({ model = arena, settings = { effectsQuality = "reduced" } })
 		controller:onArenaState({ stage = "duel", a = { citizens = 46 }, b = { citizens = 120 } })
 		crowd.director = director("loyal", "crimson", "loyal", "azure")
-		controller:step(0)
+		fill()
 		expect(#controller.figures.a).toBe(11) -- 46 citizens = 23 figures, half rounded down
 		expect(#controller.figures.b).toBe(30)
 	end)
@@ -275,7 +380,7 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 	it("a settings object that throws reads as no settings: full stands, hops on", function()
 		boot({ model = arena, settingsThrow = true })
 		crowd.director = director("loyal", "crimson", "loyal", "azure")
-		controller:step(0)
+		fill()
 		expect(#controller.figures.a).toBe(60)
 		crowd.reacted:fire({ stand = "a", kind = "roar" }, "crimson")
 		controller:step(env.clock() + 0.2)
@@ -289,7 +394,7 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 	it("a roar hops the reacting stand only, and every figure lands back on its seat", function()
 		boot({ model = arena })
 		crowd.director = director("loyal", "crimson", "loyal", "azure")
-		controller:step(0)
+		fill()
 		local t0 = env.clock()
 		crowd.reacted:fire({ stand = "a", kind = "roar" }, "crimson")
 		controller:step(t0 + 0.2)
@@ -310,7 +415,7 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 	it("gasp slumps, turnBack turns the backs, murmur stays still; a new motion starts from the seats", function()
 		boot({ model = arena })
 		crowd.director = director("hostile", "crimson", "hostile", "azure")
-		controller:step(0)
+		fill()
 		local t0 = env.clock()
 		crowd.reacted:fire({ stand = "b", kind = "turnBack" }, "azure")
 		controller:step(t0 + 0.5)

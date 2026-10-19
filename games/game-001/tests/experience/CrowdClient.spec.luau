@@ -83,6 +83,9 @@ local function boot(opts)
 			})
 		end,
 	})
+	if opts.beforeStart then
+		opts.beforeStart(env) -- remotes that exist before the controller starts (a client joining late)
+	end
 	local registry = Loader.load(env, defs)
 	return {
 		env = env,
@@ -91,6 +94,32 @@ local function boot(opts)
 		crowd = registry:get("FeedbackCrowdController"),
 		announcer = registry:get("AnnouncerController"),
 	}
+end
+
+-- ForgeRemotes/Arena: GetState answers `answer` (after `delay` seconds, if given); `pushed`, when given,
+-- is an Arena.State fired before anyone listens (MockRemotes queues it for the first handler).
+local function arenaRemotes(env, answer, pushed, delay)
+	local root = env.newInstance("Folder")
+	root.Name = "ForgeRemotes"
+	root.Parent = env.ReplicatedStorage
+	local area = env.newInstance("Folder")
+	area.Name = "Arena"
+	area.Parent = root
+	local get = env.newInstance("RemoteFunction")
+	get.Name = "GetState"
+	get.Parent = area
+	get.OnServerInvoke = function()
+		if delay then
+			env.wait(delay) -- a slow server: the reply comes after the caller moved on
+		end
+		return answer
+	end
+	local push = env.newInstance("RemoteEvent")
+	push.Name = "State"
+	push.Parent = area
+	if pushed ~= nil then
+		push:FireAllClients(pushed)
+	end
 end
 
 local function ids(plays)
@@ -121,6 +150,38 @@ describe("FeedbackCrowdController: the duel's director (FL-0074 part 2a)", funct
 		t.crowd:onArenaState("duel")
 		t.crowd:onArenaState(state("duel", { a = "nobody" }))
 		expect(t.crowd.director).toBeNil()
+	end)
+
+	it("a client that joins mid-duel asks Arena.GetState once and gets its director (FORGE-00 B22)", function()
+		local t = boot({
+			beforeStart = function(env)
+				arenaRemotes(env, state("duel"))
+			end,
+		})
+		t.env.mock:advance(1)
+		assert(t.crowd.director ~= nil, "a director from the GetState reply")
+		expect(t.crowd.director:side("a").kingdom).toBe("crimson")
+		-- a push that came first is newer: the late reply never replaces it
+		local pushed = state("duel")
+		pushed.b = duellist(7600, "loyal", "gold")
+		local u = boot({
+			beforeStart = function(env)
+				arenaRemotes(env, state("duel"), pushed)
+			end,
+		})
+		u.env.mock:advance(1)
+		assert(u.crowd.director ~= nil, "a director from the push")
+		expect(u.crowd.director:side("b").kingdom).toBe("gold")
+		-- destroyed before the reply: nothing is made
+		local w = boot({
+			beforeStart = function(env)
+				arenaRemotes(env, state("duel"), nil, 0.5)
+			end,
+		})
+		expect(w.crowd.director).toBeNil() -- still waiting for the slow reply
+		w.crowd:destroy()
+		w.env.mock:advance(1)
+		expect(w.crowd.director).toBeNil()
 	end)
 
 	it("Results and Lobby drop the director and clear the subtitles; events before a director are dropped", function()
