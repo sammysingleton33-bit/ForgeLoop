@@ -534,6 +534,7 @@ Needs:
 |---|---|
 | Raid beacon | A red column of sparks rises where the raid is, visible from the aerial start zoom, until "Your lands are clear" |
 | Ping | G (keyboard, Windows and Mac) or D-pad up (gamepad) moves the aerial camera to the raid, also from walk mode |
+| Siege beacon | While your keep is under siege, the same red column rises over your keep, and G (or FORGE-03's rail button) goes there first, even during a raid. When the siege lifts its beacon goes, and G goes to the raid again if one is still on |
 | Hit flash | A soldier or citizen that is hit flashes white for a moment, with a few bright sparks. No blood, ever |
 | Death | The fallen kneel or lie down, then fade out over about a second. Nobody stays on the field. A rig reused later is fully visible |
 | Building hit | Dust and stone chips at the roof, and the building jolts briefly (no jolt with Reduced motion on). It stands exactly where it was afterwards |
@@ -545,13 +546,15 @@ Steps
 2. (Needs FL-0125.) Start a full match, jump to Conflict (`match.phase Conflict`), and watch an AI war from the air. Hits flash (when the cue exists), the dead fade out, and buildings under attack jolt and throw dust. Screenshot **E15-2**.
 3. (Needs FL-0125.) Turn Reduced motion on (Settings) and watch an attack again: the dust stays, and no building jolts.
 4. (Needs FL-0125.) Watch a building being destroyed: dust cloud and debris. When a whole kingdom falls, at most six collapse at once, with one crash. Screenshot **E15-3**.
-5. (Needs FL-0125; two players, or let an AI conquer you.) When your keep falls: "Your keep has fallen", then the camera moves to a battle or a standing keep. Cycle with `.` and `,` (R1 / L1). At Results the camera is yours again.
+5. Still in Play Solo: run `fx.announce raid`, then `fx.announce siege`. Two beacons: the map centre and 40 studs from it (the stand-in keep). G goes to the keep's. `fx.announce raidOver`: the centre beacon goes, the keep's stays, G still goes to the keep. `fx.announce siegeLifted`: no beacon left. (Needs FL-0125 for a real one: in an AI war, when an enemy first hits your keep, the beacon rises over your keep.) Screenshot **E15-4**.
+6. (Needs FL-0125; two players, or let an AI conquer you.) When your keep falls: "Your keep has fallen", then the camera moves to a battle or a standing keep. Cycle with `.` and `,` (R1 / L1). At Results the camera is yours again.
 
-Pass: step 1 holds (2–5 when FL-0125 is on the build). Copy every red line from Output.
+Pass: steps 1 and 5 hold (2–4 and 6 when FL-0125 is on the build). Copy every red line from Output.
 
 History:
 - 2026-10-18 FORGE-04: written (FL-0130 part 2).
 - 2026-10-18 FORGE-04: spectating never starts during Results or Lobby (FORGE-07's #189 M1); the two-keeps-in-one-batch limit noted (FORGE-07 on #183).
+- 2026-10-19 FORGE-04: the siege beacon on your keep, ahead of a raid (step 5; FORGE-00's FL-0130 close-out).
 
 ## E16 — Duel controls: keyboard and mouse, gamepad, touch (FL-0075, game-001)
 
@@ -608,3 +611,65 @@ History:
 - 2026-10-19 FORGE-04: two-line boxes and the kingdom's short name, so the longest lines are not cut off (FORGE-07's #199 M1).
 - 2026-10-19 FORGE-04: step 4 also holds the thumbstick under the lowest box (FORGE-07 on #199).
 - 2026-10-19 FORGE-04: step 5 checks the perk names and the called-off ending (DuelService's Arena.Events relay, FORGE-00's draw ruling).
+
+## E18 — The arena intro: a camera pass over both stands, the arena music and the stingers (FL-0074 part 2b, game-001)
+
+At the arena's intro, everyone's overview camera passes over the two stands and settles on the ring, so each side sees its own crowd (crown-arena §7 "Intro"). The arena music plays from the intro to the crowning. A horn opens the intro, and a fanfare crowns a winner.
+
+Needs:
+- Steps 1–3: FORGE-02's arena on the build (FL-0072, #217: `Workspace.World.Arena.CrownArena`). Without it, write "blocked: needs FL-0072". They use the **Studio preview**, the same pass the real intro plays.
+- Steps 4–5: FORGE-01's arena (FL-0071: `Arena.State`). Until then write "blocked: needs FL-0071".
+- The music and the stingers are silent until the owner picks them (`production/handoffs/2026-10-19-forge-04-to-user-arena-sounds.md`). Write "silent (no asset)". While `music.arena` has no asset, the arena keeps the match music (battle or phase) instead of going silent (FORGE-07 #231 M1).
+
+Steps
+1. Play Solo, aerial camera. In the command bar run `game.Players:GetPlayers()[1]:SetAttribute("ForgeArenaPreview", "a")`. The camera glides to stand **B** (about 4 s, the stand fills the view and its seats face the ring), then to stand **A**, then to the ring seen from stand A's side. It stops there; no snap back. Screenshot **E18-1** on each stand and on the ring.
+2. Run it again with `"b"`: A first, then B, then the ring from B's side. Then `"neutral"`: A, B, the ring from A's side. During a pass, drag the view, turn it (Q / E) or scroll: the pass stops at once and the camera is yours. `""` ends a preview.
+3. Settings → Reduced motion on, then the `"a"` preview: three cuts, each held about 4 s, with no gliding. Turn reduced motion off again.
+4. (Needs FL-0071.) In a real arena: at the intro the horn plays once and the pass runs behind FORGE-03's versus card, the card stays readable, and the pass ends on the ring before the duel starts (it fits the intro, at most 15 s). Watch it as a ruler of each duelling kingdom and of a third one.
+5. (Needs FL-0071.) The arena music plays from the intro and over any battle music, until the crowning ends. A crowning with a winner, or a single qualifier crowned without a duel, plays the fanfare once; a called-off duel shows "(The duel was called off)" and plays no fanfare. At Results the match's own music comes back.
+
+Pass: steps 1–3 hold (4 and 5 when FL-0071 is on the build). Copy every red line from Output.
+
+History:
+- 2026-10-19 FORGE-04: written (FL-0074 part 2b; G12 v0.4-g11e).
+
+## E19 — Full-match tips: war, siege, raid, ram and the Crown Arena (FL-0137, game-001)
+
+Needs:
+- The full match on the build (FORGE-01's FL-0125, `Match.mode = "match"`), with at least one AI rival.
+- The war events on the server: `WarChanged` (MatchHost), `SiegeChanged` and `RaidChanged` (Sim/WarWatch). These are on `main`.
+- For the siege tip's "Press G or tap the marked button": FORGE-04's siege alert (#235). Without it, G and the rail button answer raids only.
+- For the gold stroke on the Kingdom button and the Raid rail button: FORGE-03's `HUD.KingdomButton` and `HUD.RaidButton` (#232). Without them the tips show with no mark.
+- For the Crown Arena tip: FORGE-01's ArenaService (FL-0071). Without it that tip never shows (Output: `onboarding: a step's service is missing` for `tip_crown_arena`), because the build has no duel to promise.
+- For the ram tip: FORGE-01's MilitaryService. Without it the ram tip never shows (Output: `onboarding: a step's service is missing` for `tip_ram`).
+- DataService is not needed. Without it each tip shows once per session, not once ever (D-027).
+
+| Tip | Shows when | Card |
+|---|---|---|
+| `tip_war_open` | Conflict starts | "Conflict: war is open" |
+| `tip_war_on_you` | a rival declares war on your kingdom | "A rival declared war on you" |
+| `tip_siege` | your keep is besieged | "Your keep is under siege!" |
+| `tip_raid` | enemies enter your lands | "Raiders in your lands!" |
+| `tip_ram` | your soldiers besiege an enemy keep | "Your army is at their keep" |
+| `tip_crown_arena` | Endgame starts | "Endgame: the race for the crown" |
+
+Rules for every tip:
+- A tip uses the onboarding card. Its button reads "Got it", and it has no step counter.
+- A tip hides by itself after 12 s, or sooner when its situation ends (the siege lifted, the raid over, peace made, you declared war, you recruited).
+- A tip never freezes the camera, blocks taps or opens a panel.
+- A tip shows over an unfinished tutorial step, and the tutorial's card comes back when the tip ends.
+
+Steps
+1. Play Solo in a full match. Filter Output for `onboarding`. Speed up the phases, or play to Conflict. When Conflict starts, "Conflict: war is open" shows and hides by itself about 12 s later. You can pan, zoom and tap while it shows. Screenshot **E19-1**.
+2. Declare war on a rival from the Kingdom panel. If the war tip is still showing, it hides at once. Wait for (or provoke) a raid and a siege on your keep. "Raiders in your lands!" and "Your keep is under siege!" each show once. Press "Got it" on one: it hides at once, and Output shows `onboarding tip dismissed`. Screenshot **E19-2** (the siege tip).
+3. Let a second raid or siege come. No tip shows again.
+4. Send soldiers to an enemy keep. When the siege starts, "Your army is at their keep" shows (it needs MilitaryService). Recruit any unit: the tip hides.
+5. (Needs ArenaService.) Reach Endgame. "Endgame: the race for the crown" shows. On a 667×375 phone, its body and the Conflict tip's body each fit inside the card, on two lines (FORGE-07 #236 L1).
+6. Settings → turn hints off, then start a new session and repeat step 1. No tip shows. The tutorial card still shows.
+7. Phone emulator (667×375): repeat step 2. The tip and its "Got it" button are not cut off, and the button is easy to tap.
+8. (Two players, Test → Local Server, 2 players, different kingdoms.) Player 1 declares war on player 2's kingdom. Player 2 sees "A rival declared war on you"; player 1 does not.
+
+Pass: steps 1–7 hold (8 when two players can join). Write which tips you saw, and copy every red line from Output.
+
+History:
+- 2026-10-19 FORGE-04: written (FL-0137; D-053, Operation Crownfall).

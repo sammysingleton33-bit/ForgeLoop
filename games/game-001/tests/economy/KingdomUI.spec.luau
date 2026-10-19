@@ -161,6 +161,7 @@ describe("Kingdom HUD (desktop)", function()
 		-- FORGE-04 onboarding targets
 		expect(find(hud.guis.hud, "Pills"):GetAttribute("OnboardingTarget")).toBe("HUD.Resources")
 		expect(find(hud.guis.hud, "Menu_build"):GetAttribute("OnboardingTarget")).toBe("HUD.BuildButton")
+		expect(find(hud.guis.hud, "Menu_kingdom"):GetAttribute("OnboardingTarget")).toBe("HUD.KingdomButton") -- FL-0137
 	end)
 
 	it("follows the server: treasury pushes float a delta, Crown Points and phase update", function()

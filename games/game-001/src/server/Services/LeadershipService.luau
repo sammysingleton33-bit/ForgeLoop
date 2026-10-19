@@ -14,8 +14,16 @@
 			one sample per `Support.sampling.intervalSeconds` of match time, oldest first, all seven components 0..100
 			(SupportModel.score reads exactly this). userId picks which ruler's conduct and valour are in it.
 		LeadershipService:sample()                      -- one round (the loop calls it; specs call it directly)
+		LeadershipService:closeOut()                    -- a final round when the arena begins; credits the open phase
 		LeadershipService.acted: Signal<(kingdom, userId?, act, component, delta)>
 			(the G12.5 `LeadershipAct` event is fired on the GameEvents bus once FORGE-05 declares it)
+
+	Acts the service records by itself from the simulation (thresholds in config Support `rules`), for every ruler
+	who was seated when the streak behind the act began (a ruler who joined later did not earn it) (the "no ruler" series for an AI-held one), checked at each sample: starvation (fed ratio below
+	the bar for more than 60 s, once per episode), fedRatioKept (fed ratio never under 0.9 through a whole Expansion,
+	Conflict or Endgame, recorded when the phase changes, or by `closeOut` for the phase the arena
+	begins in) and overConscription (soldiers above 35 % of soldiers +
+	citizens for more than 60 s, once per episode). Phase edges are seen at sample resolution (30 s).
 
 	Components sampled: reputation = mean of ReputationService's kingdom categories (config reputationCategories) plus
 	the kingdom's reputation act offset; happiness / stability / morale = the kingdom's conditions (stability minus
@@ -60,6 +68,8 @@ function LeadershipService:_reset(round: any)
 	self._samples = {} :: { [string]: { any } } -- "kingdom|userId" -> samples
 	self._lastSampleAt = -math.huge
 	self._warned = {} :: { [string]: boolean }
+	self._watch = {} :: { [string]: any } -- kingdom -> what the act rules have seen so far
+	self._seatedSince = {} :: { [string]: { [number]: number } } -- kingdom -> ruler -> the first sample they were seated at
 end
 
 function LeadershipService:_sim(): any
@@ -164,6 +174,105 @@ function LeadershipService:_kingdomComponents(sim: any, kingdom: string, k: any)
 	}
 end
 
+-- Records `act` for every ruler who was seated when the streak behind it began (`since`: the first low sample, the
+-- first sample of the phase, ...): a ruler who joined later did not earn it. The unseated series (an AI holds the
+-- kingdom) takes it whenever it happens.
+function LeadershipService:_recordRulers(kingdom: string, k: any, act: string, since: number)
+	if #k.rulers == 0 then
+		self:record(kingdom, nil, act, 1)
+		return
+	end
+	local seated = self._seatedSince[kingdom] or {}
+	for _, userId in k.rulers do
+		if (seated[userId] or math.huge) <= since then
+			self:record(kingdom, userId, act, 1)
+		end
+	end
+end
+
+-- The acts the simulation's own state decides (config Support `rules`); see the header.
+function LeadershipService:_watchKingdom(kingdom: string, k: any, now: number, closing: boolean)
+	local rules = self.config.rules
+	local w = self._watch[kingdom]
+	if w == nil then
+		w = {
+			lowSince = nil,
+			starving = false,
+			armedSince = nil,
+			conscripting = false,
+			phase = nil,
+			phaseMin = 1,
+			phaseSince = now,
+			credited = false,
+		}
+		self._watch[kingdom] = w
+	end
+	local fed = k.fedRatio or 1
+	local seated = self._seatedSince[kingdom]
+	if seated == nil then
+		seated = {}
+		self._seatedSince[kingdom] = seated
+	end
+	local present: { [number]: boolean } = {}
+	for _, userId in k.rulers do
+		present[userId] = true
+		seated[userId] = seated[userId] or now
+	end
+	for userId in seated do
+		if not present[userId] then
+			seated[userId] = nil -- a ruler who left and comes back starts again
+		end
+	end
+
+	-- an episode runs from the first sample under the bar; it counts once it has lasted more than `seconds`
+	if fed < rules.starvation.below then
+		w.lowSince = w.lowSince or now
+		if not w.starving and now - w.lowSince > rules.starvation.seconds then
+			w.starving = true
+			self:_recordRulers(kingdom, k, "starvation", w.lowSince)
+		end
+	else
+		w.lowSince = nil
+		w.starving = false
+	end
+
+	local phase = self._match:getPhase()
+	if w.phase ~= phase then
+		if
+			w.phase ~= nil
+			and not w.credited
+			and rules.fedKept.phases[w.phase]
+			and w.phaseMin >= rules.fedKept.atLeast
+		then
+			self:_recordRulers(kingdom, k, "fedRatioKept", w.phaseSince)
+		end
+		w.phase = phase
+		w.phaseMin = fed
+		w.phaseSince = now
+		w.credited = false
+	else
+		w.phaseMin = math.min(w.phaseMin, fed)
+	end
+	-- the last phase never changes (Endgame waits for the arena), so the arena's start closes it
+	if closing and not w.credited and rules.fedKept.phases[phase] and w.phaseMin >= rules.fedKept.atLeast then
+		w.credited = true
+		self:_recordRulers(kingdom, k, "fedRatioKept", w.phaseSince)
+	end
+
+	local soldiers, citizens = #k.unitIds, #k.citizenIds
+	local share = if soldiers + citizens > 0 then soldiers / (soldiers + citizens) else 0
+	if share > rules.conscription.soldierShareAbove then
+		w.armedSince = w.armedSince or now
+		if not w.conscripting and now - w.armedSince > rules.conscription.seconds then
+			w.conscripting = true
+			self:_recordRulers(kingdom, k, "overConscription", w.armedSince)
+		end
+	else
+		w.armedSince = nil
+		w.conscripting = false
+	end
+end
+
 function LeadershipService:_store(kingdom: string, userId: number?, sample: any)
 	local key = sampleKey(kingdom, userId)
 	local list = self._samples[key]
@@ -177,19 +286,20 @@ function LeadershipService:_store(kingdom: string, userId: number?, sample: any)
 	end
 end
 
-function LeadershipService:sample()
+function LeadershipService:sample(closing: boolean?)
 	local sim = self:_sim()
 	if not sim.active then
 		return
 	end
 	local now = sim.time
-	if now - self._lastSampleAt < self.config.sampling.intervalSeconds - 1e-6 then
+	if not closing and now - self._lastSampleAt < self.config.sampling.intervalSeconds - 1e-6 then
 		return
 	end
 	self._lastSampleAt = now
 	for _, kingdom in sim.kingdomOrder do
 		local k = sim.kingdoms[kingdom]
 		if k.alive and k.populated then
+			self:_watchKingdom(kingdom, k, now, closing == true)
 			local shared = self:_kingdomComponents(sim, kingdom, k)
 			-- one series per seated ruler; an AI-held kingdom has one for the "no ruler" key
 			local rulers: { any } = if #k.rulers > 0 then table.clone(k.rulers) else { false }
@@ -202,6 +312,13 @@ function LeadershipService:sample()
 			end
 		end
 	end
+end
+
+-- The match is about to leave its last phase for the arena (which Endgame waits in): one more sample, taken now,
+-- and the open phase is credited if its streak qualifies, so the ledger the arena reads is complete. ArenaService
+-- calls this when the arena begins.
+function LeadershipService:closeOut()
+	self:sample(true)
 end
 
 -- ---------------------------------------------------------------- lifecycle

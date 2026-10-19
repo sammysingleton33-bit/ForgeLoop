@@ -27,6 +27,9 @@
 	  with no winner (Arena.Events `ended` with side "draw", cancelled or both champions dropped: no
 	  crowd payoff, FORGE-00 2026-10-19).
 	triggerNames: the perk names a `triggerFired` caption shows, by TriggerId (design §4 table; G12.1).
+	intro: the intro's camera pass over the stands (CrowdStageController, design §7 "Intro"): each stand
+	  shot at `standZoom` studs for `standSec`, then the ring at `ringZoom` for `ringSec`; the pass
+	  shrinks to fit a shorter intro (Pacing.arena.intro at most), never below `minShotSec` a shot.
 ]]
 
 return table.freeze({
@@ -81,6 +84,7 @@ return table.freeze({
 		empty = table.freeze({ sound = nil, caption = "(The stand empties)" }),
 		calledOff = table.freeze({ sound = nil, caption = "(The duel was called off)" }),
 	}),
+	intro = table.freeze({ standZoom = 55, ringZoom = 80, standSec = 4, ringSec = 4, minShotSec = 1 }),
 	triggerNames = table.freeze({
 		reforge = "Reforge",
 		fieldRemedy = "Field Remedy",

@@ -53,9 +53,31 @@ also accepted: no device insets, same top bar.
 | phone | 844 × 390 | 47 / 47 / 0 / 21 | 58 | 750 × 311 at (47, 58) | 646 × 58 at (151, 0) |
 | tablet | 1024 × 768 | 0 / 0 / 0 / 20 | 58 | 1024 × 690 at (0, 58) | 920 × 58 at (104, 0) |
 | desktop | 1920 × 1080 | 0 / 0 / 0 / 0 | 58 | 1920 × 1022 at (0, 58) | 1816 × 58 at (104, 0) |
+| desktop-720 | 1280 × 720 | 0 / 0 / 0 / 0 | 58 | 1280 × 662 at (0, 58) | 1176 × 58 at (104, 0) |
+| desktop-1440 | 2560 × 1440 | 0 / 0 / 0 / 0 | 58 | 2560 × 1382 at (0, 58) | 2456 × 58 at (104, 0) |
 
 The top bar (58 px band, ~104 px of Roblox controls on its left) is an estimate; in a live game
 `GuiService.TopbarInset` gives the real rectangle.
+
+game-001's `UI/Layout` puts 1280 × 720 (core 1280 × 662) at the **tablet** breakpoint (desktop needs width ≥ 1400 and
+height ≥ 760); 2560 × 1440 is desktop with the scale clamped at 1.5.
+
+## Fit audits
+
+```bash
+S=$PWD/games/game-001/design/ui/scenes
+PROJECT=games/game-001/default.project.json DEVICES="phone-se desktop-720 desktop desktop-1440" \
+    bash design/ui/render/shoot-luau.sh $(ls $S/*.luau | grep -v '/_')   # absolute scene paths (worktrees)
+python3 design/ui/render/desktop-audit.py      # phone-se + the three desktop sizes; exit 0 clean, 1 issues, 2 no fonts
+python3 design/ui/render/phone-audit.py        # phone-se only (release checklist L7)
+```
+
+`desktop-audit.py` reports per device `clipped` and `offscreen` (same rules as `phone-audit.py`) and `overlap`: two
+top-level widgets (the first GuiObjects under a ScreenGui that are not full-screen containers: HUD crest, pills,
+rail, chips, drawer, toast stack, sheet, dialog) whose drawn extent intersects by more than 4 px both ways. Modals (a
+container with a full-size painted Scrim) and pure decorations (no text, image or button inside, e.g. a dim band) are
+left out; a transparent container counts as the union of what it draws, cut to ScrollingFrame / ClipsDescendants.
+It does not look inside a widget (e.g. a tab touching a close button in the same header): look at the PNGs.
 
 ## Scene contract
 
@@ -306,5 +328,6 @@ Studio check.
 | `engine.js` | in-page Roblox layout + paint emulation (used by render.js) |
 | `devices.json` | emulated devices (shared with the prototypes' numbers) |
 | `shoot-luau.sh` | snapshot + render for scenes × devices |
+| `phone-audit.py`, `desktop-audit.py` | fit audits over `out/*.layout.json` (see Fit audits) |
 | `scenes/selftest.luau`, `scenes/selftest.expect.md` | renderer self-test and what it must look like |
 | `assets.json` (optional, not committed by default) | asset id → local image file |

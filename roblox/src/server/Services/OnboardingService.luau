@@ -4,7 +4,8 @@
 	for every player, server-authoritatively (engine: Experience/Onboarding).
 
 	Lifecycle per player and flow
-		flow.startOn (default PlayerReady; game-001: KingdomJoined)
+		flow.startOn (default PlayerReady; game-001: KingdomJoined), for the subjects whose info fits
+		flow.startMatch (FL-0137)
 		                       restore progress from experience.onboarding (SettingsService: persistent
 		                       with DataService, session-only without it, D-027), begin the flow (auto
 		                       steps), push Experience.OnboardingState to the client
@@ -33,6 +34,10 @@
 		OnboardingService:state(player, flowId?) -> snapshot?      -- Onboarding.snapshot
 		OnboardingService:skip(player, flowId) -> boolean
 		OnboardingService:action(player, flowId, action) -> boolean
+	Tips (flow.tip, FL-0137): one-step flows started by a game event (a siege on my keep, a war declared
+	on me). They run like any flow (stored, so each shows once per player; Skip is the client's "Got it")
+	but are not the tutorial: no funnel, no reward, and no OnboardingCompleted or OnboardingSkipped
+	analytics event (those stay tutorial numbers); only the log line.
 	Never blocks play: nothing here freezes, teleports or gates the player.
 ]]
 
@@ -216,8 +221,8 @@ end
 function OnboardingService:_stateOf(player: any, flowId: string): (any, any)
 	local states = if isPlayer(player) then self._players[player.UserId] else nil
 	local flow = self._flows[flowId]
-	if states == nil or flow == nil then
-		return nil, nil
+	if states == nil or flow == nil or states[flowId] == nil then
+		return nil, nil -- includes a flow this player has not started (a tip whose event never came)
 	end
 	return flow, states[flowId]
 end
@@ -292,7 +297,9 @@ function OnboardingService:_apply(player: any, flow: any, state: any, transition
 		})
 		self:_grant(player, flow, transition.id, transition.reward)
 	end
-	if state.finishedAt ~= nil and not state.reportedFinish then
+	if state.finishedAt ~= nil and not state.reportedFinish and flow.tip then
+		state.reportedFinish = true -- a tip is not the tutorial: no completion event, no reward
+	elseif state.finishedAt ~= nil and not state.reportedFinish then
 		state.reportedFinish = true
 		local duration = math.max(0, math.floor((state.finishedAt or 0) - (state.startedAt or state.finishedAt or 0)))
 		self._analytics:event(player, "OnboardingCompleted", { durationSec = duration, flow = flow.id })
@@ -328,7 +335,7 @@ function OnboardingService:_onBus(eventName: string, args: { any })
 	end
 	for _, subject in subjects do
 		for _, flow in self._config.flows do
-			if (flow.startOn or "PlayerReady") == eventName then
+			if (flow.startOn or "PlayerReady") == eventName and Onboarding.startMatches(flow, subject.info) then
 				self:_begin(subject.player, flow)
 			end
 		end
@@ -373,12 +380,18 @@ function OnboardingService:skip(player: any, flowId: any): boolean
 		return false
 	end
 	local lastStep = flow.steps[state.completed]
-	self._analytics:event(player, "OnboardingSkipped", {
-		lastStep = state.completed,
-		lastStepName = if lastStep then lastStep.id else "None",
-		flow = flow.id,
-	})
-	self._env.log("info", "onboarding skipped", { userId = player.UserId, flow = flow.id, lastStep = state.completed })
+	if not flow.tip then -- a dismissed tip is not a skipped tutorial
+		self._analytics:event(player, "OnboardingSkipped", {
+			lastStep = state.completed,
+			lastStepName = if lastStep then lastStep.id else "None",
+			flow = flow.id,
+		})
+	end
+	self._env.log(
+		"info",
+		if flow.tip then "onboarding tip dismissed" else "onboarding skipped",
+		{ userId = player.UserId, flow = flow.id, lastStep = state.completed }
+	)
 	self:_persist(player, flow, state)
 	self:_push(player, flow, state)
 	return true

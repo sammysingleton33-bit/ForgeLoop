@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g11f, 2026-10-19; G12 rows are effective as their PRs merge (#208: Types, Caps, DuelModel, config Duel; #209: SupportModel, config Support; #216: Ledger, LeadershipService), the rest is a draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g11g, 2026-10-19; G12 rows are effective as their PRs merge (#208: Types, Caps, DuelModel, config Duel; #209: SupportModel, config Support; #216: Ledger, LeadershipService; #217: Kit arena, crowd, gear and Layout.arena), the rest is a draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -332,7 +332,7 @@ The events are appended to `Contracts/GameEvents` by FORGE-05 in FL-0046 (D-024)
 
   Otherwise it returns the part-built rig, whole, never a mix. The choice is made per build, so one match, and even one assembly, can show both kinds (without `crest_azure`, only azure soldiers are part-built). Bad art data falls back and never errors.
 
-  The committed data has no pieces, so every rig stays part-built until two things happen: FORGE-02 commits generated data, and the owner imports the kit (`art/IMPORT_CHARACTERS.md`: `Forge.Assets.CitizenKit`, saved as `roblox/assets/CitizenKit.rbxm`).
+  The committed data has had pieces since #220 (after #226: 117 pieces, 111 with a mesh, and 13 assemblies; v0.4-g11g), so every rig stays part-built until the owner imports the kit (`art/IMPORT_CHARACTERS.md`: `Forge.Assets.CitizenKit`, saved as `roblox/assets/CitizenKit.rbxm`).
   - **Assembly lookup.** The style comes from `Character.styleOf`: kind `governor` is a governor; kind `soldier` or job `soldier` is a soldier; everyone else is a citizen.
     - Citizens: `job`, then the `woodcutter`/`lumberjack` alias, then `idle`.
     - Soldiers: `soldier_<job>` (unless the job is `soldier`), then `soldier`.
@@ -386,6 +386,7 @@ Kit.characterMeshStatus(): { pieces: number, assemblies: number, source: boolean
 ```
 - **What WorldService does**, at server start, all from `world/Layout.luau`:
   - builds terrain with `Fill*` primitives, one per Layout feature (no single huge `WriteVoxels`; if it is used, at most 64×64×16 voxels per frame), through a thin terrain adapter that Lune specs can record;
+  - places the Crown Arena once, neutral, at `Layout.arena` (tag `CrownArena`, `Workspace.World.Arena`; G12.6, v0.4-g11g);
   - places props and forests, spread across frames;
   - applies `world/Lighting.luau`;
   - then fires `WorldService.ready` (`WorldService:isReady(): boolean`) and logs the build time in ms.
@@ -419,7 +420,7 @@ Kit.characterMeshStatus(): { pieces: number, assemblies: number, source: boolean
 - VS-1 has no persistence (D-027): onboarding and settings progress is kept for the session only when DataService is absent.
 
 ## G12. Crown Arena and support (D-029, D-053; design: `design/crown-arena.md`; effective row by row as the arena PRs merge)
-**Effective on main since #208 (v0.4-g11d):** the G12.1 type block, `DuelModel` and `Caps` in G12.2, config `Duel`, and G12.3. **Effective on main since #209 (v0.4-g11e):** `SupportModel` in G12.2 and config `Support`. **Effective on main since #216 (v0.4-g11f):** `Ledger` and `LeadershipService` in G12.2 (FL-0069 slice 1) and config `Support.reputationCategories`. **Still a draft** (shapes to build against; a change is announced in a handoff): the other G12.2 services, the G12.4 remotes, the G12.5 events and the G12.6 hooks. A row becomes effective when the PR that implements it merges (Crownfall handoff 2026-10-18).
+**Effective on main since #208 (v0.4-g11d):** the G12.1 type block, `DuelModel` and `Caps` in G12.2, config `Duel`, and G12.3. **Effective on main since #209 (v0.4-g11e):** `SupportModel` in G12.2 and config `Support`. **Effective on main since #216 (v0.4-g11f):** `Ledger` and `LeadershipService` in G12.2 (FL-0069 slice 1) and config `Support.reputationCategories`. **Effective on main since #217 (v0.4-g11g):** the G12.6 FORGE-02 Kit additions and `Layout.arena`. **Still a draft** (shapes to build against; a change is announced in a handoff): the other G12.2 services, the G12.4 remotes, the G12.5 events and the G12.6 hooks. A row becomes effective when the PR that implements it merges (Crownfall handoff 2026-10-18).
 
 ### G12.1 Types (`src/shared/Arena/Types.luau`, FORGE-01; on main since #208)
 ```lua
@@ -657,7 +658,64 @@ DuelModel events (`DuelEvent`; `t` is duel seconds; v0.4-g11d). `Arena.Events` (
 
 ### G12.6 Client and asset hooks
 - FORGE-01 `src/client/Controllers/DuelController.luau`: `act(action: DuelAction)`, `getState(): ArenaState`, `events: Signal<(ArenaEvent)>`. It is the only sender of `Arena.Action`. FORGE-04's InputMode binds keys, touch and gamepad to `act`; FORGE-03's arena HUD and FORGE-04's crowd director read `events`.
-- FORGE-02 Kit additions: `Kit.arena(): Model` (two stands with `StandA`/`StandB` seat attachments, royal boxes, gate, duel ring), `Kit.crowdFigure(kingdomColor, role: KeyRole?): Model` (≤ 4 parts, client-only; a figure with a `role`, i.e. one of the six key citizens, may have ≤ 8 parts for its readable prop, v0.4-g11a), `Kit.armour(armour: Armour, kingdomColor): { Accessory }`, `Kit.weapon(weapon: Weapon): Tool`. Layout gains `arena = { cframe: CFrame, duelRadius: number, spawnA: CFrame, spawnB: CFrame }` at the neutral map centre, visible during the whole match.
+- **FORGE-02 Kit additions (v0.4-g11g; effective on main since #217, FL-0072; interim art under D-051, headless evidence only, nothing seen in Studio).** `Kit/Arena`, `Kit/Crowd` and `Kit/Gear`, exported by `Kit/Kit`. Primitive Parts only, no yields, no scripts.
+```lua
+Kit.arena(colorA: Color3?, colorB: Color3?): Model              -- the venue; a nil colour gives that side the neutral dress
+Kit.arenaDress(model: Model, colorA: Color3?, colorB: Color3?)  -- destroys and rebuilds DressA and DressB (known defect below)
+Kit.crowdFigure(kingdomColor: Color3, role: KeyRole?, variant: number?): Model  -- an unknown role errors
+Kit.crowdPoolKey(color: Color3, role: KeyRole?, variant: number?): string      -- "<hue style>.<role or 'crowd'>.<variant>"
+Kit.armour(armour: Armour, kingdomColor: Color3?): { Accessory }  -- nil colour = neutral; an unknown armour errors
+Kit.weapon(weapon: Weapon, kingdomColor: Color3?): Tool           -- nil colour = neutral; an unknown weapon errors
+Kit.ARENA            -- the Kit/Arena module: PART_BUDGET { target = 700, cap = 900 }, FOOTPRINT (75, 74), RING_RADIUS 23,
+                     -- DUEL_RADIUS 21, SPAWN_X 13, FLOOR_TOP 1.12, SPAWN_HEIGHT 3, SEATS_PER_STAND 72, ...
+Kit.CROWD_ROLES      -- G12.1 KeyRole order: blacksmith, healer, captain, provisioner, elder, merchant
+Kit.CROWD_MAX_PARTS (4), Kit.CROWD_ROLE_MAX_PARTS (8), Kit.CROWD_VARIANTS (12), Kit.CROWD_HEIGHT (5)
+Kit.ARMOURS = { "light", "medium", "heavy" }; Kit.WEAPONS = { "swordShield", "greatsword", "spear", "mace" }
+```
+- **Arena model.** PrimaryPart `Root`, the invisible 75 × 74 plate; pivot at the ring centre on the ground. X is the gate axis (Gate A at -X), Z the stand axis (Stand A at -Z); side B is side A turned 180°. 349 parts neutral; `KitArena.spec` keeps every kingdom pairing ≤ 700 (worst 487) and under the cap of 900. Model attributes `KitType` ("arena"), `ArenaDuelRadius` (21), `ArenaSeatsPerStand` (72), `KitColorA`, `KitColorB`.
+- **Arena attachments**, all on `Root`. The seat, rail, royal, gate and spawn attachments look at the ring along -Z, so `PivotTo(attachment.WorldCFrame)` faces the ring. For each side X = A, B:
+  - `StandX_Row<r>_Seat<s>`: r = 1 (front, lowest) to 4; s = 1 to 18, left to right for a figure on the seat facing the ring (Seat1 is on its left). The royal-box gap is skipped, so the numbers stay contiguous. 72 a stand. Attributes `Stand`, `Row`, `Seat`.
+  - `StandX_Rail<n>`, n = 1 to 6, left to right in the same way: the key citizens' places on the rail podium, in `Kit.CROWD_ROLES` order. Attributes `Stand`, `Rail`.
+  - `StandX_Royal<n>`, n = 1 to 3: the royal box's chairs (attributes `Stand`, `Royal`). `StandX_RoyalBox`: the box's centre at deck level.
+  - `GateX`: the champion's gate threshold. `SpawnX`: the champion's start mark, 3 studs above the ring floor, facing the other mark. Attribute `Side`.
+  - Plus one `Centre`, the ring centre on the floor. The duel ring has no attachment of its own: it is parts (the painted `RingLine` at radius 21) and the `ArenaDuelRadius` attribute.
+- **Arena dress.** Every part that carries a kingdom (caps, banners, plaques, chairs, riser bands, the champion's rug) is in the sub-model `DressA` or `DressB`. With a kingdom colour, each dress shows the kingdom's tower-cap silhouette and its emblem, never colour alone (D-033, D-039); a neutral colour gives plain caps and no emblems. Every dress part carries `KitSide`; the kingdom-coloured ones also carry `KitTint`.
+  - `Kit.setKingdomColor(model.DressA, c)` recolours that side and re-forms its emblems to `c`'s kind. It keeps the caps as built and does not update `KitColorA`/`KitColorB`. Called on the whole arena, it paints both sides one colour.
+  - Nothing on main calls `Kit.arenaDress` yet. FORGE-01's ArenaService is meant to call it once the two kingdoms are known.
+  - **Known defect on main (Lune probe):** `Kit.arenaDress` builds the new dress in the Kit's build frame and ignores where the model stands. On the placed `CrownArena`, the new `DressA`/`DressB` appear around the world origin, not at the arena. The rebuilt parts also miss WorldService's decoration physics: they keep CanTouch, and the high ones collide.
+- **Who places it (WorldService, server).** At server start, in the build thread, when `Layout.arena` exists: after the zones, build-slot markers and objective zones, and before props and `ready`. WorldService builds one `Kit.arena()` (neutral) and renames it `CrownArena`. It pivots it at ground height under `Layout.arena.cframe`, with that frame's rotation (yaw only), and sets the attribute `RegionId`. It parents the model to `Workspace.World.Arena` and tags it `CrownArena` (find it with `CollectionService:GetTagged("CrownArena")[1]`).
+  - Decoration physics are the same as for props. No part fires Touched, the Root plate is not queryable, and parts whose bottom is more than `COLLIDE_HEIGHT` (7) above the base do not collide.
+  - WorldService builds the world once per server, and no game code removes or hides the arena (only `WorldService:destroy()` removes `Workspace.World`). So it stands, neutral, for the whole match.
+  - `WorldService.stats.arenaParts` counts its parts at build; `stats.parts` includes them.
+- **Crowd figure.** Model `CrowdFigure` (`CrowdFigure_<role>` with a role). PrimaryPart `Body`. The pivot is on the feet and the front is -Z, so `fig:PivotTo(seat.WorldCFrame)` stands it on a seat facing the ring.
+  - No Root, Humanoid, Motor6D or script. Every part is Anchored, has CanCollide, CanTouch and CanQuery false, and casts no shadow.
+  - An ordinary figure is 4 parts (Body, Head, Crest, Arms). A key citizen is 7 parts (captain) or 8 (the other roles). The build asserts the caps of 4, and 8 with a role (v0.4-g11a).
+  - `variant` defaults to 1 and wraps over 12.
+  - The crest shape follows the build colour's hue style; `KitTint` parts recolour. So pool by `Kit.crowdPoolKey`.
+  - Attributes `KitCrowd`, `KitRole` ("none" without a role), `KitVariant`, `KitStyle`, `KitCrest`, `KitHeight`.
+  - Client-only is a rule; the Kit does not check it.
+- **Armour** is Accessories (never a Tool), one per body attachment. Each has a `Handle` holding one Attachment named for that body attachment, with the other parts welded to the Handle. Every part is unanchored and Massless, with CanCollide, CanTouch and CanQuery false. Attributes `KitArmour`, `KitPiece`. Fit on R15 and R6 is unverified in Studio.
+  - light (3): `KitLightCap` (HatAttachment), `KitLightJerkin` (BodyFrontAttachment), `KitLightCloak` (BodyBackAttachment);
+  - medium (4): `KitMediumHelm` (Hat), `KitMediumMail` (BodyFront), `KitMediumPauldronLeft` and `KitMediumPauldronRight` (LeftCollarAttachment, RightCollarAttachment);
+  - heavy (5): `KitHeavyHelm` (Hat), `KitHeavyPlate` (BodyFront), `KitHeavyBack` (BodyBack), `KitHeavyPauldronLeft` and `KitHeavyPauldronRight` (Left and Right Collar).
+- **Weapon** is one `Tool` named by the weapon id: a `Handle` plus welded parts.
+  - `RequiresHandle` is true and `CanBeDropped` false. `Grip` holds it blade up, front -Z.
+  - No scripts. No part collides or touches; hits are resolved on the server.
+  - Attributes `KitWeapon`, `KitHands` (1: swordShield, mace; 2: greatsword, spear) and `KitReach` (the tip's height above the grip, in studs).
+  - The swordShield shield is part of the same one-hand Tool.
+- **Layout.arena** (`world/Layout.luau`). `footprint` and `regionId` are additions to the draft shape:
+```lua
+arena = {
+	cframe = CFrame.new(141, 0, -27),  -- the arena frame on the ground (yaw only): X = gate axis, Z = stand axis
+	duelRadius = 21,                   -- from cframe.Position: the painted ring (= Kit.ARENA.DUEL_RADIUS)
+	spawnA = cframe * CFrame.new(-13, 4.12, 0) * CFrame.Angles(0, -math.pi / 2, 0),  -- looks +X, at spawnB
+	spawnB = cframe * CFrame.new(13, 4.12, 0) * CFrame.Angles(0, math.pi / 2, 0),    -- looks -X, at spawnA
+	footprint = Vector2.new(75, 74),   -- the Root plate (X = gate axis); WorldPlan keeps decor off it
+	regionId = "heartland",
+}
+```
+- The site is not the map centre, where the roads, the hub plaza and the watchtower zone meet. It is east of the watchtower, with its centre inside `heartland` (x ≤ 150). The part beyond x = 150, including `spawnB` (x = 154) and Gate B, lies outside that polygon.
+- The ground under the site is flat at y = 0 (`ArenaLayout.spec`). So the placed `SpawnA`/`SpawnB` equal `spawnA`/`spawnB`, and the ring floor is at `cframe.Y + Kit.ARENA.FLOOR_TOP` (1.12), which equals `spawnA.Y - 3`.
 - Crowd figures and reactions are client-only (FORGE-04). The server sends no per-figure data; the crowd is derived from `ArenaState`, `Arena.Events` and kingdom population.
   - **Crowd director (v0.4-g11f, #221; reads the G12.4 draft relay).** `Feedback/CrowdDirector` reads `kind` and `side`, plus `hit` `damageShare`, `hpShare` (else DuelModel's `targetHpShare`) and `heavy`, and `triggerFired` `trigger` (else `source` without `"perk:"`) and `citizenName`. It never reads `hit`'s raw `damage` (HP points) or `ended`'s `reason`. Every field is optional; a missing one degrades quietly. A hit is major when `heavy` is true or `damageShare` ≥ config `Crowd.moments.bigHit`; the HP share drives near-death and comeback. Perk names come from config `Crowd.triggerNames` (every G12.1 TriggerId; design §3 and §4); an unknown id reads "their pledge", a missing `citizenName` "A citizen". `CrowdDirector.spec` fails unless FORGE-03's `UI/ArenaText.TRIGGERS` has the same ids and names. An `ended` with side `"draw"` or no side, and a crowning with no winner, are `Crowd.endings.calledOff` for both stands: no payoff, no sound, and `onEvent`/`finish` return nothing more. Unknown kinds (so `miss`, `dodged`) and sides are ignored.
 
@@ -865,6 +923,8 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g11g (2026-10-19) FORGE-00: G12.6 follows #217 as merged (FORGE-02 FL-0072, interim art under D-051; headless evidence only, not seen in Studio). The FORGE-02 Kit additions and `Layout.arena` are effective. Real signatures: `Kit.arena(colorA?, colorB?)` (Color3s; nil gives the neutral dress), the new `Kit.arenaDress`, `Kit.crowdFigure(kingdomColor, role?, variant?)`, `Kit.armour(armour, kingdomColor?)` returning Accessories and `Kit.weapon(weapon, kingdomColor?)` returning one Tool, plus `Kit.ARENA`, `CROWD_*`, `crowdPoolKey`, `ARMOURS` and `WEAPONS`. G12.6 lists the arena's attachments: 72 `StandX_Row<r>_Seat<s>` a stand (numbered from the left of a seated figure facing the ring), `StandX_Rail1..6`, `StandX_Royal1..3`, `StandX_RoyalBox`, `GateA/B`, `SpawnA/B` and `Centre`; the duel ring has no attachment. It also gives the part counts (arena 349 neutral, cap 900; crowd 4, key citizens 7–8) and the `DressA`/`DressB` sub-models. `Layout.arena` gains `footprint` and `regionId`. It sits at (141, 0, -27) in the heartland, not at the map centre. WorldService places it once at server start, before `ready` (tag `CrownArena`), so it stands for the whole match. Nothing calls `Kit.arenaDress` yet, so it stays neutral. On the placed arena, `Kit.arenaDress` would build the dress at the world origin (known defect, FORGE-02). G10 lists the WorldService step. Additive: the rows were a draft, and the colour arguments are optional.
+- v0.4-g11g (2026-10-19) FORGE-00: G10 follows #226 as merged (FORGE-02 FL-0135 silhouette pass, interim art). Only the kit data changed: `Kit/CharacterMeshData` has 117 pieces (111 with a mesh) and 13 assemblies. The assembly `soldier_swordsman` is renamed `soldier_knight`, so the soldier keys are `soldier`, `soldier_archer` and `soldier_knight`. Every unit still reaches the Kit as job `soldier` (`Sim/Replication`), so every soldier builds `soldier` for now. The hauler wears `hat_hauler` and has no `hair` slot, so its mesh rig has no `Hair` part. Seven `gear_*` Torso extras replace the two aprons and two satchels and give the builder, miner and woodcutter one each. G10 now says the committed data has had pieces since #220, so only the owner's import is left; until then every rig is part-built. No rule, D-057 budget, part name, attribute or signature changed. Over all 1,728 looks in every kingdom and neutral, every assembly has at most 16 pieces and stays within budget: citizens ≤ 966 of 1,000 (body ≤ 878 of 900, tool ≤ 102 of 150), soldiers and governor ≤ 978 of 1,500. Additive. Job `swordsman` now falls back to `soldier`, and no caller passes it.
 - v0.4-g11f (2026-10-19) FORGE-00: G12 follows #218 as merged (FORGE-01 FL-0070/71, input validation). `Caps.check` refuses a trigger, heal or telegraph without a condition DuelModel can evaluate (`hpBelow:<share>` with 0 < share ≤ 1, `staminaOut`, `hype`, `opponentHeavy`), and a slotted passive whose `source` already took a slot (Fine Wares twice). DuelModel no longer errors on an active modifier with no condition (it never fires). A telegraph without a `lead` gives `heavyWindup.warned = 0`, not nil. `SupportModel.modifiers` errors on a repeated pick and on a perk power other than `pledged`/`empowered`. `SupportModel.offers` gives a clean "unknown tier" error. `Arena/Types` re-exports `KingdomId`/`EntityId` from `Kingdom/Types`, which closes the G12.1 open item. `tests/sim/ArenaCaps.spec` pins config Duel's `rules.quietStart` ≥ 10 s. G12.3 Slots now says that a passive without `slot` listed twice is not refused (it adds up). No signature changed. Stricter input: an active modifier with a missing or unknown condition, or a repeated slotted passive, used to pass `Caps.check` and is now refused (no config Support output is one); `KingdomId` narrows from `string` to G2's union (type only).
 - v0.4-g11f (2026-10-19) FORGE-00: G12 follows #216 as merged (FORGE-01 FL-0069 slice 1). `Arena/Ledger` and `LeadershipService` are effective. G12.2 replaces the two draft LeadershipService rows with the real API: `Ledger.new`/`record`/`level`/`offset`/`moments`, and `LeadershipService:record` (now returns `LeadershipMoment?`), `getMoments`, `samples` (SupportModel `Sample` series, one per seated ruler, at most one round per 30 s of `sim.time`), `sample()` and the `acted` signal. Acts are keys of config `Support.acts`, and magnitude is clamped 0..2. Conduct and valour are per-ruler levels (start 50, 0..100), and reputation acts move a kingdom offset (±20). Valour gains are capped per rolling minute (`valourCapPerMinute`). Config `Support` gains `reputationCategories`. No producer calls `record` yet. G12.5 `LeadershipAct` is not on the bus yet (`acted` carries its values). G12.1 is unchanged. Additive (the replaced rows were a draft; `record` gains a return value).
 - v0.4-g11f (2026-10-19) FORGE-00: G12.4 `Arena.Events` records the relay data FORGE-01 and FORGE-04 agreed on 2026-10-19, as a DRAFT: shares only, `hit` `{ damageShare, hpShare, heavy? }`, `hype` with no data, `ended` `{ reason }`, and `triggerFired` as ruled (`citizenName` nil for the Crowd Rally). The data of `parry`, `stagger`, `staminaOut` and `heavyWindup` stays open. Its consumer, FORGE-04's crowd director, merged in #221 (FL-0074). Its producer, FORGE-01's DuelRunner (#224), has not, and nothing sends the remote yet. G12.6 says what the crowd reads: `source` when `trigger` is missing, DuelModel's `targetHpShare` when `hpShare` is, and never raw `damage`. Perk names come from config `Crowd.triggerNames`, which `CrowdDirector.spec` keeps equal to FORGE-03's `ArenaText.TRIGGERS`. A draw, an `ended` with no side, or a crowning with no winner is "called off" for both stands. Additive (the row was a draft).
