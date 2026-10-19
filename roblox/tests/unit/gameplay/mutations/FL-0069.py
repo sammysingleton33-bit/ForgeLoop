@@ -21,10 +21,10 @@ M = [
  ("FL-0069", LG, 'if moment.kingdom == kingdom and (userId == nil or moment.userId == nil or moment.userId == userId) then', 'if (userId == nil or moment.userId == nil or moment.userId == userId) then', "sim/Ledger", "for that kingdom only"),
  ("FL-0069", LG, 'if #out >= count then', 'if #out > count then', "sim/Ledger", "at most the limit"),
  # --- the service
- ("FL-0069", LS, 'if k == nil then\n\t\treturn nil\n\tend\n\t-- An act for a ruler', 'if false then\n\t\treturn nil\n\tend\n\t-- An act for a ruler', "sim/LeadershipService", "refuses an unknown act, an unknown kingdom"),
+ ("FL-0069", LS, 'local k = sim.kingdoms[kingdom]\n\tif k == nil then\n\t\treturn nil\n\tend', 'local k = sim.kingdoms[kingdom]\n\tif false then\n\t\treturn nil\n\tend', "sim/LeadershipService", "refuses an unknown act, an unknown kingdom"),
  ("FL-0069", LS, 'if reason == "unknown_act" and not self._warned[act] then', 'if reason == "unknown_act" then', "sim/LeadershipService", "logging an unknown act once"),
  ("FL-0069", LS, 'self.acted:fire(kingdom, userId, act, moment.component, moment.delta)', 'self.acted:fire(kingdom, userId, act, moment.component, 0)', "sim/LeadershipService", "fires acted"),
- ("FL-0069", LS, 'stability = clamp100(if conditions then Consequences.effectiveStability(k) else NEUTRAL),', 'stability = clamp100(if conditions then conditions.stability or NEUTRAL else NEUTRAL),', "sim/LeadershipService", "stability net of unrest pressure"),
+ ("FL-0069", LS, '(conditions.stability or NEUTRAL) - (k.unrestPressure or 0)', '(conditions.stability or NEUTRAL)', "sim/LeadershipService", "stability net of unrest pressure"),
  ("FL-0069", LS, 'if c and c.alive ~= false then\n\t\t\ttotal += c.loyalty or NEUTRAL', 'if c then\n\t\t\ttotal += c.loyalty or NEUTRAL', "sim/LeadershipService", "leaves out the dead"),
  ("FL-0069", LS, 'return clamp100(mean + Ledger.offset(self._ledger, kingdom, "reputation"))', 'return clamp100(mean)', "sim/LeadershipService", "adds a kingdom reputation act as an offset"),
  ("FL-0069", LS, 'if not closing and now - self._lastSampleAt < self.config.sampling.intervalSeconds - 1e-6 then', 'if false then', "sim/LeadershipService", "does not sample twice inside one interval"),
@@ -35,7 +35,7 @@ M = [
  ("FL-0069", LG, 'local def = config.components[component]', 'local def = Support.components[component]', "sim/Ledger", "classifies a component by the ledger\'s config"),
  ("FL-0069", LS, 'if userId ~= nil and table.find(k.rulers, userId) == nil then', 'if false then', "sim/LeadershipService", "not seated in that kingdom"),
  ("FL-0069", LS, 'if userId ~= nil and table.find(k.rulers, userId) == nil then', 'if table.find(k.rulers, userId) == nil then', "sim/LeadershipService", "refuses an act for a ruler who is not seated"),
- ("FL-0069", LS, '		if not self._warned[key] then\n			self._warned[key] = true', '		if true then\n			self._warned[key] = true', "sim/LeadershipService", "logging it once"),
+ ("FL-0069", LS, 'if not self._warned[key] then\n\t\t\tself._warned[key] = true\n\t\t\tself._env.log(\n\t\t\t\t"warn",', 'if true then\n\t\t\tself._warned[key] = true\n\t\t\tself._env.log(\n\t\t\t\t"warn",', "sim/LeadershipService", "logging it once"),
  # --- the acts the simulation decides (slice 2)
  ("FL-0069", LS, 'if fed < rules.starvation.below then', 'if fed <= rules.starvation.below then', "sim/LeadershipService", "at exactly the bar"),
  ("FL-0069", LS, 'if not w.starving and now - w.lowSince > rules.starvation.seconds then', 'if not w.starving and now - w.lowSince >= rules.starvation.seconds then', "sim/LeadershipService", "records starvation once an episode"),
@@ -64,4 +64,5 @@ M = [
  ("FL-0069", LS, 'if closing and not w.credited and', 'if false and not w.credited and', "sim/LeadershipService", "closeOut credits the phase"),
  ("FL-0069", LS, '\t\tw.credited = true\n', '\t\tw.credited = false\n', "sim/LeadershipService", "closeOut credits the phase"),
  ("FL-0069", LS, 'if not closing and now - self._lastSampleAt', 'if now - self._lastSampleAt', "sim/LeadershipService", "takes a last sample"),
+ ("FL-0069", LS, 'if not self._warned[key] then\n\t\t\tself._warned[key] = true\n\t\t\tself._env.log("warn", "LeadershipService: ruler act without a ruler"', 'if true then\n\t\t\tself._warned[key] = true\n\t\t\tself._env.log("warn", "LeadershipService: ruler act without a ruler"', "sim/LeadershipService", "logging it once per kingdom and act"),
 ]
