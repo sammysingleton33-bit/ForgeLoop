@@ -984,15 +984,24 @@ for _, ds in datasets do
 		local function eachPlan(fn: (plan: any, label: string) -> ())
 			local r = Kit.LOOK_RANGES
 			local contexts = {}
-			-- (unknown jobs such as blacksmith build the idle assembly, covered by "idle")
-			for _, job in { "idle", "farmer", "woodcutter", "miner", "builder", "hauler" } do
+			-- every assembly of the committed kit: the nine citizen jobs, the three soldier unit kinds (the soldier's job is its unit kind:
+			-- "soldier", "knight", "archer"; a kit without a `soldier_<unit>` assembly builds the plain `soldier`, as does the placeholder)
+			-- and the governor, in the four kingdoms and neutral. (A job a dataset lacks, such as the placeholder's blacksmith, builds the
+			-- idle assembly, so every dataset resolves every context.)
+			for _, job in
+				{ "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "blacksmith", "merchant", "healer" }
+			do
 				table.insert(contexts, { "citizen", job, AZURE, nil })
 			end
 			for _, id in MeshKit.KINGDOM_IDS do
-				table.insert(contexts, { "soldier", "soldier", MeshKit.KINGDOM_COLORS[id], id })
+				for _, unit in { "soldier", "knight", "archer" } do
+					table.insert(contexts, { "soldier", unit, MeshKit.KINGDOM_COLORS[id], id })
+				end
 				table.insert(contexts, { "governor", "governor", MeshKit.KINGDOM_COLORS[id], id })
 			end
-			table.insert(contexts, { "soldier", "soldier", Kit.NEUTRAL_COLOR, nil })
+			for _, unit in { "soldier", "knight", "archer" } do
+				table.insert(contexts, { "soldier", unit, Kit.NEUTRAL_COLOR, nil })
+			end
 			table.insert(contexts, { "governor", "governor", Kit.NEUTRAL_COLOR, nil })
 			for skin = 1, r.skin do
 				for hair = 1, r.hair do
@@ -1049,7 +1058,7 @@ for _, ds in datasets do
 		end
 
 		it("resolves every assembly for all 1,728 looks, in every kingdom", function()
-			expect(scan().plans).toBe(1728 * 16) -- 6 citizen jobs, soldiers and governors in 4 kingdoms and neutral
+			expect(scan().plans).toBe(1728 * 29) -- 9 citizen jobs, 3 soldier unit kinds and the governor in 4 kingdoms and neutral
 		end)
 
 		it("keeps every rig within 16 pieces and its triangle budget, every mesh under 20,000", function()
