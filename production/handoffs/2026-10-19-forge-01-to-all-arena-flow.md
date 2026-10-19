@@ -23,7 +23,7 @@ The Crown Arena's stage machine and the AI champion, headless and deterministic,
 Headless only. The full gate runs in CI; locally `sim/ArenaFlow` 30/0, `sim/DuelAI` 9/0, selene 0 warnings, `mutations.py FL-0071F` 37 of 37 CAUGHT.
 
 ## Open issues and risks
-- Two AIs at skill 0.5 finish a duel in about 13 s (median, headless): the DuelModel numbers are FORGE-05's tuned ones; the AI is aggressive. Duel length is for the playtest and FL-0076, not tuned here.
+- Two AIs at skill 0.5 can finish a duel quickly (one headless example, seed 10, ended at 12.8 s; I did not measure a distribution). The DuelModel numbers are FORGE-05's tuned ones and the AI is aggressive. Duel length is for the playtest and FL-0076, not tuned here.
 - The AI champion's skill is a fixed 0.5 until the governor difficulty (BRIEF §16.3) is wired.
 
 ## Files to read
