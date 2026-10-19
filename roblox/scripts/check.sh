@@ -33,8 +33,9 @@ STEP_TIMEOUT=600 # seconds per Lune step (coreutils `timeout`, when installed): 
 # spec folders that run as several Lune steps (run.luau --shard i/n), each under STEP_TIMEOUT:
 # "<game id>/<folder>:<n>". game-001's sim/ took 572 s alone locally on 2026-10-15 (limit 600); its 49 files
 # summed 584 s one by one on 2026-10-18 (ConversationService 138 s, ConsequenceService 113 s, MatchKingdomServices
-# 79 s), which the every-n-th split puts at 424 + 160 s with 2 shards and 253 + 109 + 221 s with 3.
-SHARDS=("game-001/sim:3")
+# 79 s), which the every-n-th split puts at 424 + 160 s with 2 shards and 253 + 109 + 221 s with 3. game-001's
+# world/ took 565 s of 600 on 2026-10-19 (gate 7: #217 arena venue, #226 citizen mesh kit), so it runs as 2 shards too.
+SHARDS=("game-001/sim:3" "game-001/world:2")
 # sub-folders that run as their own Lune step and are left out of their parent folder's step(s) (run.luau
 # --exclude): "<game id>/<folder>/<sub>". game-001's sim/long holds the real-length full-match spec (FL-0125).
 SPLITS=("game-001/sim/long")
