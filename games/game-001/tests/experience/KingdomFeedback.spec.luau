@@ -1392,9 +1392,9 @@ describe("client feedback controllers (FL-0062)", function()
 			expect(music[#music]).toBe("battle")
 			controller:setScene("arena")
 			expect(music[#music]).toBe("arena")
-			local played = #music
+			local musicCount = #music
 			controller:setScene("arena") -- the same scene again changes nothing
-			expect(#music).toBe(played)
+			expect(#music).toBe(musicCount)
 			controller:setScene(nil)
 			expect(music[#music]).toBe("battle") -- the raid is still on
 			controller:setAlert("raid", false)
