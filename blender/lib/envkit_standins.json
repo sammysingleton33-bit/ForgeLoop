@@ -1,0 +1,1893 @@
+{
+ "_comment": "Part-built stand-in figures per asset id, summarised from blender/scripts/lune/EnvInventory.spec.luau (Kit/Props.luau at the Kit.VERSION below): bbox size in studs (x, y, z), PlotClearance-style horizontal reach, parts (Root included), and how many times the real world places the id (count_full = density 1.0 incl. resource nodes, count_shipped = the shipped density). Regenerate with blender/scripts/envkit_standins.py.",
+ "kit_version": "0.5.0",
+ "clear_radius": {
+  "bush": 5.2,
+  "farm_haystack": 4.4,
+  "plant_flowers": 3.4,
+  "prop_banner": 2.4,
+  "prop_cart": 7.3,
+  "prop_goods": 4.8,
+  "prop_well": 5.3,
+  "rock_boulder_l": 13.3,
+  "rock_boulder_m": 7.5,
+  "rock_boulder_s": 5.8,
+  "tree_birch": 8.5,
+  "tree_oak": 13.5,
+  "tree_pine": 11.7
+ },
+ "world": {
+  "default": {
+   "parts": 6553,
+   "props": 417
+  },
+  "full": {
+   "parts": 8309,
+   "props": 616
+  }
+ },
+ "standins": {
+  "bridge_stone_01": {
+   "size": [
+    16.0,
+    12.8,
+    60.0
+   ],
+   "x_range": [
+    -8.0,
+    8.0
+   ],
+   "z_range": [
+    -30.0,
+    30.0
+   ],
+   "reach": 32.4,
+   "parts": 13,
+   "placed": true,
+   "count_full": 1,
+   "count_shipped": 1,
+   "node": false,
+   "features": {
+    "bridge": 1
+   }
+  },
+  "bridge_stone_02": {
+   "size": [
+    16.0,
+    12.8,
+    60.0
+   ],
+   "x_range": [
+    -8.0,
+    8.0
+   ],
+   "z_range": [
+    -30.0,
+    30.0
+   ],
+   "reach": 32.4,
+   "parts": 13,
+   "placed": true,
+   "count_full": 1,
+   "count_shipped": 1,
+   "node": false,
+   "features": {
+    "bridge": 1
+   }
+  },
+  "bush_01": {
+   "size": [
+    7.43,
+    5.18,
+    6.87
+   ],
+   "x_range": [
+    -4.06,
+    3.37
+   ],
+   "z_range": [
+    -2.85,
+    4.03
+   ],
+   "reach": 4.07,
+   "parts": 5,
+   "placed": true,
+   "count_full": 8,
+   "count_shipped": 6,
+   "node": false,
+   "features": {
+    "bush": 8
+   }
+  },
+  "bush_02": {
+   "size": [
+    7.28,
+    5.07,
+    6.96
+   ],
+   "x_range": [
+    -3.87,
+    3.41
+   ],
+   "z_range": [
+    -3.63,
+    3.33
+   ],
+   "reach": 3.94,
+   "parts": 10,
+   "placed": true,
+   "count_full": 13,
+   "count_shipped": 3,
+   "node": false,
+   "features": {
+    "bush": 13
+   }
+  },
+  "bush_03": {
+   "size": [
+    6.09,
+    5.47,
+    6.69
+   ],
+   "x_range": [
+    -2.65,
+    3.44
+   ],
+   "z_range": [
+    -3.35,
+    3.34
+   ],
+   "reach": 3.62,
+   "parts": 10,
+   "placed": true,
+   "count_full": 24,
+   "count_shipped": 16,
+   "node": true,
+   "features": {
+    "bush": 16
+   }
+  },
+  "bush_04": {
+   "size": [
+    6.71,
+    4.85,
+    6.79
+   ],
+   "x_range": [
+    -3.77,
+    2.94
+   ],
+   "z_range": [
+    -2.99,
+    3.8
+   ],
+   "reach": 3.97,
+   "parts": 5,
+   "placed": true,
+   "count_full": 19,
+   "count_shipped": 6,
+   "node": false,
+   "features": {
+    "bush": 19
+   }
+  },
+  "bush_05": {
+   "size": [
+    6.99,
+    5.51,
+    7.01
+   ],
+   "x_range": [
+    -3.5,
+    3.48
+   ],
+   "z_range": [
+    -4.01,
+    3.0
+   ],
+   "reach": 4.02,
+   "parts": 10,
+   "placed": true,
+   "count_full": 17,
+   "count_shipped": 13,
+   "node": false,
+   "features": {
+    "bush": 17
+   }
+  },
+  "bush_06": {
+   "size": [
+    6.67,
+    5.16,
+    6.51
+   ],
+   "x_range": [
+    -2.91,
+    3.75
+   ],
+   "z_range": [
+    -2.94,
+    3.57
+   ],
+   "reach": 3.78,
+   "parts": 10,
+   "placed": true,
+   "count_full": 11,
+   "count_shipped": 5,
+   "node": false,
+   "features": {
+    "bush": 11
+   }
+  },
+  "bush_07": {
+   "size": [
+    6.95,
+    5.33,
+    7.59
+   ],
+   "x_range": [
+    -3.63,
+    3.32
+   ],
+   "z_range": [
+    -3.8,
+    3.79
+   ],
+   "reach": 4.2,
+   "parts": 5,
+   "placed": true,
+   "count_full": 14,
+   "count_shipped": 8,
+   "node": false,
+   "features": {
+    "bush": 14
+   }
+  },
+  "bush_08": {
+   "size": [
+    6.9,
+    5.21,
+    6.52
+   ],
+   "x_range": [
+    -3.33,
+    3.58
+   ],
+   "z_range": [
+    -3.69,
+    2.82
+   ],
+   "reach": 3.76,
+   "parts": 10,
+   "placed": true,
+   "count_full": 12,
+   "count_shipped": 6,
+   "node": false,
+   "features": {
+    "bush": 12
+   }
+  },
+  "farm_fence_01": {
+   "size": [
+    16.5,
+    2.8,
+    0.5
+   ],
+   "x_range": [
+    -8.25,
+    8.25
+   ],
+   "z_range": [
+    -0.25,
+    0.25
+   ],
+   "reach": 8.35,
+   "parts": 7,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "farm_fence_02": {
+   "size": [
+    16.5,
+    2.8,
+    0.5
+   ],
+   "x_range": [
+    -8.25,
+    8.25
+   ],
+   "z_range": [
+    -0.25,
+    0.25
+   ],
+   "reach": 8.35,
+   "parts": 8,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "farm_field_cabbage_01": {
+   "size": [
+    38.0,
+    3.14,
+    28.0
+   ],
+   "x_range": [
+    -19.0,
+    19.0
+   ],
+   "z_range": [
+    -14.0,
+    14.0
+   ],
+   "reach": 29.04,
+   "parts": 65,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "farm_field_cabbage_02": {
+   "size": [
+    38.0,
+    3.15,
+    28.0
+   ],
+   "x_range": [
+    -19.0,
+    19.0
+   ],
+   "z_range": [
+    -14.0,
+    14.0
+   ],
+   "reach": 29.04,
+   "parts": 65,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "farm_field_cabbage_03": {
+   "size": [
+    38.0,
+    3.14,
+    28.0
+   ],
+   "x_range": [
+    -19.0,
+    19.0
+   ],
+   "z_range": [
+    -14.0,
+    14.0
+   ],
+   "reach": 29.04,
+   "parts": 65,
+   "placed": true,
+   "count_full": 4,
+   "count_shipped": 4,
+   "node": false,
+   "features": {
+    "crops": 4
+   }
+  },
+  "farm_field_wheat_01": {
+   "size": [
+    38.0,
+    2.42,
+    28.0
+   ],
+   "x_range": [
+    -19.0,
+    19.0
+   ],
+   "z_range": [
+    -14.0,
+    14.0
+   ],
+   "reach": 28.05,
+   "parts": 17,
+   "placed": true,
+   "count_full": 4,
+   "count_shipped": 4,
+   "node": false,
+   "features": {
+    "crops": 4
+   }
+  },
+  "farm_field_wheat_02": {
+   "size": [
+    38.0,
+    2.42,
+    28.0
+   ],
+   "x_range": [
+    -19.0,
+    19.0
+   ],
+   "z_range": [
+    -14.0,
+    14.0
+   ],
+   "reach": 28.05,
+   "parts": 17,
+   "placed": true,
+   "count_full": 4,
+   "count_shipped": 4,
+   "node": false,
+   "features": {
+    "crops": 4
+   }
+  },
+  "farm_field_wheat_03": {
+   "size": [
+    38.0,
+    2.42,
+    28.0
+   ],
+   "x_range": [
+    -19.0,
+    19.0
+   ],
+   "z_range": [
+    -14.0,
+    14.0
+   ],
+   "reach": 28.05,
+   "parts": 17,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "farm_haystack_01": {
+   "size": [
+    7.29,
+    6.2,
+    6.2
+   ],
+   "x_range": [
+    -3.1,
+    4.19
+   ],
+   "z_range": [
+    -3.1,
+    3.1
+   ],
+   "reach": 4.3,
+   "parts": 4,
+   "placed": true,
+   "count_full": 1,
+   "count_shipped": 1,
+   "node": false,
+   "features": {
+    "dressing": 1
+   }
+  },
+  "plant_flowers_01": {
+   "size": [
+    4.09,
+    3.01,
+    2.95
+   ],
+   "x_range": [
+    -1.99,
+    2.1
+   ],
+   "z_range": [
+    -1.7,
+    1.25
+   ],
+   "reach": 2.34,
+   "parts": 9,
+   "placed": true,
+   "count_full": 4,
+   "count_shipped": 4,
+   "node": false,
+   "features": {
+    "flowers": 4
+   }
+  },
+  "plant_flowers_02": {
+   "size": [
+    3.74,
+    2.98,
+    3.67
+   ],
+   "x_range": [
+    -1.64,
+    2.1
+   ],
+   "z_range": [
+    -1.7,
+    1.97
+   ],
+   "reach": 2.36,
+   "parts": 9,
+   "placed": true,
+   "count_full": 5,
+   "count_shipped": 5,
+   "node": false,
+   "features": {
+    "flowers": 5
+   }
+  },
+  "plant_flowers_03": {
+   "size": [
+    4.24,
+    2.93,
+    3.45
+   ],
+   "x_range": [
+    -2.14,
+    2.1
+   ],
+   "z_range": [
+    -1.81,
+    1.63
+   ],
+   "reach": 2.34,
+   "parts": 9,
+   "placed": true,
+   "count_full": 5,
+   "count_shipped": 5,
+   "node": false,
+   "features": {
+    "flowers": 5
+   }
+  },
+  "plant_flowers_04": {
+   "size": [
+    4.36,
+    2.97,
+    3.09
+   ],
+   "x_range": [
+    -2.26,
+    2.1
+   ],
+   "z_range": [
+    -1.84,
+    1.25
+   ],
+   "reach": 2.34,
+   "parts": 9,
+   "placed": true,
+   "count_full": 6,
+   "count_shipped": 6,
+   "node": false,
+   "features": {
+    "flowers": 6
+   }
+  },
+  "plant_flowers_05": {
+   "size": [
+    3.35,
+    3.08,
+    2.95
+   ],
+   "x_range": [
+    -1.25,
+    2.1
+   ],
+   "z_range": [
+    -1.7,
+    1.25
+   ],
+   "reach": 2.34,
+   "parts": 9,
+   "placed": true,
+   "count_full": 7,
+   "count_shipped": 7,
+   "node": false,
+   "features": {
+    "flowers": 7
+   }
+  },
+  "plant_flowers_06": {
+   "size": [
+    3.48,
+    2.96,
+    3.7
+   ],
+   "x_range": [
+    -1.38,
+    2.1
+   ],
+   "z_range": [
+    -2.02,
+    1.68
+   ],
+   "reach": 2.34,
+   "parts": 9,
+   "placed": true,
+   "count_full": 4,
+   "count_shipped": 4,
+   "node": false,
+   "features": {
+    "flowers": 4
+   }
+  },
+  "prop_banner_blue_01": {
+   "size": [
+    4.0,
+    12.65,
+    2.0
+   ],
+   "x_range": [
+    -2.0,
+    2.0
+   ],
+   "z_range": [
+    -1.0,
+    1.0
+   ],
+   "reach": 2.31,
+   "parts": 13,
+   "placed": true,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "prop_banner_blue_02": {
+   "size": [
+    4.0,
+    12.65,
+    2.0
+   ],
+   "x_range": [
+    -2.0,
+    2.0
+   ],
+   "z_range": [
+    -1.0,
+    1.0
+   ],
+   "reach": 2.31,
+   "parts": 13,
+   "placed": true,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "prop_banner_green_01": {
+   "size": [
+    4.0,
+    12.65,
+    2.0
+   ],
+   "x_range": [
+    -2.0,
+    2.0
+   ],
+   "z_range": [
+    -1.0,
+    1.0
+   ],
+   "reach": 2.31,
+   "parts": 13,
+   "placed": true,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "prop_banner_green_02": {
+   "size": [
+    4.0,
+    12.65,
+    2.0
+   ],
+   "x_range": [
+    -2.0,
+    2.0
+   ],
+   "z_range": [
+    -1.0,
+    1.0
+   ],
+   "reach": 2.31,
+   "parts": 13,
+   "placed": true,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "prop_banner_red_01": {
+   "size": [
+    4.0,
+    12.65,
+    2.0
+   ],
+   "x_range": [
+    -2.0,
+    2.0
+   ],
+   "z_range": [
+    -1.0,
+    1.0
+   ],
+   "reach": 2.31,
+   "parts": 11,
+   "placed": true,
+   "count_full": 2,
+   "count_shipped": 2,
+   "node": false,
+   "features": {
+    "dressing": 2
+   }
+  },
+  "prop_banner_red_02": {
+   "size": [
+    4.0,
+    12.65,
+    2.0
+   ],
+   "x_range": [
+    -2.0,
+    2.0
+   ],
+   "z_range": [
+    -1.0,
+    1.0
+   ],
+   "reach": 2.31,
+   "parts": 11,
+   "placed": true,
+   "count_full": 2,
+   "count_shipped": 2,
+   "node": false,
+   "features": {
+    "dressing": 2
+   }
+  },
+  "prop_banner_yellow_01": {
+   "size": [
+    4.0,
+    12.65,
+    2.0
+   ],
+   "x_range": [
+    -2.0,
+    2.0
+   ],
+   "z_range": [
+    -1.0,
+    1.0
+   ],
+   "reach": 2.31,
+   "parts": 12,
+   "placed": true,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "prop_banner_yellow_02": {
+   "size": [
+    4.0,
+    12.65,
+    2.0
+   ],
+   "x_range": [
+    -2.0,
+    2.0
+   ],
+   "z_range": [
+    -1.0,
+    1.0
+   ],
+   "reach": 2.31,
+   "parts": 12,
+   "placed": true,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "prop_cart_02": {
+   "size": [
+    5.4,
+    5.9,
+    10.25
+   ],
+   "x_range": [
+    -2.7,
+    2.7
+   ],
+   "z_range": [
+    -7.0,
+    3.25
+   ],
+   "reach": 7.2,
+   "parts": 10,
+   "placed": true,
+   "count_full": 1,
+   "count_shipped": 1,
+   "node": false,
+   "features": {
+    "dressing": 1
+   }
+  },
+  "prop_goods_01": {
+   "size": [
+    8.45,
+    3.9,
+    3.88
+   ],
+   "x_range": [
+    -4.1,
+    4.35
+   ],
+   "z_range": [
+    -1.13,
+    2.75
+   ],
+   "reach": 4.73,
+   "parts": 8,
+   "placed": true,
+   "count_full": 1,
+   "count_shipped": 1,
+   "node": false,
+   "features": {
+    "dressing": 1
+   }
+  },
+  "prop_goods_02": {
+   "size": [
+    8.45,
+    3.9,
+    3.91
+   ],
+   "x_range": [
+    -4.1,
+    4.35
+   ],
+   "z_range": [
+    -1.16,
+    2.75
+   ],
+   "reach": 4.73,
+   "parts": 8,
+   "placed": true,
+   "count_full": 1,
+   "count_shipped": 1,
+   "node": false,
+   "features": {
+    "dressing": 1
+   }
+  },
+  "prop_well_01": {
+   "size": [
+    7.6,
+    8.7,
+    6.0
+   ],
+   "x_range": [
+    -3.8,
+    3.8
+   ],
+   "z_range": [
+    -3.0,
+    3.0
+   ],
+   "reach": 5.18,
+   "parts": 10,
+   "placed": true,
+   "count_full": 1,
+   "count_shipped": 1,
+   "node": false,
+   "features": {
+    "dressing": 1
+   }
+  },
+  "resource_ore_01": {
+   "size": [
+    10.82,
+    8.06,
+    11.96
+   ],
+   "x_range": [
+    -4.97,
+    5.86
+   ],
+   "z_range": [
+    -6.95,
+    5.01
+   ],
+   "reach": 7.86,
+   "parts": 10,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "resource_ore_02": {
+   "size": [
+    11.48,
+    8.06,
+    10.84
+   ],
+   "x_range": [
+    -6.23,
+    5.26
+   ],
+   "z_range": [
+    -4.43,
+    6.41
+   ],
+   "reach": 7.96,
+   "parts": 10,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "resource_ore_03": {
+   "size": [
+    11.38,
+    8.06,
+    9.9
+   ],
+   "x_range": [
+    -4.87,
+    6.51
+   ],
+   "z_range": [
+    -5.64,
+    4.27
+   ],
+   "reach": 8.02,
+   "parts": 10,
+   "placed": true,
+   "count_full": 4,
+   "count_shipped": 4,
+   "node": true,
+   "features": {}
+  },
+  "resource_ore_04": {
+   "size": [
+    11.59,
+    8.06,
+    9.04
+   ],
+   "x_range": [
+    -6.52,
+    5.07
+   ],
+   "z_range": [
+    -4.29,
+    4.75
+   ],
+   "reach": 8.07,
+   "parts": 10,
+   "placed": true,
+   "count_full": 1,
+   "count_shipped": 1,
+   "node": true,
+   "features": {}
+  },
+  "resource_ore_05": {
+   "size": [
+    11.95,
+    8.06,
+    9.7
+   ],
+   "x_range": [
+    -4.93,
+    7.02
+   ],
+   "z_range": [
+    -4.85,
+    4.85
+   ],
+   "reach": 8.04,
+   "parts": 10,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "resource_ore_06": {
+   "size": [
+    13.02,
+    8.06,
+    10.39
+   ],
+   "x_range": [
+    -7.24,
+    5.78
+   ],
+   "z_range": [
+    -5.2,
+    5.2
+   ],
+   "reach": 7.92,
+   "parts": 10,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "resource_stone_01": {
+   "size": [
+    16.83,
+    7.82,
+    10.68
+   ],
+   "x_range": [
+    -7.86,
+    8.97
+   ],
+   "z_range": [
+    -6.0,
+    4.68
+   ],
+   "reach": 10.03,
+   "parts": 8,
+   "placed": true,
+   "count_full": 4,
+   "count_shipped": 4,
+   "node": true,
+   "features": {}
+  },
+  "resource_stone_02": {
+   "size": [
+    16.79,
+    7.82,
+    11.35
+   ],
+   "x_range": [
+    -7.84,
+    8.95
+   ],
+   "z_range": [
+    -5.98,
+    5.37
+   ],
+   "reach": 10.0,
+   "parts": 8,
+   "placed": true,
+   "count_full": 4,
+   "count_shipped": 4,
+   "node": true,
+   "features": {}
+  },
+  "resource_stone_03": {
+   "size": [
+    16.74,
+    7.79,
+    10.53
+   ],
+   "x_range": [
+    -7.82,
+    8.92
+   ],
+   "z_range": [
+    -5.98,
+    4.55
+   ],
+   "reach": 9.96,
+   "parts": 8,
+   "placed": true,
+   "count_full": 1,
+   "count_shipped": 1,
+   "node": true,
+   "features": {}
+  },
+  "resource_wood_01": {
+   "size": [
+    9.08,
+    4.18,
+    8.02
+   ],
+   "x_range": [
+    -2.68,
+    6.4
+   ],
+   "z_range": [
+    -3.41,
+    4.61
+   ],
+   "reach": 7.04,
+   "parts": 14,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "resource_wood_02": {
+   "size": [
+    9.08,
+    4.19,
+    7.91
+   ],
+   "x_range": [
+    -2.68,
+    6.4
+   ],
+   "z_range": [
+    -3.43,
+    4.48
+   ],
+   "reach": 7.04,
+   "parts": 14,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "rock_boulder_l_01": {
+   "size": [
+    17.98,
+    9.1,
+    14.3
+   ],
+   "x_range": [
+    -10.48,
+    7.5
+   ],
+   "z_range": [
+    -7.15,
+    7.15
+   ],
+   "reach": 11.81,
+   "parts": 5,
+   "placed": true,
+   "count_full": 23,
+   "count_shipped": 10,
+   "node": false,
+   "features": {
+    "rocks": 23
+   }
+  },
+  "rock_boulder_l_02": {
+   "size": [
+    18.75,
+    9.17,
+    15.91
+   ],
+   "x_range": [
+    -8.24,
+    10.51
+   ],
+   "z_range": [
+    -7.95,
+    7.95
+   ],
+   "reach": 11.84,
+   "parts": 5,
+   "placed": true,
+   "count_full": 15,
+   "count_shipped": 6,
+   "node": false,
+   "features": {
+    "rocks": 15
+   }
+  },
+  "rock_boulder_l_03": {
+   "size": [
+    19.02,
+    9.54,
+    17.15
+   ],
+   "x_range": [
+    -10.65,
+    8.37
+   ],
+   "z_range": [
+    -8.58,
+    8.58
+   ],
+   "reach": 12.25,
+   "parts": 5,
+   "placed": true,
+   "count_full": 23,
+   "count_shipped": 15,
+   "node": false,
+   "features": {
+    "rocks": 23
+   }
+  },
+  "rock_boulder_m_01": {
+   "size": [
+    6.2,
+    5.34,
+    8.87
+   ],
+   "x_range": [
+    -2.81,
+    3.39
+   ],
+   "z_range": [
+    -3.3,
+    5.57
+   ],
+   "reach": 6.48,
+   "parts": 4,
+   "placed": true,
+   "count_full": 20,
+   "count_shipped": 6,
+   "node": false,
+   "features": {
+    "rocks": 20
+   }
+  },
+  "rock_boulder_m_02": {
+   "size": [
+    6.38,
+    5.98,
+    9.27
+   ],
+   "x_range": [
+    -2.98,
+    3.39
+   ],
+   "z_range": [
+    -5.75,
+    3.52
+   ],
+   "reach": 6.27,
+   "parts": 4,
+   "placed": true,
+   "count_full": 20,
+   "count_shipped": 9,
+   "node": false,
+   "features": {
+    "rocks": 20
+   }
+  },
+  "rock_boulder_m_03": {
+   "size": [
+    7.32,
+    6.02,
+    9.7
+   ],
+   "x_range": [
+    -3.66,
+    3.66
+   ],
+   "z_range": [
+    -4.0,
+    5.71
+   ],
+   "reach": 6.22,
+   "parts": 4,
+   "placed": true,
+   "count_full": 18,
+   "count_shipped": 10,
+   "node": false,
+   "features": {
+    "rocks": 18
+   }
+  },
+  "rock_boulder_s_01": {
+   "size": [
+    6.2,
+    3.78,
+    4.95
+   ],
+   "x_range": [
+    -2.37,
+    3.83
+   ],
+   "z_range": [
+    -2.15,
+    2.79
+   ],
+   "reach": 4.77,
+   "parts": 3,
+   "placed": true,
+   "count_full": 18,
+   "count_shipped": 9,
+   "node": false,
+   "features": {
+    "rocks": 18
+   }
+  },
+  "rock_boulder_s_02": {
+   "size": [
+    6.38,
+    3.76,
+    5.27
+   ],
+   "x_range": [
+    -2.67,
+    3.71
+   ],
+   "z_range": [
+    -2.46,
+    2.8
+   ],
+   "reach": 4.69,
+   "parts": 3,
+   "placed": true,
+   "count_full": 13,
+   "count_shipped": 10,
+   "node": false,
+   "features": {
+    "rocks": 13
+   }
+  },
+  "rock_boulder_s_03": {
+   "size": [
+    6.76,
+    3.74,
+    5.68
+   ],
+   "x_range": [
+    -3.07,
+    3.68
+   ],
+   "z_range": [
+    -2.84,
+    2.84
+   ],
+   "reach": 4.62,
+   "parts": 3,
+   "placed": true,
+   "count_full": 20,
+   "count_shipped": 10,
+   "node": false,
+   "features": {
+    "rocks": 20
+   }
+  },
+  "rock_cliff_01": {
+   "size": [
+    13.57,
+    10.57,
+    15.4
+   ],
+   "x_range": [
+    -6.78,
+    6.78
+   ],
+   "z_range": [
+    -7.7,
+    7.7
+   ],
+   "reach": 10.26,
+   "parts": 4,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "rock_cliff_02": {
+   "size": [
+    13.17,
+    10.36,
+    14.92
+   ],
+   "x_range": [
+    -6.8,
+    6.37
+   ],
+   "z_range": [
+    -7.46,
+    7.46
+   ],
+   "reach": 9.8,
+   "parts": 4,
+   "placed": false,
+   "count_full": 0,
+   "count_shipped": 0,
+   "node": false,
+   "features": {}
+  },
+  "tree_birch_01": {
+   "size": [
+    10.1,
+    22.2,
+    8.14
+   ],
+   "x_range": [
+    -7.02,
+    3.08
+   ],
+   "z_range": [
+    -4.81,
+    3.33
+   ],
+   "reach": 7.03,
+   "parts": 9,
+   "placed": true,
+   "count_full": 11,
+   "count_shipped": 11,
+   "node": false,
+   "features": {
+    "forest": 8,
+    "lone_tree": 3
+   }
+  },
+  "tree_birch_02": {
+   "size": [
+    8.23,
+    20.81,
+    10.33
+   ],
+   "x_range": [
+    -3.13,
+    5.1
+   ],
+   "z_range": [
+    -4.73,
+    5.6
+   ],
+   "reach": 5.8,
+   "parts": 9,
+   "placed": true,
+   "count_full": 9,
+   "count_shipped": 7,
+   "node": false,
+   "features": {
+    "forest": 7,
+    "lone_tree": 2
+   }
+  },
+  "tree_birch_03": {
+   "size": [
+    8.8,
+    22.61,
+    10.0
+   ],
+   "x_range": [
+    -2.78,
+    6.02
+   ],
+   "z_range": [
+    -6.29,
+    3.71
+   ],
+   "reach": 6.82,
+   "parts": 9,
+   "placed": true,
+   "count_full": 9,
+   "count_shipped": 8,
+   "node": false,
+   "features": {
+    "forest": 4,
+    "lone_tree": 5
+   }
+  },
+  "tree_birch_04": {
+   "size": [
+    10.54,
+    21.21,
+    9.0
+   ],
+   "x_range": [
+    -6.33,
+    4.2
+   ],
+   "z_range": [
+    -3.57,
+    5.43
+   ],
+   "reach": 6.35,
+   "parts": 9,
+   "placed": true,
+   "count_full": 8,
+   "count_shipped": 6,
+   "node": false,
+   "features": {
+    "forest": 6,
+    "lone_tree": 2
+   }
+  },
+  "tree_birch_05": {
+   "size": [
+    8.59,
+    23.01,
+    9.37
+   ],
+   "x_range": [
+    -4.39,
+    4.2
+   ],
+   "z_range": [
+    -3.91,
+    5.46
+   ],
+   "reach": 6.03,
+   "parts": 9,
+   "placed": true,
+   "count_full": 11,
+   "count_shipped": 8,
+   "node": false,
+   "features": {
+    "forest": 9,
+    "lone_tree": 2
+   }
+  },
+  "tree_birch_06": {
+   "size": [
+    8.56,
+    21.62,
+    8.32
+   ],
+   "x_range": [
+    -3.42,
+    5.15
+   ],
+   "z_range": [
+    -6.17,
+    2.15
+   ],
+   "reach": 7.03,
+   "parts": 9,
+   "placed": true,
+   "count_full": 11,
+   "count_shipped": 8,
+   "node": false,
+   "features": {
+    "forest": 7,
+    "lone_tree": 4
+   }
+  },
+  "tree_oak_01": {
+   "size": [
+    18.87,
+    25.51,
+    20.97
+   ],
+   "x_range": [
+    -11.54,
+    7.33
+   ],
+   "z_range": [
+    -10.18,
+    10.78
+   ],
+   "reach": 11.59,
+   "parts": 16,
+   "placed": true,
+   "count_full": 13,
+   "count_shipped": 13,
+   "node": true,
+   "features": {
+    "forest": 8,
+    "lone_tree": 1
+   }
+  },
+  "tree_oak_02": {
+   "size": [
+    16.3,
+    24.56,
+    16.92
+   ],
+   "x_range": [
+    -8.44,
+    7.86
+   ],
+   "z_range": [
+    -9.04,
+    7.88
+   ],
+   "reach": 9.08,
+   "parts": 16,
+   "placed": true,
+   "count_full": 22,
+   "count_shipped": 12,
+   "node": false,
+   "features": {
+    "forest": 15,
+    "lone_tree": 7
+   }
+  },
+  "tree_oak_03": {
+   "size": [
+    20.79,
+    25.47,
+    22.74
+   ],
+   "x_range": [
+    -8.53,
+    12.26
+   ],
+   "z_range": [
+    -11.59,
+    11.16
+   ],
+   "reach": 12.61,
+   "parts": 16,
+   "placed": true,
+   "count_full": 17,
+   "count_shipped": 17,
+   "node": true,
+   "features": {
+    "forest": 7,
+    "lone_tree": 6
+   }
+  },
+  "tree_oak_04": {
+   "size": [
+    18.52,
+    24.53,
+    17.35
+   ],
+   "x_range": [
+    -7.94,
+    10.58
+   ],
+   "z_range": [
+    -5.77,
+    11.58
+   ],
+   "reach": 11.69,
+   "parts": 16,
+   "placed": true,
+   "count_full": 18,
+   "count_shipped": 12,
+   "node": false,
+   "features": {
+    "forest": 12,
+    "lone_tree": 6
+   }
+  },
+  "tree_oak_05": {
+   "size": [
+    20.03,
+    25.2,
+    21.84
+   ],
+   "x_range": [
+    -10.85,
+    9.18
+   ],
+   "z_range": [
+    -9.74,
+    12.1
+   ],
+   "reach": 12.17,
+   "parts": 16,
+   "placed": true,
+   "count_full": 21,
+   "count_shipped": 16,
+   "node": true,
+   "features": {
+    "forest": 11,
+    "lone_tree": 6
+   }
+  },
+  "tree_oak_06": {
+   "size": [
+    21.3,
+    24.88,
+    18.57
+   ],
+   "x_range": [
+    -10.73,
+    10.57
+   ],
+   "z_range": [
+    -9.54,
+    9.02
+   ],
+   "reach": 12.44,
+   "parts": 16,
+   "placed": true,
+   "count_full": 19,
+   "count_shipped": 16,
+   "node": false,
+   "features": {
+    "forest": 14,
+    "lone_tree": 5
+   }
+  },
+  "tree_oak_07": {
+   "size": [
+    14.29,
+    25.9,
+    14.88
+   ],
+   "x_range": [
+    -6.04,
+    8.25
+   ],
+   "z_range": [
+    -7.93,
+    6.96
+   ],
+   "reach": 9.45,
+   "parts": 16,
+   "placed": true,
+   "count_full": 15,
+   "count_shipped": 10,
+   "node": false,
+   "features": {
+    "forest": 9,
+    "lone_tree": 6
+   }
+  },
+  "tree_oak_08": {
+   "size": [
+    22.42,
+    24.7,
+    20.38
+   ],
+   "x_range": [
+    -10.21,
+    12.21
+   ],
+   "z_range": [
+    -9.82,
+    10.56
+   ],
+   "reach": 12.74,
+   "parts": 16,
+   "placed": true,
+   "count_full": 12,
+   "count_shipped": 9,
+   "node": false,
+   "features": {
+    "forest": 7,
+    "lone_tree": 5
+   }
+  },
+  "tree_pine_01": {
+   "size": [
+    16.4,
+    29.64,
+    16.4
+   ],
+   "x_range": [
+    -8.16,
+    8.24
+   ],
+   "z_range": [
+    -8.09,
+    8.31
+   ],
+   "reach": 11.44,
+   "parts": 22,
+   "placed": true,
+   "count_full": 22,
+   "count_shipped": 18,
+   "node": false,
+   "features": {
+    "forest": 22
+   }
+  },
+  "tree_pine_02": {
+   "size": [
+    16.4,
+    32.31,
+    16.4
+   ],
+   "x_range": [
+    -8.31,
+    8.09
+   ],
+   "z_range": [
+    -8.14,
+    8.26
+   ],
+   "reach": 11.45,
+   "parts": 22,
+   "placed": true,
+   "count_full": 19,
+   "count_shipped": 15,
+   "node": true,
+   "features": {
+    "forest": 15
+   }
+  },
+  "tree_pine_03": {
+   "size": [
+    16.08,
+    29.97,
+    16.08
+   ],
+   "x_range": [
+    -8.13,
+    7.96
+   ],
+   "z_range": [
+    -8.14,
+    7.94
+   ],
+   "reach": 11.49,
+   "parts": 22,
+   "placed": true,
+   "count_full": 16,
+   "count_shipped": 13,
+   "node": false,
+   "features": {
+    "forest": 16
+   }
+  },
+  "tree_pine_04": {
+   "size": [
+    16.37,
+    32.63,
+    16.37
+   ],
+   "x_range": [
+    -8.1,
+    8.27
+   ],
+   "z_range": [
+    -8.29,
+    8.08
+   ],
+   "reach": 11.47,
+   "parts": 22,
+   "placed": true,
+   "count_full": 12,
+   "count_shipped": 11,
+   "node": false,
+   "features": {
+    "forest": 12
+   }
+  },
+  "tree_pine_05": {
+   "size": [
+    16.43,
+    30.3,
+    16.43
+   ],
+   "x_range": [
+    -8.09,
+    8.34
+   ],
+   "z_range": [
+    -8.15,
+    8.28
+   ],
+   "reach": 11.46,
+   "parts": 22,
+   "placed": true,
+   "count_full": 17,
+   "count_shipped": 16,
+   "node": false,
+   "features": {
+    "forest": 17
+   }
+  },
+  "tree_pine_06": {
+   "size": [
+    16.14,
+    27.96,
+    16.14
+   ],
+   "x_range": [
+    -8.11,
+    8.03
+   ],
+   "z_range": [
+    -7.93,
+    8.21
+   ],
+   "reach": 11.49,
+   "parts": 22,
+   "placed": true,
+   "count_full": 16,
+   "count_shipped": 13,
+   "node": false,
+   "features": {
+    "forest": 16
+   }
+  }
+ }
+}

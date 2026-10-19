@@ -1,0 +1,24 @@
+{
+ "assets": {
+  "env_kit_01": {
+   "geometry_hash": "61bac208a4421907",
+   "verdict": "PASS"
+  }
+ },
+ "generator": "env_kit",
+ "generator_version": 1,
+ "notes": "env_kit_01 (the 52 ids the world places): SET B (these meshes) PASS in all three groups; minimum over the groups shown (the crops reviewer scored cost 3 for the ~1.4k-triangle fields, trees/bushes and rocks/nodes scored 4). Renders are Blender, not Studio. env_kit_02 (15 spare ids nothing places yet) was only partly shown (wheat stages 04/05) and is not reviewed.",
+ "reviewer": "fresh-context subagents, one per family group (images + rubric only); see games/game-001/art/reviews/img/d057-env-nature-r1/review.json",
+ "round": 1,
+ "scores": {
+  "cohesion": 4,
+  "detail_density": 4,
+  "palette": 4,
+  "proportions": 4,
+  "readability": 4,
+  "silhouette": 4,
+  "triangle_cost": 3,
+  "variation": 4
+ },
+ "verdict": "PASS"
+}

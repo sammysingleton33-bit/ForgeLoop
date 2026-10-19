@@ -3,6 +3,8 @@
 	Kit/Props — props by asset id (CONTRACTS G10): the imported Blender mesh when an asset source is
 	registered (Kit.setAssetSource(ReplicatedStorage.Forge.Assets)), otherwise a part-built stand-in
 	with the same id, so imports swap in automatically (D-021). Also territory markers.
+	The nature meshes of FL-0136 (trees, bushes, rocks, resource nodes, flowers, crops) are Models in
+	Forge.Assets (or Forge.Assets.EnvKit) checked and prepared by Kit/EnvMesh against Kit/EnvMeshData.
 
 	Stand-ins follow the art bible (blender/ART_DIRECTION.md) as far as primitives allow: chunky,
 	layered, colour-varied. They are deterministic per asset id (Park–Miller PRNG from WorldPlan,
@@ -13,6 +15,7 @@
 ]]
 
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
+local EnvMesh = require("./EnvMesh")
 local Parts = require("./Parts")
 local Pieces = require("./Pieces")
 local WorldPlan = require("./WorldPlan")
@@ -839,11 +842,15 @@ local function standIn(assetId: string): Model
 end
 Props._standIn = standIn
 
+-- A Model for the id in the asset source is cloned. The nature meshes (Kit/EnvMeshData lists their ids) are made ready by
+-- Kit/EnvMesh first and rejected, in favour of the stand-in, when they do not match their data (never an error); an id
+-- the data does not list is cloned as it always was.
 function Props.prop(assetId: string): Model
-	if assetSource then
-		local found = assetSource:FindFirstChild(assetId)
-		if found and found:IsA("Model") then
-			return found:Clone()
+	local found = EnvMesh.find(assetSource, assetId)
+	if found and found:IsA("Model") then
+		local ready = EnvMesh.accept(assetId, found:Clone()) -- the clone itself for an id the data does not list
+		if ready then
+			return ready
 		end
 	end
 	return standIn(assetId)

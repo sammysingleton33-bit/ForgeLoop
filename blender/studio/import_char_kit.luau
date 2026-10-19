@@ -297,6 +297,11 @@ local function importCitizenKit(world, settings)
 					piece:RemoveTag(tag)
 				end
 				piece.Name = id
+				-- the physics shape: set here (the command bar has plugin rights); a game script cannot write it, so the Kit does not,
+				-- and the saved Forge.Assets piece carries it
+				if piece:IsA("MeshPart") then
+					piece.CollisionFidelity = Enum.CollisionFidelity.Box
+				end
 				if existing and existing ~= piece then
 					existing:Destroy()
 				end

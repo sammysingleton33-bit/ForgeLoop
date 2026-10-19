@@ -51,7 +51,8 @@
 		Kit.portraitCamera(portrait) -> (CFrame, number)        -- camera CFrame and FieldOfView from PortraitFocus
 		Kit.posePortrait(portrait, joints)                      -- places anchored parts for Sim/Pose joint transforms
 		Kit.regalia(kingdomColor) -> { Accessory }              -- crown + cape
-		Kit.prop(assetId) -> Model                              -- Forge.Assets mesh if registered, else stand-in
+		Kit.prop(assetId) -> Model                              -- Forge.Assets mesh if registered (the FL-0136 nature meshes
+		                                                        -- are checked against Kit/EnvMeshData: a mismatch is the stand-in), else stand-in
 		Kit.regionMarkers(polygon, kingdomColor) -> Model
 		Kit.slotMarker(size: Vector2, kingdomColor) -> Model   -- G13.5 build slot marker (Root is the query target)
 		Kit.NEUTRAL_COLOR, Kit.setKingdomColor(model, color)
@@ -102,7 +103,7 @@
 		recoloured to gold has 262 parts against 260); Kit.build always fits.
 		setKingdomColor also works on a container holding several Kit models (slots pair per model).
 	Additive (FORGE-02 area): Kit.setAssetSource(folder) (WorldService passes ReplicatedStorage.Forge.Assets),
-		Kit.BUILDING_TYPES, Kit.partCount(model), Kit.characterMeshAvailable(), Kit.characterMeshStatus().
+		Kit.BUILDING_TYPES, Kit.partCount(model), Kit.characterMeshAvailable(), Kit.characterMeshStatus(), Kit.envMeshStatus().
 	Characters (FORGE-02): Kit.characterLod(kind, kingdomColor), Kit.CHARACTER_ROOT_HEIGHT, Kit.CHARACTER_MAX_PARTS,
 		Kit.JOB_HEADWEAR, Kit.JOB_TOOLS, Kit.LOOK_RANGES,
 		Kit.LOOK_PALETTES, Kit.DEFAULT_LOOK, Kit.normalizeLook(look), Kit.lookKey(look, kingdom?) (soldiers: pass
@@ -114,8 +115,9 @@ local Buildings = require("./Buildings")
 local Character = require("./Character")
 local Damage = require("./Damage")
 local CharacterMesh = require("./CharacterMesh")
-local Gear = require("./Gear")
 local Crowd = require("./Crowd")
+local EnvMesh = require("./EnvMesh")
+local Gear = require("./Gear")
 local Parts = require("./Parts")
 local Pieces = require("./Pieces")
 local Portrait = require("./Portrait")
@@ -222,6 +224,7 @@ function Kit.setAssetSource(folder: Instance?)
 end
 Kit.characterMeshAvailable = CharacterMesh.available -- () -> boolean: kit data + a CitizenKit folder are present
 Kit.characterMeshStatus = CharacterMesh.status -- () -> diagnostics (pieces, missing, mesh vs fallback builds, last fallback reason)
+Kit.envMeshStatus = EnvMesh.status -- () -> { props, accepted, rejected = { [assetId] = why } }: the FL-0136 nature meshes behind Kit.prop
 Kit.regionMarkers = Props.regionMarkers
 Kit.slotMarker = Props.slotMarker -- G13.5 build slot ground marker (WorldService)
 Kit._hueStyle = Parts.hueStyle
