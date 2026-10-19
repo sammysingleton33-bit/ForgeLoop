@@ -33,6 +33,9 @@ local CONTRACT_EVENTS = {
 	"MatchEnded",
 	"CitizenAnswered",
 	"ConsequenceChanged",
+	"WarChanged",
+	"SiegeChanged",
+	"RaidChanged",
 }
 
 describe("Contracts/GameEvents", function()

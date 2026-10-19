@@ -1062,7 +1062,10 @@ function KingdomHudController:render()
 	local banner = HudModel.banner(store)
 	local active = banner ~= nil
 	self.guis.hud.Enabled = active
-	self.guis.topbar.Enabled = active
+	-- The phase bar stays for a ruler without a kingdom while a match runs: a fallen ruler who stays
+	-- to watch still sees the phase and time left (FL-0129; FORGE-07 L3 on #185). Its pill exists once
+	-- the HUD was built for this player's kingdom; refreshTimer keeps it current every tick.
+	self.guis.topbar.Enabled = active or (store.match ~= nil and store.match.phase ~= nil)
 	self.guis.menus.Enabled = active
 	self.guis.backdrop.Enabled = active
 	if not active and s.menu ~= nil then

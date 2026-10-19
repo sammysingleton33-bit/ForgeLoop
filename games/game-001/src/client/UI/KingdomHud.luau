@@ -14,7 +14,8 @@
 		model = { banner: HudModel Banner?, members: { Member }, balances: ResourceBag?,
 		          timer: HudModel timer?, queue: { Chip }, menu: string?, hideQueue: boolean?,
 		          onMenu: (id) -> (), onPill: (resourceId) -> () }
-	hud:refreshTimer(timer?, metrics)        every tick
+	hud:refreshTimer(timer?, metrics)        every tick; builds the pill if the HUD never was (a watcher)
+	hud:setTimerNote(text?)                  one line under the pill ("TimerNote")
 	hud:refreshQueue(queue, metrics, drawerOpen, hidden?)
 	hud:pulse(deltas)                        float each change under its pill (visual confirmation)
 	hud:addMenu({ id, icon, label, target?, order? })   another rail button (the next render rebuilds
@@ -341,6 +342,12 @@ function KingdomHud:_build(metrics: any, banner: any)
 		Parent = container,
 	}, { List = Style.list("x", 8, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center) })
 
+	self:_buildTimer()
+end
+
+-- The phase pill in the top bar, and the note line under it (setTimerNote). Built with the HUD, or on
+-- the first refreshTimer for a player who never had a kingdom HUD (a match_full watcher, FL-0129).
+function KingdomHud:_buildTimer()
 	Create.clear(self._topbar)
 	self._timer = Create("Frame", {
 		Name = "Timer",
@@ -424,6 +431,26 @@ function KingdomHud:_build(metrics: any, banner: any)
 			extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 13), LayoutOrder = 2 },
 		}),
 	})
+	self._noteLabel = Style.text({
+		text = self._note or "",
+		weight = Enum.FontWeight.SemiBold,
+		size = 12,
+		color = Theme.color("gold300"),
+		xAlign = "Center",
+		extra = {
+			Name = "TimerNote",
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0.5, 23),
+			AutomaticSize = Enum.AutomaticSize.X,
+			Size = UDim2.fromOffset(0, 20),
+			BackgroundColor3 = Theme.color("ink950"),
+			BackgroundTransparency = 0.25, -- readable over a bright sky
+			Visible = false,
+			Parent = self._topbar,
+		},
+	})
+	Style.corner(999).Parent = self._noteLabel
+	Style.padding(0, 10).Parent = self._noteLabel
 end
 
 local function memberChip(member: any, color: Color3, order: number): Frame
@@ -509,10 +536,18 @@ function KingdomHud:render(model: any, metrics: any)
 end
 
 function KingdomHud:refreshTimer(timer: any, metrics: any)
+	local show = timer ~= nil and timer.phase ~= ""
 	if self._timer == nil then
-		return
+		if not show then
+			return
+		end
+		self:_buildTimer()
 	end
-	if timer == nil or timer.phase == "" then
+	if self._noteLabel then
+		self._noteLabel.Text = self._note or ""
+		self._noteLabel.Visible = show and self._note ~= nil
+	end
+	if not show then
 		self._timer.Visible = false
 		return
 	end
@@ -648,7 +683,19 @@ function KingdomHud:destroy()
 		self._container = nil
 	end
 	Create.clear(self._topbar)
+	self._timer = nil
+	self._noteLabel = nil
 	self._breakpoint = nil
+end
+
+-- One line under the phase pill (nil: none), e.g. "You'll join the next match" for a match_full
+-- watcher (FL-0129); shown on the next refreshTimer, which runs every tick.
+function KingdomHud:setTimerNote(text: string?)
+	self._note = text
+	if self._noteLabel then
+		self._noteLabel.Text = text or ""
+		self._noteLabel.Visible = text ~= nil and self._timer ~= nil and self._timer.Visible
+	end
 end
 
 return KingdomHud

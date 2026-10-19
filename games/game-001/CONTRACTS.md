@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g11a, 2026-10-19; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g11b, 2026-10-19; G12 is a VS-2 draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -260,7 +260,9 @@ ObjectiveService.captured: Signal<(objectiveId: string, KingdomId)>
 
 | Remote | Kind | Args → result, or payload |
 |---|---|---|
-| `Kingdom.State` / `Kingdom.GetState` | serverEvent / function | `{ kingdoms: { Kingdom }, mine: KingdomId? }` on change / on request |
+| `Kingdom.State` / `Kingdom.GetState` | serverEvent / function | `{ kingdoms: { Kingdom }, mine: KingdomId?, diplomacy? }` on change / on request. `diplomacy` (v0.4-g11b) is the viewer's relations, open proposals and asks, the shape FORGE-03 pinned in #182 |
+| `Kingdom.Diplomacy` (v0.4-g11b, D-054) | function | `(action: "declareWar" \| "proposePeace" \| "acceptPeace", target: KingdomId(1,16))` → `(ok, tag?)`; burst 3, 1/s. `declareWar` from the senior ruler → `(true, "declared")`; from another ruler → `(true, "asked")`, and the senior gets `Kingdom.WarAsk`. `proposePeace`: any ruler. `acceptPeace`: senior only, else `(false, "not_senior")`. A ruler seated after Founding began is locked from `declareWar`/`acceptPeace` for 120 s: `(false, "newcomer_lock")`. Sim codes pass through: `invalid_args`, `unknown_kingdom`, `grace_period`, `already_at_war`, `peace_cooldown`, `not_at_war`, `no_proposal`, `not_in_match`, `match_not_active`, `kingdom_eliminated`. The senior is the longest-seated present ruler and loses seniority after 90 s idle. Governors are exempt |
+| `Kingdom.WarAsk` (v0.4-g11b) | serverEvent | `(requesterUserId, requesterName, target: KingdomId)` to the senior ruler when a co-ruler asks for war |
 | `Kingdom.Gather` | function | `(nodeId: string(1,32))` → `(true, ResourceId, amount)` or `(false, errorCode)`; the server checks distance and cooldown |
 | `Kingdom.SetJobQuota` | function | `(job: "farmer" \| "woodcutter" \| "miner" \| "builder", count: integer(0,50))` → `(ok, errorCode?)` (calls `requestWorkers`). Haulers take the citizens left over and soldiers come from the barracks, so neither has a quota |
 | `Match.State` / `Match.GetState` | serverEvent / function | `(phase, endsAtServerTime?, startedAtServerTime)` |
@@ -647,6 +649,7 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g11b (2026-10-19) FORGE-00: G8 `Kingdom.Diplomacy` and `Kingdom.WarAsk` (D-054 player war and peace, senior ruler, newcomer lock), plus `Kingdom.State.diplomacy`. Additive. Rows from #195 as merged.
 - v0.4-g11a (2026-10-19) FORGE-00: G12.6 key-citizen crowd figures (with a `role`) may have up to 8 parts, so the six key props (satchel, plume, staff, basket, scales, banner) read. That is 12 figures, about +48 parts in the arena-phase budget; other crowd figures stay at 4 (FORGE-02 FL-0072 D-019 finding). Additive.
 - v0.4-g11 (2026-10-18) FORGE-00: G3 full match by default (match mode, PvP, governors, elimination, the D-055 caps, `match.mode` debug), Crown Arena hooks (`registerArena`/`arenaEnded`, `Match.arena.maxSeconds`), `MatchEnded.reason`, the `Match.waiting` seat queue. G8 `Match.Spectate` and `Army.Recruit` `army_cap`. Additive. Rows from FORGE-01's FL-0125 handoff (#187).
 - v0.4-g10d (2026-10-16) FORGE-00: G9 `ConsequenceChanged` wording: a rebellion fires only its start; a rule cut short by elimination or a world reset fires no end (FORGE-07 L1/L2 on #173). Wording only.

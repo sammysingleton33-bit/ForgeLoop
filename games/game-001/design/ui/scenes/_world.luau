@@ -22,6 +22,7 @@ return function(ctx, opts, act)
 		remotes = opts.remotes, -- extra doubles for a scene (e.g. PopulationDoubles)
 		services = opts.services,
 		latency = opts.latency,
+		kingdom = opts.kingdom, -- false: the player is never seated (a match_full watcher)
 	})
 	local hud = world.client:get("KingdomHudController")
 	local build = world.client:get("BuildMenuController")
