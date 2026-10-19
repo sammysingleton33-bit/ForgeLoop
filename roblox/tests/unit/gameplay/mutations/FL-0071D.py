@@ -18,4 +18,11 @@ M = [
  ("FL-0071D", DC, 'if not self._destroyed and self._state == nil then', 'if false then', "sim/DuelController", "asks Arena.GetState once"),
  ("FL-0071D", DC, 'if self._destroyed or type(action) ~= "string"', 'if type(action) ~= "string"', "sim/DuelController", "stops relaying and sending after destroy"),
  ("FL-0071D", DC, '\t\tlink:disconnect()\n', '', "sim/DuelController", "stops relaying and sending after destroy"),
+ # --- FORGE-07's review: side b, the whole action set, the server's rate numbers
+ ("FL-0071D", DC, 'for _, side in { "a", "b" } do\n\t\tlocal duellist = state[side]', 'for _, side in { "a" } do\n\t\tlocal duellist = state[side]', "sim/DuelController", "lets the second champion (side b) act too"),
+ ("FL-0071D", DC, '\tblockEnd = true,\n', '', "sim/DuelController", "sends all six actions"),
+ ("FL-0071D", DC, '\tparry = true,\n', '', "sim/DuelController", "sends all six actions"),
+ ("FL-0071D", DC, '\tdodge = true,\n', '', "sim/DuelController", "sends all six actions"),
+ ("FL-0071D", DC, 'DuelController.BURST = 8', 'DuelController.BURST = 4', "sim/DuelController", "mirrors the server's rate row"),
+ ("FL-0071D", DC, 'DuelController.PER_SECOND = 12', 'DuelController.PER_SECOND = 6', "sim/DuelController", "mirrors the server's rate row"),
 ]

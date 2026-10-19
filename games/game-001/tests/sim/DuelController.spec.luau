@@ -10,6 +10,7 @@ local describe, it, expect, afterEach = T.describe, T.it, T.expect, T.afterEach
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local DuelDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/DuelController")
+local ArenaRemotes = require("@game/ReplicatedStorage/Game/Arena/Remotes")
 
 local ME = 8101
 local RIVAL = 8102
@@ -138,6 +139,45 @@ describe("DuelController: act", function()
 		expect(world.controller:act("block")).toBe(true)
 		world.env.mock:advance(0.1)
 		expect(world.sent).toEqual({ "light", "block" })
+	end)
+
+	it("sends all six actions, and the same six the server's Arena.Action accepts", function()
+		local world = boot()
+		push(world, arenaState("duel"))
+		for _, action in { "light", "heavy", "block", "blockEnd", "parry", "dodge" } do
+			expect(world.controller:act(action)).toBe(true)
+		end
+		world.env.mock:advance(0.1)
+		expect(world.sent).toEqual({ "light", "heavy", "block", "blockEnd", "parry", "dodge" })
+		local count = 0
+		for _ in world.controller.ACTIONS do
+			count += 1
+		end
+		expect(count).toBe(6)
+	end)
+
+	it("lets the second champion (side b) act too", function()
+		local world = boot()
+		push(world, arenaState("duel", duellist(RIVAL), duellist(ME)))
+		expect(world.controller:isChampion()).toBe(true)
+		expect(world.controller:act("heavy")).toBe(true)
+		world.env.mock:advance(0.1)
+		expect(world.sent).toEqual({ "heavy" })
+	end)
+
+	it("mirrors the server's rate row for Arena.Action: burst 8, 12 a second", function()
+		local row
+		for _, remote in ArenaRemotes do
+			if remote.name == "Arena.Action" then
+				row = remote
+			end
+		end
+		assert(row, "the Arena.Action remote")
+		expect(row.rate.burst).toBe(8)
+		expect(row.rate.perSecond).toBe(12)
+		local world = boot()
+		expect(world.controller.BURST).toBe(row.rate.burst)
+		expect(world.controller.PER_SECOND).toBe(row.rate.perSecond)
 	end)
 
 	it("sends nothing from a spectator, an AI's seat, another stage, or before any state", function()
