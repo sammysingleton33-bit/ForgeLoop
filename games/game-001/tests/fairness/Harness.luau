@@ -242,15 +242,18 @@ function Harness.evaluate(results: { any }, contract: any?): { any }
 		local ok, rule, edges
 		if bound == "supportMatters" then
 			ok = rate >= outcome.supportMatters.min and rate <= outcome.supportMatters.max
-			rule = `{outcome.supportMatters.min * 100}-{outcome.supportMatters.max * 100} %`
+			rule = `{string.format("%.0f", outcome.supportMatters.min * 100)}-{string.format(
+				"%.0f",
+				outcome.supportMatters.max * 100
+			)} %`
 			edges = { outcome.supportMatters.min, outcome.supportMatters.max }
 		elseif bound == "skillStillWins" then
 			ok = rate >= outcome.skillStillWins
-			rule = `>= {outcome.skillStillWins * 100} %`
+			rule = `>= {string.format("%.0f", outcome.skillStillWins * 100)} %`
 			edges = { outcome.skillStillWins }
 		elseif bound == "noAutoWin" then
 			ok = rate <= outcome.noAutoWin
-			rule = `<= {outcome.noAutoWin * 100} %`
+			rule = `<= {string.format("%.0f", outcome.noAutoWin * 100)} %`
 			edges = { outcome.noAutoWin }
 		else
 			error(`Harness.evaluate: unknown bound '{tostring(bound)}'`)

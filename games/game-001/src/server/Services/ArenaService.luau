@@ -157,6 +157,7 @@ function ArenaService:_begin(qualifiers: { string }): boolean
 	local sim = self:_sim()
 	local leadership = self._leadership
 	local support = self._support
+	leadership:closeOut() -- the last phase (Endgame) is credited before the arena reads the ledger
 	local ok, flow = pcall(ArenaFlow.new, {
 		qualifiers = qualifiers,
 		rulersOf = function(kingdom: string): { number }

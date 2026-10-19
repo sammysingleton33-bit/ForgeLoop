@@ -598,7 +598,7 @@ Steps
 2. During the preview: "Crimson: Mara steps up: Reforge!" (a perk) stays about 4 s and is not replaced early. A chant line reads "Crimson: Crimson! Crimson!". The last step is the ending: "(The stand floods the arena to crown its ruler)" for Crimson and "(The stand empties)" for Azure.
 3. Run it again with `"hostile,adoring"`: Crimson now boos or turns its back, and the ending reads "(A thin crowd watches the crowning)" for Crimson and "They fought for us! (The stand salutes)" for Azure. Then `""` stops it and the lines go.
 4. Phone emulator (667×375): the two subtitle boxes fit inside the screen and don't cover the bottom HUD buttons. The longest lines, the ending's "(The stand floods the arena to crown its ruler)" and the salute, wrap onto a second line inside their box and are not cut off (FORGE-07's #199 M1). Screenshot **E17-2**. Then also turn on the duel preview (E16 step 1, `ForgeDuelPreview`) and run the crowd preview again: the boxes now sit left of the duel's touch buttons, just above the thumbstick, never on a button or on the thumbstick, and well below the top of the screen. Screenshot **E17-3**. Then hold and drag the thumbstick while the lines show (the champion can walk in the duel): the stick, its ring and your thumb stay below the lowest box, and every line stays readable. If they cover a line, note how far (FORGE-07 on #199).
-5. (Needs FL-0071.) In a real duel, a big hit and a parry make both stands react, and an announcer line makes the crowd quieter for about 2.5 s (once sounds exist). At crowning, the ending lines show once, and they go at Results.
+5. (Needs FL-0071.) In a real duel, a big hit and a parry make both stands react, and an announcer line makes the crowd quieter for about 2.5 s (once sounds exist). At crowning, the ending lines show once, and they go at Results. A perk names its citizen and the perk ("Mara steps up: Reforge!"). A duel that is called off (a draw: cancelled, or both champions drop) shows "(The duel was called off)" for both stands and nothing else.
 
 Pass: steps 1–4 hold (5 when FL-0071 is on the build). Copy every red line from Output.
 
@@ -607,3 +607,4 @@ History:
 - 2026-10-18 FORGE-04: step 4 checks the lines keep clear of the duel's touch buttons (FORGE-03 on #199).
 - 2026-10-19 FORGE-04: two-line boxes and the kingdom's short name, so the longest lines are not cut off (FORGE-07's #199 M1).
 - 2026-10-19 FORGE-04: step 4 also holds the thumbstick under the lowest box (FORGE-07 on #199).
+- 2026-10-19 FORGE-04: step 5 checks the perk names and the called-off ending (DuelService's Arena.Events relay, FORGE-00's draw ruling).

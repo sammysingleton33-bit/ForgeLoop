@@ -217,6 +217,20 @@ describe("ArenaService: the host", function()
 		end
 	)
 
+	it("closes the leadership ledger when the arena begins: the Endgame fed ratio is credited", function()
+		local world = boot({ 1, 2 })
+		world.sim.kingdoms[world.sim:kingdomOfUser(1).id].fedRatio = 1
+		reachArena(world)
+		expect(world.arena:state().stage).toBe("loadout")
+		local kept = 0
+		for _, moment in world.leadership:getMoments(world.a, 1, 200) do
+			if moment.act == "fedRatioKept" then
+				kept += 1
+			end
+		end
+		expect(kept).toBe(1)
+	end)
+
 	it("publishes the state to everyone on every change, and answers Arena.GetState", function()
 		local world = boot({ 1, 2 })
 		reachArena(world)
