@@ -386,5 +386,19 @@ Then, with SupportService on, run a desktop window and the phone emulator (667 �
 4. Treasury income ticking does not flicker the chip or reset the drawer's scroll.
 5. Phone emulator: the chip stays clear of the pills and the objective tracker; the drawer scrolls to the last moment.
 
+## U27 — Results recap: Arena & support (FL-0073; needs FORGE-01's SupportService and the Arena remotes)
+Play a match to Results with the arena debug presets (your kingdom's champion Adoring, one with Restless), desktop and
+the phone emulator (667 × 375).
+1. Results → Your reign: next to "Back to results" an "Arena & support" button. Without the arena (no SupportService)
+   there is no such button and Back is full width.
+2. Arena & support: "Biggest moments" lists five moments of the whole match (not only the last few), the biggest
+   change first, each with its component and a signed, coloured number.
+3. "Perks": your champion's chosen perks; the ones that fired in the duel are gold with ✓; "2 of 3 perks fired".
+4. "Crowd": won with Adoring/Loyal "Crowned by your people"; won lower "A quiet crowning"; lost with Adoring/Loyal
+   "Saluted in defeat"; lost lower "The stand emptied"; a cancelled duel "No victor"; no champion "Not in the arena".
+   Compare with what the crowd did in the arena (FORGE-04's crowd states).
+5. "Your reign" switches back; closing and reopening the recap starts on the reign page.
+6. Phone emulator: moments left (scroll to the fifth), perks and crowd right, both buttons 44 px in the bottom row.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.
