@@ -82,8 +82,10 @@ def torso_r(y, w=1.0):
     return pts[-1][1] * w, pts[-1][2]
 
 
-BEANIE = (0.19, 0.2, 0.25)  # woodcutter's charcoal knit (baked: the runtime's cloth palette would turn it umber)
-HARDHAT = (0.95, 0.92, 0.82)  # builder's cream cap
+BEANIE = (0.97, 0.5, 0.1)  # woodcutter's orange knit (baked: the runtime's cloth palette would turn it umber)
+KNIT_CUFF = (0.98, 0.93, 0.84)
+MINER_HELMET = (0.98, 0.8, 0.12)  # miner's yellow pot helmet: a value no other job's head has
+HARDHAT = (0.06, 0.7, 0.72)  # builder's teal hard hat: the one saturated cyan on the field
 MERCHANT_HAT = (0.34, 0.2, 0.47)  # merchant's violet beret
 COIF = (0.97, 0.96, 0.93)  # healer's white headscarf
 SMITH_CAP = (0.2, 0.18, 0.18)  # blacksmith's soot-black skull cap
@@ -104,38 +106,38 @@ def build_hats(S, R):
     GREY = (0.66, 0.66, 0.66)
 
     # ---- straw hat: a wide flat brim, a domed crown with a dark band (farmer)
-    brim = loft([(4.98, 1.58, 1.58), (5.1, 1.58, 1.58)], seg=S.seg(12, 8), n=2.0, caps=(True, True), phase=ph(S, S.seg(12, 8)),
+    brim = loft([(4.98, 1.9, 1.9), (5.1, 1.9, 1.9)], seg=S.seg(12, 8), n=2.0, caps=(True, True), phase=ph(S, S.seg(12, 8)),
                 color=STRAW, smooth=sm, tag="straw")
-    crown = loft([(5.08, 0.92, 0.9), (5.34, 0.88, 0.86), (5.66, 0.62, 0.6), (5.82, 0.0, 0.0)], seg=seg, n=n, caps=(True, False), phase=p0,
+    crown = loft([(5.08, 0.96, 0.94), (5.36, 0.92, 0.9), (5.76, 0.66, 0.64), (5.98, 0.0, 0.0)], seg=seg, n=n, caps=(True, False), phase=p0,
                  color=STRAW, smooth=sm, tag="straw")
     crown.paint(WOOD_DARK, where=lambda x, y, z: 5.1 < y < 5.4)
     hat(R, "hat_straw", merge(brim, crown), tags=("farmer",))
     # the kingdom ribbon round the crown (tinted): visible from above between the brim and the dome
-    rib = loft([(5.12, 0.95, 0.93), (5.4, 0.91, 0.89)], seg=seg, n=n, caps=(True, True), phase=p0, color=TINT, smooth=sm, tag="cloth")
+    rib = loft([(5.12, 0.99, 0.97), (5.44, 0.95, 0.93)], seg=seg, n=n, caps=(True, True), phase=p0, color=TINT, smooth=sm, tag="cloth")
     hat(R, "hat_ribbon", rib, slot="hatband", tint="kingdom", tags=("farmer",))
 
-    # ---- knit beanie with a folded cuff (woodcutter); the pompom is a separate kingdom piece
-    dome = loft([(4.9, 0.9, 0.86), (5.06, 0.92, 0.88), (5.32, 0.84, 0.81), (5.62, 0.62, 0.6), (5.78, 0.0, 0.0)], seg=seg, n=n,
-                caps=(True, False), phase=p0, color=BEANIE, smooth=sm, tag="cloth")
-    dome.paint(mix(BEANIE, (0.62, 0.64, 0.7), 0.6), where=lambda x, y, z: y < 5.1)
+    # ---- tall knit cap with a folded cuff (woodcutter): orange, a long point; the pompom is a separate kingdom piece
+    dome = loft([(4.9, 0.9, 0.86), (5.06, 0.95, 0.91), (5.4, 0.9, 0.86), (5.9, 0.68, 0.64), (6.3, 0.36, 0.34), (6.62, 0.0, 0.0)], seg=seg,
+                n=n, caps=(True, False), phase=p0, color=BEANIE, smooth=sm, tag="cloth")
+    dome.paint(KNIT_CUFF, where=lambda x, y, z: y < 5.14)
     hat(R, "hat_beanie", dome, tint="fixed", tags=("woodcutter",))
-    pom = sphere(0.3, 0.3, 0.3, seg=S.seg(7, 5), rings=S.seg(4, 3), color=TINT, smooth=sm, tag="cloth").move(0, 5.84, 0.0)
+    pom = sphere(0.34, 0.34, 0.34, seg=S.seg(7, 5), rings=S.seg(4, 3), color=TINT, smooth=sm, tag="cloth").move(0, 6.68, 0.0)
     hat(R, "hat_pompom", pom, slot="hatband", tint="kingdom", tags=("woodcutter",))
 
-    # ---- miner's pot helmet: ochre iron dome, wide rim, a lamp on the front
-    ochre = rgb(168, 104, 34)
-    pot = loft([(4.99, 1.08, 1.06), (5.1, 1.04, 1.02), (5.4, 0.9, 0.88), (5.72, 0.68, 0.66), (5.86, 0.0, 0.0)], seg=seg,
-               n=n, caps=(True, False), phase=p0, color=ochre, smooth=sm, tag="iron")
-    pot.paint(mix(ochre, (0.55, 0.35, 0.15), 0.4), where=lambda x, y, z: y < 5.1)
-    lamp = merge(box(0.5, 0.4, 0.3, color=IRON, smooth=False, tag="lamp").move(0, 5.4, -0.94),
-                 box(0.28, 0.24, 0.1, color=LAMP, smooth=False, tag="lamp").move(0, 5.4, -1.12))
+    # ---- miner's pot helmet: yellow iron dome, a wide rim, a big lamp on the front
+    pot = loft([(4.99, 1.3, 1.28), (5.1, 1.26, 1.24), (5.42, 0.96, 0.94), (5.78, 0.7, 0.68), (5.98, 0.0, 0.0)], seg=seg,
+               n=n, caps=(True, False), phase=p0, color=MINER_HELMET, smooth=sm, tag="iron")
+    pot.paint(mix(MINER_HELMET, (0.55, 0.4, 0.1), 0.45), where=lambda x, y, z: y < 5.12)
+    lamp = merge(box(0.62, 0.5, 0.36, color=IRON, smooth=False, tag="lamp").move(0, 5.42, -1.0),
+                 box(0.36, 0.3, 0.12, color=LAMP, smooth=False, tag="lamp").move(0, 5.42, -1.24))
     hat(R, "hat_miner", merge(pot, lamp), tags=("miner",))
 
-    # ---- builder's cap: a hard hat with a peak
-    hh = loft([(4.98, 0.92, 0.9), (5.3, 0.92, 0.9), (5.62, 0.72, 0.7), (5.8, 0.0, 0.0)], seg=seg, n=n, caps=(True, False), phase=p0,
+    # ---- builder's hard hat: teal, a big peak and a white ridge along the crown (reads from above)
+    hh = loft([(4.98, 0.92, 0.92), (5.3, 0.91, 0.91), (5.64, 0.74, 0.72), (5.86, 0.0, 0.0)], seg=seg, n=n, caps=(True, False), phase=p0,
               color=HARDHAT, smooth=sm, tag="cloth")
-    peak = box(1.3, 0.12, 0.6, color=mix(HARDHAT, (0.7, 0.66, 0.55), 0.5), smooth=False, tag="cloth").move(0, 5.04, -1.14)
-    hat(R, "hat_builder", merge(hh, peak), tint="fixed", tags=("builder",))
+    peak = box(1.3, 0.12, 0.6, color=mix(HARDHAT, (0.0, 0.3, 0.35), 0.4), smooth=False, tag="cloth").move(0, 5.06, -1.14)
+    ridge = box(0.24, 0.16, 1.5, color=(0.97, 0.97, 0.94), smooth=False, tag="cloth").move(0, 5.8, 0.0)
+    hat(R, "hat_builder", merge(hh, peak, ridge), tint="fixed", tags=("builder",))
 
     # ---- hood: kingdom cowl closed over the head, the face opening in front
     hood = _hood(S, 0.11, 4.55, -0.5, back=False)
@@ -143,13 +145,13 @@ def build_hats(S, R):
     R.add("hair_10", hood, "Head", "hair", "kingdom", weld="head", tags=("hair", "hood"))
 
     # ---- merchant's floppy beret with a feather
-    beret = sphere(1.05, 0.5, 0.98, seg=S.seg(9, 8), rings=S.seg(4, 3), color=MERCHANT_HAT, smooth=sm, tag="cloth", phase=p0)
+    beret = sphere(1.4, 0.5, 1.3, seg=S.seg(9, 8), rings=S.seg(4, 3), color=MERCHANT_HAT, smooth=sm, tag="cloth", phase=p0)
     beret = beret.rot(-8, "z").move(0.12, 5.3, 0.0)
     brimb = loft([(4.95, 0.93, 0.9), (5.12, 0.95, 0.92)], seg=seg, n=n, caps=(True, True), phase=p0, color=mix(MERCHANT_HAT, (0.15, 0.1, 0.2), 0.5),
                  smooth=sm, tag="cloth")
     feather = loft([(0.0, 0.0, 0.0), (0.3, 0.07, 0.04), (1.0, 0.16, 0.04), (1.6, 0.05, 0.02), (1.7, 0.0, 0.0)], seg=4, n=1.6,
-                   caps=(False, False), color=rgb(238, 232, 214), smooth=False, tag="feather")
-    feather = feather.scale(1.0, 0.7, 1.0).rot(-62, "z").rot(-14, "x").move(0.9, 5.3, -0.22)
+                   caps=(False, False), color=rgb(246, 208, 66), smooth=False, tag="feather")
+    feather = feather.scale(1.4, 1.0, 1.4).rot(-52, "z").rot(-14, "x").move(1.0, 5.4, -0.22)
     hat(R, "hat_merchant", merge(beret, brimb), tint="fixed", tags=("merchant",))
     hat(R, "hat_feather", feather, slot="hatband", tint="fixed", tags=("merchant",))
 
@@ -159,7 +161,9 @@ def build_hats(S, R):
     tail = tube([(0, 4.82, 0.85), (0, 4.4, 1.05), (0, 3.95, 1.0)], [0.2, 0.16, 0.08], seg=S.seg(4, 3), color=COIF, smooth=sm, tag="cloth")
     cross = merge(box(0.1, 0.3, 0.06, color=rgb(40, 120, 60), tag="cross"), box(0.3, 0.1, 0.06, color=rgb(40, 120, 60), tag="cross")).rot(
         -22, "x").move(0, 5.16, -0.74)
-    hat(R, "hat_coif", merge(coif, knot, tail, cross), tint="fixed", tags=("healer",))
+    green = rgb(34, 150, 74)
+    top_cross = merge(box(1.15, 0.07, 0.3, color=green, smooth=False, tag="cross"), box(0.3, 0.07, 1.15, color=green, smooth=False, tag="cross")).move(0, 5.43, 0.0)
+    hat(R, "hat_coif", merge(coif, knot, tail, cross, top_cross), tint="fixed", tags=("healer",))
 
     # ---- blacksmith: a sooty leather skull cap (the beard is his hair piece)
     smith_cap = _cap(S, 0.06, 4.74, -0.36, rim_flare=0.04, thick=0.12)
@@ -228,66 +232,66 @@ def build_tools(S, R):
     sm = S.smooth
     sg = S.seg(8, 6)
 
-    # ---- hoe: long pale shaft, steel socket, a flat blade angled down at the top
-    shaft = _shaft(S, -1.75, 3.55, 0.15, WOOD_LIGHT, 0.13)
-    sock = _shaft(S, 3.05, 3.6, 0.2, STEEL_DARK, tag="metal")
-    neck = box(0.22, 0.2, 0.7, color=STEEL_DARK, smooth=False, tag="metal").move(0, 3.4, -0.4)
-    blade = _side_prism([(0.2, 3.5), (0.85, 3.42), (1.25, 2.65), (1.3, 2.28), (0.7, 2.5), (0.2, 3.0)], 0.42, rgb(140, 150, 166))
+    # ---- hoe: long pale shaft, steel socket, a big flat blade angled down at the top (about 1.3x the old one)
+    shaft = _shaft(S, -1.75, 4.3, 0.16, WOOD_LIGHT, 0.14)
+    sock = _shaft(S, 3.8, 4.35, 0.22, STEEL_DARK, tag="metal")
+    neck = box(0.24, 0.22, 0.85, color=STEEL_DARK, smooth=False, tag="metal").move(0, 4.15, -0.5)
+    blade = _side_prism([(0.2, 4.25), (1.05, 4.15), (1.65, 3.2), (1.7, 2.75), (0.9, 3.05), (0.2, 3.7)], 0.5, rgb(170, 180, 196))
     tool(R, "tool_hoe", held(merge(shaft, sock, neck, blade), lean=3), tags=("farmer",))
 
-    # ---- axe: haft + a heavy bearded head
-    haft = _shaft(S, -1.1, 3.1, 0.17, WOOD, 0.15)
-    back = hull([(sx * 0.17, y, f) for sx in (-1, 1) for (f, y) in ((0.2, 2.05), (0.2, 3.35), (-0.3, 2.45), (-0.3, 2.95))],
+    # ---- axe: long haft + a heavy bearded head (about 1.35x), bright steel
+    haft = _shaft(S, -1.1, 3.8, 0.18, WOOD, 0.16)
+    back = hull([(sx * 0.19, y, f) for sx in (-1, 1) for (f, y) in ((0.22, 2.7), (0.22, 4.1), (-0.38, 3.1), (-0.38, 3.7))],
                 color=STEEL_DARK, smooth=False, tag="metal")
     back = _swap_fy(back)
-    wedge = _swap_fy(hull([(sx * 0.17, y, f) for sx in (-1, 1) for (f, y) in ((0.15, 1.95), (0.15, 3.45))]
-                          + [(0.0, y, f) for (f, y) in ((1.35, 1.45), (1.35, 3.8))], color=BLADE, smooth=False, tag="metal"))
+    wedge = _swap_fy(hull([(sx * 0.19, y, f) for sx in (-1, 1) for (f, y) in ((0.18, 2.55), (0.18, 4.25))]
+                          + [(0.0, y, f) for (f, y) in ((1.85, 1.75), (1.85, 5.0))], color=rgb(206, 214, 224), smooth=False, tag="metal"))
     tool(R, "tool_axe", held(merge(haft, back, wedge), lean=8), tags=("woodcutter",))
 
-    # ---- pickaxe: dark haft, a curved double-sided iron head (a clear T seen from the front and side)
-    haft2 = _shaft(S, -1.2, 3.3, 0.17, WOOD_DARK, 0.15)
+    # ---- pickaxe: dark haft, a long one-sided mattock head (long curved end outward, short blunt end inward)
+    haft2 = _shaft(S, -1.2, 3.95, 0.18, WOOD_DARK, 0.16)
     pts, rad = [], []
-    for u in (-0.5, -0.2, 0.0, 0.95, 1.9):  # along the head axis: a short blunt end (-) and a long curved pick end (+)
-        t = u / 1.8
-        pts.append((u, 3.42 + 0.34 * (1 - t * t) - 0.2 * abs(t) ** 1.6, 0.0))
-        rad.append(0.03 + 0.17 * (1 - min(1.0, abs(t)) ** 1.4) + (0.1 if u < 0 else 0.0))
-    head = tube(pts, rad, seg=S.seg(5, 4), n=2.0, color=STEEL_DARK, smooth=sm, tag="metal")
-    boss = box(0.42, 0.46, 0.42, color=IRON, smooth=False, tag="metal").move(0, 3.44, 0)
+    for u in (-0.5, -0.2, 0.0, 1.1, 2.3):  # along the head axis: a short blunt end (-) and a long curved pick end (+)
+        t = u / 2.2
+        pts.append((u, 4.0 + 0.4 * (1 - t * t) - 0.24 * abs(t) ** 1.6, 0.0))
+        rad.append(0.035 + 0.2 * (1 - min(1.0, abs(t)) ** 1.4) + (0.1 if u < 0 else 0.0))
+    head = tube(pts, rad, seg=S.seg(5, 4), n=2.0, color=rgb(150, 158, 170), smooth=sm, tag="metal")
+    boss = box(0.5, 0.52, 0.5, color=IRON, smooth=False, tag="metal").move(0, 4.02, 0)
     pick = merge(head, boss).rot(55, "y", pivot=(0, 0, 0))
     tool(R, "tool_pick", held(merge(haft2, pick), lean=3), tags=("miner",))
 
-    # ---- mallet: builder's wooden maul with iron bands
-    h3 = _shaft(S, -0.9, 2.2, 0.16, WOOD_PALE)
-    mh = box(1.7, 0.84, 0.84, color=WOOD, smooth=False, tag="wood").move(0, 2.4, 0)
-    bands = [box(0.16, 0.9, 0.9, color=IRON, smooth=False, tag="metal").move(sx * 0.6, 2.4, 0) for sx in (-1, 1)]
+    # ---- mallet: builder's wooden maul with iron bands, a big head lying front to back
+    h3 = _shaft(S, -0.9, 2.4, 0.17, WOOD_PALE)
+    mh = box(1.7, 0.9, 0.9, color=rgb(150, 104, 62), smooth=False, tag="wood").move(0, 2.7, 0)
+    bands = [box(0.18, 0.96, 0.96, color=IRON, smooth=False, tag="metal").move(sx * 0.6, 2.7, 0) for sx in (-1, 1)]
     mall = merge(h3, mh, *bands).rot(90, "y")
     tool(R, "tool_mallet", held(mall, lean=4), tags=("builder",))
 
-    # ---- smith hammer: short thick handle, a big steel head with a peen
-    h4 = _shaft(S, -0.9, 2.0, 0.19, WOOD_DARK, 0.17)
-    head4 = merge(box(0.9, 0.85, 0.85, color=STEEL, smooth=False, tag="metal").move(0, 2.35, 0),
-                  hull([(0.45, 2.78, -0.42), (0.45, 1.92, -0.42), (0.45, 2.78, 0.42), (0.45, 1.92, 0.42), (1.2, 2.5, -0.1),
-                        (1.2, 2.2, -0.1), (1.2, 2.5, 0.1), (1.2, 2.2, 0.1)], color=STEEL_DARK, smooth=False, tag="metal"))
+    # ---- smith hammer: a thick handle, a very big steel head with a peen (about 1.4x)
+    h4 = _shaft(S, -0.9, 2.5, 0.21, WOOD_DARK, 0.19)
+    head4 = merge(box(1.2, 1.1, 1.1, color=rgb(190, 198, 210), smooth=False, tag="metal").move(0, 2.95, 0),
+                  hull([(0.6, 3.5, -0.55), (0.6, 2.4, -0.55), (0.6, 3.5, 0.55), (0.6, 2.4, 0.55), (1.6, 3.15, -0.12),
+                        (1.6, 2.75, -0.12), (1.6, 3.15, 0.12), (1.6, 2.75, 0.12)], color=STEEL_DARK, smooth=False, tag="metal"))
     tool(R, "tool_hammer", held(merge(h4, head4.rot(30, "y")), lean=10), tags=("blacksmith",))
 
-    # ---- merchant's hand scale: a short stave, a beam and two pans
-    st = _shaft(S, -1.0, 2.6, 0.1, WOOD_DARK)
-    beam = box(2.6, 0.13, 0.13, color=GOLD, smooth=False, tag="metal").move(0, 2.7, 0)
-    fin = cone(0.15, 0.3, seg=4, y0=2.6, color=GOLD, smooth=False, tag="metal")
+    # ---- merchant's hand scale: a tall stave, a long beam and two big pans
+    st = _shaft(S, -1.0, 3.3, 0.12, WOOD_DARK)
+    beam = box(3.4, 0.16, 0.16, color=GOLD, smooth=False, tag="metal").move(0, 3.4, 0)
+    fin = cone(0.2, 0.4, seg=4, y0=3.3, color=GOLD, smooth=False, tag="metal")
     pans = []
     for sx in (-1, 1):
-        cx = sx * 1.22
-        pans.append(cyl(0.55, 0.3, 0.14, seg=S.seg(8, 6), y0=1.3, color=GOLD_DARK, smooth=sm, tag="metal").move(cx, 0, 0))
-        pans.append(box(0.05, 1.3, 0.05, color=IRON, smooth=False, tag="metal").move(cx, 2.0, 0))
+        cx = sx * 1.6
+        pans.append(cyl(0.72, 0.4, 0.16, seg=S.seg(8, 6), y0=1.6, color=GOLD_DARK, smooth=sm, tag="metal").move(cx, 0, 0))
+        pans.append(box(0.06, 1.8, 0.06, color=IRON, smooth=False, tag="metal").move(cx, 2.5, 0))
     scale = merge(st, beam, fin, *pans)
     tool(R, "tool_scale", held(scale, lean=6), tags=("merchant",))
 
-    # ---- healer's staff: wooden stave, a crook at the top with a herb bundle
-    st2 = _shaft(S, -1.8, 3.9, 0.15, WOOD_LIGHT, 0.13)
-    crook = tube([(0, 3.85, 0), (0, 4.4, -0.2), (0, 4.4, -0.7), (0, 4.0, -0.9)], [0.14, 0.12, 0.11, 0.09],
+    # ---- healer's staff: a tall wooden stave, a big crook at the top with a herb bundle
+    st2 = _shaft(S, -1.8, 4.6, 0.16, WOOD_LIGHT, 0.14)
+    crook = tube([(0, 4.55, 0), (0, 5.2, -0.25), (0, 5.2, -0.85), (0, 4.7, -1.1)], [0.16, 0.14, 0.13, 0.1],
                  seg=S.seg(5, 4), color=WOOD_LIGHT, smooth=sm, tag="wood")
-    leaf_c = rgb(86, 150, 62)
-    leaves = [_leaf(0.3, 0.75, leaf_c).rot(a, "z").move(0, 3.75, -0.9) for a in (-30, 30)]
+    leaf_c = rgb(86, 160, 62)
+    leaves = [_leaf(0.38, 0.95, leaf_c).rot(a, "z").move(0, 4.45, -1.1) for a in (-30, 30)]
     tool(R, "tool_staff_healer", held(merge(st2, crook, *leaves), lean=5), tags=("healer",))
 
     # ---- spear: long ash shaft, steel leaf head, socket
@@ -328,12 +332,12 @@ def build_tools(S, R):
     gem = sphere(0.2, seg=5, rings=2, color=RED_GEM, smooth=False, tag="gem").move(0, 5.55, -0.45)
     tool(R, "tool_staff_ruler", held(merge(gs, ring, orb, gem, *prongs), lean=3), tags=("governor",))
 
-    # ---- hauler's sack (Torso joint "TorsoTool"): lumpy burlap ball tied at the neck; strap on the chest
-    body = sphere(1.05, 1.28, 1.12, seg=S.seg(8, 7), rings=S.seg(5, 4), color=BURLAP, smooth=sm, tag="sack")
-    body = body.map(lambda p: (p[0] + 0.05 * math.sin(p[1] * 3), p[1], p[2] + 0.06 * math.sin(p[0] * 4 + p[1]))).move(0.1, 3.0, 1.95)
-    neck = loft([(3.9, 0.55, 0.5), (4.25, 0.3, 0.28), (4.75, 0.5, 0.46)], seg=S.seg(8, 6), n=2.0, caps=(True, True),
-                color=BURLAP, smooth=sm, tag="sack").move(0.1, 0, 1.95)
-    tie = _shaft(S, 4.18, 4.34, 0.36, LEATHER_DARK, seg=6, tag="tie").move(0.1, 0, 1.95)
+    # ---- hauler's sack (Torso joint "TorsoTool"): a big lumpy burlap ball tied high above the shoulders; strap on the chest
+    body = sphere(1.12, 1.3, 1.15, seg=S.seg(8, 7), rings=S.seg(5, 4), color=BURLAP, smooth=sm, tag="sack")
+    body = body.map(lambda p: (p[0] + 0.05 * math.sin(p[1] * 3), p[1], p[2] + 0.06 * math.sin(p[0] * 4 + p[1]))).move(0.1, 3.75, 2.15)
+    neck = loft([(4.5, 0.6, 0.55), (4.95, 0.34, 0.32), (5.45, 0.55, 0.5)], seg=S.seg(8, 6), n=2.0, caps=(True, True),
+                color=BURLAP, smooth=sm, tag="sack").move(0.1, 0, 2.15)
+    tie = _shaft(S, 4.88, 5.06, 0.4, rgb(176, 36, 52), seg=6, tag="tie").move(0.1, 0, 2.15)
     sack = merge(body, neck, tie)
     sack.h = [1.0] * len(sack.v)
     R.add("tool_sack", sack, "TorsoTool", "tool", "fixed", weld=None, tags=("tool", "hauler"))
@@ -456,28 +460,45 @@ def build_extras(S, R):
     seg = S.seg(8, 6)
     rz_of = lambda y: torso_r(y)[1]
     rx_of = lambda y: torso_r(y)[0]
-    # farmer's canvas apron: a front panel from the chest to just below the hips, a patch pocket
-    ap = panel(rx_of, rz_of, 2.1, 3.55, -0.62, 0.62, 0.06, front=True, nx=S.seg(3, 2), ny=2, off=0.03, flare=0.03, color=CANVAS,
+    # ---- aerial gear (fixed colours): one piece per job so the piece count stays; each reads from above at 170 studs
+    # farmer: canvas apron + a wicker basket of wheat on the back (gold sheaf above the shoulders)
+    ap = panel(rx_of, rz_of, 2.1, 3.55, -0.62, 0.62, 0.06, front=True, nx=1, ny=1, off=0.03, flare=0.03, color=CANVAS,
                smooth=False, tag="canvas")
     pocket = box(0.6, 0.3, 0.07, color=mix(CANVAS, (0.8, 0.76, 0.66), 1.0), smooth=False, tag="canvas").move(0, 2.5, -0.74)
-    _extra(R, "apron_farm", merge(ap, pocket), tags=("farmer",))
-    # blacksmith's leather apron: bib to the neck, dark, with a chest strap
-    sa = panel(rx_of, rz_of, 2.05, 3.78, -0.7, 0.7, 0.07, front=True, nx=S.seg(3, 2), ny=2, off=0.03, flare=0.03, color=LEATHER_DARK,
+    basket = cyl(0.7, 0.55, 1.0, seg=S.seg(7, 6), y0=2.7, color=rgb(168, 118, 62), smooth=False, tag="basket").move(0, 0, 1.05)
+    sheaf = cone(0.62, 1.2, seg=S.seg(7, 6), y0=3.7, color=rgb(240, 200, 70), smooth=False, tag="wheat").move(0, 0, 1.05)
+    _extra(R, "gear_farmer", merge(ap, pocket, basket, sheaf), tags=("farmer",))
+    # woodcutter: a standing bundle of three logs on the back, pale cut tops above the shoulders
+    logs = []
+    for (lx, lz) in ((-0.4, 1.15), (0.4, 1.15), (0.0, 1.65)):
+        lg = cyl(0.34, 0.34, 2.9, seg=5, y0=2.3, color=rgb(104, 68, 40), smooth=False, tag="log").move(lx, 0, lz)
+        lg.paint(rgb(232, 196, 138), where=lambda x, y, z: y > 5.1)
+        logs.append(lg)
+    _extra(R, "gear_woodcutter", merge(*logs), tags=("woodcutter",))
+    # miner: a canvas pack with a lit lantern hung on it
+    pack = box(1.5, 1.6, 0.8, color=rgb(70, 86, 112), smooth=False, tag="pack").move(0, 3.1, 1.0)
+    lantern = merge(box(0.34, 0.4, 0.34, color=rgb(255, 232, 120), smooth=False, tag="lamp").move(0.0, 4.15, 1.2),
+                    box(0.44, 0.1, 0.44, color=IRON, smooth=False, tag="metal").move(0.0, 4.4, 1.2))
+    _extra(R, "gear_miner", merge(pack, lantern), tags=("miner",))
+    # builder: a bundle of three pale planks standing on the back, leaning away from the head
+    planks = [box(1.0, 3.2, 0.14, color=rgb(214, 176, 122), smooth=False, tag="plank").rot(-5, "x", pivot=(0, 2.0, 1.0)).move(0, 3.5, 0.98 + i * 0.16)
+              for i in range(3)]
+    _extra(R, "gear_builder", merge(*planks), tags=("builder",))
+    # blacksmith: a pale leather apron (value contrast on the charcoal shirt), bib to the neck, a dark chest strap
+    sa = panel(rx_of, rz_of, 2.05, 3.78, -0.7, 0.7, 0.07, front=True, nx=1, ny=2, off=0.03, flare=0.03, color=rgb(206, 160, 104),
                smooth=False, tag="leather")
-    sa.paint(mix(LEATHER_DARK, LEATHER, 0.5), where=lambda x, y, z: y > 3.3)
-    _extra(R, "apron_smith", sa, tags=("blacksmith",))
-    # merchant's satchel: a cross strap and a bag on the back hip
-    strap = tube([(-0.7, 3.88, 0.1), (-0.72, 3.5, -0.4), (0.0, 3.0, -0.58), (0.7, 2.7, -0.4), (0.9, 2.62, 0.2), (0.78, 2.6, 0.75)], [0.1] * 6, seg=S.seg(4, 4),
-                 n=2.0, color=LEATHER, smooth=sm, tag="leather", rz_scale=0.5)
-    bag = merge(box(0.9, 0.7, 0.42, color=LEATHER, smooth=False, tag="leather").move(0.72, 2.62, 0.86),
-                box(0.94, 0.26, 0.46, color=LEATHER_DARK, smooth=False, tag="leather").move(0.72, 2.86, 0.86))
-    _extra(R, "satchel_merchant", merge(strap, bag), tags=("merchant",))
-    # healer's herb satchel: a strap and a cloth bag with green herbs sticking out
-    strap2 = tube([(0.7, 3.88, 0.1), (0.72, 3.5, -0.4), (0.0, 3.0, -0.58), (-0.7, 2.7, -0.4), (-0.9, 2.62, 0.2), (-0.78, 2.6, 0.75)], [0.1] * 6, seg=S.seg(4, 4),
-                  n=2.0, color=LEATHER, smooth=sm, tag="leather", rz_scale=0.5)
-    bag2 = merge(box(0.9, 0.7, 0.46, color=mix(CANVAS, (0.86, 0.8, 0.66), 1.0), smooth=False, tag="cloth").move(-0.72, 2.62, 0.88),
-                 *[_leaf(0.18, 0.7, rgb(86, 150, 62)).rot(a, "z").move(-0.72 + dx, 2.92, 0.88) for a, dx in ((-20, -0.15), (20, 0.15))])
-    _extra(R, "satchel_herb", merge(strap2, bag2), tags=("healer",))
+    sa.paint(rgb(60, 40, 26), where=lambda x, y, z: y > 3.55)
+    _extra(R, "gear_smith", sa, tags=("blacksmith",))
+    # merchant: a big pack with a yellow bedroll on top and two shoulder straps
+    mpack = box(1.6, 1.5, 0.9, color=rgb(120, 62, 40), smooth=False, tag="pack").move(0, 3.1, 1.05)
+    roll = cyl(0.42, 0.42, 1.9, seg=5, y0=0.0, color=rgb(246, 208, 66), smooth=False, tag="roll").rot(90, "z").move(0.0, 3.95, 1.4)
+    straps = [box(0.16, 1.4, 0.1, color=LEATHER_DARK, smooth=False, tag="leather").move(sx * 0.45, 3.2, 0.58) for sx in (-1, 1)]
+    _extra(R, "gear_merchant", merge(mpack, roll, *straps), tags=("merchant",))
+    # healer: a white herb bag with green herbs sticking out, on a strap
+    hstrap = box(0.18, 1.5, 0.1, color=LEATHER, smooth=False, tag="leather").rot(40, "z").move(-0.3, 3.2, -0.6)
+    hbag = merge(box(0.9, 0.7, 0.5, color=mix(CANVAS, (0.86, 0.8, 0.66), 1.0), smooth=False, tag="cloth").move(-0.72, 2.62, 0.88),
+                 *[_leaf(0.2, 0.8, rgb(60, 160, 70)).rot(a, "z").move(-0.72 + dx, 2.95, 0.88) for a, dx in ((-22, -0.17), (22, 0.17))])
+    _extra(R, "gear_healer", merge(hstrap, hbag), tags=("healer",))
     # archer's quiver on the back with three arrows
     qv = loft([(2.7, 0.28, 0.28), (3.85, 0.34, 0.34)], seg=seg, n=2.0, caps=(True, True), color=LEATHER, smooth=sm, tag="leather")
     arrows = [cyl(0.05, 0.05, 0.9, seg=4, y0=3.78, color=ASH, smooth=False, tag="arrow").move(dx, 0, dz) for dx, dz in ((-0.1, 0.0), (0.1, 0.06), (0.0, -0.08))]

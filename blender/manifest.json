@@ -7293,9 +7293,9 @@
         "fidelity": "Box"
       },
       "dimensions_studs": {
-        "x": 4.074,
-        "y": 6.056,
-        "z": 3.24
+        "x": 4.193,
+        "y": 6.806,
+        "z": 3.935
       },
       "double_sided": false,
       "files": {
@@ -7306,22 +7306,22 @@
       },
       "generator": "char_kit",
       "generator_version": 1,
-      "geometry_hash": "041cfd2aed652f88",
+      "geometry_hash": "f2565ba8e89a45e2",
       "id": "char_kit_01",
       "kingdom": null,
       "kit": {
         "jobs": {
           "blacksmith": {
             "pieces_max": 13,
-            "tris_max": 764
+            "tris_max": 752
           },
           "builder": {
-            "pieces_max": 14,
-            "tris_max": 830
+            "pieces_max": 15,
+            "tris_max": 878
           },
           "farmer": {
             "pieces_max": 16,
-            "tris_max": 934
+            "tris_max": 944
           },
           "governor": {
             "pieces_max": 16,
@@ -7333,7 +7333,7 @@
           },
           "healer": {
             "pieces_max": 15,
-            "tris_max": 982
+            "tris_max": 974
           },
           "idle": {
             "pieces_max": 14,
@@ -7341,11 +7341,11 @@
           },
           "merchant": {
             "pieces_max": 16,
-            "tris_max": 970
+            "tris_max": 954
           },
           "miner": {
-            "pieces_max": 14,
-            "tris_max": 870
+            "pieces_max": 15,
+            "tris_max": 906
           },
           "soldier": {
             "pieces_max": 15,
@@ -7360,15 +7360,15 @@
             "tris_max": 964
           },
           "woodcutter": {
-            "pieces_max": 15,
-            "tris_max": 862
+            "pieces_max": 16,
+            "tris_max": 926
           }
         },
-        "max_citizen_tris": 982,
+        "max_citizen_tris": 974,
         "max_ruler_tris": 978,
-        "pieces": 107,
+        "pieces": 110,
         "style": "B",
-        "total_piece_tris": 6906
+        "total_piece_tris": 7028
       },
       "license": "project-original",
       "material": "M_charkit_vc",
@@ -7388,7 +7388,7 @@
           "soldier_swordsman",
           "woodcutter"
         ],
-        "pieces": 107,
+        "pieces": 110,
         "style": "B"
       },
       "preview": "previews/char_kit.jpg",
@@ -7442,7 +7442,7 @@
       "texture": "none (vertex colours, 0 bytes of texture memory)",
       "triangles": {
         "budget_lod0": 1000,
-        "lod0": 982,
+        "lod0": 974,
         "lod1": 12
       },
       "validation_pass": true
