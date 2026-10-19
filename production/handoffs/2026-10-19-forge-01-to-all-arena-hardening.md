@@ -1,6 +1,6 @@
 # Handoff: FORGE-01 → FORGE-00, FORGE-05 (cc FORGE-07) · FL-0071: arena hardening (FORGE-00's verifier list, items 1-4) · 2026-10-19
 
-Small fixes to code already on main (DuelRunner, DuelModel, DuelAI, ArenaFlow header). Nothing changes while `Arena.enabled` is false.
+Small fixes to code already on main (DuelRunner, DuelModel, DuelAI, ArenaFlow header). Nothing changes in the game while `Arena.enabled` is false, but one fix moves the duel's fairness numbers: `heavyWindup.impactAt` is now exact (the telegraph was one tick late). Per FORGE-07's runs (headless), the quick gate's noAutoWin max goes from 67.0 % to 68.3 % and two full-sweep noAutoWin cells (greatsword over medium, novice/adoring and average) read "PASS (marginal)" against the 70 % bound; the full sweep still passes. FORGE-00 rules whether that is acceptable for the provisional bound or the greatsword numbers in `config/Duel.luau` need a look; the `fairness-full` job on the main push will show the two marginal cells.
 
 ## What changed
 1. **`DuelRunner:act(userId, action, now)`** refuses a nil, NaN or infinite `now` with `(false, "bad_arguments")`. Before, a nil `now` on a champion's first act stored `at = nil` in the rate bucket and every later act by that champion errored.
