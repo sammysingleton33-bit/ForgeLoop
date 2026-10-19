@@ -330,6 +330,7 @@ describe("Petition edges (FORGE-07)", function()
 		expect(k(79.6).power).toBe("none")
 		expect(k(79.6).loyalty).toBe(79)
 		expect(k(79.6).toGo).toBe(1)
+		expect(k(72.4).toGo).toBe(8) -- 72.4 + 7 is still short of 80 (FORGE-07 L1')
 		expect(k(80).power).toBe("pledged")
 		expect(k(94.9).power).toBe("pledged")
 		expect(k(95).power).toBe("empowered")
@@ -365,6 +366,24 @@ describe("Petition edges (FORGE-07)", function()
 		world.card:fulfil()
 		world:advance(0.3)
 		expect(#world.petitions.calls).toBe(0)
+		world:destroy()
+	end)
+
+	it("an earlier Fulfil's timer never cuts a later one short (FORGE-07 L2')", function()
+		local world = newWorld()
+		local limit = world.card.FULFIL_TIMEOUT_SEC
+		world.petitions.latency = 2
+		world.petitions.refuse = "insufficient"
+		open(world, 41)
+		world.card:fulfil() -- #1: refused at 2 s
+		world:advance(3)
+		expect(world.card.petition.state).toBe("idle")
+		world.petitions.latency = limit + 20 -- #2: no answer
+		world.card:fulfil()
+		world:advance(limit - 3 + 0.5) -- past #1's timer, well inside #2's
+		expect(world.card.petition.state).toBe("loading")
+		world:advance(3)
+		expect(world.card.petition.state).toBe("idle") -- #2's own timer
 		world:destroy()
 	end)
 

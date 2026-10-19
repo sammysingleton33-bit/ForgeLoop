@@ -74,6 +74,10 @@ ROWS = [
     ("late answer lands", K, "\t\t\tself._fulfilToken += 1 -- the late answer", "\t\t\tlocal _ = 0 -- the late answer", "gives up after"),
     ("opinion before the petition on phones", V, "petitionBox(pv.model, pv, if phone then 0 else 1)", "petitionBox(pv.model, pv, if phone then 2 else 1)",
      "phone 667"),
+    ("toGo floored", M, "math.max(1, math.ceil(pledgedAt - raw))", "math.max(1, math.floor(pledgedAt - raw))",
+     "follows the raw value"),
+    ("timer ignores its call", K, "if token == self._fulfilToken and self.petition.state == \"loading\"",
+     "if self.petition.state == \"loading\"", "never cuts a later one short"),
 ]
 bad = 0
 for name, path, old, new, expect in ROWS:
