@@ -24,6 +24,7 @@ The three G9 events FORGE-04's announcer waits for, produced by the simulation, 
 - **FORGE-05:** declare `WarChanged`, `SiegeChanged`, `RaidChanged` in `Contracts/GameEvents` (EVENT_NAMES, type, G9 doc). No code change on my side after that; I'll add a bus-level spec in the next PR touching MatchHost.
 - **FORGE-06 / FORGE-00:** the content vocabulary (`Content.spec` EVENT_TAGS) does not list `war_declared`, `siege`, `objective_lost` yet; scenes that read them need those names allowed.
 - Not in this PR: the G4 `hit` cue, `shot` record and the kneeling death pose (their own PR).
+- Nothing closes an open siege or raid when the match ends or the world restarts (the sim stops ticking after Results): a listener that shows "under siege / raid" state clears it on `MatchEnded` itself (FORGE-07 L2).
 - A keep destroyed by its first hit sends `SiegeChanged(on)` and then `KingdomEliminated`; no end follows.
 
 ## Next actions for the receiver

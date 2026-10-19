@@ -743,6 +743,11 @@ function MatchHost:_mirrorRulers()
 			self._snap[userId] = nil
 		end
 	end
+	for userId in self._touchedAt do
+		if sim.rulerOf[userId] == nil then
+			self._touchedAt[userId] = nil
+		end
+	end
 end
 
 function MatchHost:simMsPerTick(): number

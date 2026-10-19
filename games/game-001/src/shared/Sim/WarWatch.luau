@@ -83,9 +83,10 @@ end
 local function attackers(sim: any, threats: { any }): { string }
 	local set = {}
 	for _, t in threats do
-		local u = sim.units[t.id]
-		if u then
-			set[u.kingdomId] = true
+		-- the threat names its owner: the unit itself may already be dead by the time this runs (same tick)
+		local owner = t.kingdomId or (sim.units[t.id] and sim.units[t.id].kingdomId)
+		if owner then
+			set[owner] = true
 		end
 	end
 	return sortedKeys(set)

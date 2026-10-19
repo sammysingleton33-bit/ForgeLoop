@@ -29,4 +29,5 @@ M = [
  ("FL-0134", CONV, 'if event.previousOwner ~= nil and event.previousOwner ~= event.kingdomId then', 'if false then', "sim/ConversationService", "raises objective_lost"),
  ("FL-0134", CONV, 'if on and (rule == "strike" or rule == "riot") then', 'if (rule == "strike" or rule == "riot") then', "sim/ConversationService", "raises strike and riot when ConsequenceService starts them"),
  ("FL-0134", CONV, 'if on and (rule == "strike" or rule == "riot") then', 'if on then', "sim/ConversationService", "raises strike and riot when ConsequenceService starts them"),
+ ("FL-0134", MIL, 'table.insert(threats, { id = u.id, x = u.x, z = u.z, kingdomId = otherId })', 'table.insert(threats, { id = u.id, x = u.x, z = u.z })', "sim/WarWatch", "names the attacker even when the intruder dies"),
 ]

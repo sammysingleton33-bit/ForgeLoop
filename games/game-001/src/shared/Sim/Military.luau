@@ -1022,7 +1022,7 @@ local function refreshThreats(sim: any)
 					for _, uid in other.unitIds do
 						local u = sim.units[uid]
 						if dist(u.x, u.z, kingdom.x, kingdom.z) <= radius then
-							table.insert(threats, { id = u.id, x = u.x, z = u.z })
+							table.insert(threats, { id = u.id, x = u.x, z = u.z, kingdomId = otherId })
 						end
 					end
 				end

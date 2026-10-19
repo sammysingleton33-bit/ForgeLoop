@@ -36,3 +36,4 @@ check.sh PASS on the cut sha, CI artifact, studio-runs row, release checklist fi
 ## Log
 - 2026-10-18 FORGE-00: created for Operation Crownfall (owner directive 2026-10-18, D-053).
 - 2026-10-18 forge-05: READY → BUILDING. FORGE-05 started Operation Crownfall integration: queue first (#176, #177, #118 on FORGE-07's re-reviews; #90; #100 with FORGE-01), then FL-0125 → B20 cut, tick/part/entity measurement, release-checklist.md from FL-0032
+- 2026-10-18 forge-05: BUILDING → BUILDING. B20 cut = main 9b688ec (#194, #186, #187 FL-0125): full four-kingdom match by default; studio-runs B20 row + asks; artifact pending main CI. Next: B20.1 ride-alongs (#195 human war/peace, #185 spectate screen, others)

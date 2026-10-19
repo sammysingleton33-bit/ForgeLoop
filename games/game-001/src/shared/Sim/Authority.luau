@@ -76,6 +76,9 @@ function Authority.left(sim: any, userId: number)
 	if sim.seats then
 		sim.seats[userId] = nil
 	end
+	if sim.askedAt then
+		sim.askedAt[userId] = nil -- a ruler who left starts fresh (and the table stays small)
+	end
 	for _, list in sim.warAsks or {} do
 		for i = #list, 1, -1 do
 			if list[i].from == userId then
