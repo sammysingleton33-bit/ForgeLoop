@@ -23,7 +23,10 @@
 	chants: pre-written lines per kingdom style, never user text; {ruler} is the champion's Roblox
 	  display name (platform-filtered). `any` is used for a kingdom without its own list. Boos and
 	  turned backs are the strongest negative; no line insults anyone.
-	endings: the four endings (§7): win or loss x high or low support.
+	endings: the four endings (§7): win or loss x high or low support; `calledOff` closes a duel
+	  with no winner (Arena.Events `ended` with side "draw", cancelled or both champions dropped: no
+	  crowd payoff, FORGE-00 2026-10-19).
+	triggerNames: the perk names a `triggerFired` caption shows, by TriggerId (design §4 table; G12.1).
 ]]
 
 return table.freeze({
@@ -76,5 +79,15 @@ return table.freeze({
 		}),
 		salute = table.freeze({ sound = "crowd.salute", caption = "They fought for us! (The stand salutes)" }),
 		empty = table.freeze({ sound = nil, caption = "(The stand empties)" }),
+		calledOff = table.freeze({ sound = nil, caption = "(The duel was called off)" }),
+	}),
+	triggerNames = table.freeze({
+		reforge = "Reforge",
+		fieldRemedy = "Field Remedy",
+		calledWarning = "Called Warning",
+		heartyRations = "Hearty Rations",
+		rallyingHymn = "Rallying Hymn",
+		fineWares = "Fine Wares",
+		crowdRally = "Crowd Rally",
 	}),
 })

@@ -17,6 +17,8 @@
 	offer                       loyalty needed for a perk (pledged) and for the stronger one (empowered)
 	acts[id]                    a ruler decision LeadershipService records: component, signed delta, pre-authored text
 	valourCapPerMinute          valour gained per minute is capped, so fighting nonstop is not required
+	reputationCategories        the ReputationService categories whose mean is the kingdom's reputation component
+	                            (fear is left out: a feared ruler is not a loved one)
 ]]
 
 return {
@@ -121,6 +123,7 @@ return {
 	},
 
 	valourCapPerMinute = 6,
+	reputationCategories = { "compassion", "honor", "competence", "courage", "authority" },
 	acts = {
 		-- reputation (public acts)
 		keepUpgraded = { component = "reputation", delta = 2, text = "Raised the keep for all to see" },
