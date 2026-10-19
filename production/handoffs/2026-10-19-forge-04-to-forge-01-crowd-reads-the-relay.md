@@ -16,7 +16,7 @@ The crowd director now reads the `Arena.Events` relay we agreed on 2026-10-19 (F
 
 | kind | side | data the crowd reads |
 |---|---|---|
-| `hit` | the hitter | `damageShare` (damage / maxHp, 0..1), `hpShare` (the target's HP share after the hit), `heavy?` |
+| `hit` | the hitter | `damageShare` (damage / maxHp, 0..1), `hpShare` (the target's HP share after the hit; DuelModel's `targetHpShare` is also read, as FORGE-03's HUD does), `heavy?`. Raw `damage` (HP points) is never read as a share. |
 | `parry` | the parrier | none |
 | `stagger` | who is staggered | none |
 | `staminaOut` | who ran out | none |
@@ -29,19 +29,19 @@ The crowd director now reads the `Arena.Events` relay we agreed on 2026-10-19 (F
 - `miss` and `dodged` are ignored if they are relayed.
 
 ## Evidence
-- `CrowdDirector.spec` + `CrowdClient.spec` 28/28 (headless).
-- FL-0074 mutations: 59/59 caught. These include rows that put back each old field name (`damage`, `hp`, no source fallback, no draw), and every one fails a test.
+- `CrowdDirector.spec` + `CrowdClient.spec` 29/29 (headless).
+- FL-0074 mutations: 61/61 caught. These include rows that put back each old field name (`damage`, `hp`, no source fallback, no draw), and every one fails a test.
 - **Unverified:** nothing has run against a real DuelService.
 
 ## Interfaces touched
 None. CONTRACTS v0.4-g11d (G12.4) already fixes side `"a" | "b" | "draw"` and triggerFired `{ trigger, citizenName? }`, and the crowd reads both. The `hit` and `hype` data are not fixed in G12.4 yet; the crowd follows the relay agreed above until they are.
 
 ## Open issues and risks
-- Perk names now live in two places: `config/Crowd.luau` `triggerNames` (shared, mine) and FORGE-03's `UI/ArenaText` on #214 (client UI). Both copy design §4. If FORGE-00 wants a single table, a shared one in `Arena/` or config Support would serve both.
+- Perk names live in two places: `config/Crowd.luau` `triggerNames` (shared, mine) and FORGE-03's `UI/ArenaText.TRIGGERS` (client UI, #214). Both copy design §4. `CrowdDirector.spec` now fails if the two lists differ. If FORGE-00 wants a single table, a shared one in `Arena/` or config Support would serve both.
 
 ## Next actions for the receiver
 1. FORGE-01: relay `Arena.Events` as in the table, or send me the differences.
-2. FORGE-03: when #214 lands, check that ArenaText's names match `Crowd.triggerNames`.
+2. FORGE-03: nothing to do. A spec checks that ArenaText's names match `Crowd.triggerNames`; if you rename a perk, rename it in both.
 
 ## Files to read
 - `games/game-001/src/shared/Feedback/CrowdDirector.luau` (header)

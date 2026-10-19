@@ -5,6 +5,7 @@ local Crowd = require("@game/ReplicatedStorage/Forge/Config/Crowd")
 local Sounds = require("@game/ReplicatedStorage/Forge/Config/Sounds")
 local Pacing = require("@game/ReplicatedStorage/Forge/Config/Pacing")
 local CrowdDirector = require("@game/ReplicatedStorage/Game/Feedback/CrowdDirector")
+local ArenaText = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaText") -- FORGE-03's HUD names
 
 local TIERS = { "adoring", "loyal", "divided", "restless", "hostile" }
 
@@ -141,7 +142,31 @@ describe("CrowdDirector: reactions follow the tier and the duel (design §3, §7
 		do
 			expect(type(Crowd.triggerNames[id])).toBe("string")
 		end
+		-- the crowd's caption and FORGE-03's arena HUD (#214) name every perk the same way
+		for id, entry in ArenaText.TRIGGERS do
+			expect(Crowd.triggerNames[id]).toBe(entry.name)
+		end
+		for id in Crowd.triggerNames do
+			expect(ArenaText.TRIGGERS[id] ~= nil).toBe(true)
+		end
 	end)
+
+	it(
+		"DuelModel's raw hit data: targetHpShare still drives near-death, raw damage points are not a share (#221 L1)",
+		function()
+			local d = director("loyal", "adoring")
+			-- 30 HP points of a 100 HP champion, read as a share, would be a big hit: it must stay minor
+			expect(kinds(d:onEvent(ev("hit", "b", { damage = 30, targetHp = 70, targetHpShare = 0.7 }), 0))).toEqual({
+				"b:roar",
+			})
+			-- the target falls below nearDeath on the model's own field: both stands react
+			local near = d:onEvent(ev("hit", "b", { damage = 55, targetHp = 15, targetHpShare = 0.15 }), 4)
+			expect(kinds(near)).toEqual({ "a:gasp", "b:roar" })
+			-- hpShare wins when the relay sends both
+			local e = director("loyal", "loyal")
+			expect(#e:onEvent(ev("hit", "b", { hpShare = 0.9, targetHpShare = 0.1 }), 0)).toBe(1) -- minor: 0.9 is not near death
+		end
+	)
 
 	it("near-death once per champion, and a comeback when the trailing champion takes the lead", function()
 		local d = director("loyal", "adoring")

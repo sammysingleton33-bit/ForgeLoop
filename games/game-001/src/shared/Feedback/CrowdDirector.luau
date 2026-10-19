@@ -24,8 +24,9 @@
 	DuelModel data:
 		hit          side landed it; data { damageShare, hpShare, heavy? }. Major when data.heavy or
 		             data.damageShare >= moments.bigHit (a share of max HP), else minor (only the
-		             hitter's stand reacts). data.hpShare, the target's HP share after the hit, drives
-		             near-death and comeback.
+		             hitter's stand reacts). data.hpShare (or DuelModel's own targetHpShare, as FORGE-03's
+		             HUD reads it), the target's HP share after the hit, drives near-death and comeback.
+		             DuelModel's raw `damage` is HP points and is never read as a share.
 		parry        side parried: major.
 		stagger      side is staggered: major, bad for side.
 		staminaOut   side ran out of stamina: minor, bad for side.
@@ -246,7 +247,7 @@ function Director:onEvent(event: any, now: number): { Reaction }
 	local kind = event.kind
 	local config = self._config
 	if kind == "hit" then
-		local moment, who = self:_track(SIDES[side] :: Stand, data.hpShare)
+		local moment, who = self:_track(SIDES[side] :: Stand, data.hpShare or data.targetHpShare)
 		if moment == "comeback" and who ~= nil then
 			return self:_major(now, who, true)
 		elseif moment == "nearDeath" and who ~= nil then

@@ -16,7 +16,8 @@ M = [
  # reactions by tier
  ("FL-0074", D, 'self:_reaction(other, if good then theirs.bad else theirs.good, true, priority),', 'self:_reaction(other, if good then theirs.good else theirs.bad, true, priority),', "CrowdDirector", "a big hit", "game"),
  ("FL-0074", D, 'count(data.damageShare) >= config.moments.bigHit', 'count(data.damage) >= config.moments.bigHit', "CrowdDirector", 'a big hit', "game"),
- ("FL-0074", D, 'self:_track(SIDES[side] :: Stand, data.hpShare)', 'self:_track(SIDES[side] :: Stand, data.hp)', "CrowdDirector", 'near-death once per champion', "game"),
+ ("FL-0074", D, 'self:_track(SIDES[side] :: Stand, data.hpShare or data.targetHpShare)', 'self:_track(SIDES[side] :: Stand, data.hp or data.targetHpShare)', "CrowdDirector", 'near-death once per champion', "game"),
+ ("FL-0074", D, 'self:_track(SIDES[side] :: Stand, data.hpShare or data.targetHpShare)', 'self:_track(SIDES[side] :: Stand, data.hpShare)', "CrowdDirector", "DuelModel's raw hit data", "game"),
  ("FL-0074", K, 'hostile = table.freeze({ fill = 0.5, idle = "boo", good = "silence", bad = "turnBack", chants = false }),', 'hostile = table.freeze({ fill = 0.5, idle = "boo", good = "cheer", bad = "turnBack", chants = false }),', "CrowdDirector", "a hostile stand boos", "game"),
  # rationing and priority
  ("FL-0074", D, 'if now - self._lastMajor < self._config.majorGapSec then', 'if false then', "CrowdDirector", "at most one major reaction every 3 s", "game"),
@@ -78,4 +79,5 @@ M = [
  ("FL-0074", K2, 'NAMES[identity.id] = (string.gsub(identity.name, "%s+Kingdom$", ""))', 'NAMES[identity.id] = identity.name', "CrowdClient", "one line per stand with the kingdom's name", "game"),
  ("FL-0074", K2, '\theight = 44,', '\theight = 28,', "CrowdClient", "every subtitle fits a two-line box", "game"),
  ("FL-0074", K2, '\tmaxChars = 80,', '\tmaxChars = 40,', "CrowdClient", "every subtitle fits a two-line box", "game"),
+ ("FL-0074", K, 'fineWares = "Fine Wares",', 'fineWares = "Fine Steel",', "CrowdDirector", "a triggerFired names its perk", "game"),
 ]
