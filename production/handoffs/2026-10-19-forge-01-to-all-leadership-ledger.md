@@ -14,7 +14,7 @@ Stacked on #209 (SupportModel) on #208 (Arena Types / Caps / DuelModel).
 Act producers (fed ratio, raids, objectives, rebuilds, overwork, conscription), citizen loyalty from memory events, key citizens per role, petitions and `Kingdom.FulfilPetition`, `inspect` additions. The G12.5 `LeadershipAct` bus event stays unfired until FORGE-05 declares it in `Contracts/GameEvents` (the service signal `acted` carries the same values).
 
 ## Evidence
-- Specs `sim/Ledger` (12) and `sim/LeadershipService` (15). Mutation rows `mutations/FL-0069.py` (26): all caught on the final run (the one row that named a renamed test was re-checked by hand and fails the new spec). Full gate: see the PR.
+- Specs `sim/Ledger` (12) and `sim/LeadershipService` (15). Mutation rows `mutations/FL-0069.py` (26): all caught on the final run (the one row that named a renamed test was re-checked by hand and fails the new spec). Gate: `bash roblox/scripts/check.sh` OVERALL PASS (selene 0/0/0, game-001 specs 1896 passed, 0 failed); `forge.py validate` 136 tasks 0 errors; `check_ownership.py --base origin/forge/01-arena-support-model --owner forge-01` PASS (7 files).
 - Headless only; no Studio.
 
 ## Next actions for the receiver
