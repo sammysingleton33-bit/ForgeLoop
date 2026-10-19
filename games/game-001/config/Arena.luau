@@ -17,6 +17,10 @@
 	enabled                the arena switch: false = the host answers no to beginArena and the match goes to the Crown
 	                       Points result at once (and the support meter stays dark). On since the DuelController client and
 	                       the ring bounds landed; the two-player Studio run is still owed
+	ring                   the champions' bounds, kept by the server from the intro to the end of the duel: one beyond the
+	                       ring's radius (WorldLayout.arena duelRadius; `fallbackRadius` around a `site` override) plus `margin`
+	                       studs is put back at the edge, WalkSpeed is fixed at `walkSpeed` and restored afterwards, and a
+	                       champion whose character resets is placed on their mark again
 	site                   optional override of where the duel ring is; without it the champions stand on the marks of
 	                       WorldLayout.arena (FORGE-02), and only without that layout does a fallback at the origin apply: the centre
 	                       and the distance between the two duellists' starting places
@@ -49,6 +53,7 @@ return {
 	defaultArmour = "medium",
 	ai = { weapon = "swordShield", armour = "medium", skill = 0.5 },
 	enabled = true,
+	ring = { margin = 2, walkSpeed = 16, fallbackRadius = 12 },
 	tick = 1 / 30,
 	maxCatchup = 0.25,
 	snapshotEvery = 0.2,
