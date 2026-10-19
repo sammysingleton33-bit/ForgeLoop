@@ -100,9 +100,11 @@ end
 
 -- Per-side insets (badge centre to the area's edge, px) and the top-left corner to avoid, from FORGE-03's
 -- HUD layout on an area of `size` (UI/Layout.compute; its logical px times its scale). Plain INSET when
--- the layout cannot be computed.
-function Def.insets(size: Vector2): (Requests.Insets, Vector2?)
-	local ok, m = pcall(ScreenLayout.compute, size.X, size.Y)
+-- the layout cannot be computed. `support` = the HUD shows its support chip (FL-0073): the corner then
+-- reaches under it (FORGE-00, 2026-10-19: without it badges slid over the chip). The reputation strip's
+-- room is always kept (the badges stay clear of it before it first shows, too).
+function Def.insets(size: Vector2, support: boolean?): (Requests.Insets, Vector2?)
+	local ok, m = pcall(ScreenLayout.compute, size.X, size.Y, { support = support == true })
 	if not ok or type(m) ~= "table" then
 		return { left = Def.INSET, right = Def.INSET, top = Def.INSET, bottom = Def.INSET }, nil
 	end
@@ -113,11 +115,11 @@ function Def.insets(size: Vector2): (Requests.Insets, Vector2?)
 		top = math.max(Def.INSET, (m.hud.y + m.hud.crest + clear) * s + reach),
 		bottom = math.max(Def.INSET, (m.place.bottom + m.place.height + clear) * s + reach),
 	}
+	-- the chip sits under the strip and is no wider (RequestIndicators.spec pins both), so the strip
+	-- sets the corner's width and the chip only its depth (m.hud.bottom)
 	local strip = m.hud.reputation
-	local corner = Vector2.new(
-		(math.max(strip.x + strip.width, m.hud.pills.x) + clear) * s + reach,
-		(m.hud.bottom + clear) * s + reach
-	)
+	local right = math.max(strip.x + strip.width, m.hud.pills.x)
+	local corner = Vector2.new((right + clear) * s + reach, (m.hud.bottom + clear) * s + reach)
 	return insets, corner
 end
 
@@ -244,12 +246,20 @@ function Controller:cycleRequests(step: number?): number?
 	return nil
 end
 
+-- Whether FORGE-03's HUD shows its support chip now (KingdomHudController.state.support; false without
+-- the HUD), so the top-left corner the badges avoid includes it.
+function Controller:_supportShown(): boolean
+	local hud = self._registry:find("KingdomHudController")
+	local state = if hud ~= nil then hud.state else nil
+	return type(state) == "table" and state.support == true
+end
+
 function Controller:refresh()
 	local placed = {}
 	if self._bubbles ~= nil and self:_active() then
 		local origin, viewport = self:_area()
 		if origin ~= nil and viewport ~= nil then
-			local insets, corner = Def.insets(viewport)
+			local insets, corner = Def.insets(viewport, self:_supportShown())
 			for _, request in self:_requests() do
 				local point = self:_projectPoint(request.position + Vector3.new(0, Def.HEIGHT, 0), origin)
 				if point ~= nil then

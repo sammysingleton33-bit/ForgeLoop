@@ -24,7 +24,7 @@ from mathutils.bvhtree import BVHTree  # noqa: E402
 
 from lib import ckit_pose as P  # noqa: E402
 
-SHELL_SLOTS = ("hair", "hat", "hatband", "crest", "cape", "extra", "shield", "toolband")
+SHELL_SLOTS = ("hair", "hat", "hatband", "crest", "cape", "extra", "shield", "toolband", "acc")
 BODY_SLOTS = ("torso", "arm", "sleeve", "leg", "boot", "head")
 # a shell never has to avoid its own carrier: hats/hair ride the head, so test them against shoulders and arms only
 # shells that hang loose in FRONT of the swinging thighs and are allowed to be crossed by a leg in the fast walk/flee swing (the leg is
@@ -34,6 +34,7 @@ AVOID = {
     "hair": ("torso", "arm", "sleeve"), "hat": ("torso", "arm", "sleeve"), "hatband": ("torso", "arm", "sleeve"),
     "crest": ("torso", "arm", "sleeve"), "cape": ("arm", "sleeve", "leg", "boot", "head"),
     "extra": ("arm", "sleeve", "leg", "boot"), "shield": ("torso", "leg", "boot"), "toolband": ("head",),
+    "acc": ("torso", "arm", "sleeve", "leg", "boot"),  # idle's bandana (head), bindle and rucksack (torso)
 }
 
 
@@ -82,11 +83,13 @@ def main(argv):
     results = []
     worst = 0.0
     looks = [{"skin": 1, "hair": h, "hairColor": hc, "outfit": 1} for hc in (1, 5) for h in range(1, 7)]
+    # the idle citizen's accessory follows the whole look (acc axis mixes outfit, hair and skin): a grid that reaches every variant
+    looks_idle = [{"skin": sk, "hair": h, "hairColor": 1, "outfit": o} for h in range(1, 7) for sk, o in ((1, 1), (2, 3), (4, 5), (6, 2))]
     actions = P.ACTIONS if not a.quick else P.ACTIONS[:5]
     for job in rig.ASSEMBLIES:
         seen = set()
         for kd in rig.KINGDOMS:
-            for lk in (looks if job in ("idle", "hauler", "blacksmith") else looks[:1]):
+            for lk in (looks_idle if job == "idle" else looks if job in ("hauler", "blacksmith", "miner", "builder", "merchant") else looks[:1]):
                 names = rig.names_for(job, lk, kd)
                 key = tuple(names)
                 if key in seen:

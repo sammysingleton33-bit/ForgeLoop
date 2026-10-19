@@ -166,6 +166,61 @@ describe("LeadershipService.record", function()
 	end)
 end)
 
+describe("LeadershipService fixes", function()
+	it(
+		"refuses a ruler act with no ruler named while a ruler is seated, but takes it for an AI-held kingdom",
+		function()
+			local w = boot()
+			expect(w.service:record("crimson", nil, "fedRatioKept", 1)).toBeNil()
+			expect(#w.service:getMoments("crimson", 1, 10)).toBe(0)
+			expect(w.service:record("crimson", nil, "keepUpgraded", 1)).never.toBeNil() -- a kingdom act needs no ruler
+			w.k.rulers = {}
+			expect(w.service:record("crimson", nil, "fedRatioKept", 1)).never.toBeNil() -- nobody to credit: the AI series
+		end
+	)
+
+	it("returns copies and frozen records from samples and getMoments", function()
+		local w = boot()
+		w.service:record("crimson", 1, "fedRatioKept", 1)
+		w.service:sample()
+		local list = w.service:samples("crimson", 1)
+		expect(#list).toBe(1)
+		table.clear(list)
+		expect(#w.service:samples("crimson", 1)).toBe(1) -- the stored list is untouched
+		expect(table.isfrozen(w.service:samples("crimson", 1)[1])).toBe(true)
+		expect(table.isfrozen(w.service:samples("crimson", 1)[1].components)).toBe(true)
+		local moments = w.service:getMoments("crimson", 1, 5)
+		table.clear(moments)
+		expect(#w.service:getMoments("crimson", 1, 5)).toBe(1)
+		expect(table.isfrozen(w.service:getMoments("crimson", 1, 5)[1])).toBe(true)
+	end)
+
+	it("reads a conditions table without stability as neutral, not as zero", function()
+		local w = boot()
+		w.k.conditions = { happiness = 80, morale = 60 }
+		w.k.unrestPressure = 0
+		w.service:sample()
+		expect(w.service:samples("crimson", 1)[1].components.stability).toBe(50)
+		w.k.conditions = { stability = 70, happiness = 80, morale = 60 }
+		w.k.unrestPressure = 10
+		w.env.mock:advance(w.interval + 1)
+		w.service:sample()
+		expect(w.service:samples("crimson", 1)[2].components.stability).toBe(60)
+	end)
+
+	it("checks for a due sample every pollSeconds of wall time, not once per interval", function()
+		local w = boot()
+		local calls = 0
+		local real = w.service.sample
+		w.service.sample = function(self, ...)
+			calls += 1
+			return real(self, ...)
+		end
+		w.env.mock:advance(w.service.config.sampling.pollSeconds * 5 + 0.5)
+		expect(calls >= 5).toBe(true)
+	end)
+end)
+
 describe("LeadershipService sampling", function()
 	it("samples every kingdom's components 0..100, one series per seated ruler", function()
 		local w = boot()

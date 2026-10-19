@@ -6,7 +6,6 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Crowd = require("@game/ReplicatedStorage/Forge/Config/Crowd")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
-local Pacing = require("@game/ReplicatedStorage/Forge/Config/Pacing")
 local CameraDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/RulerCameraController")
 local StageDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/CrowdStageController")
 
@@ -143,7 +142,7 @@ describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stin
 		for _, shot in shots do
 			total += shot.seconds
 		end
-		expect(total <= Pacing.arena.intro).toBe(true)
+		expect(total <= 2 * Crowd.intro.standSec + Crowd.intro.ringSec + 1e-9).toBe(true) -- the full pass
 		-- a repeated push of the same stage plays nothing twice
 		controller:onArenaState(state("intro"))
 		expect(#camera.shots).toBe(1)
@@ -186,14 +185,14 @@ describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stin
 		local late = camera.shots[2]
 		expect(#late).toBe(1)
 		expect(near(late[1].focus, CENTRE)).toBe(true)
-		-- an absurd endsAt is capped at Pacing.arena.intro
+		-- an absurd endsAt is capped at the pass's own length (the server's endsAt is the only clock)
 		controller:onPhase("Lobby")
 		controller:onArenaState(state("intro", { endsAt = now + 9999 }))
 		local long = 0
 		for _, shot in camera.shots[3] do
 			long += shot.seconds
 		end
-		expect(long <= Pacing.arena.intro).toBe(true)
+		expect(math.abs(long - (2 * Crowd.intro.standSec + Crowd.intro.ringSec)) < 1e-6).toBe(true)
 	end)
 
 	it("a late joiner gets the ring at the duel; the intro's own pass is not repeated", function()
@@ -315,11 +314,11 @@ describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stin
 		for _, shot in StageDef.pass(geometry, nil, 0.5, Crowd) do
 			expect(shot.seconds).toBe(Crowd.intro.minShotSec)
 		end
-		-- a pass longer than the intro is capped at `most`; with no `most`, at its own length
+		-- the time left caps the pass; more time than the pass needs leaves it at its own length
 		local long = table.clone(Crowd)
 		long.intro = { standZoom = 55, ringZoom = 80, standSec = 10, ringSec = 10, minShotSec = 1 }
 		local capped = 0
-		for _, shot in StageDef.pass(geometry, "a", nil, long, 15) do
+		for _, shot in StageDef.pass(geometry, "a", 15, long) do
 			capped += shot.seconds
 		end
 		expect(math.abs(capped - 15) < 1e-6).toBe(true)

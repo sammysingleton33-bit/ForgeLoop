@@ -2,8 +2,8 @@
 --[[
 	Kit/CharacterMeshData — the imported-mesh citizen kit as data (FL-0135, D-057). GENERATED, do not edit by hand:
 		python3 games/game-001/art/char_kit/rig_to_luau.py
-	source games/game-001/art/char_kit/rig.json  sha256 fe4cd5256b401f88f83ce39f7524af7c4302de5ec59e5cee20ec6f6e58251206
-	117 pieces (111 with a mesh), 13 assemblies, 8 joints.
+	source games/game-001/art/char_kit/rig.json  sha256 80b90a308935e50a703079c6bfd57a189d6c146d59f28a4cfa0e6a06ec50f0c5
+	126 pieces (118 with a mesh), 13 assemblies, 8 joints.
 	Kit/CharacterMesh.luau reads it; with no pieces (or a CitizenKit folder that lacks one) Kit.character falls back.
 ]]
 
@@ -24,7 +24,8 @@ return table.freeze({
 	},
 	pieces = {
 		acc_01 = { joint = "Head", empty = true, tint = "fixed", slot = "acc", tags = { "idle", "none" } },
-		acc_02 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.7327, 0.1023 }, size = { 1.7458, 0.7347, 1.8754 }, tris = 60, tint = "cloth", slot = "acc", tags = { "hat", "headband", "idle" } },
+		acc_02 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.95, 0.1474 }, size = { 1.7458, 0.5768, 1.9656 }, tris = 38, tint = "cloth", slot = "acc", tags = { "hat", "headband", "idle" } },
+		acc_03 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.9283, 0.2231 }, size = { 1.7438, 1.2634, 1.9322 }, tris = 40, tint = "cloth", slot = "acc", tags = { "bandana", "idle" } },
 		arm_bare_l = { joint = "LeftArm", bbox_center = { -1.4485, 3.0882, -0.03 }, size = { 0.8669, 1.757, 0.82 }, tris = 48, tint = "skin", slot = "arm", tags = { "arm" } },
 		arm_bare_r = { joint = "RightArm", bbox_center = { 1.4485, 3.0882, -0.03 }, size = { 0.8669, 1.757, 0.82 }, tris = 48, tint = "skin", slot = "arm", tags = { "arm" } },
 		arm_gauntlet_l = { joint = "LeftArm", bbox_center = { -1.5616, 2.5819, -0.04 }, size = { 0.6408, 0.7444, 0.8 }, tris = 36, tint = "fixed", slot = "arm", tags = { "soldier" } },
@@ -66,15 +67,13 @@ return table.freeze({
 		hair_beard = { joint = "Head", weld_to = "Head", bbox_center = { 0.0366, 4.22, -0.1463 }, size = { 1.4067, 0.68, 1.3406 }, tris = 66, tint = "hair", slot = "hair", tags = { "hair" } },
 		hat_beanie = { joint = "Head", weld_to = "Head", bbox_center = { 0, 5.76, 0 }, size = { 1.7834, 1.72, 1.7083 }, tris = 78, tint = "fixed", slot = "hat", tags = { "hat", "woodcutter" } },
 		hat_builder = { joint = "Head", weld_to = "Head", bbox_center = { 0, 5.43, -0.2882 }, size = { 1.7271, 0.9, 2.3035 }, tris = 70, tint = "fixed", slot = "hat", tags = { "builder", "hat" } },
-		hat_coif = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.8632, 0 }, size = { 2.7716, 1.3936, 2.6238 }, tris = 134, tint = "fixed", slot = "hat", tags = { "hat", "healer" } },
+		hat_coif = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.8632, 0 }, size = { 2.7716, 1.3936, 2.6238 }, tris = 154, tint = "fixed", slot = "hat", tags = { "hat", "healer" } },
 		hat_crown = { joint = "Head", weld_to = "Head", bbox_center = { 0.065, 5.655, -0.0914 }, size = { 2.1019, 1.31, 2.0571 }, tris = 56, tint = "fixed", slot = "hat", tags = { "governor", "hat" } },
-		hat_feather = { joint = "Head", weld_to = "Head", bbox_center = { 1.6698, 5.9078, -0.3479 }, size = { 1.3396, 1.0155, 0.2751 }, tris = 24, tint = "fixed", slot = "hat", tags = { "hat", "merchant" } },
 		hat_hauler = { joint = "Head", weld_to = "Head", bbox_center = { 0, 5.255, -0.2329 }, size = { 1.9148, 0.57, 2.3242 }, tris = 74, tint = "fixed", slot = "hat", tags = { "hat", "hauler" } },
 		hat_helm = { joint = "Head", weld_to = "Head", bbox_center = { 0, 5.25, 0 }, size = { 2.2543, 1.42, 2.2173 }, tris = 86, tint = "fixed", slot = "hat", tags = { "hat", "soldier" } },
-		hat_merchant = { joint = "Head", weld_to = "Head", bbox_center = { 0.12, 5.3, 0 }, size = { 2.2881, 0.9903, 2.0803 }, tris = 60, tint = "fixed", slot = "hat", tags = { "hat", "merchant" } },
+		hat_merchant = { joint = "Head", weld_to = "Head", bbox_center = { 0.6578, 5.6102, 0 }, size = { 3.3637, 1.6107, 2.0803 }, tris = 84, tint = "fixed", slot = "hat", tags = { "hat", "merchant" } },
 		hat_miner = { joint = "Head", weld_to = "Head", bbox_center = { 0, 5.485, -0.0493 }, size = { 2.4404, 0.99, 2.5014 }, tris = 86, tint = "fixed", slot = "hat", tags = { "hat", "miner" } },
 		hat_pompom = { joint = "Head", weld_to = "Head", bbox_center = { 0.0281, 6.68, 0 }, size = { 0.5327, 0.68, 0.5601 }, tris = 20, tint = "kingdom", tint_factor = 0.85, slot = "hat", tags = { "hat", "woodcutter" } },
-		hat_ribbon = { joint = "Head", weld_to = "Head", bbox_center = { 0, 5.28, 0 }, size = { 1.8585, 0.32, 1.8209 }, tris = 28, tint = "kingdom", tint_factor = 0.85, slot = "hat", tags = { "farmer", "hat" } },
 		hat_smith = { joint = "Head", weld_to = "Head", bbox_center = { 0, 5.34, 0 }, size = { 2.3282, 0.76, 2.2543 }, tris = 74, tint = "fixed", slot = "hat", tags = { "blacksmith", "hat" } },
 		hat_straw = { joint = "Head", weld_to = "Head", bbox_center = { 0, 5.48, 0 }, size = { 3.5107, 1, 3.5107 }, tris = 74, tint = "fixed", slot = "hat", tags = { "farmer", "hat" } },
 		head_01 = { joint = "Head", bbox_center = { 0, 4.64, -0.0224 }, size = { 1.6731, 1.6, 1.4902 }, tris = 164, tint = "skin", slot = "head", tags = { "face" } },
@@ -90,6 +89,10 @@ return table.freeze({
 		leg_trousers_l = { joint = "LeftLeg", bbox_center = { -0.5, 1.345, 0 }, size = { 0.8022, 1.79, 0.94 }, tris = 34, tint = "cloth", slot = "leg", tags = { "trousers" } },
 		leg_trousers_r = { joint = "RightLeg", bbox_center = { 0.5, 1.345, 0 }, size = { 0.8022, 1.79, 0.94 }, tris = 34, tint = "cloth", slot = "leg", tags = { "trousers" } },
 		mantle_kingdom = { joint = "Torso", weld_to = "Torso", bbox_center = { 0, 3.715, 0 }, size = { 1.9148, 0.51, 1.284 }, tris = 60, tint = "kingdom", tint_factor = 0.95, slot = "acc", tags = { "citizen" } },
+		pack_01 = { joint = "Torso", empty = true, tint = "fixed", slot = "acc", tags = { "idle", "none" } },
+		pack_02 = { joint = "Torso", empty = true, tint = "fixed", slot = "acc", tags = { "idle", "none" } },
+		pack_03 = { joint = "Torso", weld_to = "Torso", bbox_center = { 0.2126, 3.7769, 1.05 }, size = { 1.5762, 2.1938, 1.02 }, tris = 50, tint = "fixed", slot = "acc", tags = { "bindle", "idle" } },
+		pack_04 = { joint = "Torso", weld_to = "Torso", bbox_center = { 0, 3.325, 0.97 }, size = { 1.25, 1.25, 0.6 }, tris = 48, tint = "fixed", slot = "acc", tags = { "idle", "rucksack" } },
 		quiver = { joint = "Torso", weld_to = "Torso", bbox_center = { -0.4262, 3.6661, 0.8372 }, size = { 0.8498, 2.0197, 0.6972 }, tris = 80, tint = "fixed", slot = "acc", tags = { "archer", "soldier" } },
 		shield_azure = { joint = "LeftArm", weld_to = "LeftArm", bbox_center = { -1.68, 3, -0.735 }, size = { 1.44, 1.9, 0.33 }, tris = 68, tint = "kingdom", tint_factor = 0.9, slot = "acc", tags = { "azure", "soldier" } },
 		shield_crimson = { joint = "LeftArm", weld_to = "LeftArm", bbox_center = { -1.68, 3, -0.735 }, size = { 1.44, 1.9, 0.33 }, tris = 72, tint = "kingdom", tint_factor = 0.9, slot = "acc", tags = { "crimson", "soldier" } },
@@ -123,7 +126,7 @@ return table.freeze({
 		tool_pennant = { joint = "Tool", weld_to = "Tool", bbox_center = { 2.6701, 7.4228, -0.48 }, size = { 1.6084, 0.9594, 0.1 }, tris = 16, tint = "kingdom", tint_factor = 0.9, slot = "tool", tags = { "soldier", "tool" } },
 		tool_pick = { joint = "Tool", bbox_center = { 2.203, 4.2055, -1.1384 }, size = { 1.8518, 5.9265, 2.4914 }, tris = 68, tint = "fixed", slot = "tool", tags = { "miner", "tool" } },
 		tool_sack = { joint = "TorsoTool", bbox_center = { 0.1555, 3.95, 2.0996 }, size = { 2.1291, 3, 2.2423 }, tris = 94, tint = "fixed", slot = "tool", tags = { "hauler", "tool" } },
-		tool_scale = { joint = "Tool", bbox_center = { 1.7562, 3.7917, -0.48 }, size = { 5.6688, 4.6975, 1.4722 }, tris = 102, tint = "fixed", slot = "tool", tags = { "merchant", "tool" } },
+		tool_scale = { joint = "Tool", bbox_center = { 1.5778, 2.6403, -1.4211 }, size = { 5.4866, 2.193, 2.09 }, tris = 114, tint = "fixed", slot = "tool", tags = { "merchant", "tool" } },
 		tool_spear = { joint = "Tool", bbox_center = { 1.779, 5.7454, -0.48 }, size = { 0.8404, 11.1984, 0.3637 }, tris = 70, tint = "fixed", slot = "tool", tags = { "soldier", "tool" } },
 		tool_staff_healer = { joint = "Tool", bbox_center = { 1.9049, 4.1935, -1.0001 }, size = { 1.2645, 7.1012, 1.3388 }, tris = 88, tint = "fixed", slot = "tool", tags = { "healer", "tool" } },
 		tool_staff_ruler = { joint = "Tool", bbox_center = { 1.8342, 4.817, -0.6126 }, size = { 1.0071, 7.7488, 1.0152 }, tris = 92, tint = "fixed", slot = "tool", tags = { "governor", "tool" } },
@@ -140,6 +143,12 @@ return table.freeze({
 		torso_smock = { joint = "Torso", bbox_center = { 0, 3.04, -0.0372 }, size = { 1.8773, 1.68, 1.2655 }, tris = 104, tint = "fixed", slot = "torso", tags = { "smock" } },
 		torso_tabard = { joint = "Torso", bbox_center = { 0, 3.04, 0 }, size = { 1.9899, 1.68, 1.1508 }, tris = 108, tint = "kingdom", tint_factor = 1, slot = "torso", tags = { "soldier", "tabard" } },
 		trim_regal = { joint = "Torso", weld_to = "Torso", bbox_center = { 0, 2.84, 0 }, size = { 2.478, 2.36, 1.5957 }, tris = 100, tint = "fixed", slot = "acc", tags = { "ermine", "governor" } },
+		tuft_01 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.48, 0.2768 }, size = { 1.8975, 0.6354, 1.3936 }, tris = 38, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
+		tuft_02 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.6044, 0.4597 }, size = { 2.2006, 0.4303, 1.2835 }, tris = 26, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
+		tuft_03 = { joint = "Head", weld_to = "Head", bbox_center = { -0.0199, 4.3681, 0.493 }, size = { 1.94, 1.1039, 1.6615 }, tris = 44, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
+		tuft_04 = { joint = "Head", weld_to = "Head", bbox_center = { -0.0538, 4.4278, 0.0489 }, size = { 2.3984, 0.9085, 0.441 }, tris = 28, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
+		tuft_05 = { joint = "Head", weld_to = "Head", bbox_center = { 0, 4.64, 0.5656 }, size = { 2.3639, 0.62, 1.2582 }, tris = 40, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
+		tuft_06 = { joint = "Head", weld_to = "Head", bbox_center = { -0.0199, 4.51, 0.3077 }, size = { 1.94, 0.74, 1.2909 }, tris = 42, tint = "hair", slot = "hair", tags = { "hair", "tuft" } },
 	},
 	assemblies = {
 		blacksmith = {
@@ -152,11 +161,13 @@ return table.freeze({
 			leg = { "leg_trousers_l", "leg_trousers_r" },
 			tool = "tool_hammer",
 			torso = "torso_smith",
+			tuft = "tuft_%look.hair%",
 		},
 		builder = {
 			arm = { "arm_hand_l", "arm_hand_r" },
 			boot = { "boot_%look.boots%_l", "boot_%look.boots%_r" },
 			extras = { "gear_builder", "mantle_kingdom" },
+			hair = "tuft_%look.hair%",
 			hat = "hat_builder",
 			head = "head_%look.face%",
 			leg = { "leg_breeches_l", "leg_breeches_r" },
@@ -169,8 +180,8 @@ return table.freeze({
 			arm = { "arm_bare_l", "arm_bare_r" },
 			boot = { "boot_%look.boots%_l", "boot_%look.boots%_r" },
 			extras = { "gear_farmer", "mantle_kingdom" },
+			hair = "tuft_%look.hair%",
 			hat = "hat_straw",
-			hatband = "hat_ribbon",
 			head = "head_%look.face%",
 			leg = { "leg_trousers_l", "leg_trousers_r" },
 			skirt = "skirt_%look.outfit%",
@@ -195,6 +206,7 @@ return table.freeze({
 			arm = { "arm_bare_l", "arm_bare_r" },
 			boot = { "boot_%look.boots%_l", "boot_%look.boots%_r" },
 			extras = { "strap_kingdom", "mantle_kingdom" },
+			hair = "tuft_%look.hair%",
 			hat = "hat_hauler",
 			head = "head_%look.face%",
 			leg = { "leg_trousers_l", "leg_trousers_r" },
@@ -223,6 +235,7 @@ return table.freeze({
 			hair = "hair_%look.hair%",
 			head = "head_%look.face%",
 			leg = { "leg_trousers_l", "leg_trousers_r" },
+			pack = "pack_%look.weapon%",
 			skirt = "skirt_%look.outfit%",
 			sleeve = { "sleeve_short_l", "sleeve_short_r" },
 			torso = "torso_%look.outfit%",
@@ -231,8 +244,8 @@ return table.freeze({
 			arm = { "arm_hand_l", "arm_hand_r" },
 			boot = { "boot_%look.boots%_l", "boot_%look.boots%_r" },
 			extras = { "gear_merchant", "mantle_kingdom" },
+			hair = "tuft_%look.hair%",
 			hat = "hat_merchant",
-			hatband = "hat_feather",
 			head = "head_%look.face%",
 			leg = { "leg_breeches_l", "leg_breeches_r" },
 			skirt = "skirt_merchant",
@@ -244,6 +257,7 @@ return table.freeze({
 			arm = { "arm_bare_l", "arm_bare_r" },
 			boot = { "boot_%look.boots%_l", "boot_%look.boots%_r" },
 			extras = { "gear_miner", "mantle_kingdom" },
+			hair = "tuft_%look.hair%",
 			hat = "hat_miner",
 			head = "head_%look.face%",
 			leg = { "leg_trousers_l", "leg_trousers_r" },
