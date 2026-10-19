@@ -983,7 +983,7 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 			local expectations = {
 				farmer = { handle = 5.0, head = "WedgePart", metal = true },
 				woodcutter = { handle = 3.7, head = "WedgePart", metal = true },
-				miner = { handle = 3.5, head = "Part/Block", metal = true },
+				miner = { handle = 3.5, head = "WedgePart", metal = true, tines = 2 }, -- a pickaxe: two drooping wedges
 				builder = { handle = 2.8, head = "Part/Block", metal = false },
 			}
 			local handleColours = {}
@@ -992,7 +992,7 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 				expect(primitive(handle)).toBe("Part/Cylinder")
 				expect(handle.Size.X).toBeGreaterThanOrEqual(want.handle) -- the cylinder's length is its X
 				expect(handle.Size.Y).toBeLessThanOrEqual(0.45)
-				expect(#heads).toBe(1)
+				expect(#heads).toBe(want.tines or 1)
 				expect(primitive(heads[1])).toBe(want.head)
 				expect(
 					if want.metal
@@ -1005,14 +1005,23 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 				expect(handleColours[handle.Color:ToHex()]).toBeNil() -- four different handles
 				handleColours[handle.Color:ToHex()] = job
 			end
-			-- sizes of the heads: a hoe blade, a bearded axe head, a long pick bar, a fat mallet
+			-- sizes of the heads: a hoe blade, a bearded axe head, two long pick tines, a fat mallet
 			local _, hoeHeads = tool("farmer")
 			expect(math.max(hoeHeads[1].Size.X, hoeHeads[1].Size.Z)).toBeGreaterThanOrEqual(1.1)
 			local _, axeHeads = tool("woodcutter")
 			expect(math.max(axeHeads[1].Size.Y, axeHeads[1].Size.Z)).toBeGreaterThanOrEqual(1.7)
 			local _, pickHeads = tool("miner")
-			expect(pickHeads[1].Size.Z).toBeGreaterThanOrEqual(3.4)
-			expect(pickHeads[1].Size.Z).toBeGreaterThan(5 * pickHeads[1].Size.Y) -- double-sided: a long thin bar
+			expect(#pickHeads).toBe(2) -- a pickaxe: two long thin tines on either side of the handle's top, drooped into an arch
+			for _, tine in pickHeads do
+				expect(tine.Size.Z).toBeGreaterThanOrEqual(2.4)
+				expect(tine.Size.Z).toBeGreaterThan(2.5 * tine.Size.Y)
+			end
+			expect((pos(pickHeads[1]) - pos(pickHeads[2])).Magnitude).toBeGreaterThanOrEqual(2.3) -- the arch spans ~4.7 studs tip to tip
+			local pickHandle = tool("miner")
+			local _, pickHandleTop = bounds(pickHandle)
+			for _, tine in pickHeads do
+				expect(pos(tine).Y).toBeLessThan(pickHandleTop.Y - 0.4) -- the tines droop below the hub, they are not a T
+			end
 			local _, mallet = tool("builder")
 			expect(math.min(mallet[1].Size.X, mallet[1].Size.Y)).toBeGreaterThanOrEqual(1.1) -- a fat head
 			expect(mallet[1].Size.Z).toBeGreaterThanOrEqual(1.9)
@@ -1424,13 +1433,13 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 
 	-- The smallest clearance over every pair (tool part, head part) in every Pose action (idle, walk, work, carry,
 	-- fight, flee, celebrate; walk, carry and flee at speeds 0, 6 and 12; 24 phases per cycle) of one rig, as
-	-- { exact clearance, bounding-box clearance, "tool part | head part, action" of the exact minimum }.
+	-- { exact clearance, bounding-box clearance, "tool part | head part, action" of the exact minimum, the same of the box minimum }.
 	-- The bounding-box clearance takes every part as its oriented box (a Ball as its cube, a Cylinder as its box).
 	local TOOL_ACTIONS = { "idle", "walk", "work", "carry", "fight", "flee", "celebrate" }
-	local function toolHeadClearance(rig: Model, job: string): (number, number, string)
+	local function toolHeadClearance(rig: Model, job: string): (number, number, string, string)
 		local head, tool = child(rig, "Head"), child(rig, "Tool")
 		local toolParts, headParts = assemblyOf(rig, tool), assemblyOf(rig, head)
-		local lowExact, lowBox, where = math.huge, math.huge, ""
+		local lowExact, lowBox, where, whereBox = math.huge, math.huge, "", ""
 		for _, action in TOOL_ACTIONS do
 			local speeds = if action == "walk" or action == "carry" or action == "flee" then { 0, 6, 12 } else { 0 }
 			for _, speed in speeds do
@@ -1442,13 +1451,16 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 							if c < lowExact then
 								lowExact, where = c, `{t.Name} | {h.Name}, {action}`
 							end
-							lowBox = math.min(lowBox, boxBox(w[t], t.Size, w[h], h.Size))
+							local b = boxBox(w[t], t.Size, w[h], h.Size)
+							if b < lowBox then
+								lowBox, whereBox = b, `{t.Name} | {h.Name}, {action}`
+							end
 						end
 					end
 				end
 			end
 		end
-		return lowExact, lowBox, where
+		return lowExact, lowBox, where, whereBox
 	end
 
 	local TOOL_RIGS = {
@@ -1472,7 +1484,7 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 					local look = if c[1] == "citizen" then { skin = 1, hair = hair, hairColor = 1, outfit = 1 } else nil
 					local rig = Kit.character(c[1], c[2], AZURE, look :: any, c[3])
 					local job = if c[1] == "governor" then "governor" else c[2]
-					local exact, box, where = toolHeadClearance(rig, job)
+					local exact, box, where, whereBox = toolHeadClearance(rig, job)
 					if exact < TOOL_HEAD_EXACT then
 						error(
 							`{c[1]}/{c[2]} hair {hair}: {string.format("%.3f", exact)} studs at {where} (needs {TOOL_HEAD_EXACT})`
@@ -1480,7 +1492,7 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 					end
 					if c[2] ~= "hauler" and box < TOOL_HEAD_BOX then
 						error(
-							`{c[1]}/{c[2]} hair {hair}: bounding boxes only {string.format("%.3f", box)} studs apart (needs {TOOL_HEAD_BOX})`
+							`{c[1]}/{c[2]} hair {hair}: bounding boxes only {string.format("%.3f", box)} studs apart at {whereBox} (needs {TOOL_HEAD_BOX})`
 						)
 					end
 				end
@@ -1737,7 +1749,7 @@ describe("Kit.character detail parts (D-048): 11 parts, rigid, welded, flagged, 
 	local WANT = {
 		farmer = { { "strawcrown", "Head" }, { "hoeblade", "Tool" } },
 		woodcutter = { { "pompom", "Head" }, { "axehead", "Tool" } },
-		miner = { { "lamp", "Head" }, { "pickhead", "Tool" } },
+		miner = { { "pickhead", "Tool" }, { "pickpoint", "Tool" } }, -- both on the pick: the arch reads as a pickaxe, not a hammer
 		builder = { { "visor", "Head" }, { "mallet", "Tool" } },
 		hauler = { { "strap", "Tool" }, { "tie", "Tool" } },
 	}
@@ -1821,6 +1833,9 @@ describe("Kit.character detail parts (D-048): 11 parts, rigid, welded, flagged, 
 
 	it("keeps every head detail clear of the face and on the hat, following its tilt", function()
 		for _, job in WORKING do
+			if job == "miner" then
+				continue -- the miner's two details are the pick's tines (Tool), not a head detail
+			end
 			local ref
 			for hair = 1, R.hair do
 				local rig =
