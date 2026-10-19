@@ -99,11 +99,20 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 			{
 				name = "SettingsController",
 				new = function()
-					return {
+					local settings = {
 						get = function(_, key)
+							if opts.settingsThrow then
+								error("settings broke")
+							end
 							return values[key]
 						end,
 					}
+					if opts.platformReduced ~= nil then -- SettingsController:reducedMotion(): the toggle OR the platform's
+						settings.reducedMotion = function()
+							return values.reducedMotion == true or opts.platformReduced == true
+						end
+					end
+					return settings
 				end,
 			},
 			{
@@ -221,10 +230,60 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 		for _, figure in controller.figures.a do
 			expect(near(pivotOf(figure.model).Position, figure.seat.Position)).toBe(true)
 		end
+		crowd.reacted:fire({ stand = "a", kind = "boo" }, "crimson") -- a slump still shows (FORGE-07 #237 L1)
+		controller:step(t0 + 0.25)
+		local sunk = controller.figures.a[1]
+		expect(pivotOf(sunk.model).Position.Y < sunk.seat.Position.Y - 0.1).toBe(true)
 		crowd.reacted:fire({ stand = "b", kind = "turnBack" }, "azure")
 		controller:step(t0 + 0.3)
 		local first = controller.figures.b[1]
 		expect(pivotOf(first.model).LookVector:Dot(first.seat.LookVector) < -0.9).toBe(true)
+	end)
+
+	it("the platform's Reduce Motion skips the hops with the in-game toggle off (FORGE-07 #237 M2)", function()
+		boot({ model = arena, settings = { reducedMotion = false }, platformReduced = true })
+		crowd.director = director("loyal", "crimson", "loyal", "azure")
+		controller:step(0)
+		expect(#controller.figures.a).toBe(60)
+		local t0 = env.clock()
+		crowd.reacted:fire({ stand = "a", kind = "roar" }, "crimson")
+		controller:step(t0 + 0.2)
+		for _, figure in controller.figures.a do
+			expect(near(pivotOf(figure.model).Position, figure.seat.Position)).toBe(true)
+		end
+		boot({ model = arena, settings = { reducedMotion = false }, platformReduced = false }) -- neither: hops
+		crowd.director = director("loyal", "crimson", "loyal", "azure")
+		controller:step(0)
+		crowd.reacted:fire({ stand = "a", kind = "roar" }, "crimson")
+		controller:step(env.clock() + 0.2)
+		local lifted = 0
+		for _, figure in controller.figures.a do
+			lifted += if pivotOf(figure.model).Position.Y > figure.seat.Position.Y + 0.01 then 1 else 0
+		end
+		expect(lifted > 30).toBe(true)
+	end)
+
+	it("reduced effects round an odd stand down (23 figures seat 11)", function()
+		boot({ model = arena, settings = { effectsQuality = "reduced" } })
+		controller:onArenaState({ stage = "duel", a = { citizens = 46 }, b = { citizens = 120 } })
+		crowd.director = director("loyal", "crimson", "loyal", "azure")
+		controller:step(0)
+		expect(#controller.figures.a).toBe(11) -- 46 citizens = 23 figures, half rounded down
+		expect(#controller.figures.b).toBe(30)
+	end)
+
+	it("a settings object that throws reads as no settings: full stands, hops on", function()
+		boot({ model = arena, settingsThrow = true })
+		crowd.director = director("loyal", "crimson", "loyal", "azure")
+		controller:step(0)
+		expect(#controller.figures.a).toBe(60)
+		crowd.reacted:fire({ stand = "a", kind = "roar" }, "crimson")
+		controller:step(env.clock() + 0.2)
+		local lifted = 0
+		for _, figure in controller.figures.a do
+			lifted += if pivotOf(figure.model).Position.Y > figure.seat.Position.Y + 0.01 then 1 else 0
+		end
+		expect(lifted > 30).toBe(true)
 	end)
 
 	it("a roar hops the reacting stand only, and every figure lands back on its seat", function()

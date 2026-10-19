@@ -138,9 +138,16 @@ M = [
  ("FL-0074", F+"CrowdDirector.luau", 'return { tier = side.tier, kingdom = side.kingdom }', 'return { tier = "divided", kingdom = side.kingdom }', "CrowdFigures", "a duel fills both stands", "game"),
  ("FL-0074", D, 'if type(data.citizenName) == "string" and string.find(data.citizenName, "%S")', 'if type(data.citizenName) == "string"', "CrowdDirector", "a triggerFired names its perk", "game"),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'if self:_setting("effectsQuality") == "reduced" then', 'if false then', "CrowdFigures", "low-end clients", "game"),
- ("FL-0074", C2+"CrowdFiguresController.luau", 'if spec == nil or (spec.motion == "hop" and self:_setting("reducedMotion") == true) then', 'if spec == nil then', "CrowdFigures", "low-end clients", "game"),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'if spec == nil or (spec.motion == "hop" and self:_reducedMotion()) then', 'if spec == nil then', "CrowdFigures", "low-end clients", "game"),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'counts.b = math.floor(counts.b * Def.REDUCED_SHARE)', 'counts.b = counts.b', "CrowdFigures", "low-end clients", "game"),
  ("FL-0074", ST, 'local scale = math.min(1, budget / full) -- never longer than the full pass', 'local scale = budget / full -- never longer than the full pass', 'CrowdStage', 'the pass shrinks to the intro time left', 'game'),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'self._pending = not self:_seat(director) -- retried', 'self._pending = false and self:_seat(director) -- retried', 'CrowdFigures', 'the arena streams in after the director', 'game'),
  ("FL-0074", C2+"CrowdFiguresController.luau", '\t\tself.figures[side] = list\n\tend\n\treturn true\nend', '\t\tself.figures[side] = list\n\tend\n\treturn false\nend', 'CrowdFigures', 'the arena streams in after the director', 'game'),
+ # FORGE-07 #237 M2 and L1-L3; FORGE-00's 07:48 correction (Pacing.arena.intro from config Arena)
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'then settings:reducedMotion()', 'then settings:get("reducedMotion")', 'CrowdFigures', "the platform's Reduce Motion skips the hops", 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'else settings:get("reducedMotion")', 'else false', 'CrowdFigures', 'low-end clients', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'spec.motion == "hop" and self:_reducedMotion()', 'spec.motion ~= "turn" and self:_reducedMotion()', 'CrowdFigures', 'low-end clients', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'counts.a = math.floor(counts.a * Def.REDUCED_SHARE)', 'counts.a = math.ceil(counts.a * Def.REDUCED_SHARE)', 'CrowdFigures', 'round an odd stand down', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'local ok, value = pcall(settings.get, settings, key)', 'local ok, value = true, settings.get(settings, key)', 'CrowdFigures', 'a settings object that throws', 'game'),
+ ("FL-0074", G + "config/Pacing.luau", 'intro = Arena.introSeconds,', 'intro = 15,', 'CrowdDirector', 'arena stage timings in Pacing', 'game'),
 ]

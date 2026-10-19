@@ -23,17 +23,18 @@
 		  attachment StandX_Row<r>_Seat<s> (feet on the plank, facing the ring) with WorldView.placeModel.
 		- Figures are parented to Workspace.ForgeCrowdFigures (client-made, not under the arena model).
 		- Low-end clients: with the effectsQuality setting "reduced" (FL-0103) each stand seats
-		  Def.REDUCED_SHARE of its figures (at most 60 in the arena, 240 parts), read when the stands fill.
+		  Def.REDUCED_SHARE of its figures, rounded down (at most 60 in the arena, 240 parts), read when
+		  the stands fill.
 	How they move (FeedbackCrowdController.reacted)
 		Def.MOTIONS maps each reaction kind to a motion of that reaction's stand for its seconds:
 			hop    a share of the stand bobs up and down (roar, cheer, chant, rally, perk, flood ...)
 			slump  the stand sinks a little (gasp, mutter, boo)
 			turn   the stand turns its backs on the ring (turnBack: the strongest negative)
-		Kinds with no motion (murmur, quiet, silence, calledOff, ...) leave the stand still. With the
-		reducedMotion setting on, a hop is skipped (the stand stays still); a slump or a turn is one step,
-		not an animation, so it still shows. Which figures
-		hop is a pure function of the figure's index and the share, so a third of a stand is always the
-		same third. Every motion ends with each figure back on its seat.
+		Kinds with no motion (murmur, quiet, silence, calledOff, ...) leave the stand still. With reduced
+		motion on (the in-game setting or the platform's: SettingsController:reducedMotion()), a hop is
+		skipped (the stand stays still); a slump or a turn is one step, not an animation, so it still
+		shows. Which figures hop is a pure function of the figure's index and the share, so a third of
+		a stand is always the same third. Every motion ends with each figure back on its seat.
 	API
 		controller.figures                      -- { a: { Figure }, b: { Figure } }, Figure = { model, seat: CFrame, row, seat# }
 		controller:refresh()                    -- follows the crowd controller's director (step calls it)
@@ -257,6 +258,22 @@ function Controller:_setting(key: string): any
 	return if ok then value else nil
 end
 
+-- Reduced motion: SettingsController:reducedMotion() is the in-game toggle OR the platform's Reduce
+-- Motion (GuiService.ReducedMotionEnabled), as the other controllers ask (FORGE-07 #237 M2); get() only
+-- on a settings object without it.
+function Controller:_reducedMotion(): boolean
+	local settings = self._registry:find("SettingsController")
+	if settings == nil then
+		return false
+	end
+	local ok, reduced = pcall(function()
+		return if type(settings.reducedMotion) == "function"
+			then settings:reducedMotion()
+			else settings:get("reducedMotion")
+	end)
+	return ok and reduced == true
+end
+
 function Controller:_workspace(): any
 	return self._opts.workspace or self._env.Workspace
 end
@@ -339,7 +356,7 @@ function Controller:onReaction(reaction: any, _kingdom: any?)
 	end
 	self:refresh() -- the director may be new since the last step
 	local spec = Def.MOTIONS[reaction.kind]
-	if spec == nil or (spec.motion == "hop" and self:_setting("reducedMotion") == true) then
+	if spec == nil or (spec.motion == "hop" and self:_reducedMotion()) then
 		return
 	end
 	if self._motions[reaction.stand] ~= nil then
