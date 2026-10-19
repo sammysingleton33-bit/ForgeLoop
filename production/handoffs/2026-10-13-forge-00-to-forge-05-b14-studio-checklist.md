@@ -191,3 +191,13 @@ Run the B20.1 rows (M1–M5) on B20.2, then:
 | N3 | Enemy soldiers enter your territory | a raid notice and a "Go to the raid" button (phone too); it ends about 10 s after they leave |
 | N4 | Pan the camera far from your kingdom during an AI war | units under the camera move smoothly; far-off citizens step at about 2 Hz; your own soldiers never freeze |
 | N5 | MicroProfiler during Endgame | note server and client frame time (also gates #200's paint cost) |
+
+## B21 additions (main `ebdd564`, BuildInfo `ebdd56445476…`): sieges decide wars
+Run the B20.1 rows (M1–M5) and the B20.2 rows (N1–N5) on B21, then the B21 asks in `production/quality-gates/studio-runs.md` (asks 1–4), summarised here:
+
+| ID | Check | Pass |
+|---|---|---|
+| O1 | Play Solo, `match.phase Conflict`, watch from the aerial view | within about 10 minutes an AI governor builds rams, besieges a rival keep (siege notice) and takes it; note the time from Conflict to the first fall (screenshot B21-1) |
+| O2 | At war with an AI, keep soldiers at your keep | an assault of about your size breaks against it; note whether it held |
+| O3 | Recruit a ram (barracks level 2, wood 200) and attack a building | the ram hits buildings far harder than soldiers do (screenshot B21-2) |
+| O4 | Output window through a full match | copy every red line; citizens still use the part-built rig (no mesh data yet) |
