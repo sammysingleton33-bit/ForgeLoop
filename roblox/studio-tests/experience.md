@@ -552,3 +552,34 @@ Pass: step 1 holds (2–5 when FL-0125 is on the build). Copy every red line fro
 History:
 - 2026-10-18 FORGE-04: written (FL-0130 part 2).
 - 2026-10-18 FORGE-04: spectating never starts during Results or Lobby (FORGE-07's #189 M1); the two-keeps-in-one-batch limit noted (FORGE-07 on #183).
+
+## E16 — Duel controls: keyboard and mouse, gamepad, touch (FL-0075, game-001)
+
+The Crown Arena duel (D-029, design `crown-arena.md` §5) is fought on foot. During the `duel` stage the champion's input switches to arena mode: five actions go to FORGE-01's DuelController, which sends them to the server. Spectators keep the camera only.
+
+Needs:
+- Steps 1–5: nothing beyond the build. They use the **Studio preview**: the duel controls without a duel. A press sends nothing and prints `InputModeArenaController preview: <action>` in Output.
+- Steps 6–7: FORGE-01's arena (FL-0071: `Arena.State`, DuelController). Until then write "blocked: needs FL-0071".
+
+| Action | Keyboard + mouse | Gamepad | Touch button |
+|---|---|---|---|
+| light | left click | R1 | **Light** (the biggest, left of jump) |
+| heavy | R | R2 | **Heavy** |
+| block (hold) | hold F | hold L1 | hold **Block** |
+| parry | E | L2 | **Parry** |
+| dodge | Q | B | **Dodge** |
+
+Steps
+1. Play Solo. In the command bar run `game.Players:GetPlayers()[1]:SetAttribute("ForgeDuelPreview", true)` (server or client view both work: a player's attributes replicate to its client). The camera goes from the aerial view to the walk camera behind your ruler. WASD walks and Space jumps. V does nothing.
+2. Press each key in the table once. Output prints one `preview:` line per press with the right action. Hold F for 2 s, then release it: `block` on the press, `blockEnd` on the release, nothing in between. Q and E do not turn the camera; Backspace closes nothing. Click a HUD button (for example the rail's **Settings**): it opens, and Output prints **no** `preview: light` for that click (FORGE-07's #191 L1: the left click is bound at High priority for the duel; a GUI click must stay the GUI's). If it does print, write it down: that is a bug.
+3. Gamepad (or Studio's gamepad emulator): R1, R2, L2 and B print light, heavy, parry and dodge. Holding L1 prints block, then blockEnd on release. The left stick walks.
+4. Phone emulator (667×375, then an iPad size). Five round buttons stand around Roblox's jump button, right side, none covering it or each other; the labels read clearly, and the thumbstick still shows on the left. Tap each: one `preview:` line each. Hold **Block** and slide the finger off before lifting it: `blockEnd` prints when the finger lifts. Screenshot **E16-1** (the phone layout) and **E16-2** (the iPad layout).
+5. Run `game.Players:GetPlayers()[1]:SetAttribute("ForgeDuelPreview", false)`. The buttons go, the aerial view comes back, V toggles the view again, and Q / E turn the view again.
+6. (Needs FL-0071.) Two players (Test → Local Server, 2 players) qualify for the arena. At the `duel` stage both get the walk camera and the controls; every action works against the other champion. A third player watching gets neither the controls nor the buttons.
+7. (Needs FL-0071.) Hold block when the duel ends: at `crowning` the controls and buttons go and the aerial view returns. Output shows no error.
+
+Pass: steps 1–5 hold (6 and 7 when FL-0071 is on the build). Copy every red line from Output. Write down any button that is hard to reach with the right thumb on the phone emulator.
+
+History:
+- 2026-10-18 FORGE-04: written (FL-0075; G12.6 DRAFT).
+- 2026-10-18 FORGE-04: step 2 checks that a HUD click is not also a light attack (FORGE-07's #191 L1).
