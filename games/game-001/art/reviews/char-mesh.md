@@ -157,3 +157,61 @@ has 0 warnings. Measured again from the FBX: max citizen 982 / 1,000 (healer; bo
 `blender/scripts/charkit_runtime_checks.py` (also a pytest). Look check (opened): `img/d057-kit-runtime-fit/after_jobs.jpg`, `after_portraits.jpg`,
 `after_kingdoms.jpg` against the r2 sheets: same identities, hats, colours; the pick now shows its long end outward and its blunt end on the front view,
 the mallet head is seen end-on from the front. The D-019 verdict is unchanged (NEEDS-WORK at 170 studs, accepted as interim by the coordinator under D-051).
+
+### Silhouette pass (FL-0135, branch `forge/02-blender-fl0135-silhouettes`, 2026-10-19): FORGE-00 OPTION A, bolder job silhouettes inside the kit
+Decision applied: the kit itself gets bolder, larger job-specific hats, tools, back gear and one colour VALUE per job, readable at 170 studs / 50 degrees
+down (about 10 px per citizen); no zoom-dependent swap, so portrait and world rig stay identical (G13.8). Budgets unchanged (citizen <= 1,000,
+body <= 900, tool <= 150; soldier / governor <= 1,500; <= 16 pieces). Two author rounds, each followed by a fresh image-only D-019 reviewer who saw
+only the seven sheets (`img/d057-sil-review-r1/`, `img/d057-sil-review-r2/`; verbatim replies in each `review.json`). OLD = the kit of PR #220
+(snapshot of `citizen_kit.fbx` + `rig.json`), NEW = this branch, same camera, same 30-citizen roster around the farm.
+
+**Round 1 (kit change):** woodcutter orange knit cap with a tall point + pompom, miner yellow pot helmet with a wide rim and a lamp, builder teal hard
+hat with a peak and a white ridge, farmer wider straw brim, merchant beret + larger feather, healer coif with a flat green top cross; every tool
+about 1.2 to 1.4x longer / bigger (hoe, axe, pick, mallet, hammer, scale, staff); one merged back-gear piece per job (`gear_farmer`, `gear_woodcutter`
+log bundle with pale tops above the shoulders, `gear_miner` blue pack + lantern, `gear_builder` three planks, `gear_smith` apron, `gear_merchant` pack +
+yellow roll, `gear_healer`), a bigger hauler sack with a red tie. **Round 2 (after reviewer 1):** hauler cobalt flat cap (replaces the hair slot, so
+the hauler no longer has an orange head next to the woodcutter); blacksmith wide soot-black forge hat with an ember band, a hammer head about 1.6x
+the first kit's and an anvil strapped on the back; healer wide white winged coif with a big green cross on a flat top, forest-green tabard front and
+back with a white cross (hem 2.42, clear of the thighs); merchant lighter violet beret, 4.2 stud scale beam, bigger pans; governor taller crown points
+and a broader ermine collar; mantle slimmed vertically (y 3.46 to 3.97) so more job-coloured torso shows (the ring seen from above is unchanged).
+Assembly `soldier_swordsman` renamed `soldier_knight` on FORGE-07's review of #220 (sim units: soldier, archer, knight; no ram, FL-0128).
+No per-job torso shape was added: what still fails is blob size at 10 px, not the torso block.
+
+| Rubric (After kit) | silhouette | variation | readability | proportions | palette | detail | cohesion | verdict |
+|---|---|---|---|---|---|---|---|---|
+| Before (PR #220 kit), both reviewers | 2 | 2 | 2 | 4 | 3 | 4 | 4 | |
+| After round 1 | 3 | 3 | 3 | 4 | 4 | 4 | 4 | NEEDS-WORK, ship false |
+| After round 2 | 3 | 3 | 3 | 4 | 4 | 4 | 4 | **NEEDS-WORK, ship false** |
+
+Identities, After kit, at 40 / at 170 studs (reviewer's words reduced to yes / partly / no): r1: farmer y/y, miner y/p, woodcutter y/p, blacksmith p/n,
+merchant y/p, healer p/n, soldier y/y, builder y/p, hauler p/p, idle p/n, governor y/p. r2: farmer y/y, miner y/p, woodcutter y/p, blacksmith p/p,
+merchant y/y, healer p/p, soldier y/y, builder p/p, hauler p/p, idle n/n, governor y/p. At 170 studs that is 2 "yes" and 3 "no" in r1 and 3 "yes" and 1 "no"
+in r2 (the PR #220 kit had 2 "yes" and 4 "no": blacksmith, healer, builder, idle). The builder, hauler and idle rows did not change between r1 and r2
+in geometry, so a one-step swing (builder 40: yes to partly) is reviewer noise of one level, not a regression I can attribute.
+
+**Status: NEEDS-WORK after two author rounds (silhouette, variation and readability 3 against a pass bar of 4). Blocker, reported not hidden.** The
+170-stud identity read improved (no identity is a blank dot any more except the idle citizen; merchant joined farmer and soldier as "yes"), and the
+40-stud read is clearly better than the PR #220 kit (my own look at the sheets agrees: teal builder, orange woodcutter, yellow miner, blue hauler,
+violet merchant, white healer with a cross, black-hatted smith, crowned governor are each a different coloured shape from above). What the reviewers
+still flag, ordered: (1) at 10 px only a hat-colour dot separates the jobs; red / brown / beige dominate the crowd, builder / hauler / blacksmith /
+healer remain "partly"; (2) idle has no hat, tool or prop by definition, so it reads as "a citizen with nothing", and the same-job variation (skin,
+hair, outfit tint; the hat jobs have no hair slot) stays at 3; (3) the governor and soldier are both red from above. Options for FORGE-00, none done
+because each needs a decision: (a) scale every citizen about 1.15x in the runtime rig (the aerial read grows with area, tools and heads included; touches
+the Pose / camera numbers); (b) give idle a visible accessory (a bundle, a bare light head-cloth) and let hat jobs keep a hair tuft / sideburn for
+variation (a kit change, within budget: idle has 190 tris of headroom, builder 138); (c) a per-job coloured torso family or the runtime applying
+`tints.cloth_panels` so the job colour also covers the body (not only hat and gear); (d) accept the 170-stud read of builder / hauler / blacksmith /
+healer / idle as "partly", with the unambiguous cues (hat colour, tool, back gear) kept for 40 studs, and judge it in Studio, where lighting, FOV and
+the vertex-colour tint will change several of these judgements.
+
+**Measured** (`~/forge-bpy/bin/python -I blender/scripts/charkit_budget.py`, from the FBX bytes, 1,728 looks x 4 kingdoms; FBX 512,972 bytes, 111 mesh objects,
+7,180 triangles, largest mesh 188): farmer 858 default / 928 max, woodcutter 840 / 910, miner 820 / 890, builder 792 / 862, hauler 842 / 912, blacksmith
+796 / 822, merchant 912 / 938, healer 940 / 966, idle 660 / 810 (all citizens cap 1,000, body max 878 of 900, tool max 102 of 150), soldier 854 / 900,
+soldier_knight 898 / 964, soldier_archer 932 / 978, governor 928 / 954 (cap 1,500); pieces <= 16; PASS; converter `rig_to_luau.py`: 0 warnings.
+**Runtime fit, specs not weakened:** `Kit` filter 248 passed, whole `games/game-001/tests/world` suite 318 passed / 0 failed (20 files); ported checks
+`charkit_runtime_checks.py`: 0 violations, worst tool-head clearance 0.204 (limit 0.1, and no closer to headwear than at rest in any Pose action),
+lowest fall corner -0.133 (limit -0.25), highest body point 7.17 (< 7.2); `charkit_clearance.py`: 0 over tolerance; `blender/tests` 58 passed
+(new: assembly keys equal the sim unit kinds); `bash blender/scripts/check.sh` PASS.
+**What I looked at (all opened):** the r1 and r2 sheets (aerial crowd at 170 studs, labelled lineup, 40-stud crowd, front / behind / above, black silhouettes,
+portraits, 36 looks), and the 11-identity jobs strip from the front and behind. **Weak / unverified:** everything about Studio (importer scale and axes, vertex-colour
+multiplication, real lighting and FOV, draw-call cost in a crowd); Blender renders are not Studio renders; the blacksmith's anvil reads from behind and above
+only; the healer's cross is about 2 px at 170 studs, the white wing and the green tabard carry the read; the hat jobs show no hair.
