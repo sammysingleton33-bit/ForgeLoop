@@ -5,6 +5,7 @@ local Crowd = require("@game/ReplicatedStorage/Forge/Config/Crowd")
 local Sounds = require("@game/ReplicatedStorage/Forge/Config/Sounds")
 local Pacing = require("@game/ReplicatedStorage/Forge/Config/Pacing")
 local CrowdDirector = require("@game/ReplicatedStorage/Game/Feedback/CrowdDirector")
+local ArenaText = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaText") -- FORGE-03's HUD names
 
 local TIERS = { "adoring", "loyal", "divided", "restless", "hostile" }
 
@@ -66,7 +67,7 @@ end)
 describe("CrowdDirector: reactions follow the tier and the duel (design §3, §7)", function()
 	it("a big hit: the hitter's stand reacts by its tier's good, the other by its tier's bad", function()
 		local d = director("adoring", "hostile")
-		expect(kinds(d:onEvent(ev("hit", "a", { damage = 0.2 }), 10))).toEqual({ "a:roar", "b:turnBack" })
+		expect(kinds(d:onEvent(ev("hit", "a", { damageShare = 0.2 }), 10))).toEqual({ "a:roar", "b:turnBack" })
 		local e = director("loyal", "restless")
 		expect(kinds(e:onEvent(ev("hit", "b", { heavy = true }), 10))).toEqual({ "b:scattered", "a:gasp" })
 		local reactions = director("divided", "divided"):onEvent(ev("parry", "a"), 0)
@@ -87,12 +88,12 @@ describe("CrowdDirector: reactions follow the tier and the duel (design §3, §7
 
 	it("small hits are minor: only the hitter's stand, at most one per stand every minorGapSec", function()
 		local d = director("loyal", "loyal")
-		local first = d:onEvent(ev("hit", "a", { damage = 0.05 }), 0)
+		local first = d:onEvent(ev("hit", "a", { damageShare = 0.05 }), 0)
 		expect(kinds(first)).toEqual({ "a:cheer" })
 		expect(first[1].major).toBe(false)
-		expect(#d:onEvent(ev("hit", "a", { damage = 0.05 }), Crowd.minorGapSec - 0.1)).toBe(0)
-		expect(kinds(d:onEvent(ev("hit", "b", { damage = 0.05 }), 0.1))).toEqual({ "b:cheer" })
-		expect(#d:onEvent(ev("hit", "a", { damage = 0.05 }), Crowd.minorGapSec + 0.01)).toBe(1)
+		expect(#d:onEvent(ev("hit", "a", { damageShare = 0.05 }), Crowd.minorGapSec - 0.1)).toBe(0)
+		expect(kinds(d:onEvent(ev("hit", "b", { damageShare = 0.05 }), 0.1))).toEqual({ "b:cheer" })
+		expect(#d:onEvent(ev("hit", "a", { damageShare = 0.05 }), Crowd.minorGapSec + 0.01)).toBe(1)
 		expect(kinds(d:onEvent(ev("staminaOut", "b"), 5))).toEqual({ "b:gasp" })
 		expect(kinds(d:onEvent(ev("heavyWindup", "a"), 5))).toEqual({ "a:murmur" })
 	end)
@@ -110,7 +111,7 @@ describe("CrowdDirector: reactions follow the tier and the duel (design §3, §7
 		local d = director("adoring", "divided")
 		d:onEvent(ev("parry", "b"), 20)
 		local perk = d:onEvent(
-			ev("triggerFired", "a", { trigger = "reforge", triggerName = "Reforge", citizenName = "Mara" }),
+			ev("triggerFired", "a", { source = "perk:reforge", trigger = "reforge", citizenName = "Mara" }),
 			20.5
 		)
 		expect(kinds(perk)).toEqual({ "a:perk" })
@@ -119,38 +120,85 @@ describe("CrowdDirector: reactions follow the tier and the duel (design §3, §7
 		expect(d:volume(20.6)).toBe(Crowd.duck.volume)
 		expect(d:volume(20.5 + Crowd.duck.perkSec + 0.01)).toBe(1)
 		expect(#d:onEvent(ev("parry", "a"), 23)).toBe(0) -- the perk restarted the gap
-		local rally = d:onEvent(ev("triggerFired", "a", { trigger = "crowdRally" }), 23.1)
+		local rally = d:onEvent(ev("triggerFired", "a", { source = "crowdRally", trigger = "crowdRally" }), 23.1)
 		expect(kinds(rally)).toEqual({ "a:rally" })
 		local anonymous = director("loyal", "loyal"):onEvent(ev("triggerFired", "b", { trigger = "fineWares" }), 0)
-		expect(anonymous[1].caption).toBe("A citizen steps up: fineWares!")
+		expect(anonymous[1].caption).toBe("A citizen steps up: Fine Wares!")
 	end)
+
+	it("a triggerFired names its perk from `trigger`, else from `source`, never a raw id (FORGE-01's relay)", function()
+		local function caption(data)
+			return director("loyal", "loyal"):onEvent(ev("triggerFired", "a", data), 0)[1]
+		end
+		expect(caption({ source = "perk:fieldRemedy", citizenName = "Ivo" }).caption).toBe(
+			"Ivo steps up: Field Remedy!"
+		)
+		expect(caption({ source = "crowdRally" }).kind).toBe("rally") -- no trigger: the source says it
+		expect(caption({ source = "perk:somethingNew" }).caption).toBe("A citizen steps up: their pledge!")
+		expect(caption({ citizenName = 7 }).caption).toBe("A citizen steps up: their pledge!")
+		-- every TriggerId of CONTRACTS G12.1 has a name
+		for _, id in
+			{ "reforge", "fieldRemedy", "calledWarning", "heartyRations", "rallyingHymn", "fineWares", "crowdRally" }
+		do
+			expect(type(Crowd.triggerNames[id])).toBe("string")
+		end
+		-- the crowd's caption and FORGE-03's arena HUD (#214) name every perk the same way
+		for id, entry in ArenaText.TRIGGERS do
+			expect(Crowd.triggerNames[id]).toBe(entry.name)
+		end
+		for id in Crowd.triggerNames do
+			expect(ArenaText.TRIGGERS[id] ~= nil).toBe(true)
+		end
+	end)
+
+	it(
+		"DuelModel's raw hit data: targetHpShare still drives near-death, raw damage points are not a share (#221 L1)",
+		function()
+			local d = director("loyal", "adoring")
+			-- 30 HP points of a 100 HP champion, read as a share, would be a big hit: it must stay minor
+			expect(kinds(d:onEvent(ev("hit", "b", { damage = 30, targetHp = 70, targetHpShare = 0.7 }), 0))).toEqual({
+				"b:roar",
+			})
+			-- the target falls below nearDeath on the model's own field: both stands react
+			local near = d:onEvent(ev("hit", "b", { damage = 55, targetHp = 15, targetHpShare = 0.15 }), 4)
+			expect(kinds(near)).toEqual({ "a:gasp", "b:roar" })
+			-- hpShare wins when the relay sends both
+			local e = director("loyal", "loyal")
+			expect(#e:onEvent(ev("hit", "b", { hpShare = 0.9, targetHpShare = 0.1 }), 0)).toBe(1) -- minor: 0.9 is not near death
+		end
+	)
 
 	it("near-death once per champion, and a comeback when the trailing champion takes the lead", function()
 		local d = director("loyal", "adoring")
 		-- b hits a down to 15 %: near-death for a (bad for a)
-		expect(kinds(d:onEvent(ev("hit", "b", { damage = 0.05, hp = 0.15 }), 0))).toEqual({ "a:gasp", "b:roar" })
-		expect(kinds(d:onEvent(ev("hit", "b", { damage = 0.02, hp = 0.1 }), 4))).toEqual({ "b:roar" }) -- minor now
+		expect(kinds(d:onEvent(ev("hit", "b", { damageShare = 0.05, hpShare = 0.15 }), 0))).toEqual({
+			"a:gasp",
+			"b:roar",
+		})
+		expect(kinds(d:onEvent(ev("hit", "b", { damageShare = 0.02, hpShare = 0.1 }), 4))).toEqual({ "b:roar" }) -- minor now
 		-- a fights back: b falls from 100 % to 5 %, below a's 10 %: a comeback for a
-		local back = d:onEvent(ev("hit", "a", { damage = 0.05, hp = 0.05 }), 8)
+		local back = d:onEvent(ev("hit", "a", { damageShare = 0.05, hpShare = 0.05 }), 8)
 		expect(kinds(back)).toEqual({ "a:cheer", "b:gasp" })
 		local zero = director("loyal", "loyal")
-		expect(#zero:onEvent(ev("hit", "a", { damage = 0.05, hp = 0 }), 0)).toBe(1) -- the finish is `ended`
-		expect(#zero:onEvent(ev("hit", "a", { damage = 0.05, hp = 0 / 0 }), 5)).toBe(1)
+		expect(#zero:onEvent(ev("hit", "a", { damageShare = 0.05, hpShare = 0 }), 0)).toBe(1) -- the finish is `ended`
+		expect(#zero:onEvent(ev("hit", "a", { damageShare = 0.05, hpShare = 0 / 0 }), 5)).toBe(1)
 	end)
 
-	it("full hype chants for a chanting tier only, pre-written lines with the ruler's name", function()
-		local d = director("adoring", "restless", { nameA = "Sam", kingdomA = "emerald" })
-		local first = d:onEvent(ev("hype", "a", { full = true }), 0)
-		expect(kinds(first)).toEqual({ "a:chant" })
-		expect(first[1].caption).toBe("Emerald stands!")
-		local second = d:onEvent(ev("hype", "a", { full = true }), 3)
-		expect(second[1].caption).toBe("Strong as the oak, Sam!")
-		expect(#d:onEvent(ev("hype", "b", { full = true }), 6)).toBe(0) -- restless does not chant
-		expect(#d:onEvent(ev("hype", "a", { full = false }), 9)).toBe(0)
-		expect(#d:onEvent(ev("hype", "a", { full = true }), 5.5)).toBe(0) -- rationed as a major
-		expect(CrowdDirector.chant("nowhere", 2, nil, Crowd)).toBe("For the kingdom!") -- no name, no {ruler}
-		expect(CrowdDirector.chant("gold", 2, "%1", Crowd)).toBe("Shine, %1!") -- a name is never a pattern
-	end)
+	it(
+		"a hype event (sent only when the meter is full) chants for a chanting tier only, with the ruler's name",
+		function()
+			local d = director("adoring", "restless", { nameA = "Sam", kingdomA = "emerald" })
+			local first = d:onEvent(ev("hype", "a", nil), 0)
+			expect(kinds(first)).toEqual({ "a:chant" })
+			expect(first[1].caption).toBe("Emerald stands!")
+			local second = d:onEvent(ev("hype", "a", nil), 3)
+			expect(second[1].caption).toBe("Strong as the oak, Sam!")
+			expect(#d:onEvent(ev("hype", "b", nil), 6)).toBe(0) -- restless does not chant
+			expect(#d:onEvent(ev("hype", "a", nil), 5.5)).toBe(0) -- rationed as a major
+			expect(CrowdDirector.chant("nowhere", 2, nil, Crowd)).toBe("For the kingdom!") -- no name, no {ruler}
+			expect(CrowdDirector.chant("gold", 2, "%1", Crowd)).toBe("Shine, %1!") -- a name is never a pattern
+		end
+	)
 
 	it("four endings: win or loss x high or low support, both stands, once (design §7)", function()
 		expect(CrowdDirector.ending(true, "adoring", Crowd)).toBe("flood")
@@ -168,17 +216,20 @@ describe("CrowdDirector: reactions follow the tier and the duel (design §3, §7
 		expect(#d:onEvent(ev("parry", "b"), 10)).toBe(0) -- nothing after the end
 	end)
 
-	it("a duel with no winner ends the crowd quietly, once (#193 L1)", function()
+	it("a duel with no winner or a draw is called off, once, with no payoff (#193 L1, FORGE-00)", function()
 		local d = director("adoring", "hostile")
-		expect(kinds(d:finish(nil, 10))).toEqual({ "a:quiet", "b:quiet" })
+		expect(kinds(d:finish(nil, 10))).toEqual({ "a:calledOff", "b:calledOff" })
 		expect(#d:onEvent(ev("parry", "a"), 20)).toBe(0) -- nothing after the end
 		expect(#d:finish("a", 21)).toBe(0)
 		local e = director("loyal", "loyal")
-		local quiet = e:onEvent({ t = 0, kind = "ended" }, 5) -- Arena.Events with no side
-		expect(kinds(quiet)).toEqual({ "a:quiet", "b:quiet" })
-		expect(quiet[1].priority).toBe(true)
-		expect(quiet[1].caption).toBe("(The stand is quiet)")
+		local off = e:onEvent({ t = 0, kind = "ended", side = "draw", data = { reason = "draw" } }, 5)
+		expect(kinds(off)).toEqual({ "a:calledOff", "b:calledOff" })
+		expect(off[1].priority).toBe(true)
+		expect(off[1].caption).toBe("(The duel was called off)")
+		expect(off[1].sound).toBeNil()
 		expect(#e:onEvent(ev("hit", "a", { heavy = true }), 9)).toBe(0)
+		local g = director("loyal", "loyal")
+		expect(kinds(g:onEvent({ t = 0, kind = "ended" }, 0))).toEqual({ "a:calledOff", "b:calledOff" }) -- no side
 		local f = director("loyal", "loyal")
 		expect(#f:finish("c", 0)).toBe(0) -- a side that does not exist ends nothing
 		expect(#f:onEvent(ev("parry", "a"), 1)).toBe(2)
