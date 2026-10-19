@@ -25,8 +25,11 @@
 	WorldView) through Kit.damageFromHp, written only when the value changes, and Kit.applyDamage (FORGE-02's
 	FL-0128 war kit: cracks, soot, missing merlons, a collapsed corner) runs only when the damage state
 	(Kit.damageState: 0..4) changes. A repaired building (Hp back up) gets its parts back the same way; a
-	rebuilt one is a new model that starts undamaged. A building without both numbers, or with MaxHp <= 0,
-	is left alone, and so are the plain-part stand-ins (not Models). No per-frame work: one pass every
+	rebuilt one is a new model that starts undamaged. A damaged building the server moves in place (G13.9,
+	WorldView's placeModel) would leave behind the damage parts made here, which the server does not know;
+	so its root's CFrame is remembered, and when it changes the damage is repaired and dressed again where
+	the building now stands. A building without both numbers, with MaxHp <= 0 or without a PrimaryPart is
+	left alone, and so are the plain-part stand-ins (not Models). No per-frame work: one pass every
 	BURN_POLL_SEC.
 	Distances are measured from the overview's focus (RulerCameraController:getFocus() while mode is
 	"overview"), else from the camera (walk mode, whose focus would be the stale overview one), so a
@@ -119,7 +122,8 @@ function Def.burningBuildings(workspace: any): { [any]: any }
 	return out
 end
 
--- Building Models under Workspace.ForgeKingdoms/<kingdom>/Buildings that carry Hp and MaxHp.
+-- Building Models under Workspace.ForgeKingdoms/<kingdom>/Buildings that carry Hp and MaxHp and have a
+-- PrimaryPart (Kit.applyDamage dresses nothing without one).
 function Def.damageable(workspace: any): { any }
 	local out = {}
 	local root = workspace and workspace:FindFirstChild("ForgeKingdoms")
@@ -132,7 +136,8 @@ function Def.damageable(workspace: any): { any }
 			for _, model in buildings:GetChildren() do
 				if model:IsA("Model") then
 					local hp, maxHp = model:GetAttribute("Hp"), model:GetAttribute("MaxHp")
-					if type(hp) == "number" and hp == hp and type(maxHp) == "number" and maxHp > 0 then
+					local ready = model.PrimaryPart ~= nil
+					if ready and type(hp) == "number" and hp == hp and type(maxHp) == "number" and maxHp > 0 then
 						table.insert(out, model)
 					end
 				end
@@ -156,6 +161,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_registry = registry,
 		_origin = options.origin,
 		_kit = options.kit or Kit,
+		_dressedAt = setmetatable({}, { __mode = "k" }) :: { [any]: CFrame }, -- damaged model -> its root then
 		_nodes = nodes,
 		_connections = {},
 		_attached = {} :: { [number]: { { effect: any, at: number } } },
@@ -202,7 +208,10 @@ function FeedbackController:start()
 	self._env.spawn(function()
 		while self._running do
 			self:refreshFires()
-			self:refreshDamage()
+			local ok, err = pcall(self.refreshDamage, self) -- a damage error never stops the fires
+			if not ok then
+				self._env.log("warn", "FeedbackController: building damage failed", { error = tostring(err) })
+			end
 			self._env.wait(Def.BURN_POLL_SEC)
 		end
 	end)
@@ -254,8 +263,17 @@ function FeedbackController:refreshFires()
 	end
 end
 
+-- Whether a building's root moved or turned since it was dressed.
+local function movedSince(a: CFrame, b: CFrame): boolean
+	local rel = a:ToObjectSpace(b)
+	local _, angle = rel:ToAxisAngle()
+	return rel.Position.Magnitude > 0.01 or math.abs(angle) > 1e-3
+end
+
 -- Each building's Damage follows its Hp (FL-0143): the attribute when its value changes, the parts
--- (Kit.applyDamage) only when its damage state does. Returns how many models were re-dressed (specs).
+-- (Kit.applyDamage) only when its damage state does, or when the server moved a damaged building (its
+-- damage parts are this client's own and stay where they were made). Returns how many models were
+-- re-dressed (specs).
 function FeedbackController:refreshDamage(): number
 	local kit = self._kit
 	if type(kit.applyDamage) ~= "function" or type(kit.damageFromHp) ~= "function" then
@@ -265,22 +283,33 @@ function FeedbackController:refreshDamage(): number
 	if not ok then
 		return 0
 	end
-	local applied = 0
+	local applied, dressedAt = 0, self._dressedAt
 	for _, model in models do
 		local damage = kit.damageFromHp(model:GetAttribute("Hp"), model:GetAttribute("MaxHp"))
 		local before = model:GetAttribute("Damage")
-		if before ~= damage then
+		local was = if type(before) == "number" then before else 0
+		local pivot = model.PrimaryPart.CFrame
+		local moved = dressedAt[model] ~= nil and movedSince(dressedAt[model], pivot)
+		if before ~= damage or moved then
+			local okApply, err = true, nil
+			if moved and kit.damageState(was) > 0 then
+				-- repaired first (the removed parts come back), then dressed again where it stands now
+				model:SetAttribute("Damage", 0)
+				okApply, err = pcall(kit.applyDamage, model)
+				was = 0
+			end
 			model:SetAttribute("Damage", damage)
-			local was = if type(before) == "number" then before else 0
-			if kit.damageState(damage) ~= kit.damageState(was) then
-				local okApply, err = pcall(kit.applyDamage, model)
+			if okApply and kit.damageState(damage) ~= kit.damageState(was) then
+				okApply, err = pcall(kit.applyDamage, model)
 				if okApply then
 					applied += 1
-				else
-					self._env.log("warn", "FeedbackController: Kit.applyDamage failed", { error = tostring(err) })
 				end
 			end
+			if not okApply then
+				self._env.log("warn", "FeedbackController: Kit.applyDamage failed", { error = tostring(err) })
+			end
 		end
+		dressedAt[model] = if kit.damageState(damage) > 0 then pivot else nil
 	end
 	return applied
 end

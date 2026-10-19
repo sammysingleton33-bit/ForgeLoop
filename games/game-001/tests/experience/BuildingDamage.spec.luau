@@ -126,13 +126,25 @@ describe("FeedbackController: building damage follows HP (FL-0143, FL-0128 war k
 				building(folder, "house", 1, 41, 10, nil),
 				building(folder, "house", 1, 42, 10, 0),
 				building(folder, "house", 1, 43, 0 / 0, 100),
+				roblox.Instance.new("Model"), -- no PrimaryPart: Kit would dress nothing
 			}
+			roblox.Instance.new("Part").Parent = odd[4]
+			odd[4]:SetAttribute("Hp", 10)
+			odd[4]:SetAttribute("MaxHp", 100)
+			odd[4].Parent = folder
+			-- a kingdom whose Buildings folder has not streamed in yet
+			local azure = roblox.Instance.new("Folder")
+			azure.Name = "azure"
+			azure.Parent = env.Workspace:FindFirstChild("ForgeKingdoms")
+			-- ... and none of them stops a damaged house in the same read
+			local fresh = building(folder, "house", 1, 44, 30, 100) -- 0.7: state 2
 			env.mock:advance(FeedbackDef.BURN_POLL_SEC)
 			expect(part:GetAttribute("Damage")).toBeNil()
 			for _, model in odd do
 				expect(model:GetAttribute("Damage")).toBeNil()
 			end
-			expect(#calls).toBe(2)
+			expect(fresh:GetAttribute("KitDamageState")).toBe(2)
+			expect(#calls).toBe(3)
 			expect(env.mock.threadErrors).toEqual({})
 		end
 	)
@@ -156,5 +168,76 @@ describe("FeedbackController: building damage follows HP (FL-0143, FL-0128 war k
 		expect(none:refreshDamage()).toBe(0)
 		expect(untouched:GetAttribute("Damage")).toBeNil()
 		expect(bare.mock:hasLog("warn", "FeedbackController: Kit.applyDamage failed")).toBe(false)
+	end)
+
+	it("a damaged building the server moves is dressed again where it stands (FORGE-07 #273 M1)", function()
+		local env = MockEnv.new({ seed = 147, isServer = false, localPlayer = { userId = 1 } })
+		local kit, calls = countingKit()
+		local feedback = boot(env, kit)
+		local keep = building(buildingsFolder(env), "keep", 3, 61, 20, 100) -- 0.8: state 3
+		expect(feedback:refreshDamage()).toBe(1)
+		-- the keep's own extent, in its root's frame
+		local root = keep.PrimaryPart
+		local lo, hi = Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
+		for _, d in keep:GetDescendants() do
+			if d:IsA("BasePart") and d:GetAttribute("KitDamage") ~= true then
+				local p = root.CFrame:PointToObjectSpace(d.CFrame.Position)
+				lo, hi = lo:Min(p), hi:Max(p)
+			end
+		end
+		-- WorldView's placeModel on the server moves the parts it knows; the damage parts are this client's
+		local function serverMoves(delta)
+			for _, d in keep:GetDescendants() do
+				if d:IsA("BasePart") and d:GetAttribute("KitDamage") ~= true then
+					d.CFrame = delta * d.CFrame
+				end
+			end
+		end
+		local function marksOnTheKeep()
+			local marks = 0
+			for _, d in keep:GetDescendants() do
+				if d:IsA("BasePart") and d:GetAttribute("KitDamage") == true then
+					marks += 1
+					local p = root.CFrame:PointToObjectSpace(d.CFrame.Position)
+					local inside = p.X >= lo.X - 2 and p.X <= hi.X + 2 and p.Z >= lo.Z - 2 and p.Z <= hi.Z + 2
+					assert(inside, `{d.Name} stayed behind at {d.CFrame.Position}`)
+				end
+			end
+			return marks
+		end
+		serverMoves(CFrame.new(44, 0, 0))
+		expect(feedback:refreshDamage()).toBe(1) -- dressed again
+		expect(#calls).toBe(3) -- the repair and the new dressing
+		expect(keep:GetAttribute("KitDamageState")).toBe(3)
+		expect(math.abs(keep:GetAttribute("Damage") - 0.8) < 1e-9).toBe(true)
+		expect(marksOnTheKeep() > 0).toBe(true)
+		-- turned in place (a quarter turn about its root): dressed again too. Where the marks then sit is
+		-- FORGE-02's Kit/Damage fix (FORGE-00's g11l (a): today the kit works in world axes)
+		local at = CFrame.new(root.CFrame.Position)
+		serverMoves(at * CFrame.Angles(0, math.rad(90), 0) * at:Inverse())
+		expect(feedback:refreshDamage()).toBe(1)
+		expect(#calls).toBe(5)
+		expect(keep:GetAttribute("KitDamageState")).toBe(3)
+		expect(feedback:refreshDamage()).toBe(0) -- standing still: nothing more
+		expect(#calls).toBe(5)
+	end)
+
+	it("an error in the damage pass is logged and the poll (and the fires) go on", function()
+		local env = MockEnv.new({ seed = 148, isServer = false, localPlayer = { userId = 1 } })
+		local reads = 0
+		boot(
+			env,
+			setmetatable({
+				damageFromHp = function()
+					reads += 1
+					error("kit broke")
+				end,
+			}, { __index = Kit })
+		)
+		building(buildingsFolder(env), "house", 1, 71, 10, 100)
+		env.mock:advance(FeedbackDef.BURN_POLL_SEC * 3 + 0.05)
+		expect(reads >= 3).toBe(true) -- the loop kept polling
+		expect(env.mock:hasLog("warn", "FeedbackController: building damage failed")).toBe(true)
+		expect(env.mock.threadErrors).toEqual({})
 	end)
 end)
