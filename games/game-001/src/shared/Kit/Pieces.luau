@@ -26,10 +26,12 @@ local column = Parts.column
 local log = Parts.log
 local ball = Parts.ball
 local hueStyle = Parts.hueStyle
+local KingdomStyle = require("./KingdomStyle")
 
 type Ctx = Parts.Ctx
 
-export type Stone = { base: Color3, light: Color3, dark: Color3 }
+-- accent: the stone every third plinth block takes (the Kit's original look: the light stone)
+export type Stone = { base: Color3, light: Color3, dark: Color3, accent: Color3 }
 export type Opening = { u: number, hw: number, door: boolean? }
 export type RoofSpec = {
 	w: number, -- length along the ridge (the wall length under it)
@@ -47,6 +49,7 @@ export type RoofSpec = {
 	infillMaterial: Enum.Material?,
 	kingPost: boolean?,
 	ends: number?, -- nil/0 = both gable ends, 1 = only the local +X end (dormers)
+	tight: boolean?, -- a footprint-bound roof: a kingdom's wider gable reach never grows it (KingdomStyle)
 }
 export type RoofInfo = { ridgeY: number, theta: number, slope: number, width: number }
 export type WindowOpts = {
@@ -80,38 +83,14 @@ local rad = math.rad
 
 -- ------------------------------------------------------------------ palettes (ART_DIRECTION §3)
 
-local STONE: { [string]: Stone } = {
-	neutral = { base = C.stone, light = C.stoneLight, dark = C.stoneDark },
-	crimson = {
-		base = Color3.fromRGB(161, 146, 134),
-		light = Color3.fromRGB(196, 182, 166),
-		dark = Color3.fromRGB(118, 105, 96),
-	},
-	azure = {
-		base = Color3.fromRGB(139, 149, 162),
-		light = Color3.fromRGB(178, 188, 201),
-		dark = Color3.fromRGB(99, 108, 121),
-	},
-	emerald = {
-		base = Color3.fromRGB(137, 146, 124),
-		light = Color3.fromRGB(173, 181, 157),
-		dark = Color3.fromRGB(98, 107, 89),
-	},
-	gold = {
-		base = Color3.fromRGB(199, 172, 128),
-		light = Color3.fromRGB(226, 205, 163),
-		dark = Color3.fromRGB(156, 128, 92),
-	},
-}
-
+-- stone family and trim metal per kingdom hue style: KingdomStyle is the single table (FL-0127)
+local STONE: { [string]: Stone } = {}
 -- trim metal / emblem colour per kingdom: gold, silver, bronze, royal purple (+ ivory)
-local TRIM: { [string]: Color3 } = {
-	neutral = Color3.fromRGB(236, 228, 210),
-	crimson = C.gold,
-	azure = Color3.fromRGB(226, 232, 240),
-	emerald = Color3.fromRGB(214, 160, 82),
-	gold = Color3.fromRGB(112, 62, 150),
-}
+local TRIM: { [string]: Color3 } = {}
+for id, st in KingdomStyle.STYLES do
+	STONE[id] = st.stone
+	TRIM[id] = st.trim
+end
 local IVORY = Color3.fromRGB(240, 232, 212)
 -- emerald banners/flags: lighter, high-saturation tint (KitTint > 1) with a cream border
 local EMERALD_LIGHT = 1.35
@@ -119,11 +98,11 @@ local POT = Color3.fromRGB(184, 98, 64)
 local FLOWERS = { Color3.fromRGB(226, 72, 92), Color3.fromRGB(246, 206, 70), Color3.fromRGB(176, 108, 214) }
 
 local function stoneFor(style: string): Stone
-	return STONE[style] or STONE.neutral
+	return KingdomStyle.get(style).stone
 end
 
 local function trimFor(style: string): Color3
-	return TRIM[style] or TRIM.neutral
+	return KingdomStyle.get(style).trim
 end
 
 -- Deterministic jitter in [-amp, amp].
@@ -506,7 +485,7 @@ local function stonePlinth(
 				bh = h + 0.03 -- never flush with the core's top face
 			end
 			local out = 0.32 + jit(sd * 5 + k, 0.1)
-			local col = if k % 3 == 0 then S.light elseif k % 3 == 1 then S.base else shade(S.base, 1.07)
+			local col = if k % 3 == 0 then S.accent elseif k % 3 == 1 then S.base else shade(S.base, 1.07)
 			local size, pos
 			if alongX then
 				size = Vector3.new(bl - 0.14, bh, 1)
@@ -706,6 +685,9 @@ end
 -- Tile roof: courses of slabs (each course laps over the one below), alternating shade, ridge cap,
 -- barge boards on the gable ends. Kingdom tiles: pass the raw kingdom colour + tint.
 local function tileRoof(ctx: Ctx, r: RoofSpec): RoofInfo
+	-- the kingdom's roof profile (KingdomStyle): pitch, eave overhang, gable reach, tile courses
+	local prof = KingdomStyle.get(ctx.style).roof
+	r = KingdomStyle.shapeRoof(ctx.style, r, 1.4, 1)
 	local base = r.cf or CFrame.new()
 	local s = r.d / 2
 	local theta = math.atan2(r.rise, s)
@@ -720,9 +702,10 @@ local function tileRoof(ctx: Ctx, r: RoofSpec): RoofInfo
 	local step = 0.17
 	local ends = if r.ends == 1 then { 1 } else { -1, 1 }
 	local k = 0
+	local roofTint = if r.tint then r.tint * prof.tint else nil
 	local function tileColor(f: number): (Color3, number?)
-		if r.tint then
-			return shade(r.color, r.tint * f), r.tint * f
+		if roofTint then
+			return shade(r.color, roofTint * f), roofTint * f
 		end
 		return shade(r.color, f), nil
 	end
@@ -730,8 +713,13 @@ local function tileRoof(ctx: Ctx, r: RoofSpec): RoofInfo
 		for i = 0, n - 1 do
 			k += 1
 			local lift = (n - 1 - i) * step
-			local f = if i % 2 == 0 then 1 else 0.86
+			local f = if i % 2 == 0 then 1 else prof.alt
 			local col, tint = tileColor(f)
+			if i == 0 and prof.capColor then
+				col, tint = prof.capColor, nil -- the course next to the ridge: snow
+			elseif i % 2 == 1 and prof.altColor then
+				col, tint = shade(prof.altColor, 1 + (i % 4 - 1) * 0.05), nil -- moss between the kingdom courses
+			end
 			local xw = W + jit(k * 3.1 + r.w, 0.16)
 			local xo = if r.ends == 1 then 0 else jit(k * 1.7 + r.d, 0.1)
 			block(
@@ -740,7 +728,7 @@ local function tileRoof(ctx: Ctx, r: RoofSpec): RoofInfo
 				Vector3.new(xw, t, du + 0.45),
 				slopeCF(base, yR, theta, side, (i + 0.5) * du - 0.2, t / 2 + lift, xo),
 				col,
-				M.ClayRoofTiles,
+				prof.material,
 				tint
 			)
 		end
@@ -748,6 +736,9 @@ local function tileRoof(ctx: Ctx, r: RoofSpec): RoofInfo
 	local top = (n - 1) * step + t
 	local ridgeY = yR + top / math.cos(theta)
 	local rc, rt = tileColor(0.62)
+	if prof.ridgeColor then
+		rc, rt = prof.ridgeColor, nil
+	end
 	block(
 		ctx,
 		"RidgeCap",
@@ -776,6 +767,7 @@ end
 
 -- Thatch roof: thick straw slabs with a lighter upper layer, rolled eaves, rolled ridge and verges.
 local function thatchRoof(ctx: Ctx, r: RoofSpec): RoofInfo
+	r = KingdomStyle.shapeRoof(ctx.style, r, 1.6, 1.2)
 	local base = r.cf or CFrame.new()
 	local s = r.d / 2
 	local theta = math.atan2(r.rise, s)
@@ -853,18 +845,26 @@ local function leanTo(
 	local n = rows or 2
 	local du = L / n
 	local c, s = math.cos(theta), math.sin(theta)
+	local prof = KingdomStyle.get(ctx.style).roof
+	local roofTint = if tint then tint * prof.tint else nil
 	for i = 0, n - 1 do
 		local f = if i % 2 == 0 then 1 else 0.87
 		local uc = (i + 0.5) * du - 0.15
 		local nn = 0.25 + (n - 1 - i) * 0.15
+		local col, tn = shade(color, (roofTint or 1) * f), if roofTint then roofTint * f else nil
+		if roofTint and i == 0 and prof.capColor then
+			col, tn = prof.capColor, nil -- snow on the high edge
+		elseif roofTint and i % 2 == 1 and prof.altColor then
+			col, tn = shade(prof.altColor, 1 + (i % 4 - 1) * 0.05), nil
+		end
 		block(
 			ctx,
 			"LeanToRoof",
 			Vector3.new(len, 0.5, du + 0.4),
 			cf * CFrame.new(0, -uc * s + nn * c, -uc * c - nn * s) * CFrame.Angles(-theta, 0, 0),
-			shade(color, (tint or 1) * f),
-			material or M.ClayRoofTiles,
-			if tint then tint * f else nil
+			col,
+			material or (if roofTint then prof.material else M.ClayRoofTiles),
+			tn
 		)
 	end
 end
@@ -1133,6 +1133,9 @@ local function crenellate(
 	local opts = o or {}
 	local m, mh, t = opts.m or 2.6, opts.h or 3, opts.t or 1.2
 	local g = opts.gap or 1.8
+	-- the kingdom's merlon proportions: the layout (count, spacing) stays, the stone gets taller or broader
+	local prop = KingdomStyle.get(ctx.style).merlon
+	local mw, mhs = m * prop.w, mh * prop.h
 	local skip = opts.skip or 0
 	for _, side in { { w, d, 1 }, { d, w, 0 } } do
 		local len, other, alongX = side[1], side[2], side[3] == 1
@@ -1141,13 +1144,15 @@ local function crenellate(
 		for i = 0, n - 1 do
 			local u = -len / 2 + m / 2 + i * stepU
 			local corner = i == 0 or i == n - 1
+			-- the end merlons keep their outer edge on the wall end whatever the proportion
+			u += if i == 0 then (mw - m) / 2 elseif i == n - 1 then -(mw - m) / 2 else 0
 			local skipped = skip > 0 and math.abs(u) > len / 2 - skip
 			if not (corner and not alongX) and not skipped and (alongX or not opts.xOnly) then
 				for _, s in { -1, 1 } do
 					local pos = if alongX
-						then Vector3.new(ox + u, y + mh / 2, oz + s * (other / 2 - t / 2))
-						else Vector3.new(ox + s * (other / 2 - t / 2), y + mh / 2, oz + u)
-					local size = if alongX then Vector3.new(m, mh, t) else Vector3.new(t, mh, m)
+						then Vector3.new(ox + u, y + mhs / 2, oz + s * (other / 2 - t / 2))
+						else Vector3.new(ox + s * (other / 2 - t / 2), y + mhs / 2, oz + u)
+					local size = if alongX then Vector3.new(mw, mhs, t) else Vector3.new(t, mhs, mw)
 					block(ctx, "Merlon", size, CFrame.new(pos), color, M.Slate)
 				end
 			end
@@ -1341,13 +1346,15 @@ local function banner(
 	style: string?,
 	width: number?
 )
-	local hh = h or 5
+	-- the kingdom's banner: a longer hang (Emberhold), a tail shape, a bolder tint (KingdomStyle)
+	local bs = KingdomStyle.get(style or ctx.style).banner
+	local hh = (h or 5) * bs.length
 	local bw = width or 2.6
 	local base = CFrame.new(x, y, z) * CFrame.Angles(0, rad(facing), 0)
 	cyl(ctx, "BannerPole", base * CFrame.new(0, 0.1, -0.45), bw + 0.9, 0.34, C.woodDark, M.Wood)
 	-- emerald (on green terrain): lighter, high-saturation cloth with a cream border
 	local emerald = (style or hueStyle(color)) == "emerald"
-	local f = if emerald then EMERALD_LIGHT else 1
+	local f = if emerald then EMERALD_LIGHT else bs.tint
 	local cloth = block(
 		ctx,
 		"Banner",
@@ -1358,15 +1365,35 @@ local function banner(
 		f
 	)
 	local s = bw / math.sqrt(2)
-	block(
-		ctx,
-		"BannerTip",
-		Vector3.new(s, s, 0.16),
-		base * CFrame.new(0, -hh, -0.45) * CFrame.Angles(0, 0, rad(45)),
-		shade(color, f),
-		M.Fabric,
-		f
-	)
+	if bs.tip == "round" then
+		-- a half-disc tail: the cylinder's upper half hides inside the cloth
+		disc(ctx, "BannerTip", base * CFrame.new(0, -hh, -0.45), bw, 0.16, shade(color, f), M.Fabric, f)
+	elseif bs.tip == "long" then
+		-- a long slashed pennon tail: one right-triangle wedge hanging a full cloth-width below the cloth
+		triangle(
+			ctx,
+			"BannerTip",
+			base,
+			Vector2.new(-bw / 2, -hh),
+			Vector2.new(-bw / 2, -hh - bw * 1.05),
+			Vector2.new(bw / 2, -hh),
+			-0.45,
+			0.16,
+			shade(color, f),
+			M.Fabric,
+			f
+		)
+	else
+		block(
+			ctx,
+			"BannerTip",
+			Vector3.new(s, s, 0.16),
+			base * CFrame.new(0, -hh, -0.45) * CFrame.Angles(0, 0, rad(45)),
+			shade(color, f),
+			M.Fabric,
+			f
+		)
+	end
 	if emerald then
 		block(
 			ctx,
