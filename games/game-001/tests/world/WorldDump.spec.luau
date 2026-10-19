@@ -162,14 +162,18 @@ local function dump()
 		end
 	end
 	assets.watchtower_neutral = partsOf(Kit.build("watchtower", 1, "complete", Kit.NEUTRAL_COLOR))
+	-- the neutral tower of every objective (FORGE-01's ObjectiveService builds them in the game: the watchtower and, since
+	-- FL-0127, the three outposts; the preview shows them all)
+	for _, obj in Layout.objectives do
+		local op = obj.cframe.Position
+		local ty = WorldPlan.groundHeight(Layout, op.X, op.Z)
+		table.insert(placements, {
+			assetId = "watchtower_neutral",
+			cframe = cf12(CFrame.new(op.X, ty, op.Z) * (obj.cframe - op)),
+			feature = "objective",
+		})
+	end
 	local o = Layout.objectives[1]
-	local op = o.cframe.Position
-	local ty = WorldPlan.groundHeight(Layout, op.X, op.Z)
-	table.insert(placements, {
-		assetId = "watchtower_neutral",
-		cframe = cf12(CFrame.new(op.X, ty, op.Z) * (o.cframe - op)),
-		feature = "objective",
-	})
 	return {
 		heightfield = { x0 = x0, z0 = z0, step = STEP, nx = nx, nz = nz, heights = heights, materials = materials },
 		waterY = -1.4,
