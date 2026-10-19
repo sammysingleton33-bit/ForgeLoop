@@ -130,6 +130,7 @@ local SLOT_PLAN = {
 
 local plots = {}
 local plotRoads: { [string]: { Vector2 } } = {}
+local plotPaths: { { kingdom: string, name: string, width: number, points: { Vector2 } } } = {}
 local plotFields = {}
 local resourceNodes = {}
 local regions: { [string]: { kingdom: string?, polygon: { Vector2 } } } = {}
@@ -201,6 +202,28 @@ for _, k in KINGDOMS do
 	end
 	plotRoads[k.id] = { flat(0, -36), flat(0, -62), flat(0, -110) }
 	plotRoads[`{k.id}_street`] = { flat(-110, -62), flat(0, -62), flat(110, -62) }
+	-- Worn lanes between the plot's buildings (`features.paths`, drawn as dirt by Kit/WorldGround; the ground only). They are
+	-- NOT features.roads on purpose: the sim reserves every road near a keep as no-build ground (Kingdom/Layout), and a lane
+	-- must never take a slot's or a field's place. Points are in the keep's frame (x right, z back; the keep door is at
+	-- z = -23, the yard crossroads at z = -62); each lane ends in front of a building door, a work area or a slot front.
+	local function lane(name: string, width: number, pts: { { number } })
+		local line = {}
+		for _, p in pts do
+			table.insert(line, flat(p[1], p[2]))
+		end
+		table.insert(plotPaths, { kingdom = k.id, name = name, width = width, points = line })
+	end
+	lane("keep", 8, { { 0, -26 }, { 0, -32 } })
+	lane("storehouse", 7, { { -12, -40 }, { -24, -34 }, { -37, -28 } })
+	lane("farm", 7, { { 12, -40 }, { 28, -32 }, { 44, -21 } })
+	lane("fields", 6, { { 28, -32 }, { 27, -10 }, { 26, 14 }, { 24, 34 }, { 24, 64 } })
+	lane("quarry", 7, { { 26, 14 }, { 30, 30 }, { 37, 38 }, { 43, 36 } })
+	lane("quarry_slot", 6, { { 58, 33 }, { 72, 24 }, { 82, 19 } })
+	lane("stone", 6, { { 66, 58 }, { 80, 60 } })
+	lane("lumbercamp", 7, { { -70, -62 }, { -76, -36 }, { -74, -8 }, { -72, 16 }, { -60, 28 } })
+	lane("lumber_slot", 6, { { -72, 14 }, { -82, 14 } })
+	lane("timber", 6, { { -58, 58 }, { -62, 66 }, { -66, 73 } })
+
 	-- farmland behind the keep, turned with the plot (clear of slots, wood nodes and the quarry)
 	local look = keepCF.LookVector
 	local keepYaw = math.atan2(-look.X, -look.Z)
@@ -556,6 +579,8 @@ local features = {
 		{ center = Vector2.new(560, -500), radius = 80, count = 16, species = { "tree_pine", "tree_birch" } },
 	},
 	fields = plotFields, -- { center: Vector2, size: Vector2, yaw: number, crop: string }
+	-- worn lanes inside the plots, { kingdom, name, width, points } (terrain only: Kit/WorldGround; not roads, see `lane`)
+	paths = plotPaths,
 	-- Dressing density knob (D-047, FL-0116): the share of each dressing kind WorldPlan.props keeps, the least
 	-- seen first to go (map edges, the ground between kingdoms). Never thinned: the plot showcase (fields,
 	-- buildings, slots and the farm's view), plot framing and approach roads for scatter props, and any forest stand
