@@ -13,6 +13,9 @@
 		}
 		Flow = { id: string, version: number, funnel: boolean?, startOn: string? (bus event that starts the
 		         flow for its subject players; default "PlayerReady"; game-001 uses "KingdomJoined"),
+		         startMatch: { [string]: primitive }? (the start event's subject info must have these values,
+		         e.g. { role = "defender", on = true }; FL-0137),
+		         tip: boolean? (a one-step tip; see Tips below),
 		         steps: { Step }, completeReward: Reward? }
 		subjects = { [eventName]: resolver }?   -- who a game event is about (Experience/Subjects)
 		Step = {
@@ -36,6 +39,10 @@
 	Progress (persisted in experience.onboarding.flows[flowId] through SettingsService):
 		{ version, completed: number, skipped: boolean, startedAt: number?, finishedAt: number?,
 		  satisfied: { [stepId]: true } }
+	Tips (FL-0137): a flow with tip = true is a contextual hint, not a tutorial. It has exactly one step,
+	no reward, no funnel and an autoAdvanceSec of at most TIP_MAX_SEC, so it hides by itself and never
+	waits for anything; its step is not auto (an auto step would finish before it shows). Its progress
+	is stored like any flow, so a finished or dismissed (skipped) tip never shows again.
 	Rules
 	- Steps run in order; a later step's BUS trigger that fires early is remembered (satisfied) and that
 	  step completes as soon as it becomes current, so the tutorial never asks for something already done.
@@ -45,6 +52,7 @@
 
 	API
 		Onboarding.validate(config, knownBusEvents) -> { string }
+		Onboarding.startMatches(flow, info) -> boolean          -- the start event's subject info fits startMatch
 		Onboarding.restore(flow, stored, now) -> State
 		Onboarding.begin(flow, state, now) -> { Transition }               -- auto steps at the start
 		Onboarding.handle(flow, state, trigger, now) -> ({ Transition }, satisfiedChanged)  -- trigger = { bus, info } | { client }
@@ -65,6 +73,10 @@ local Onboarding = {}
 
 local NAME_PATTERN = "^[A-Z][A-Za-z0-9]*$"
 local ID_PATTERN = "^[a-z][a-z0-9_]*$"
+
+Onboarding.TIP_MAX_SEC = 20 -- a tip hides by itself within this many seconds
+
+local PRIMITIVE = table.freeze({ string = true, number = true, boolean = true })
 
 export type Transition = { index: number, id: string, via: string, reward: any? }
 
@@ -135,9 +147,38 @@ function Onboarding.validate(config: any, knownBusEvents: { string }): { string 
 		if flow.startOn ~= nil and (type(flow.startOn) ~= "string" or not table.find(knownBusEvents, flow.startOn)) then
 			table.insert(problems, `{where}: startOn '{tostring(flow.startOn)}' is not a declared bus event`)
 		end
+		if flow.startMatch ~= nil then
+			local okMatch = type(flow.startMatch) == "table"
+			for key, value in (if okMatch then flow.startMatch else {}) do
+				okMatch = okMatch and type(key) == "string" and PRIMITIVE[type(value)] == true
+			end
+			if not okMatch then
+				table.insert(problems, `{where}: startMatch must map names to strings, numbers or booleans`)
+			end
+		end
 		if type(flow.steps) ~= "table" or #flow.steps == 0 then
 			table.insert(problems, `{where}: steps required`)
 			continue
+		end
+		if flow.tip then
+			local step = flow.steps[1]
+			local trigger = if type(step) == "table" then step.trigger else nil
+			if #flow.steps ~= 1 then
+				table.insert(problems, `{where}: a tip has exactly one step`)
+			end
+			if flow.funnel then
+				table.insert(problems, `{where}: a tip never logs the onboarding funnel`)
+			end
+			if flow.completeReward ~= nil or (type(step) == "table" and step.reward ~= nil) then
+				table.insert(problems, `{where}: a tip pays no reward`)
+			end
+			local hides = type(step) == "table" and step.autoAdvanceSec
+			if type(hides) ~= "number" or hides <= 0 or hides > Onboarding.TIP_MAX_SEC then
+				table.insert(problems, `{where}: a tip hides by itself: autoAdvanceSec 1-{Onboarding.TIP_MAX_SEC} s`)
+			end
+			if type(trigger) == "table" and trigger.auto then
+				table.insert(problems, `{where}: a tip's step cannot be auto (it would finish before it shows)`)
+			end
 		end
 		if #flow.steps > 30 then
 			table.insert(problems, `{where}: {#flow.steps} steps; keep tutorials to 30 or fewer`)
@@ -339,6 +380,16 @@ function Onboarding.unavailable(flow: any, has: (string) -> boolean): { [string]
 	return out
 end
 
+-- Whether a start event's subject info fits the flow's startMatch (no startMatch: always).
+function Onboarding.startMatches(flow: any, info: any): boolean
+	for key, expected in flow.startMatch or {} do
+		if type(info) ~= "table" or info[key] ~= expected then
+			return false
+		end
+	end
+	return true
+end
+
 function Onboarding.begin(flow: any, state: any, now: number): { Transition }
 	local out = {}
 	if Onboarding.done(flow, state) then
@@ -426,6 +477,7 @@ function Onboarding.snapshot(flow: any, state: any): { [string]: any }
 	local index, step = Onboarding.current(flow, state)
 	return {
 		flowId = flow.id,
+		tip = flow.tip == true, -- a contextual tip (FL-0137): "Got it", no counter, no celebration
 		total = #flow.steps,
 		completed = state.completed,
 		step = index,

@@ -32,6 +32,26 @@ local function deepCopy(value)
 	return out
 end
 
+-- A tip flow for the specs (FL-0137): starts when a Farm's construction starts, ends on the harvest.
+local function tipFlow()
+	return {
+		id = "tip_farm",
+		version = 1,
+		tip = true,
+		startOn = "ConstructionStarted",
+		startMatch = { buildingType = "Farm" },
+		steps = {
+			{
+				id = "FarmTip",
+				trigger = { bus = "ResourceProduced" },
+				hint = { title = "Farms feed your kingdom" },
+				expectSec = 10,
+				autoAdvanceSec = 10,
+			},
+		},
+	}
+end
+
 local function problemsOf(mutate)
 	local config = deepCopy(CONFIG)
 	mutate(config)
@@ -116,6 +136,79 @@ describe("Experience/Onboarding config rules", function()
 		expect(text).toContain("id must be PascalCase")
 		expect(text).toContain("duplicate step id")
 		expect(text).toContain("only one flow may log the onboarding funnel")
+	end)
+
+	it(
+		"accepts a tip and rejects one that has two steps, logs the funnel, pays, never hides or is auto (FL-0137)",
+		function()
+			expect(problemsOf(function(c)
+				table.insert(c.flows, tipFlow())
+			end)).toBe("")
+			local function tipProblems(change)
+				return problemsOf(function(c)
+					local flow = tipFlow()
+					change(flow)
+					table.insert(c.flows, flow)
+				end)
+			end
+			expect(tipProblems(function(flow)
+				table.insert(flow.steps, deepCopy(flow.steps[1]))
+				flow.steps[2].id = "FarmTipAgain"
+			end)).toContain("a tip has exactly one step")
+			expect(tipProblems(function(flow)
+				flow.funnel = true
+			end)).toContain("a tip never logs the onboarding funnel")
+			expect(tipProblems(function(flow)
+				flow.completeReward = { currency = "Coins", amount = 5 }
+			end)).toContain("a tip pays no reward")
+			expect(tipProblems(function(flow)
+				flow.steps[1].reward = { currency = "Coins", amount = 5 }
+				flow.steps[1].autoAdvanceSec = nil
+			end)).toContain("a tip pays no reward")
+			expect(tipProblems(function(flow)
+				flow.steps[1].autoAdvanceSec = nil
+			end)).toContain("a tip hides by itself: autoAdvanceSec 1-20 s")
+			expect(tipProblems(function(flow)
+				flow.steps[1].autoAdvanceSec = Onboarding.TIP_MAX_SEC + 1
+			end)).toContain("a tip hides by itself")
+			expect(tipProblems(function(flow)
+				flow.steps[1].autoAdvanceSec = 0
+			end)).toContain("a tip hides by itself")
+			expect(tipProblems(function(flow)
+				flow.steps[1].autoAdvanceSec = Onboarding.TIP_MAX_SEC
+			end)).toBe("")
+			expect(tipProblems(function(flow)
+				flow.steps[1].trigger = { auto = true }
+			end)).toContain("a tip's step cannot be auto")
+		end
+	)
+
+	it("rejects a startMatch that is not names to strings, numbers or booleans (FL-0137)", function()
+		expect(problemsOf(function(c)
+			c.flows[1].startMatch = { role = { "a" } }
+		end)).toContain("startMatch must map names to strings, numbers or booleans")
+		expect(problemsOf(function(c)
+			c.flows[1].startMatch = "Farm"
+		end)).toContain("startMatch must map names")
+		expect(problemsOf(function(c)
+			c.flows[1].startMatch = { [1] = "Farm" }
+		end)).toContain("startMatch must map names")
+		expect(problemsOf(function(c)
+			c.flows[1].startMatch = { role = "actor", count = 2, on = true }
+		end)).toBe("")
+	end)
+
+	it("startMatches: every startMatch key must match the subject's info; none always matches (FL-0137)", function()
+		local flow = tipFlow()
+		expect(Onboarding.startMatches(flow, { buildingType = "Farm", role = "actor" })).toBe(true)
+		expect(Onboarding.startMatches(flow, { buildingType = "House" })).toBe(false)
+		expect(Onboarding.startMatches(flow, {})).toBe(false)
+		expect(Onboarding.startMatches(flow, nil)).toBe(false)
+		flow.startMatch = { buildingType = "Farm", role = "actor" }
+		expect(Onboarding.startMatches(flow, { buildingType = "Farm" })).toBe(false)
+		expect(Onboarding.startMatches(FLOW, nil)).toBe(true)
+		expect(Onboarding.snapshot(flow, Onboarding.restore(flow, nil, 0)).tip).toBe(true)
+		expect(Onboarding.snapshot(FLOW, Onboarding.restore(FLOW, nil, 0)).tip).toBe(false)
 	end)
 end)
 
@@ -661,5 +754,88 @@ describe("OnboardingService", function()
 		expect(env3.mock:hasLog("warn", "reward not granted (EconomyService not loaded)")).toBe(true)
 		expect(env3.mock:hasLog("warn", "RemoteService not loaded")).toBe(true)
 		expect(s:state(p).stepId).toBe("UpgradeHall")
+	end)
+
+	it(
+		"a tip starts only on a start event that fits startMatch, once; it logs no funnel, completion or skip event (FL-0137)",
+		function()
+			GameEvents.disconnectAll()
+			env = MockEnv.new({ seed = 24 })
+			bus = FakeBus.new({ extra = TestOnboarding.EXTRA_EVENTS })
+			data = FakeDataService.new()
+			remotes = FakeRemoteService.new({ declarations = ExperienceRemotes })
+			local config = deepCopy(CONFIG)
+			table.insert(config.flows, tipFlow())
+			registry = boot(env, data, remotes, config)
+			service = registry:get("OnboardingService")
+			player = env.mock.players:add({ userId = 903 })
+			data:load(player, nil)
+			bus.PlayerReady:fire(player)
+			-- a Skip for a tip that has not started is refused (and the remote handler does not error)
+			expect((remotes:call("Experience.OnboardingSkip", player, "tip_farm"))).toBe(true)
+			expect(service:skip(player, "tip_farm")).toBe(false)
+			expect(service:state(player, "tip_farm")).toBeNil()
+			bus.ConstructionStarted:fire(player, { buildingType = "House" })
+			expect(service:state(player, "tip_farm")).toBeNil()
+			bus.ConstructionStarted:fire(player, { buildingType = "Farm" })
+			local tip = service:state(player, "tip_farm")
+			expect(tip.tip).toBe(true)
+			expect(tip.stepId).toBe("FarmTip")
+			bus.ResourceProduced:fire(player, { resource = "Food", amount = 1, total = 1 })
+			expect(service:state(player, "tip_farm").done).toBe(true)
+			local custom = {}
+			for _, call in env.AnalyticsService:callsTo("LogCustomEvent") do
+				custom[call.args[1]] = true
+			end
+			expect(custom.OnboardingCompleted).toBeNil() -- the tutorial is still running: no completion at all
+			expect(onboardingSteps(env)).toEqual({ "Arrive" }) -- the tip's step is not a funnel step
+			-- a second Farm: the tip is done and never starts again
+			bus.ConstructionStarted:fire(player, { buildingType = "Farm" })
+			expect(service:state(player, "tip_farm").done).toBe(true)
+			local pushes = 0
+			for _, entry in remotes:sentTo("Experience.OnboardingState", player) do
+				if entry.args[1].flowId == "tip_farm" then
+					pushes += 1
+				end
+			end
+			expect(pushes).toBe(2) -- shown, then hidden
+			-- stored like any flow: a rejoin keeps it finished
+			expect(data:get(player, "experience").onboarding.flows.tip_farm.finishedAt ~= nil).toBe(true)
+			-- the tutorial is untouched by the tip
+			expect(service:state(player, "first_session").stepId).toBe("MoveRuler")
+		end
+	)
+
+	it("dismissing a tip (Skip) logs no OnboardingSkipped and keeps it dismissed (FL-0137)", function()
+		local config = deepCopy(CONFIG)
+		table.insert(config.flows, tipFlow())
+		GameEvents.disconnectAll()
+		env = MockEnv.new({ seed = 25 })
+		bus = FakeBus.new({ extra = TestOnboarding.EXTRA_EVENTS })
+		data = FakeDataService.new()
+		remotes = FakeRemoteService.new({ declarations = ExperienceRemotes })
+		registry = boot(env, data, remotes, config)
+		service = registry:get("OnboardingService")
+		player = env.mock.players:add({ userId = 904 })
+		data:load(player, nil)
+		bus.PlayerReady:fire(player)
+		bus.ConstructionStarted:fire(player, { buildingType = "Farm" })
+		expect(service:skip(player, "tip_farm")).toBe(true)
+		expect(service:state(player, "tip_farm").skipped).toBe(true)
+		for _, call in env.AnalyticsService:callsTo("LogCustomEvent") do
+			expect(call.args[1] ~= "OnboardingSkipped").toBe(true)
+		end
+		expect(env.mock:hasLog("info", "onboarding tip dismissed")).toBe(true)
+		env.mock:advance(30)
+		expect(service:state(player, "tip_farm").skipped).toBe(true)
+		-- the tutorial's own Skip still logs OnboardingSkipped
+		expect(service:skip(player, "first_session")).toBe(true)
+		local skipped = 0
+		for _, call in env.AnalyticsService:callsTo("LogCustomEvent") do
+			if call.args[1] == "OnboardingSkipped" then
+				skipped += 1
+			end
+		end
+		expect(skipped).toBe(1)
 	end)
 end)

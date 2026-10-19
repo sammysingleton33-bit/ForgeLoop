@@ -22,6 +22,8 @@
 	| CitizenAnswered    | (player, kingdomId, citizenId, decisionId, secondsOpen?) | the answering player    | kingdom, decision, secondsOpen, occupation (no ids) |
 	| ObjectiveCaptured  | (objectiveId, kingdomId)                       | members of kingdomId              | objectiveId, kingdom                         |
 	| KingdomEliminated  | (kingdomId, by?)                               | members of kingdomId / of by      | role = "eliminated" / "victor", kingdom, by  |
+	| WarChanged         | (kingdomId, otherId, atWar, by?)               | members of both kingdoms          | role, atWar, kingdom, other (FL-0137)        |
+	| SiegeChanged / RaidChanged | (kingdomId, on, { byKingdomIds, ... }) | members of kingdomId / of each attacker | role = "defender" / "attacker", on, kingdom, other |
 	| MatchEnded         | ({ winner?, standings, durationSec })          | every player                      | won, durationSec, winner                     |
 ]]
 
@@ -98,6 +100,44 @@ local function buildingInfo(building: any): { [string]: any }
 	return { buildingType = building.type, level = building.level, kingdom = building.kingdom }
 end
 
+-- WarChanged roles (G9): a declaration's kingdomId is the declarer and otherId the target; a peace's
+-- kingdomId accepted what otherId proposed.
+local function warRoles(atWar: boolean): (string, string)
+	if atWar then
+		return "declarer", "target"
+	end
+	return "acceptor", "proposer"
+end
+
+-- SiegeChanged and RaidChanged (G9, Sim/WarWatch): the attacked kingdom's members defend; each
+-- attacking kingdom's members (byKingdomIds, once each) attack. info.other names the other side.
+local function warWatch(args: { any }, ctx: any): { Subject }
+	local kingdomId, on, details = args[1], args[2] == true, args[3]
+	if type(kingdomId) ~= "string" then
+		return {}
+	end
+	local attackers = if type(details) == "table" and type(details.byKingdomIds) == "table"
+		then details.byKingdomIds
+		else {}
+	local out =
+		each(Signals.members(ctx, kingdomId), { role = "defender", on = on, kingdom = kingdomId, other = attackers[1] })
+	local seen = { [kingdomId] = true }
+	for _, attacker in attackers do
+		if type(attacker) == "string" and not seen[attacker] then
+			seen[attacker] = true
+			for _, subject in
+				each(
+					Signals.members(ctx, attacker),
+					{ role = "attacker", on = on, kingdom = attacker, other = kingdomId }
+				)
+			do
+				table.insert(out, subject)
+			end
+		end
+	end
+	return out
+end
+
 local function forMembers(args: { any }, ctx: any): { Subject }
 	local building = args[1]
 	if type(building) ~= "table" then
@@ -164,6 +204,23 @@ Signals.subjects = table.freeze({
 		end
 		return out
 	end,
+	WarChanged = function(args: { any }, ctx: any): { Subject }
+		local first, other, atWar = args[1], args[2], args[3] == true
+		if type(first) ~= "string" or type(other) ~= "string" then
+			return {}
+		end
+		local firstRole, otherRole = warRoles(atWar)
+		local out =
+			each(Signals.members(ctx, first), { role = firstRole, atWar = atWar, kingdom = first, other = other })
+		for _, subject in
+			each(Signals.members(ctx, other), { role = otherRole, atWar = atWar, kingdom = other, other = first })
+		do
+			table.insert(out, subject)
+		end
+		return out
+	end,
+	SiegeChanged = warWatch,
+	RaidChanged = warWatch,
 	MatchEnded = function(args: { any }, ctx: any): { Subject }
 		local result = args[1]
 		if type(result) ~= "table" then
