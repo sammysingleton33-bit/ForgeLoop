@@ -159,3 +159,8 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   check passed. B20.1 shipped without them and its row claimed them; FORGE-00 caught it with
   `git merge-base --is-ancestor`. Check `base.ref == main` before every merge, and run the ancestor check for every
   claimed PR before cutting a build (merge-checklist §5, §6).
+
+## Run long gates as tracked background jobs, not detached shell jobs (`repeated`, 2026-10-19)
+- **What happened:** twice on 2026-10-19 (g209 at 05:26, gate 8g at 09:39) a full `check.sh` started with a trailing `&` from a tool call died partway through the sim shards. There was no error and no OVERALL line, and the log simply stopped. A worker noticed only at the next scheduled check, about 20 minutes later.
+- **Rule:** start `check.sh` as a tracked background job (the harness's run-in-background, which notifies on exit), and write OVERALL plus the per-step lines to the job output. When a log has an older mtime and no OVERALL line, treat the run as dead and rerun it; never read it as still running.
+- **Also:** don't `git checkout` in the worktree a gate is running in. Use a second worktree for side checks (FORGE-05 uses fl-b2 for gates and fl-m93 for probes).
