@@ -151,3 +151,11 @@ jobs:
           path: roblox/build/forgeloop-game001-${{ steps.place.outputs.short }}.rbxl
           if-no-files-found: error
           retention-days: 30
+      - name: Upload Crown Arena fairness report (FL-0076)
+        if: steps.changes.outputs.run == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v6
+        with:
+          name: forgeloop-fairness-${{ steps.place.outputs.short }}
+          path: roblox/build/fairness/report.md
+          if-no-files-found: warn
+          retention-days: 30
