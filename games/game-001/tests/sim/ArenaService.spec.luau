@@ -471,6 +471,52 @@ describe("ArenaService: the duel", function()
 		env.mock:advance(0.2)
 		expect(humanoid.WalkSpeed).toBe(40)
 	end)
+	it("stands a seated champion up, off the throne, before placing them", function()
+		local world = boot({ 1, 2 })
+		world.arena.placeAt = nil -- the real ArenaService:_place
+		reachArena(world)
+		local adapter = world.kingdoms.adapter
+		local humanoid = world.players[1].Character.Humanoid
+		local seat = world.env.newInstance("Seat")
+		local seated = world.players[1].Character
+		humanoid.Jump = false
+		local log: { string } = {}
+		local jumpAtPivot = false
+		adapter.seatOf = function(character: any): any?
+			return if character == seated and seat ~= nil then seat else nil
+		end
+		adapter.unseat = function(character: any, from: any)
+			expect(character).toBe(seated)
+			expect(from).toBe(seat)
+			table.insert(log, "unseat")
+			seat = nil -- the character is free
+		end
+		local pivot = adapter.pivot
+		adapter.pivot = function(character: any, cframe: any)
+			if character == seated then
+				table.insert(log, "pivot")
+				jumpAtPivot = humanoid.Jump
+			end
+			pivot(character, cframe)
+		end
+		advanceTo(world, "intro")
+		expect(log[1]).toBe("unseat")
+		expect(log[2]).toBe("pivot")
+		expect(jumpAtPivot).toBe(true) -- a jump besides, in case Sit = false alone leaves the weld
+	end)
+
+	it("gives the champions their WalkSpeed back when the match calls the arena off mid-duel", function()
+		local world = boot({ 1, 2 })
+		reachArena(world)
+		advanceTo(world, "duel")
+		local humanoid = world.players[1].Character.Humanoid
+		expect(humanoid.WalkSpeed).toBe(world.arena.config.ring.walkSpeed)
+		world.match.host.match:_cancelArena("spec")
+		world.env.mock:advance(0.2)
+		expect(humanoid.WalkSpeed).toBe(40)
+		expect(world.players[2].Character.Humanoid.WalkSpeed).toBe(40)
+	end)
+
 	it(
 		"the real teleport puts each champion's character on its venue mark, at the mark's height, facing the other",
 		function()
