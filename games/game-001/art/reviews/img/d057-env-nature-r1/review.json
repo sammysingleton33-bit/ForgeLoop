@@ -1,0 +1,219 @@
+{
+ "review": "D-019 fresh image-only reviewer, FL-0136 phase 2 (nature and crops), author round 1 (no round 2 was needed: SET B passed in all three groups)",
+ "date": "2026-10-19",
+ "reviewed_commit": "forge/02-blender-fl0136-nature, the kit files committed at 2e48a633 (unchanged since)",
+ "geometry_hash": {
+  "env_kit_01": "61bac208a4421907",
+  "env_kit_02": "9bae7f81ca87c259"
+ },
+ "method": "one fresh Claude Code session per family group (no memory of the author), sparse checkout of this image folder only, told to open the listed JPEGs and apply the rubric in review_prompt.md; blind: the sheets say SET A / SET B only, the column order flips on alternate sheets, the key (key.json) was withheld until the replies were saved. SET A = the part-built Kit stand-ins, SET B = the style-B meshes.",
+ "prompt": "review_prompt.md (the template; __FOLDER__ and __IMAGES__ were filled per group with the lists below)",
+ "groups": {
+  "trees_bushes_flowers": {
+   "session": "session_01LoutSfVRK1oYexT4X1j214",
+   "images": [
+    "sheet_settlement_crimson.jpg",
+    "sheet_forest_broadleaf.jpg",
+    "sheet_forest_pine.jpg",
+    "sheet_trees_lineup.jpg",
+    "sheet_trees_close.jpg",
+    "sheet_bushes_lineup.jpg"
+   ],
+   "scores": {
+    "A": {
+     "silhouette": 4,
+     "variation": 3,
+     "readability": 4,
+     "proportions": 3,
+     "palette": 4,
+     "detail": 4,
+     "cohesion": 3,
+     "cost": 3
+    },
+    "B": {
+     "silhouette": 4,
+     "variation": 4,
+     "readability": 4,
+     "proportions": 4,
+     "palette": 4,
+     "detail": 4,
+     "cohesion": 4,
+     "cost": 4
+    }
+   },
+   "verdict": {
+    "A": "NEEDS-WORK",
+    "B": "PASS"
+   },
+   "best_overall": "B",
+   "ship": {
+    "A": false,
+    "B": true
+   },
+   "per_sheet_defects": {
+    "sheet_settlement_crimson.jpg": [
+     "Set A's smooth, rounded canopies look soft and balloon-like next to the angular keep, houses and citizens. Set B's faceted trees match the buildings better. In both sets the aerial-camera oaks and bushes are small and clumped, and the bright flat grass makes the scene look sparse.",
+     "Set B's dark pines and dark oak faces sink toward near-black in the shadowed areas. Set A's lighter highlight lobes on oaks are the only thing separating them from the pines at the aerial camera."
+    ],
+    "sheet_forest_broadleaf.jpg": [
+     "In Set A the oaks are all clusters of 3 to 5 overlapping spheres, so a stand reads as repeated cloud-blobs. The lit lobes look pasted on, and the birch canopies are blobby lollipops on trunks that look detached.",
+     "Set B's oaks vary better in canopy outline and size. The birch is a faceted blob on a thin tilted trunk, similar in silhouette to a lollipop, and at the aerial camera birches and bushes are close to indistinguishable specks in both sets."
+    ],
+    "sheet_forest_pine.jpg": [
+     "Set A's pines are stacks of flat, jagged plates that look messy and unlike a conical conifer. The large plate pine at the bottom of the frame reads as a heap of shards. Set A's oaks are plain spherical clumps.",
+     "Set B's pines read clearly as tall cones and are easy to tell from oaks, but they are very dark and uniform in tone. Pine silhouettes in B are similar to each other, so the stand looks a bit like copies."
+    ],
+    "sheet_trees_lineup.jpg": [
+     "Set A's 8 oaks differ mostly by lobe arrangement, and their outlines are all rounded mounds, so the variation is weaker than the 8-variant count implies. Its six pines look near-identical in outline.",
+     "Set B's oaks differ more in width, height and lean, and its pines vary in height and taper. The six birches are almost the same in both sets, and Set B has a few oak pairs that are close to duplicates."
+    ],
+    "sheet_trees_close.jpg": [
+     "Set A's pine is built from loose flat plates with visible gaps, and its oak lobes show flat-shaded overlap seams. The trunk collars look like pasted-on rings.",
+     "Set B's faceting is consistent, but the canopy facets are uneven and some oak crowns look lumpy and untidy. The birch trunk is thin and floats slightly against its canopy."
+    ],
+    "sheet_bushes_lineup.jpg": [
+     "In Set A the plain bushes are near-identical green mounds, and the flower tufts are tiny colour dots that differ only by hue. At the 82-stud camera they are hard to tell apart.",
+     "Set B's bushes are faceted and the berry and blossom bushes read clearly. The three plain bushes are still similar to each other, and the flowers are very small. B's tuft shapes and colours differ more than A's, though."
+    ]
+   },
+   "fixes_for_the_weaker_set": [
+    "Rebuild the oak canopies with different silhouettes (wide and flat, tall and narrow, lopsided, split-crown) instead of re-arranging the same 3 to 5 spheres.",
+    "Replace the plate-stack pines with a tiered conical silhouette: fewer, wider and more regular tiers with no gaps, and vary their height and taper.",
+    "Give the bushes more variation in outline and size, and make the flower tufts differ in shape and height as well as colour.",
+    "Make the shapes chunky and faceted rather than smooth, to match the buildings and citizens.",
+    "Cut the part count (oak 16, pine 22, wheat 17, cabbage 65) by merging parts. At hundreds of props the bundles are heavy against the 25,000-part budget."
+   ],
+   "notes": "Scored only trees, bushes and flower tufts, as asked. Set B is better on silhouette variation, shape language and cohesion with the faceted buildings, and it is far cheaper in part count: one mesh plus a root part per prop, against 5 to 22 parts per prop in Set A. Set B's weak points are very dark pines and oak shadow sides, near-identical birches, and plain bushes that look alike. None of these is blocking. Set A fails the variation gate (3 is below the required 4), mainly because its oaks and plain bushes are repeated blob shapes.",
+   "reply_verbatim": "I opened all six sheets. In the pine and close-up sheets the A and B panels are swapped (B on the left, A on the right), and I scored by the printed labels.\n\n```json\n{\"scores\": {\"A\": {\"silhouette\": 4, \"variation\": 3, \"readability\": 4, \"proportions\": 3, \"palette\": 4, \"detail\": 4, \"cohesion\": 3, \"cost\": 3},\n\"B\": {\"silhouette\": 4, \"variation\": 4, \"readability\": 4, \"proportions\": 4, \"palette\": 4, \"detail\": 4, \"cohesion\": 4, \"cost\": 4}},\n\"verdict\": {\"A\": \"NEEDS-WORK\", \"B\": \"PASS\"}, \"best_overall\": \"B\",\n\"per_sheet_defects\": {\n\"sheet_settlement_crimson.jpg\": [\"Set A's smooth, rounded canopies look soft and balloon-like next to the angular keep, houses and citizens. Set B's faceted trees match the buildings better. In both sets the aerial-camera oaks and bushes are small and clumped, and the bright flat grass makes the scene look sparse.\", \"Set B's dark pines and dark oak faces sink toward near-black in the shadowed areas. Set A's lighter highlight lobes on oaks are the only thing separating them from the pines at the aerial camera.\"],\n\"sheet_forest_broadleaf.jpg\": [\"In Set A the oaks are all clusters of 3 to 5 overlapping spheres, so a stand reads as repeated cloud-blobs. The lit lobes look pasted on, and the birch canopies are blobby lollipops on trunks that look detached.\", \"Set B's oaks vary better in canopy outline and size. The birch is a faceted blob on a thin tilted trunk, similar in silhouette to a lollipop, and at the aerial camera birches and bushes are close to indistinguishable specks in both sets.\"],\n\"sheet_forest_pine.jpg\": [\"Set A's pines are stacks of flat, jagged plates that look messy and unlike a conical conifer. The large plate pine at the bottom of the frame reads as a heap of shards. Set A's oaks are plain spherical clumps.\", \"Set B's pines read clearly as tall cones and are easy to tell from oaks, but they are very dark and uniform in tone. Pine silhouettes in B are similar to each other, so the stand looks a bit like copies.\"],\n\"sheet_trees_lineup.jpg\": [\"Set A's 8 oaks differ mostly by lobe arrangement, and their outlines are all rounded mounds, so the variation is weaker than the 8-variant count implies. Its six pines look near-identical in outline.\", \"Set B's oaks differ more in width, height and lean, and its pines vary in height and taper. The six birches are almost the same in both sets, and Set B has a few oak pairs that are close to duplicates.\"],\n\"sheet_trees_close.jpg\": [\"Set A's pine is built from loose flat plates with visible gaps, and its oak lobes show flat-shaded overlap seams. The trunk collars look like pasted-on rings.\", \"Set B's faceting is consistent, but the canopy facets are uneven and some oak crowns look lumpy and untidy. The birch trunk is thin and floats slightly against its canopy.\"],\n\"sheet_bushes_lineup.jpg\": [\"In Set A the plain bushes are near-identical green mounds, and the flower tufts are tiny colour dots that differ only by hue. At the 82-stud camera they are hard to tell apart.\", \"Set B's bushes are faceted and the berry and blossom bushes read clearly. The three plain bushes are still similar to each other, and the flowers are very small. B's tuft shapes and colours differ more than A's, though.\"]},\n\"fixes_for_the_weaker_set\": [\"Rebuild the oak canopies with different silhouettes (wide and flat, tall and narrow, lopsided, split-crown) instead of re-arranging the same 3 to 5 spheres.\", \"Replace the plate-stack pines with a tiered conical silhouette: fewer, wider and more regular tiers with no gaps, and vary their height and taper.\", \"Give the bushes more variation in outline and size, and make the flower tufts differ in shape and height as well as colour.\", \"Make the shapes chunky and faceted rather than smooth, to match the buildings and citizens.\", \"Cut the part count (oak 16, pine 22, wheat 17, cabbage 65) by merging parts. At hundreds of props the bundles are heavy against the 25,000-part budget.\"],\n\"ship\": {\"A\": false, \"B\": true},\n\"notes\": \"Scored only trees, bushes and flower tufts, as asked. Set B is better on silhouette variation, shape language and cohesion with the faceted buildings, and it is far cheaper in part count: one mesh plus a root part per prop, against 5 to 22 parts per prop in Set A. Set B's weak points are very dark pines and oak shadow sides, near-identical birches, and plain bushes that look alike. None of these is blocking. Set A fails the variation gate (3 is below the required 4), mainly because its oaks and plain bushes are repeated blob shapes.\"}\n```\n"
+  },
+  "rocks_boulders_nodes": {
+   "session": "session_01AdaWs4n75YYboXVj6JCNp7",
+   "images": [
+    "sheet_settlement_emerald.jpg",
+    "sheet_rocks_lineup.jpg",
+    "sheet_nodes_lineup.jpg"
+   ],
+   "scores": {
+    "A": {
+     "silhouette": 3,
+     "variation": 2,
+     "readability": 3,
+     "proportions": 3,
+     "palette": 3,
+     "detail": 3,
+     "cohesion": 3,
+     "cost": 5
+    },
+    "B": {
+     "silhouette": 4,
+     "variation": 4,
+     "readability": 4,
+     "proportions": 4,
+     "palette": 4,
+     "detail": 4,
+     "cohesion": 4,
+     "cost": 4
+    }
+   },
+   "verdict": {
+    "A": "NEEDS-WORK",
+    "B": "PASS"
+   },
+   "best_overall": "B",
+   "ship": {
+    "A": false,
+    "B": true
+   },
+   "per_sheet_defects": {
+    "sheet_settlement_emerald.jpg": [
+     "At the 170-stud camera, rocks and nodes in both sets collapse to a few grey pixels and the gold node cannot be seen.",
+     "SET A's stone reads as pale rectangular slabs, like paving or building blocks rather than rock; SET B's rocks are darker and lumpier but still small and clumped."
+    ],
+    "sheet_rocks_lineup.jpg": [
+     "SET A's three large boulders are one repeated shape (slab, block and a stray green ball on top), and the medium and small boulders follow the same pattern, so variation is poor.",
+     "SET A's boulders look boxy and architectural, not natural; the green sphere reads as a bug.",
+     "SET B's three large boulders are similar to each other, and its moss-green facet tints are slightly noisy."
+    ],
+    "sheet_nodes_lineup.jpg": [
+     "SET A's three stone quarries are nearly identical stacked slabs, so they read as plinths and differ mostly in grey tone.",
+     "SET A's gold ore is small cubes on a flat slab and is weak at the gameplay distance.",
+     "SET B's quarries differ only mildly from one another, and they share a similar mass and outline."
+    ]
+   },
+   "fixes_for_the_weaker_set": [
+    "Replace the stacked-box construction with irregular, rotated and wedge-shaped parts so the outlines read as rock.",
+    "Give each boulder and quarry variant a distinct silhouette (a tall spire, a low flat slab, a split chunk) rather than the same stack scaled up.",
+    "Remove the green sphere on the large boulders, or turn it into a moss patch that clearly sits on the rock.",
+    "Make the gold ore larger, with angled crystal-like chunks and saturated gold, and add a dark base so it stands out at 170 studs.",
+    "Add rubble and broken-edge pieces to the quarries so they read as quarried stone, not paving."
+   ],
+   "notes": "I judged both sets only on the boulders and the stone and gold-ore nodes. SET B has an organic, faceted look that matches the chunky low-poly characters, and its gold ore is clearly readable. SET A's boxy construction is cheapest by a wide margin, but it fails silhouette and variation. At the aerial camera both sets are weak for rocks and nodes because they are tiny, so the nodes may need to be scaled up or given an icon or marker. SET B's cost of roughly 116 to 268 triangles per boulder and 200 to 218 per node is acceptable for a mobile game with hundreds of props, provided the world-part budget holds.",
+   "reply_verbatim": "**Sheet defects**\n\n- **sheet_settlement_emerald.jpg:** In this sheet SET B is on the left and SET A is on the right. At the aerial camera, the rocks and nodes in both sets shrink to a handful of grey pixels. The gold node is effectively invisible in both. At the 82-stud camera, SET A's stone reads as pale rectangular slabs, like building blocks or paving rather than rock. SET B's rocks are darker and lumpier and read better against the grass, but they are still small and clumped.\n- **sheet_rocks_lineup.jpg:** In this sheet SET B is on the left and SET A is on the right. SET A's three large boulders are one shape repeated: a dark slab with a lighter block and a green ball on top. The medium and small ones are the same. They read as architectural blocks, and the green ball looks like a mistake. SET A's variants differ little in outline. SET B's boulders are faceted, with moss-green face tints, and the outlines differ across the nine. The three large ones are still fairly alike, and the green facets are slightly noisy.\n- **sheet_nodes_lineup.jpg:** In this sheet SET A is on the left and SET B is on the right. SET A's three stone quarries are almost identical stacked slabs with a different grey. Its gold ore is small gold cubes on a flat slab, readable but weak, and the stone quarries read as plinths rather than quarries. SET B's gold nodes have clearly gold, crystal-like faceted chunks on a dark rock pile, so they read as ore at both cameras. SET B's quarries are also only mildly varied (one has a pale top, one a dark one, plus scattered rubble), but they have a more natural, broken silhouette and visible rubble.\n\n```json\n{\"scores\": {\"A\": {\"silhouette\": 3, \"variation\": 2, \"readability\": 3, \"proportions\": 3, \"palette\": 3, \"detail\": 3, \"cohesion\": 3, \"cost\": 5}, \"B\": {\"silhouette\": 4, \"variation\": 4, \"readability\": 4, \"proportions\": 4, \"palette\": 4, \"detail\": 4, \"cohesion\": 4, \"cost\": 4}},\n \"verdict\": {\"A\": \"NEEDS-WORK\", \"B\": \"PASS\"}, \"best_overall\": \"B\",\n \"per_sheet_defects\": {\n  \"sheet_settlement_emerald.jpg\": [\"At the 170-stud camera, rocks and nodes in both sets collapse to a few grey pixels and the gold node cannot be seen.\", \"SET A's stone reads as pale rectangular slabs, like paving or building blocks rather than rock; SET B's rocks are darker and lumpier but still small and clumped.\"],\n  \"sheet_rocks_lineup.jpg\": [\"SET A's three large boulders are one repeated shape (slab, block and a stray green ball on top), and the medium and small boulders follow the same pattern, so variation is poor.\", \"SET A's boulders look boxy and architectural, not natural; the green sphere reads as a bug.\", \"SET B's three large boulders are similar to each other, and its moss-green facet tints are slightly noisy.\"],\n  \"sheet_nodes_lineup.jpg\": [\"SET A's three stone quarries are nearly identical stacked slabs, so they read as plinths and differ mostly in grey tone.\", \"SET A's gold ore is small cubes on a flat slab and is weak at the gameplay distance.\", \"SET B's quarries differ only mildly from one another, and they share a similar mass and outline.\"]},\n \"fixes_for_the_weaker_set\": [\"Replace the stacked-box construction with irregular, rotated and wedge-shaped parts so the outlines read as rock.\", \"Give each boulder and quarry variant a distinct silhouette (a tall spire, a low flat slab, a split chunk) rather than the same stack scaled up.\", \"Remove the green sphere on the large boulders, or turn it into a moss patch that clearly sits on the rock.\", \"Make the gold ore larger, with angled crystal-like chunks and saturated gold, and add a dark base so it stands out at 170 studs.\", \"Add rubble and broken-edge pieces to the quarries so they read as quarried stone, not paving.\"],\n \"ship\": {\"A\": false, \"B\": true},\n \"notes\": \"I judged both sets only on the boulders and the stone and gold-ore nodes. SET B has an organic, faceted look that matches the chunky low-poly characters, and its gold ore is clearly readable. SET A's boxy construction is cheapest by a wide margin, but it fails silhouette and variation. At the aerial camera both sets are weak for rocks and nodes because they are tiny, so the nodes may need to be scaled up or given an icon or marker. SET B's cost of roughly 116 to 268 triangles per boulder and 200 to 218 per node is acceptable for a mobile game with hundreds of props, provided the world-part budget holds.\"}\n```\n"
+  },
+  "crops": {
+   "session": "session_01XFzLWTYVSQFKXAP6nf2M8L",
+   "images": [
+    "sheet_crops.jpg",
+    "sheet_wheat_stages.jpg",
+    "sheet_settlement_emerald.jpg"
+   ],
+   "scores": {
+    "A": {
+     "silhouette": 2,
+     "variation": 2,
+     "readability": 2,
+     "proportions": 3,
+     "palette": 3,
+     "detail": 2,
+     "cohesion": 3,
+     "cost": 5
+    },
+    "B": {
+     "silhouette": 4,
+     "variation": 4,
+     "readability": 4,
+     "proportions": 4,
+     "palette": 4,
+     "detail": 4,
+     "cohesion": 4,
+     "cost": 3
+    }
+   },
+   "verdict": {
+    "A": "NEEDS-WORK",
+    "B": "PASS"
+   },
+   "best_overall": "B",
+   "ship": {
+    "A": false,
+    "B": true
+   },
+   "per_sheet_defects": {
+    "sheet_crops.jpg": [
+     "A: wheat is flat tan planks with no plant silhouette, and both fields are identical",
+     "A: cabbage is a uniform grid of identical green balls",
+     "B: haystack is small and low-contrast against the grass at the aerial camera",
+     "B: wheat is slightly spiky and noisy at gameplay distance"
+    ],
+    "sheet_wheat_stages.jpg": [
+     "A: the three growth stages are visually identical, so ripe cannot be told from unripe",
+     "B: the shoots stage is tiny and low-contrast against the soil at 82 studs"
+    ],
+    "sheet_settlement_emerald.jpg": [
+     "A: fields look like pale roof or plank rectangles and are flat at the aerial camera",
+     "B: fields are small in frame, the haystack is nearly invisible, and the tan wheat is close to the building roof colour"
+    ]
+   },
+   "fixes_for_the_weaker_set": [
+    "Replace the plank slabs with per-row plant shapes (stalk clumps with ear tips) so wheat has a plant silhouette",
+    "Give each growth stage a distinct height and colour: low green shoots, mid green, tall golden",
+    "Vary cabbage head size, colour and leaf shape, and add per-field variants for wheat",
+    "Give the haystack a conical or banded form and a darker straw colour so it separates from the grass"
+   ],
+   "notes": "Judged only on crop fields, the haystack and the wheat stages. Set B's cost is acceptable but is the heaviest crop item at about 1.4k triangles per field; it is fine for a handful of fields on screen, and worth watching if many fields are visible at once. Set B's minor issues are the faint shoots stage and the small haystack.",
+   "reply_verbatim": "Both sets are scored on the crop fields (wheat, cabbage), the haystack and the wheat growth stages only.\n\n**sheet_crops.jpg**\n- **Set A:** The wheat fields are flat tan plank rows. Nothing in the outline says \"wheat\", and they look like lumber or sandbags. The cabbage is a grid of identical green balls, which reads as a crop but is dull. The haystack is a smooth dome blob. The two wheat fields are identical copies, so there is no variation.\n- **Set B:** The wheat is a spiky ear silhouette with sparse red poppy flecks. The two wheat fields differ in density and orientation, so they read as different variants. The cabbage has frilly, lighter-and-darker heads that read as leaf vegetables. The haystack is small and somewhat low-contrast against the grass at the aerial camera. The wheat is a little noisy and spiky at 82 studs.\n\n**sheet_wheat_stages.jpg**\n- **Set A:** All three growth stages are the same tan slabs, with no visible change between shoots, green wheat and ripe. A player cannot tell ripe from unripe, which is a hard failure of readability.\n- **Set B:** There is a clear progression: gold ripe wheat, then green wheat, then tiny green shoots on bare soil. The shoots stage is faint and low-contrast at 82 studs, but it is still distinguishable.\n\n**sheet_settlement_emerald.jpg**\n- **Set A:** The farm fields are pale tan rectangles that look like roofs or planks next to the buildings. The cabbage field is a dark green dot grid. At the aerial camera the fields are very flat and featureless.\n- **Set B:** The gold wheat and the cabbage field read as distinct textured crop patches and sit well with the chunky buildings. The fields are small in the frame, and the haystack is barely visible. The tan fields still resemble the beige roofs a little.\n\n```json\n{\"scores\": {\"A\": {\"silhouette\": 2, \"variation\": 2, \"readability\": 2, \"proportions\": 3, \"palette\": 3, \"detail\": 2, \"cohesion\": 3, \"cost\": 5}, \"B\": {\"silhouette\": 4, \"variation\": 4, \"readability\": 4, \"proportions\": 4, \"palette\": 4, \"detail\": 4, \"cohesion\": 4, \"cost\": 3}},\n \"verdict\": {\"A\": \"NEEDS-WORK\", \"B\": \"PASS\"}, \"best_overall\": \"B\",\n \"per_sheet_defects\": {\"sheet_crops.jpg\": [\"A: wheat is flat tan planks with no plant silhouette, and both fields are identical\", \"A: cabbage is a uniform grid of identical green balls\", \"B: haystack is small and low-contrast against the grass at the aerial camera\", \"B: wheat is slightly spiky and noisy at gameplay distance\"], \"sheet_wheat_stages.jpg\": [\"A: the three growth stages are visually identical, so ripe cannot be told from unripe\", \"B: the shoots stage is tiny and low-contrast against the soil at 82 studs\"], \"sheet_settlement_emerald.jpg\": [\"A: fields look like pale roof or plank rectangles and are flat at the aerial camera\", \"B: fields are small in frame, the haystack is nearly invisible, and the tan wheat is close to the building roof colour\"]},\n \"fixes_for_the_weaker_set\": [\"Replace the plank slabs with per-row plant shapes (stalk clumps with ear tips) so wheat has a plant silhouette\", \"Give each growth stage a distinct height and colour: low green shoots, mid green, tall golden\", \"Vary cabbage head size, colour and leaf shape, and add per-field variants for wheat\", \"Give the haystack a conical or banded form and a darker straw colour so it separates from the grass\"],\n \"ship\": {\"A\": false, \"B\": true}, \"notes\": \"Judged only on crop fields, the haystack and the wheat stages. Set B's cost is acceptable but is the heaviest crop item at about 1.4k triangles per field; it is fine for a handful of fields on screen, and worth watching if many fields are visible at once. Set B's minor issues are the faint shoots stage and the small haystack.\"}\n```\n"
+  }
+ },
+ "ship_gate": "SET B passes in all three groups; SET A (today's primitive part-built props) needs work in all three",
+ "geometry_hash_note": "env_kit_01 (the 52 placed ids) is the reviewed kit; the sheets' 'after' renders were re-rendered from the committed FBX and are pixel-identical (19 views, max difference 0 of 255). env_kit_02 was not reviewed."
+}
