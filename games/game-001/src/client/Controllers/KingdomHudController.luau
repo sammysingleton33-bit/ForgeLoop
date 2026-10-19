@@ -97,6 +97,7 @@ KingdomHudController.RAID_RAIL = table.freeze({
 	target = "HUD.RaidButton", -- OnboardingTarget for FORGE-04's FL-0137 raid tip (FL-0138)
 	order = 45, -- after the built-in menus and Army, before Waiting
 })
+KingdomHudController.SIEGE_LABEL = "Siege" -- the same button while an enemy besieges our keep (#235)
 KingdomHudController.DONE_SEC = 1.6
 KingdomHudController.DEFAULT_VIEWPORT = Vector2.new(1280, 662)
 
@@ -776,23 +777,32 @@ end
 -- Diplomacy changed: the Kingdom rail button counts the peace offers waiting for my answer, and each new
 -- offer is said once ("Azure proposes peace").
 -- The Raid rail button follows FORGE-04's alert(): shown while a raid lasts, gone after (polled each tick;
--- absent controller or a failing call = no button).
+-- absent controller or a failing call = no button). A siege on our keep (alert().kind == "siege", #235) ranks
+-- ahead of a raid and relabels the same button "Siege"; the id and the OnboardingTarget stay, so the tips that
+-- mark HUD.RaidButton (#236) still find it.
 function KingdomHudController:_syncRaid()
 	local war = self._registry:find("FeedbackWarController")
-	local raid = false
+	local shown: string? = nil
 	if war ~= nil and type(war.alert) == "function" then
 		local ok, alert = pcall(war.alert, war)
-		raid = ok and alert ~= nil
+		if ok and alert ~= nil then
+			shown = if type(alert) == "table" and alert.kind == "siege" then "siege" else "raid"
+		end
 	end
-	if raid == (self._raidShown == true) then
+	if shown == self._raidShown then
 		return
 	end
-	self._raidShown = raid
-	if not raid then
+	if self._raidShown ~= nil then
 		self:removeRailItem(KingdomHudController.RAID_RAIL.id)
+	end
+	self._raidShown = shown
+	if shown == nil then
 		return
 	end
 	local item = table.clone(KingdomHudController.RAID_RAIL)
+	if shown == "siege" then
+		item.label = KingdomHudController.SIEGE_LABEL
+	end
 	item.onActivated = function()
 		local current = self._registry:find("FeedbackWarController")
 		if current ~= nil and type(current.goToAlert) == "function" then
