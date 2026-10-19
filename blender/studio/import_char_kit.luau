@@ -297,8 +297,8 @@ local function importCitizenKit(world, settings)
 					piece:RemoveTag(tag)
 				end
 				piece.Name = id
-				-- the physics shape: set here (the command bar has plugin rights); a game script cannot touch it at runtime, so the Kit does not,
-				-- and the saved Forge.Assets piece carries it
+				-- the physics shape: set here (the command bar has plugin rights) in the open place; scripts cannot manipulate it at runtime, so
+				-- the Kit does not, and the API dump lists it as not saved: it is not in the saved .rbxm and nothing relies on it
 				if piece:IsA("MeshPart") then
 					piece.CollisionFidelity = Enum.CollisionFidelity.Box
 				end

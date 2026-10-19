@@ -289,9 +289,9 @@ local function prepare(assetId: string, def: any, model: Model): (Model?, string
 		mesh.Reflectance = 0
 		mesh.Material = Enum.Material.SmoothPlastic
 		mesh.Color = Color3.new(1, 1, 1) -- the colours are baked into the mesh (tint "fixed")
-		-- CollisionFidelity is not set here: the API reference says "This property cannot be read or manipulated by scripts during
-		-- runtime". The Studio import sets Hull on every
-		-- Body (blender/studio/import_env_kit.luau) and the saved Forge.Assets Model carries it.
+		-- CollisionFidelity is not set here: scripts cannot manipulate it at runtime (API reference) and the API dump lists it as not
+		-- saved and not replicated. The Studio import sets Hull on every Body (blender/studio/import_env_kit.luau) in the open place; it is
+		-- not in the saved .rbxm, and nothing here relies on it (the Body does not collide, a raycast hits its default shape).
 	end
 	local box = colliderOf(def)
 	if box then

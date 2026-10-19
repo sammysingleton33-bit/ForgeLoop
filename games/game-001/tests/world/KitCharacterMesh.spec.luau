@@ -145,20 +145,42 @@ describe("Kit.character falls back to the part-built rig, whole, whenever the ki
 			-- a rig that does build says nothing, and another reason is another line
 			expect(Kit.character("citizen", "idle", AZURE):GetAttribute("KitMesh")).toBe(true)
 			expect(#lines).toBe(1)
+			-- a second missing piece in the SAME install (no reset in between) is a second reason: a second line, said once
+			MeshKit.install(
+				fixtureData,
+				MeshKit.assets(fixtureData, { omit = { tool_hoe_blade = true, tool_axe_head = true } })
+			)
+			lines = {}
+			CharacterMesh.setLogger(function(message)
+				table.insert(lines, message)
+			end)
+			for _ = 1, 3 do
+				fallsBack(Kit.character("citizen", "farmer", AZURE)) -- the blade
+				fallsBack(Kit.character("citizen", "woodcutter", AZURE)) -- the axe head
+			end
+			expect(#lines).toBe(2)
+			expect(lines[1]).never.toBe(lines[2])
+			-- the same reason after a reset (setData) is said again
+			CharacterMesh.setData(fixtureData)
+			fallsBack(Kit.character("citizen", "farmer", AZURE))
+			fallsBack(Kit.character("citizen", "farmer", AZURE))
+			expect(#lines).toBe(3)
+			expect(string.find(lines[3], "tool_hoe_blade", 1, true)).never.toBeNil()
+			lines = {}
 			MeshKit.install(fixtureData, MeshKit.assets(fixtureData, { omit = { crest_azure = true } })) -- new data resets the memory
 			CharacterMesh.setLogger(function(message)
 				table.insert(lines, message)
 			end)
 			fallsBack(Kit.character("soldier", "soldier", AZURE, nil, "azure"))
 			fallsBack(Kit.character("soldier", "soldier", AZURE, nil, "azure"))
-			expect(#lines).toBe(2)
+			expect(#lines).toBe(1)
 			-- and with no data or no folder it stays quiet: that is today's part-built world, not a fault
 			MeshKit.uninstall()
 			CharacterMesh.setLogger(function(message)
 				table.insert(lines, message)
 			end)
 			fallsBack(Kit.character("citizen", "farmer", AZURE))
-			expect(#lines).toBe(2)
+			expect(#lines).toBe(1)
 		end
 	)
 

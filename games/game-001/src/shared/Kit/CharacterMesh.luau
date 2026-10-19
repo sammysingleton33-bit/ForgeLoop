@@ -794,9 +794,9 @@ function CharacterMesh.build(
 		part.Transparency = 0
 		part.Reflectance = 0
 		part.Material = Enum.Material.SmoothPlastic
-		-- CollisionFidelity is not set here: the API reference says "This property cannot be read or manipulated by scripts during
-		-- runtime"; the Studio import sets Box
-		-- (blender/studio/import_char_kit.luau) and the saved Forge.Assets pieces carry it
+		-- CollisionFidelity is not set here: scripts cannot manipulate it at runtime (API reference) and the API dump lists it as not
+		-- saved and not replicated. The Studio import sets Box on every piece (blender/studio/import_char_kit.luau) in the open place; it
+		-- is not in the saved .rbxm, and nothing here relies on it (the pieces do not collide or take queries).
 
 		local tint = def.tint
 		if tint == "skin" then

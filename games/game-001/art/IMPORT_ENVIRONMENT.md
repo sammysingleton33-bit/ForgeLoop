@@ -38,9 +38,9 @@ fall back in Play; and a quiet Output also looks fine when nothing was imported 
 3. In the server command bar: `local s = require(game.ReplicatedStorage.Game.Kit.Kit).envMeshStatus(); print(s.props, s.accepted, next(s.rejected))` must print
    props = 52, `accepted` above 0 and **no rejected id** (`rejected` empty). `accepted` counts every mesh prop the world has built (hundreds), not the ids. The command bar can hand
    you a fresh copy of the module (accepted 0, and the Kit has no asset source): if `accepted` is 0, trust step 1 (Explorer), and tell FORGE-02 what you saw in both.
-4. **CollisionFidelity (unverified).** The import script sets Hull on every `Body` (a game script cannot read or write the property at runtime, the API reference says so). The
-   reference also lists it as not saved and not replicated: after you save `EnvKit.rbxm` and run `rojo build`, select one `Body` in the built place and read **CollisionFidelity**
-   in Properties. Hull is what we expect; if it shows Default, tell FORGE-02 (nothing breaks: the meshes do not collide and raycasts still hit the default shape).
+4. **CollisionFidelity (expected to be Default after saving).** The import script sets Hull on every `Body` in the open place (scripts cannot manipulate the property at runtime, the API
+   reference says; the API dump lists it as not saved and not replicated). So `EnvKit.rbxm` and a `rojo build` will show **Default**: that is expected and nothing depends on it (the meshes do not
+   collide and raycasts hit the default shape). If you want to look, select a `Body` right after the import: Hull. Tell FORGE-02 only if the Output says the script could not set it.
 If the Output has `not used` lines or Explorer shows stand-ins for ids you imported, stop and send both to FORGE-02: those ids are still the part-built stand-ins.
 
 Forests, lone trees, bushes, rocks, flowers and the farm fields from the **aerial camera** and the **82-stud gameplay camera**, next to the kingdom buildings and the

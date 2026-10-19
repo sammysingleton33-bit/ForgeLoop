@@ -248,8 +248,8 @@ local function importEnvKit(world, settings)
 		mesh.Massless = true
 		mesh.CastShadow = true
 		mesh.Transparency = 0
-		-- the physics shape of the Body: set here (the command bar has plugin rights); a game script cannot touch it at runtime, so the
-		-- Kit does not, and the saved Forge.Assets Model carries it
+		-- the physics shape of the Body: set here (the command bar has plugin rights) in the open place; scripts cannot manipulate it at
+		-- runtime, so the Kit does not, and the API dump lists it as not saved: it is not in the saved .rbxm and nothing relies on it
 		mesh.CollisionFidelity = Enum.CollisionFidelity.Hull
 		mesh.Parent = model
 		model.PrimaryPart = rootPart

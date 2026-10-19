@@ -1,8 +1,8 @@
 --!nonstrict
 --[[
 	Kit never writes a property that scripts cannot manipulate at runtime (FL-0136 / D-057 follow-up; found by FORGE-00's CONTRACTS
-	verify pass). The API reference says of MeshPart.CollisionFidelity: "This property cannot be read or manipulated by scripts
-	during runtime" (it lists it as not saved and not replicated). A game script that writes it can fail, the build inside Kit's
+	verify pass). The API reference says scripts cannot manipulate MeshPart.CollisionFidelity during runtime, and the API dump lists
+	it as not saved and not replicated. A game script that writes it can fail, the build inside Kit's
 	pcall is then rejected, and every mesh prop and every mesh rig falls back to part-built in a live server while the headless
 	specs (Lune has no such check) stay green. The Studio import scripts set these (the command bar runs with plugin rights).
 

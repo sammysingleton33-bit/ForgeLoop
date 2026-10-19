@@ -490,7 +490,19 @@ describe("import_env_kit.luau: the Studio import script, against fake trees", fu
 		expect(folderOf(place):FindFirstChild("prop_barrel_01")).toBeNil()
 	end)
 
-	it("changes nothing in a dry run", function()
+	it("changes nothing in a dry run, on kept Models either", function()
+		local imported = newPlace(data)
+		runScript(imported, { ["local MOVE = false"] = "local MOVE = true" }) -- imported and moved: the scene is gone, the Models are kept
+		for _, model in (folderOf(imported) :: Instance):GetChildren() do
+			((model :: Model):FindFirstChild("Body") :: MeshPart).CollisionFidelity = Enum.CollisionFidelity.Default
+		end
+		local kept = runScript(imported, { ["local DRY_RUN = false"] = "local DRY_RUN = true" })
+		expect(kept.kept).toBe(N)
+		for _, model in (folderOf(imported) :: Instance):GetChildren() do
+			expect(((model :: Model):FindFirstChild("Body") :: MeshPart).CollisionFidelity).toBe(
+				Enum.CollisionFidelity.Default
+			) -- a dry run sets nothing
+		end
 		local place = newPlace(data)
 		local report, printed = runScript(place, { ["local DRY_RUN = false"] = "local DRY_RUN = true" })
 		expect(report.dryRun).toBe(true)
