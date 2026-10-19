@@ -19,7 +19,6 @@ local SpectateDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Contr
 local RemoteServiceDef = require("@game/ServerScriptService/Forge/Services/RemoteService")
 local TreasuryRemotes = require("@game/ReplicatedStorage/Game/Treasury/Remotes")
 
-local TICK = MatchConfig.tickSeconds
 local PHASES = { Lobby = 2, Founding = 300, Expansion = 300, Conflict = 300, Endgame = 300, Results = 2 }
 
 local function find(root, name)
