@@ -102,6 +102,9 @@ Layout.REPUTATION_ITEM_HEIGHT = 22
 Layout.OBJECTIVES_WIDTH_PHONE = 224
 Layout.OBJECTIVES_WIDTH = 272
 Layout.CHIPS_CLEARANCE = 44
+-- Narrow phones (667 × 375; release checklist L7): when one pill row would leave the drawer narrower than this, the
+-- pills wrap to two rows and the reputation strip to three columns, so the drawer starts right of a narrower stack.
+Layout.PHONE_DRAWER_MIN = 300
 -- Phone toasts above a wide sheet: wider than the usual 250 px so titles wrap less (one fits).
 Layout.SHEET_TOAST_WIDTH = 330
 
@@ -120,10 +123,10 @@ end
 
 -- The strip's box at (x, top): phones one row of 6 items (50 px, narrower — down to 44 — when
 -- `maxWidth` is less, so it stays left of the phone drawer), tablet/desktop 3 × 2 items of 118 px.
-function Layout.reputationStrip(phone: boolean, x: number, top: number, maxWidth: number?): Strip
-	local columns = if phone then Layout.REPUTATION_ITEMS else 3
+function Layout.reputationStrip(phone: boolean, x: number, top: number, maxWidth: number?, columns_: number?): Strip
+	local columns = columns_ or (if phone then Layout.REPUTATION_ITEMS else 3)
 	local rows = math.ceil(Layout.REPUTATION_ITEMS / columns)
-	local gap = if phone then { x = 3, y = 0 } else { x = 8, y = 6 }
+	local gap = if phone then { x = 3, y = 3 } else { x = 8, y = 6 }
 	local pad = if phone then 4 else 6
 	local itemWidth = 118
 	if phone then
@@ -160,26 +163,35 @@ function Layout.compute(width: number, height: number, options: { reputation: bo
 	local railButton = if phone then 48 else 58
 	local x, y = margin, if phone then 6 else margin
 	local crest = if phone then Layout.PHONE_CREST else 52
-	local pills = if phone then { x = x + crest + 8, y = y + 2 } else { x = x, y = y + crest + 8 }
+	local pills: any = if phone
+		then { x = x + crest + 8, y = y + 2, columns = Layout.PHONE_PILLS }
+		else { x = x, y = y + crest + 8 }
 	local members = if phone then nil else { x = x, y = pills.y + Layout.PILL_HEIGHT + 6 }
 	local drawerRight = margin + railButton + 12
 	local drawer, reputation
 	if phone then
-		local left = x
-			+ Layout.PHONE_CREST
-			+ 8
-			+ Layout.PHONE_PILLS * Layout.PHONE_PILL
-			+ (Layout.PHONE_PILLS - 1) * Layout.PHONE_PILL_GAP
-			+ 12
+		local function leftOf(columns: number): number
+			return x + Layout.PHONE_CREST + 8 + columns * Layout.PHONE_PILL + (columns - 1) * Layout.PHONE_PILL_GAP + 12
+		end
+		local narrow = W - drawerRight - leftOf(Layout.PHONE_PILLS) < Layout.PHONE_DRAWER_MIN
+		pills.columns = if narrow then 2 else Layout.PHONE_PILLS
+		pills.rows = math.ceil(Layout.PHONE_PILLS / pills.columns)
+		pills.height = pills.rows * Layout.PILL_HEIGHT + (pills.rows - 1) * Layout.PHONE_PILL_GAP
+		-- a narrow phone keeps the objective tracker at its usual width beside the drawer (its names need it)
+		local left = if narrow
+			then math.max(leftOf(pills.columns), x + Layout.OBJECTIVES_WIDTH_PHONE + 12)
+			else leftOf(pills.columns)
 		local w = math.max(260, W - drawerRight - left)
 		drawer = { x = W - drawerRight - w, y = y, width = w, height = H - y - margin, single = true }
-		reputation = Layout.reputationStrip(true, x, y + crest + 12, drawer.x - x - margin)
+		local stripTop = math.max(y + crest + 12, pills.y + pills.height + 8)
+		reputation = Layout.reputationStrip(true, x, stripTop, drawer.x - x - margin, if narrow then 3 else nil)
 	else
 		reputation = Layout.reputationStrip(false, x, (members :: any).y + Layout.MEMBERS_HEIGHT + 6)
 	end
 	local bottom = if strip
 		then reputation.y + reputation.height
 		elseif members then members.y + Layout.MEMBERS_HEIGHT
+		elseif phone then math.max(y + 36, pills.y + pills.height)
 		else y + 36
 	if not phone then
 		local w = if bp == "tablet" then 560 else 620
