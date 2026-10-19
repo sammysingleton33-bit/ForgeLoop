@@ -335,7 +335,7 @@ function AudioController:setMusic(state: string?)
 	if previous then
 		self:_fade(previous.sound, previous.entry.volume, 0, true)
 	end
-	local id = if state then MusicDirector.STATE_SOUNDS[state] else nil
+	local id = if state then MusicDirector.soundFor(state) else nil
 	local entry = if id then self._registry:get(id) else nil
 	if entry == nil or entry.asset == nil then
 		if state ~= nil then

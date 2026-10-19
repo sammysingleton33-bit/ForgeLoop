@@ -596,6 +596,92 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		end
 	)
 
+	it(
+		"playShots glides through each shot and stays on the last; the player's turn, pan or zoom takes over (FL-0074)",
+		function()
+			boot()
+			settle()
+			local a = THRONE + Vector3.new(20, 0, -10)
+			local b = THRONE + Vector3.new(-20, 0, 10)
+			local shots = {
+				{ focus = a, yaw = 0, zoom = 60, seconds = 0.5 },
+				{ focus = b, yaw = math.pi / 2, zoom = 80, seconds = 0.5 },
+			}
+			expect(controller:playShots(shots)).toBe(true)
+			expect(controller:shotsPlaying()).toBe(true)
+			frames(8) -- on the way to the first shot
+			local goalA = CameraDef.aerialCFrame(a, 0, 60, O)
+			expect(near(camera.CFrame.Position, goalA.Position, 0.5)).toBe(false)
+			frames(22) -- 0.5 s: the first shot
+			expect(near(camera.CFrame.Position, goalA.Position, 1e-2)).toBe(true)
+			frames(35) -- the second shot, then the pass ends and the view stays
+			local goalB = CameraDef.aerialCFrame(b, math.pi / 2, 80, O)
+			expect(near(camera.CFrame.Position, goalB.Position, 1e-2)).toBe(true)
+			expect(controller:shotsPlaying()).toBe(false)
+			frames(30)
+			expect(near(camera.CFrame.Position, goalB.Position, 1e-2)).toBe(true)
+			expect(controller:getFocus()).toBe(b)
+			for _, takeOver in
+				{
+					function()
+						controller:rotateBy(10)
+					end,
+					function()
+						controller:panBy(Vector2.new(5, 0))
+					end,
+					function()
+						controller:zoomBy(1)
+					end,
+					function()
+						controller:focusOn(THRONE)
+					end,
+				}
+			do
+				expect(controller:playShots({ { focus = a, yaw = 0, zoom = 60, seconds = 2 } })).toBe(true)
+				frames(3)
+				takeOver()
+				expect(controller:shotsPlaying()).toBe(false)
+				expect(controller._glide).toBeNil() -- handed over at once, not after the glide
+			end
+			-- bad shots are refused; zoom and seconds are clamped
+			expect(controller:playShots({})).toBe(false)
+			expect(controller:playShots("shots")).toBe(false)
+			expect(controller:playShots({ { focus = a, yaw = 0 / 0, zoom = 60, seconds = 1 } })).toBe(false)
+			expect(controller:playShots({ { focus = a, yaw = 0, zoom = 60, seconds = 0 } })).toBe(false)
+			expect(controller:playShots({ { focus = a, yaw = 0, zoom = 1000, seconds = 99 } })).toBe(true)
+			expect(controller._shots.list[1].zoom).toBe(O.maxZoom)
+			expect(controller._shots.list[1].seconds).toBe(CameraDef.SHOT_MAX_SEC)
+			expect(controller:stopShots()).toBe(true)
+			expect(controller:stopShots()).toBe(false)
+		end
+	)
+
+	it("reduced motion cuts to each shot and holds it; walk mode refuses a pass and ends one (FL-0074)", function()
+		boot({ D.settings({ reducedMotion = true }) })
+		settle()
+		local a = THRONE + Vector3.new(20, 0, -10)
+		local b = THRONE + Vector3.new(-20, 0, 10)
+		controller:playShots({
+			{ focus = a, yaw = 0, zoom = 60, seconds = 0.5 },
+			{ focus = b, yaw = 0, zoom = 60, seconds = 0.5 },
+		})
+		controller:update(DT)
+		local goalA = CameraDef.aerialCFrame(a, 0, 60, O)
+		expect(near(camera.CFrame.Position, goalA.Position, 1e-3)).toBe(true) -- one frame: a cut
+		frames(20)
+		expect(near(camera.CFrame.Position, goalA.Position, 1e-3)).toBe(true) -- held
+		frames(12)
+		local goalB = CameraDef.aerialCFrame(b, 0, 60, O)
+		expect(near(camera.CFrame.Position, goalB.Position, 1e-3)).toBe(true) -- the next cut
+		expect(controller:playShots({ { focus = a, yaw = 0, zoom = 60, seconds = 2 } })).toBe(true)
+		controller:setMode("follow")
+		expect(controller:shotsPlaying()).toBe(false)
+		frames(2)
+		expect(controller:playShots({ { focus = a, yaw = 0, zoom = 60, seconds = 2 } })).toBe(false)
+		controller:setMode("overview")
+		expect(controller:shotsPlaying()).toBe(false)
+	end)
+
 	it("reduced motion cuts to the conversation view instead of gliding (FL-0100)", function()
 		boot({ D.settings({ reducedMotion = true }) })
 		settle()

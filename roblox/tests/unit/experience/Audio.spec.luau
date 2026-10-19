@@ -148,6 +148,7 @@ describe("AudioController", function()
 		for state, id in MusicDirector.STATE_SOUNDS do
 			table.insert(list, entry({ id = id, category = "music", loop = true, volume = 0.5, description = state }))
 		end
+		table.insert(list, entry({ id = "music.arena", category = "music", loop = true, volume = 0.5 })) -- a game scene
 		bootWith(list)
 	end)
 
@@ -232,6 +233,10 @@ describe("AudioController", function()
 		expect(battle.Volume).toBeNear(0.5)
 		expect(audio:voices()).toBe(0)
 		expect(audio:musicState()).toBe("battle")
+		-- a game's scene state plays "music.<scene>" (MusicDirector.soundFor)
+		audio:setMusic("arena")
+		expect(audio:musicState()).toBe("arena")
+		expect(audio._music.entry.id).toBe("music.arena")
 	end)
 
 	it("skips sounds cleanly when there is no SoundService to play in (headless boot)", function()
