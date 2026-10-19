@@ -17,10 +17,11 @@
 			setup.support      (userId?, KingdomId) -> Support the champion's support: { score, tier, offers, slots,
 			                   reasons }; userId nil for an AI kingdom (SupportService turns samples into this)
 		Flow:state() -> ArenaState        the public picture (same table shape as Types.ArenaState); `rev` changes with it
-		Flow:champion(side) -> Champion?  { userId, kingdom, isAI, offers, slots, weapon, armour, triggers }
+		Flow:champion(side) -> Champion?  { side, kingdom, userId, isAI, support, weapon, armour, triggers, chosen, gone }
 		Flow:vote(userId, candidate) -> (ok, reason?)
 			vote stage only; the voter is a seated human ruler of a qualified kingdom, the candidate one of that
-			kingdom's rulers; the latest vote counts; closes the stage early when every ruler has voted
+			kingdom's rulers; the latest vote counts; the stage closes early when every kingdom with more than one
+			candidate has had all its candidates vote (a kingdom with one ruler has nothing to vote on)
 		Flow:choose(userId, weapon, armour, triggers) -> (ok, reason?)
 			loadout stage only; the champion only; weapon and armour from Duel config, triggers distinct, a subset of
 			the champion's own offers, at most min(slots, 3); the latest choice counts
@@ -318,8 +319,10 @@ function ArenaFlow:vote(userId: number, candidate: number): (boolean, string?)
 			if not contains(candidates, candidate) then
 				return false, "not_a_candidate"
 			end
-			self._votes[userId] = candidate
-			self._rev += 1
+			if self._votes[userId] ~= candidate then -- the same vote again changes nothing, so nothing is broadcast
+				self._votes[userId] = candidate
+				self._rev += 1
+			end
 			return true, nil
 		end
 	end
@@ -373,11 +376,20 @@ function ArenaFlow:choose(userId: number, weapon: string, armour: string, trigge
 		end
 		table.insert(chosen, trigger)
 	end
+	local changed = not champion.chosen
+		or champion.weapon ~= weapon
+		or champion.armour ~= armour
+		or #champion.triggers ~= #chosen
+	for index, trigger in chosen do
+		changed = changed or champion.triggers[index] ~= trigger
+	end
 	champion.weapon = weapon
 	champion.armour = armour
 	champion.triggers = chosen
 	champion.chosen = true
-	self._rev += 1
+	if changed then -- the same loadout again changes nothing, so nothing is broadcast
+		self._rev += 1
+	end
 	return true, nil
 end
 
