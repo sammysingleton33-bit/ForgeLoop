@@ -3,7 +3,6 @@ local describe, it, expect = T.describe, T.it, T.expect
 
 local Crowd = require("@game/ReplicatedStorage/Forge/Config/Crowd")
 local Sounds = require("@game/ReplicatedStorage/Forge/Config/Sounds")
-local Pacing = require("@game/ReplicatedStorage/Forge/Config/Pacing")
 local CrowdDirector = require("@game/ReplicatedStorage/Game/Feedback/CrowdDirector")
 local ArenaText = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaText") -- FORGE-03's HUD names
 
@@ -278,19 +277,4 @@ describe("Crowd config (FL-0074)", function()
 			assert(#lines >= 2, `{kingdom} has chants`)
 		end
 	end)
-
-	it(
-		"arena stage timings in Pacing follow design §2 (vote 10, loadout 20, intro <= 15, duel <= 120, crowning <= 20)",
-		function()
-			local arena = Pacing.arena
-			assert(arena ~= nil, "Pacing.arena")
-			expect(arena.vote).toBe(10)
-			expect(arena.loadout).toBe(20)
-			expect(arena.intro <= 15).toBe(true)
-			expect(arena.duel).toBe(120)
-			expect(arena.crowning <= 20).toBe(true)
-			local total = arena.qualify + arena.vote + arena.loadout + arena.intro + arena.duel + arena.crowning
-			expect(total <= Pacing.modes.match30.Arena).toBe(true) -- the stages fit the Arena phase
-		end
-	)
 end)

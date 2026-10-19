@@ -168,6 +168,29 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 		expect(env.Workspace:FindFirstChild(FiguresDef.FOLDER)).toBeNil()
 	end)
 
+	it("the arena streams in after the director: the stands fill once it is there, once (FORGE-07 #237 M1)", function()
+		boot({}) -- no model option: the live tag lookup
+		crowd.director = director("loyal", "crimson", "hostile", "azure")
+		controller:step(0)
+		expect(#controller.figures.a + #controller.figures.b).toBe(0)
+		controller:step(0)
+		expect(#controller.figures.a).toBe(0) -- still waiting, nothing half-built
+		arena.Parent = env.Workspace
+		env.CollectionService:AddTag(arena, FiguresDef.TAG)
+		controller:step(0)
+		expect(#controller.figures.a).toBe(60)
+		expect(#controller.figures.b).toBe(30)
+		local first = controller.figures.a[1].model
+		controller:step(0)
+		controller:step(0)
+		expect(controller.figures.a[1].model).toBe(first) -- seated once, not rebuilt every step
+		expect(#env.Workspace:FindFirstChild(FiguresDef.FOLDER):GetChildren()).toBe(90)
+		-- the director goes before the arena ever came: nothing left waiting
+		crowd.director = nil
+		controller:step(0)
+		expect(controller._pending).toBe(false)
+	end)
+
 	it("without the arena model, or for a kingdom the config lacks, nothing is built", function()
 		boot({})
 		crowd.director = director("loyal", "crimson", "loyal", "azure")

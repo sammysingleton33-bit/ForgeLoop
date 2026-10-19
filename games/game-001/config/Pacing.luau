@@ -25,12 +25,9 @@
 	(ruler gathering is optional, D-030), so it is not part of the ordered list.
 	idleSec: seconds without a meaningful action (PACING.md §6) before a contextual hint, per MatchPhase
 	(no Arena entry until G12 freezes). For FL-0062's dead-air detector; nothing reads it yet.
-	arena: the Crown Arena's stages (G12.1 ArenaStage; design crown-arena.md §2 and the §11 defaults),
-	seconds each, for FORGE-01's ArenaService (FL-0071) and the crowd (FL-0074). DRAFT until G12
-	freezes. qualify = the qualifiers are announced; vote = co-rulers pick the champion; loadout =
-	weapon, armour and perks; intro = the versus card and the camera over both stands (at most);
-	duel = the cap (at the cap the higher HP share wins; a tie goes to sudden death, which ArenaService
-	times); crowning = the ending (at most). 190 s in all, inside match30's 4.5-minute Arena phase.
+	The Crown Arena's stage seconds are not here: they are FORGE-01's config Arena (introSeconds and the
+	rest, FL-0071), and clients follow ArenaState.endsAt (FORGE-00 2026-10-19: one source, the server's).
+	This file keeps only the match-level Arena phase (match30's Arena).
 ]]
 
 local UNTIMED = math.huge
@@ -74,5 +71,4 @@ return table.freeze({
 	}),
 	idleSec = table.freeze({ Founding = 25, Expansion = 45, Conflict = 60, Endgame = 90 }),
 	limits = table.freeze({ matchMinMinutes = 30, matchMaxMinutes = 45 }),
-	arena = table.freeze({ qualify = 5, vote = 10, loadout = 20, intro = 15, duel = 120, crowning = 20 }),
 })

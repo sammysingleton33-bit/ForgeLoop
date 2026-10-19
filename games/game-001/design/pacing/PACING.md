@@ -53,18 +53,7 @@ The user prefers about 25 minutes of kingdom play, then a 5-minute final phase, 
 - The default is `match`, the full match (D-053 (1), #187). `slice` stays reachable with the Studio debug command `match.mode slice` (D-053 (7)), so the VS-1 checklists still run. `match30` runs only when deliberately selected. Selecting it needs a FORGE-01 change to `Match.durationsFor` and MatchService, plus an optional FORGE-05 debug preset; both are pending. Until MatchPhase gains Arena (G12.1), a `match30` run ends after Endgame (25 min) without the final phase.
 - Results is 30 s as in `design/living-kingdom.md` §6; BRIEF §3 implies about 60 s for the leadership recap. FORGE-00 settles this with FL-0096.
 
-**Arena stages** (`Pacing.arena`, FL-0074; crown-arena §2 and the §11 defaults; DRAFT until G12 freezes). These are seconds per G12.1 `ArenaStage`, for FORGE-01's ArenaService:
-
-| Stage | Seconds | Meaning |
-|---|---|---|
-| qualify | 5 | the two qualifiers are announced |
-| vote | 10 | co-rulers vote for their champion |
-| loadout | 20 | weapon, armour and perks |
-| intro | 15 (at most) | the versus card; the camera passes over both stands |
-| duel | 120 (the cap) | at the cap, the higher HP share wins; ArenaService times a tie's sudden death |
-| crowning | 20 (at most) | the ending (four kinds, crown-arena §7) |
-
-They add up to 190 s, which fits match30's 270 s Arena phase and BRIEF §3's 360 s. The spare time covers sudden death and the walk to the ring.
+**Arena stages** live in FORGE-01's config Arena (`introSeconds` and the rest, FL-0071), not here: stage timing belongs to the server, and clients follow `ArenaState.endsAt` (FORGE-00's ruling, 2026-10-19: one source). Pacing keeps the match-level Arena phase (match30: 270 s).
 
 ## 3. VS-1 slice, minute by minute (*targets*, from spawn; onboarding v2, D-030)
 EXPERIENCE.md §2 cites these numbers; this section holds them.

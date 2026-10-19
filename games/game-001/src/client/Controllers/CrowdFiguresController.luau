@@ -8,7 +8,9 @@
 		- FeedbackCrowdController makes a CrowdDirector for a duel (Arena.State names both duellists at
 		  intro or duel; or its Studio preview): the stands fill. A new director (a new pair) refills
 		  them; no director (done, Results, Lobby) empties them.
-		- Without FORGE-02's CrownArena model (tag CrownArena) on this client, nothing is built.
+		- Without FORGE-02's CrownArena model (tag CrownArena) on this client, nothing is built yet: the
+		  place streams (Workspace.StreamingEnabled), so the arena may arrive after the director; every
+		  step retries until it is there (FORGE-07 #237 M1), then the stands fill once.
 	Who sits
 		- Stand A holds side a's kingdom, stand B side b's (Kit.arena: Stand A at -Z, as the dress and
 		  the intro camera). Figures: CrowdDirector.stands(citizensA, citizensB) (one per two citizens,
@@ -156,6 +158,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_links = {},
 		_connections = {},
 		_director = nil :: any,
+		_pending = false, -- a director waits for the arena model (streaming)
 		_citizens = {} :: { a: number?, b: number? },
 		_motions = {} :: { [string]: any },
 		_folder = nil :: any,
@@ -262,22 +265,23 @@ end
 function Controller:refresh()
 	local crowd = self._registry:find("FeedbackCrowdController")
 	local director = if crowd ~= nil then crowd.director else nil
-	if director == self._director then
-		return
+	if director ~= self._director then
+		self._director = director
+		self:_clear()
+		self._pending = director ~= nil and director.side ~= nil
 	end
-	self._director = director
-	self:_clear()
-	if director ~= nil and director.side ~= nil then
-		self:_seat(director)
+	if self._pending then
+		self._pending = not self:_seat(director) -- retried each step until the arena has streamed in
 	end
 end
 
-function Controller:_seat(director: any)
+-- Fills both stands; false when the arena (or its Root) has not streamed in yet, so refresh retries.
+function Controller:_seat(director: any): boolean
 	local model = self:_arena()
 	local root = model and model:FindFirstChild("Root")
 	local parent = self:_workspace()
 	if root == nil or parent == nil then
-		return
+		return false
 	end
 	local sides = { a = director:side("a"), b = director:side("b") }
 	local counts = Def.counts(self._citizens, { a = sides.a.tier, b = sides.b.tier })
@@ -312,9 +316,11 @@ function Controller:_seat(director: any)
 		end
 		self.figures[side] = list
 	end
+	return true
 end
 
 function Controller:_clear()
+	self._pending = false
 	table.clear(self._motions)
 	self.figures = { a = {}, b = {} }
 	if self._folder ~= nil then

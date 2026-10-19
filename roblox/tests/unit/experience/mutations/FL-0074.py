@@ -51,7 +51,6 @@ M = [
  ("FL-0074", D, 'self._duckUntil = math.max(self._duckUntil, now + math.min(seconds, 30))', 'self._duckUntil = math.max(self._duckUntil, now + seconds)', "CrowdDirector", "ignores unknown kinds", "game"),
  # config: sounds and arena timings
  ("FL-0074", G + "config/Sounds.luau", 'id = "crowd.salute",', 'id = "crowd.salutes",', "CrowdDirector", "sounds exist", "game"),
- ("FL-0074", G + "config/Pacing.luau", 'duel = 120,', 'duel = 150,', "CrowdDirector", "arena stage timings in Pacing", "game"),
  # #193 L1 and FORGE-00's draw ruling: a duel with no winner or a draw is called off
  ("FL-0074", D, 'then "calledOff"', 'then "empty"', "CrowdDirector", 'a duel with no winner or a draw is called off', "game"),
  ("FL-0074", D, '(event.side == nil or event.side == "draw")', '(event.side == nil)', "CrowdDirector", 'a duel with no winner or a draw is called off', "game"),
@@ -95,7 +94,6 @@ M = [
  ("FL-0074", ST, 'if left ~= nil and left <= 0 then', 'if false then', 'CrowdStage', 'the pass shrinks to the intro time left', 'game'),
  ("FL-0074", ST, 'local scale = math.min(1, budget / full)', 'local scale = 1', 'CrowdStage', 'the pass shrinks to the intro time left', 'game'),
  ("FL-0074", ST, 'if self._mine ~= nil and duellist.kingdom == self._mine then', 'if false then', 'CrowdStage', 'the intro: one horn', 'game'),
- ("FL-0074", ST, 'then most :: number else full', 'then full else full', 'CrowdStage', 'pure helpers', 'game'),
  ("FL-0074", ST, '\t\treturn false -- a real arena stage is never interrupted\n', '\t\tlocal _ = 0\n', 'CrowdStage', 'Studio preview plays the intro', 'game'),
  ("FL-0074", ST, '\tif not self:_isStudio() then\n\t\treturn false\n\tend\n\tlocal side =', '\tlocal side =', 'CrowdStage', 'Studio preview plays the intro', 'game'),
  ("FL-0074", RC, '\t\tself._shots = nil -- and a scripted pass: the player takes over\n', '', 'RulerCamera', 'playShots glides through each shot', 'game'),
@@ -142,4 +140,7 @@ M = [
  ("FL-0074", C2+"CrowdFiguresController.luau", 'if self:_setting("effectsQuality") == "reduced" then', 'if false then', "CrowdFigures", "low-end clients", "game"),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'if spec == nil or (spec.motion == "hop" and self:_setting("reducedMotion") == true) then', 'if spec == nil then', "CrowdFigures", "low-end clients", "game"),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'counts.b = math.floor(counts.b * Def.REDUCED_SHARE)', 'counts.b = counts.b', "CrowdFigures", "low-end clients", "game"),
+ ("FL-0074", ST, 'math.min(seconds :: number, full) else full', 'seconds :: number else full', 'CrowdStage', 'the pass shrinks to the intro time left', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", 'self._pending = not self:_seat(director) -- retried', 'self._pending = false and self:_seat(director) -- retried', 'CrowdFigures', 'the arena streams in after the director', 'game'),
+ ("FL-0074", C2+"CrowdFiguresController.luau", '\t\tself.figures[side] = list\n\tend\n\treturn true\nend', '\t\tself.figures[side] = list\n\tend\n\treturn false\nend', 'CrowdFigures', 'the arena streams in after the director', 'game'),
 ]
