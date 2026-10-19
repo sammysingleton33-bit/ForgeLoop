@@ -361,7 +361,7 @@ Rules under test (headless: `games/game-001/tests/experience/RulerCamera.spec.lu
 | Rule | Value |
 |---|---|
 | Glide | about 0.6 s in and back; reduced motion cuts; durations clamped (≤ 3 s) |
-| Framing | 30 studs from the citizen, citizen above the centre (6 studs; 12 on a phone: head at 28–30 % from the top, just under the HUD) |
+| Framing | 35 studs from the citizen at the overview's 55° field of view, citizen above the centre (5 studs; 7.5 on a phone: head at about 28–31 % from the top, just under the HUD). Until the D-059 framing change it was 30 studs at 70° (6 and 12 studs) |
 | Facing | in front of the citizen's face: the line from the citizen to your ruler, which the server turns them along (v0.4-g9e) |
 | Following | none once the citizen is released; without a ruler character, one turn within 1.5 s and 2 studs at most |
 | Restore | the saved overview focus, rotation and zoom |
@@ -402,6 +402,7 @@ Pass: steps 1–9 hold. Record a short video of steps 1, 2 and 7 (FL-0100's Stud
 History:
 - 2026-10-13 FORGE-04: written (FL-0100 (1/2)), from the camera handoff's rows; released citizens, walk mode mid-conversation and zoom during a conversation added (FORGE-05's B14 review).
 - 2026-10-15 FORGE-04: operator probes E10a/E10b; E10a also measures against the ruler direction (FORGE-05).
+- 2026-10-19 FORGE-04: framing for the overview's new 55° field of view (D-059): 35 studs, offsets 5 and 7.5 (it was 30, 6 and 12 at 70°).
 
 ## E11 — Back key (FL-0053, game-001)
 
@@ -745,3 +746,22 @@ Pass: steps 1–3 hold; 4–8 when a duel runs (4 with the AI body once FL-0140 
 
 History:
 - 2026-10-19 FORGE-04: written (FL-0141; G12.4 Arena.Events, G12.6).
+
+## E22 — The default aerial framing (D-059, FL-0145, game-001)
+
+The owner's B22 review found citizens barely recognisable from the start view. At zoom 120 and a 70° field of view, a citizen stood about 2 % of the screen's height: about 23 px at 1080p and 8 pt on a phone. The overview now starts at **zoom 70** with a **55° field of view** (pitch 42.5°), so a citizen stands about 6 %. The zoom limits (40–220) and the player's own zoom are unchanged. Walk mode and the duel keep Roblox's 70°. The conversation shot and the arena intro shots were re-tuned so they frame what they did.
+
+Needs: nothing (Play Solo). FORGE-02's FL-0145 pass 1 changes the look at the same time; judge the framing (how big and readable things are), not the art.
+
+Steps
+1. Play Solo on a desktop window (about 1920×1080). At spawn you see your keep from the aerial view. Citizens near the keep are clearly people: you can tell head, body and what they carry. Screenshot **E22-1**, and compare it with your B22 screenshot from the same spot.
+2. Device emulator, a phone in landscape (for example 750×311, or the smallest phone you have). Repeat step 1. Citizens are small but readable, and tapping one is easy. Screenshot **E22-2**.
+3. Zoom all the way out with the wheel or a pinch: it still goes as far as before (220 studs), and the whole kingdom fits. Zoom all the way in: it still stops at 40.
+4. Press V for walk mode. The view looks like Roblox's normal third-person camera, with no narrow "tunnel" feel. Press V again: the aerial view comes back with no jump.
+5. On the phone, open a conversation with a citizen. The camera glides in, and the citizen's head sits just under the HUD with the portrait below (E10's framing row).
+6. If an arena runs (B22.1): the intro pass frames each stand and then the ring, as in E18 step 1, with nothing important cut off at the edges.
+
+Pass: steps 1–5 hold (6 when an arena runs). Write what you think of the closer start view: too close, right, or still too far.
+
+History:
+- 2026-10-19 FORGE-04: written (D-059; FORGE-00 approved the zoom 70 / 55° framing).

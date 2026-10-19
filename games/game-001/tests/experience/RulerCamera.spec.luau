@@ -181,6 +181,20 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		settle()
 		local goal = CameraDef.aerialCFrame(controller:getFocus() :: Vector3, controller._target.yaw, O.startZoom, O)
 		expect(near(camera.CFrame.Position, goal.Position, 0.05)).toBe(true)
+		expect(math.abs(camera.FieldOfView - O.fieldOfView) < 1e-3).toBe(true) -- the overview's own
+	end)
+
+	it("the start view frames a citizen at about 6 % of the screen's height (the owner's B22 review)", function()
+		local pitch = math.rad(CameraDef.pitchFor(O.startZoom, O))
+		local function share(zoom, fieldOfView, degrees)
+			return 5.6 * math.cos(degrees) / (2 * zoom * math.tan(math.rad(fieldOfView) / 2)) -- a 5.6-stud citizen
+		end
+		local now = share(O.startZoom, O.fieldOfView, pitch)
+		expect(now > 0.05 and now < 0.07).toBe(true)
+		expect(now > 2.5 * share(120, 70, math.rad(CameraDef.pitchFor(120, O)))).toBe(true) -- B22's start: 2 %
+		expect(O.minZoom).toBe(40) -- the zoom limits are unchanged
+		expect(O.maxZoom).toBe(220)
+		expect(C.fieldOfView).toBe(70) -- walk mode and the duel keep Roblox's own
 	end)
 
 	it("WASD pans relative to the view at a speed that scales with the zoom", function()
@@ -241,7 +255,7 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		mouse("InputChanged", Enum.UserInputType.MouseMovement, 405, 300)
 		expect(controller:getFocus()).toBe(start) -- 5 px: still a tap
 		mouse("InputChanged", Enum.UserInputType.MouseMovement, 500, 300)
-		local studs = 100 * CameraDef.worldPerPixel(O.startZoom, C.fieldOfView, 720)
+		local studs = 100 * CameraDef.worldPerPixel(O.startZoom, O.fieldOfView, 720)
 		local moved = (controller:getFocus() :: Vector3) - start
 		expect(math.abs(moved.Magnitude - studs) < 1e-3).toBe(true)
 		-- the ground follows the pointer: dragging right moves the view left
@@ -371,6 +385,10 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		expect(player.CameraMaxZoomDistance).toBe(C.follow.maxZoom)
 		expect(C.follow.minZoom >= 8).toBe(true) -- never first person (smooth turning needs it)
 		expect(humanoid.CameraOffset).toBe(C.follow.shoulder)
+		expect(math.abs(camera.FieldOfView - C.fieldOfView) < 1e-3).toBe(true) -- Roblox's, not the overview's
+		expect(controller:setMode("overview")).toBe(true)
+		expect(math.abs(camera.FieldOfView - O.fieldOfView) < 1e-3).toBe(true)
+		expect(controller:setMode("follow")).toBe(true)
 		expect(controller:setMode("cinematic")).toBe(false)
 		expect(env.mock:hasLog("warn", "unknown camera mode 'cinematic'")).toBe(true)
 	end)
@@ -1038,7 +1056,7 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 			local citizen = THRONE + Vector3.new(30, 0, -20)
 			local function fromTop(point)
 				local p = camera.CFrame:PointToObjectSpace(point)
-				local ndc = (p.Y / -p.Z) / math.tan(math.rad(C.fieldOfView / 2))
+				local ndc = (p.Y / -p.Z) / math.tan(math.rad(O.fieldOfView / 2))
 				return (1 - ndc) / 2
 			end
 			controller._opts.viewportWidth, controller._opts.viewportHeight = 750, 311 -- FORGE-03's phone
