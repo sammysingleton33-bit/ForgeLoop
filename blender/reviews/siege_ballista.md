@@ -1,0 +1,59 @@
+# siege_ballista — author review log (D-019)
+
+Images: `previews/siege_ballista.jpg`, `renders/siege_ballista/siege_ballista_red_01_hero.png`,
+`renders/siege_ballista/siege_ballista_yellow_01_hero.png`, `renders/siege_ballista/siege_ballista_gameplay.png`.
+Rubric order: silhouette / variation / readability / proportions / palette / detail / kit cohesion / tris.
+
+Variants: red field carriage (2 wheels + split trail), blue trestle stand + planked mantlet, green carriage +
+Thornwood spiked mantlet, yellow trestle stand with gilded dome caps on the spring frame. All cocked with a
+bolt (steel head, kingdom-cloth fletching), rope bowstring, rear windlass, pennant, shield.
+
+## Round 1 (first quick build)
+Scores: 3 / 4 / 2 / 3 / 3 / 3 / 4 / 4
+Problems seen:
+- Reads as a box on wheels: the spring frame was a big square block, the rope skeins were pale boxes and the
+  bow arms were short and hidden behind the frame; no crossbow silhouette.
+- Mantlets on blue/green covered the whole weapon: at 40 studs they read as wooden crates.
+- Side shields faced inwards (plain backs visible).
+Changes: thinner, narrower frame; skeins as round twisted bundles with iron washers + levers; two-segment
+swept-back bow arms (3.7 per side) with iron bands and kingdom horn tips; thicker bowstring; weapon scaled
+x1.1-1.22; mantlets lowered below the stock; shield rotation fixed.
+
+## Round 2
+Scores: 4 / 4 / 3 / 4 / 4 / 4 / 4 / 4
+Problems seen: the front 3/4 hero view hides the stock and bolt behind the spring frame.
+Changes: hero camera turned to azimuth 58 / elevation 26 so the stock, bolt, string and windlass read.
+
+## Round 3
+Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4
+Seen: wide drawn arms + string + bolt read as a giant crossbow from the gameplay camera; carriage vs
+trestle mounts and mantlets separate the kingdoms (min silhouette diff 0.28). Tris 1954-2654 / 4000.
+Remaining weaknesses: smaller than the catapult (5-6 tall) so it reads less at 60+ studs; bolt fletching is
+small; static cocked pose only.
+
+## Fresh-review round 2 (FORGE-02 lead: NEEDS-WORK, variation 3 / silhouette 3)
+Problems reported: blue and green were the same ballista behind the same mantlet; red and yellow showed no
+emblem; yellow used purple tips and onion-like gold caps.
+Changes: blue now stands on a square stone dais (quoins) with a round iron-rimmed turntable and braced pivot
+post, no mantlet; green keeps carriage + spiked mantlet + oak shield; red (carriage) and yellow (trestle) and
+blue get a kingdom badge shield bolted to the front of the spring frame under the bolt (crown / sun / star);
+yellow dome caps replaced by bronze skein caps; horn tips use the bronze trim (palette).
+Seen (sheet + gameplay strip): carriage, dais, carriage+mantlet and trestle read apart at 40 studs and each
+shows its emblem from the front. Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4. Tris 1798-2686 / 4000.
+
+## Fresh-review round 3 (final; FORGE-02 lead notes)
+Problems reported: yellow sun too small and gold-on-gold; green oak a feather streak on teal bands and the
+same wheeled carriage as red; arms, bolt and spring caps spindly on a phone.
+Changes: green now on Thornwood sled runners (upturned noses, iron shoes, sleepers, braced pivot post) with
+saturated emerald mantlet bands and a 3.2 oak shield; front badge shields 3.4 (crown / star / sun on ivory);
+arms 0.95 / 0.78 thick with bigger bronze/gold horn tips; bolt 0.42 with a 1.5 steel head and larger
+kingdom-cloth fletching; spring washers 0.95 x 0.45 with heavier levers; bowstring 0.18.
+Seen (`previews/siege_ballista.jpg`): carriage / dais / sled / trestle mounts read apart; every badge faces the
+front camera. Tris 1798-2082 / 4000, min silhouette diff 0.31. Scores: 4 / 4 / 4 / 4 / 4 / 4 / 4 / 4.
+
+## Fresh review round 4
+
+- Reviewer: fresh-context subagent (contact sheet `previews/siege_ballista.jpg` only, incl. zoomed crops and grayscale check), 2026-10-13
+- Verdict: **PASS**
+- Scores: silhouette 4, variation 4, readability 5, proportions 4, palette 4, detail_density 4, cohesion 4, triangle_cost 5
+- Notes: Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.

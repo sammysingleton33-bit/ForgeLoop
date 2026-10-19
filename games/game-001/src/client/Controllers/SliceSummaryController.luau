@@ -14,7 +14,8 @@
 	Depends on KingdomHudController (remotes, store, modal layer, layout).
 	API (specs and the snapshot scenes)
 		summary:show(payload)     what a Match.Ended push does
-		summary:close()           what Continue does
+		summary:close()           what Continue does (closes the leadership recap too)
+		"Your reign" (FL-0129) shows when LeadershipRecapController:recap() has a recap; it opens it
 		summary.isOpen  summary.ended (UI/SummaryModel Ended)  summary.view (UI/SliceSummary)
 		SliceSummaryController.EVENT = "Match.Ended"
 ]]
@@ -34,6 +35,7 @@ function Def.new(env: any, registry: any)
 	return setmetatable({
 		_env = env,
 		hud = registry:get("KingdomHudController"),
+		_registry = registry,
 		isOpen = false,
 		ended = nil :: any,
 		view = nil :: any,
@@ -106,7 +108,16 @@ end
 
 function SliceSummaryController:close()
 	self.isOpen = false
+	local recap = self:_recap()
+	if recap and recap.isOpen then
+		recap:close()
+	end
 	self:render()
+end
+
+-- FL-0129: the leadership recap controller, when this client has one
+function SliceSummaryController:_recap(): any
+	return self._registry and self._registry:find("LeadershipRecapController") or nil
 end
 
 function SliceSummaryController:render(metrics: any?)
@@ -128,7 +139,9 @@ function SliceSummaryController:render(metrics: any?)
 	end
 	local m = metrics or hud:metrics()
 	local model = SummaryModel.build(self.ended, hud.store)
-	local key = Signature.of({ model = model, breakpoint = m.breakpoint, width = m.width })
+	local recapController = self:_recap()
+	local hasRecap = recapController ~= nil and recapController:recap() ~= nil
+	local key = Signature.of({ model = model, breakpoint = m.breakpoint, width = m.width, recap = hasRecap })
 	if key == self._key and self.view.instance ~= nil then
 		return
 	end
@@ -137,6 +150,11 @@ function SliceSummaryController:render(metrics: any?)
 		onContinue = function()
 			self:close()
 		end,
+		onRecap = if hasRecap
+			then function()
+				recapController:open()
+			end
+			else nil,
 	})
 end
 

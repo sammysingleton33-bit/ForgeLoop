@@ -156,3 +156,16 @@ FORGE-05's B19 asks in `production/quality-gates/studio-runs.md` and FORGE-04's 
 | K4 | With a request open, tap the 💬 Waiting button on the rail | it shows the count; a tap centres on the next citizen and opens their card; it hides while placing, moving, talking and in the walking view |
 | K5 | Studio device emulator at a phone size (667×375) | placards, toasts and the Waiting button fit and don't overlap |
 | K6 | `get_console_output` at the end | no red errors |
+
+## B20 additions (main `9b688ec`, BuildInfo `9b688ecb81c6…`): the real four-kingdom match
+B20 starts the **full match** by default. To run the older B14–B19 rows in the short slice, use the debug command `match.mode slice` first.
+
+| ID | Check | Pass |
+|---|---|---|
+| L1 | Start Play; read the phase bar | the phase bar shows Founding with a timer and names the next phase; the other three kingdoms are run by AI governors and build on their own |
+| L2 | Debug `match.phase Conflict`, then watch the rivals for a few minutes (Rivals tab, notices) | an AI kingdom declares war on someone; war notices appear; soldiers march and fight, with hit flashes and deaths (kneel and fade, no gore) |
+| L3 | Recruit until the cap | the 16th soldier is refused with an "army full" message (`army_cap`) |
+| L4 | Let an AI army attack your keep (or weaken it with debug), so your kingdom falls | you become a spectator: the spectate camera works. **Known:** the spectate screen arrives in B20.1 |
+| L5 | Let the match run out (or jump to Endgame and wait) | the match ends on Crown Points and Results shows. **Known:** the recap screen arrives in B20.1 |
+| L6 | Debug `match.mode slice` | the match restarts as the VS-1 slice; one B19 row still passes |
+| L7 | Output during an AI war, and Studio's Stats panel | no red errors; note FPS and anything that hitches |

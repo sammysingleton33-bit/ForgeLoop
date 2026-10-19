@@ -10,6 +10,7 @@ local describe, it, expect, afterEach = T.describe, T.it, T.expect, T.afterEach
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
+local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
 local Society = require("@game/ReplicatedStorage/Forge/Config/Society")
 local ConversationDef = require("@game/ServerScriptService/Game/Services/ConversationService")
 local Vfx = require("@game/ReplicatedStorage/Forge/Config/Vfx")
@@ -17,6 +18,7 @@ local ContentQuery = require("@game/ReplicatedStorage/Game/Content/ContentQuery"
 local KingdomRemotes = require("@game/ReplicatedStorage/Game/Kingdom/Remotes")
 local MatchRemotes = require("@game/ReplicatedStorage/Game/Match/Remotes")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local Military = require("@game/ReplicatedStorage/Game/Sim/Military")
 local Replication = require("@game/ReplicatedStorage/Game/Sim/Replication")
 local SimRemotes = require("@game/ReplicatedStorage/Game/Sim/Remotes")
 local TreasuryRemotes = require("@game/ReplicatedStorage/Game/Treasury/Remotes")
@@ -53,7 +55,10 @@ local function boot(options: { [string]: any }?)
 	if opts.entities then
 		table.insert(definitions, service("EntityService"))
 	end
+	local savedMode = MatchConfig.mode
+	MatchConfig.mode = "slice" -- the VS-1 slice this spec was written for; the shipped default is the full match (D-053)
 	local registry = Loader.load(env, definitions)
+	MatchConfig.mode = savedMode
 	table.insert(booted, { registry = registry, env = env })
 	registry:get("KingdomService").adapter = {
 		partyOf = function(player)
@@ -1546,5 +1551,44 @@ describe("ConversationService: FORGE-05 verdict on #107 (M1, M2, L1)", function(
 		m.roundId = if type(m.roundId) == "number" then m.roundId + 1 else `{m.roundId}+1` -- as a new round would
 		expect(conversations:hasRequest("crimson", farmer.id)).toBe(false)
 		expect(#conversations:openRequests("crimson")).toBe(0)
+	end)
+end)
+
+-- FL-0125 (FORGE-07 checklist 2): a keep falls while a conversation is open. Military.eliminate removes the
+-- citizen the ruler is talking to; every later call about it must be refused quietly.
+describe("ConversationService: the keep falls mid-conversation (FL-0125)", function()
+	local function remoteCall(env, player, name, ...)
+		local area, action = string.match(name, "^(%w+)%.(%w+)$")
+		local remote = env.ReplicatedStorage.ForgeRemotes:FindFirstChild(area):FindFirstChild(action)
+		local args = table.pack(...)
+		local results
+		env.mock.remotes:asClient(player, function()
+			results = table.pack(remote:InvokeServer(table.unpack(args, 1, args.n)))
+		end)
+		return table.unpack(results, 1, results.n)
+	end
+
+	it("refuses the open question and the hold release without throwing, leaving nothing stuck", function()
+		local env, conversations, match, registry = boot()
+		local p1 = seat(env, 1)[1]
+		local farmer, sim = hungryFarmer(match, registry)
+		local view = assert(conversations:converse(p1, farmer.id))
+		expect(sim:isHeld(farmer)).toBe(true)
+		Military.eliminate(sim, sim.kingdoms.crimson, "azure")
+		env.mock:advance(1) -- the host tick: the fallen kingdom's rulers are taken out of it
+		expect(sim.citizens[farmer.id]).toBeNil()
+		-- the answer to the question that was open
+		local ok, payload, reason = choose(conversations, p1, farmer, view.scenarioId, view.options[1].id)
+		expect(ok).toBe(false)
+		expect(payload).toBeNil()
+		expect(reason).toBe("not_in_match") -- the ruler of a fallen kingdom rules nothing
+		-- the remotes the client would use: a refusal or a plain true, never an error
+		local ended = remoteCall(env, p1, "Kingdom.EndConversation", farmer.id)
+		expect(ended == true or ended == false or ended == nil).toBe(true)
+		expect(conversations:converse(p1, farmer.id)).toBeNil()
+		-- no request, no showing, no hold is left for a citizen who is gone
+		expect(conversations:hasRequest("crimson", farmer.id)).toBe(false)
+		expect(#conversations:openRequests("crimson")).toBe(0)
+		env.mock:advance(20) -- long enough for every refresh and hold timer to run
 	end)
 end)

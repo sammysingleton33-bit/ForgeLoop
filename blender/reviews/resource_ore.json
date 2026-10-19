@@ -1,0 +1,44 @@
+{
+  "assets": {
+    "resource_ore_01": {
+      "geometry_hash": "f9d91807187c1d3e",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_ore_02": {
+      "geometry_hash": "7619c727872f5043",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_ore_03": {
+      "geometry_hash": "f9ce9c2dab1d0d00",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_ore_04": {
+      "geometry_hash": "bdeabb63ac995a69",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_ore_05": {
+      "geometry_hash": "abf52327d5603ec5",
+      "verdict": "NEEDS-WORK"
+    },
+    "resource_ore_06": {
+      "geometry_hash": "88d430dd351708f5",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "resource_ore",
+  "generator_version": 3,
+  "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
+  "reviewer": "fresh-context subagent",
+  "round": 3,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 3,
+    "palette": 3,
+    "proportions": 3,
+    "readability": 3,
+    "silhouette": 3,
+    "triangle_cost": 4,
+    "variation": 3
+  },
+  "verdict": "NEEDS-WORK"
+}

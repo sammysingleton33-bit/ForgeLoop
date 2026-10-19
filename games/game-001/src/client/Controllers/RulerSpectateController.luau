@@ -5,11 +5,16 @@
 	public API (setMode, focusOn); FORGE-03's spectate screen (FL-0129) shows the target list and calls this.
 
 	When
-		- starts when Kingdom.State (G8) says our kingdom is no longer alive. The last kingdom we had is
-		  remembered, so a state whose `mine` is nil after the fall still counts. setActive(true) starts
-		  it by hand, for FL-0125's `Match.Spectate` once it exists.
-		- ends at Results or Lobby (Match.State, G8): the match is over and control returns to the
-		  player; setActive(false) ends it by hand.
+		- starts on FORGE-01's `Match.Spectate(true, info)` (FL-0125: our kingdom fell, or every kingdom
+		  is full), or when Kingdom.State (G8) says our kingdom is no longer alive; the last kingdom we had
+		  is remembered, so a state whose `mine` is nil after the fall still counts. setActive(true)
+		  starts it by hand.
+		- ends on `Match.Spectate(false)` (seated again), at Results or Lobby (Match.State, G8): the
+		  match is over and control returns to the player; setActive(false) ends it by hand.
+		- never starts during Results or Lobby, by any path (FORGE-07's #189 M1): the results screen has
+		  the player's attention. A `Match.Spectate(true)` that arrives then (a late joiner, a fallen
+		  kingdom's state push) is kept pending and starts spectating when a playing phase begins,
+		  unless `Match.Spectate(false)` arrives first.
 	Targets, in this order (re-read on every cycle, so they follow the war):
 		1. battles: FeedbackWarController:hotspots(), the places hit in the last 20 s, newest first
 		2. the keeps of the kingdoms still standing (their `Kind = "keep"` model under
@@ -51,6 +56,8 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_links = {},
 		_kingdoms = {} :: { any },
 		_mine = nil :: string?,
+		_phase = nil :: string?,
+		_pending = false, -- the server's last Match.Spectate said true
 		_index = 0,
 		active = false,
 		changed = Signal.new(),
@@ -74,6 +81,12 @@ function Controller:start()
 		self._links,
 		RemoteLink.on(self._env, "Match.State", function(phase)
 			self:onPhase(phase)
+		end)
+	)
+	table.insert(
+		self._links,
+		RemoteLink.on(self._env, "Match.Spectate", function(spectating, info)
+			self:onSpectate(spectating, info)
 		end)
 	)
 	RemoteLink.request(self._env, "Kingdom.GetState", function(state)
@@ -116,12 +129,34 @@ function Controller:onKingdomState(state: any)
 	end
 end
 
-function Controller:onPhase(phase: any)
-	if type(phase) == "string" and Def.END_PHASES[phase] and self.active then
+-- FL-0125's Match.Spectate(spectating, info?: { reason, kingdomId?, by?, standing })
+function Controller:onSpectate(spectating: any, info: any)
+	if type(info) == "table" and type(info.kingdomId) == "string" then
+		self._mine = info.kingdomId -- our fallen kingdom: never a target
+	end
+	if spectating == true then
+		self._pending = true
+		self:setActive(true)
+	elseif spectating == false then
+		self._pending = false
 		self:setActive(false)
 	end
-	if phase == "Lobby" then
-		self._mine = nil -- a new match: the next Kingdom.State says where we rule
+end
+
+function Controller:onPhase(phase: any)
+	if type(phase) ~= "string" then
+		return
+	end
+	self._phase = phase
+	if Def.END_PHASES[phase] then
+		if self.active then
+			self:setActive(false)
+		end
+		if phase == "Lobby" then
+			self._mine = nil -- a new match: the next Kingdom.State says where we rule
+		end
+	elseif self._pending and not self.active then
+		self:setActive(true) -- a Match.Spectate(true) that arrived during Results or Lobby
 	end
 end
 
@@ -140,6 +175,9 @@ end
 function Controller:setActive(on: boolean): boolean
 	if on == self.active then
 		return false
+	end
+	if on and self._phase ~= nil and Def.END_PHASES[self._phase] then
+		return false -- never under the results screen or in the lobby
 	end
 	self.active = on
 	self._index = 0

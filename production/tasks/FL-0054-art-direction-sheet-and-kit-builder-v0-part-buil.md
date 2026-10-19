@@ -3,15 +3,16 @@ id: FL-0054
 title: Art direction sheet and Kit builder v0 (part-built medieval architecture with construction stages)
 track: asset
 owner: forge-02
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0046]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 9
-evidence: []
+evidence:
+  - Kit specs in games/game-001/tests/world (check.sh OVERALL PASS on main); keep/house contact sheets rendered via blender/scripts/render_kit.py and looked at
 ---
 
 # Art direction sheet and Kit builder v0 (part-built medieval architecture with construction stages)
@@ -46,3 +47,6 @@ Colourful, detailed medieval buildings exist in-engine without any upload step (
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): Kit stub first, primitive Parts only/no yields, footprint/Rally/neutral colour/region markers, preview path required, calibration pair
+- 2026-10-13 forge-02: READY → BUILDING. Kit v0 + ART_DIRECTION merged (#27, #28, #60).
+- 2026-10-13 forge-02: BUILDING → REVIEW. Code merged; calibration sheets blender/previews/kit_building_keep.jpg and kit_building_house.jpg land with FL-0013 for FORGE-00's D-026 verdict; Studio calibration screenshot (W6) and G6 pending.
+- 2026-10-13 forge-02: REVIEW → REVIEW. Calibration verdicts (D-026 (6), FORGE-00 on #90, 2026-10-13, renders only, not Studio): kit_building_keep PASS (silhouette 5, variation 4, readability 5, kingdom identity 5, cohesion/budget 4; kingdoms read apart without colour, gold reads as gold; orb-and-spike finials to confirm in the aerial check); kit_building_house PASS with one change (4/3/4/3/4: identity at range was colour-only -> add an emblem pennant on L1/L2; being done in the B12 fix-forward, branch forge/02-blender-b12-visuals); house_cottage v5 PASS (4/4/4/4/4; crown/star/oak/sun flags read at 82 studs, D-039). Remaining: Studio calibration screenshot (W6) and G6.

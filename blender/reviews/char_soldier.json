@@ -1,0 +1,68 @@
+{
+  "assets": {
+    "char_soldier_01": {
+      "geometry_hash": "2eef25aebac4cd9c",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_soldier_02": {
+      "geometry_hash": "67817a51e2cdd701",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_soldier_03": {
+      "geometry_hash": "9b25d1344bd58e60",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_soldier_04": {
+      "geometry_hash": "63fc7f669f80b14b",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_soldier_05": {
+      "geometry_hash": "8c77c620733ec3af",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_soldier_06": {
+      "geometry_hash": "8f736bb54a888891",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_soldier_07": {
+      "geometry_hash": "8d96e6d81ba8b482",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_soldier_08": {
+      "geometry_hash": "5679c6d33da29e91",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_soldier_09": {
+      "geometry_hash": "54bd0ac5e99cebd4",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_soldier_10": {
+      "geometry_hash": "52e1729f0c8cbaf9",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_soldier_11": {
+      "geometry_hash": "edd6ed3513d529e2",
+      "verdict": "NEEDS-WORK"
+    },
+    "char_soldier_12": {
+      "geometry_hash": "3fc27e7f2470c29a",
+      "verdict": "NEEDS-WORK"
+    }
+  },
+  "generator": "char_soldier",
+  "generator_version": 1,
+  "notes": "Spearmen 01-04 and knights 09-12 meet the bar: crown/star/oak/sun on shields read in grayscale at 40 studs; no flame anywhere. Blocking: archers 05-08 have no shield and carry the kingdom only on a small chest emblem that the grey belt pouch overlaps on all four. In grayscale at gameplay distance 07 oak is a blob and 08 gold sun in cream roundel on yellow tabard vanishes (light on light). 07 wears a red feather on the green hat (reads as red kingdom); 08 shows a green side panel under the yellow tabard. Fix: move pouch off the emblem, enlarge chest emblem ~1.5x, add a back/quiver emblem or small buckler, recolour 07 feather green or cream, remove the green on 08, use a large sun without ring on a cream field. Minor: helmet crests inconsistent (09 crown circlet, 11 oak crest, 10/12 none); crowns gold here but plain cream on smithy/barracks; strip proxy hides 06. Tris 2146-2490 of 2500 (04 at 99.6%).",
+  "reviewer": "fresh-context subagent",
+  "round": 6,
+  "scores": {
+    "cohesion": 3,
+    "detail_density": 4,
+    "palette": 3,
+    "proportions": 4,
+    "readability": 3,
+    "silhouette": 4,
+    "triangle_cost": 3,
+    "variation": 4
+  },
+  "verdict": "NEEDS-WORK"
+}

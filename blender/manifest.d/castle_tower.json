@@ -1,0 +1,691 @@
+{
+  "assets": [
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 18.579,
+        "y": 64.9,
+        "z": 18.579
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_blue_01.fbx",
+        "validation": "exports/castle_tower_blue_01.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "7acd5d64107e3e60",
+      "id": "castle_tower_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "pyramid_big",
+        "form": "square",
+        "kingdom": "blue",
+        "walk": 33.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
+        "review_file": "reviews/castle_tower.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7302,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          64.9,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          33.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 4172,
+        "lod1": 1460
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 19.048,
+        "y": 62.95,
+        "z": 19.048
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_blue_02.fbx",
+        "validation": "exports/castle_tower_blue_02.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "e889d06203126994",
+      "id": "castle_tower_blue_02",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "bartizans",
+        "form": "square",
+        "kingdom": "blue",
+        "walk": 34.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
+        "review_file": "reviews/castle_tower.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7303,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          62.95,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          34.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 5468,
+        "lod1": 1912
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 20.7,
+        "y": 50.856,
+        "z": 20.7
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_green_01.fbx",
+        "validation": "exports/castle_tower_green_01.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "98d32b9aadac8212",
+      "id": "castle_tower_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "hoarding",
+        "form": "round",
+        "kingdom": "green",
+        "walk": 32.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
+        "review_file": "reviews/castle_tower.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7304,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          50.856,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          32.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 4388,
+        "lod1": 1534
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 20.7,
+        "y": 59.073,
+        "z": 20.7
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_green_02.fbx",
+        "validation": "exports/castle_tower_green_02.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "4524e210e7cbacca",
+      "id": "castle_tower_green_02",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "hoarding_lookout",
+        "form": "octagon",
+        "kingdom": "green",
+        "walk": 35.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
+        "review_file": "reviews/castle_tower.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7305,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          59.073,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          35.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 4912,
+        "lod1": 1718
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 18.635,
+        "y": 70.5,
+        "z": 18.635
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_red_01.fbx",
+        "validation": "exports/castle_tower_red_01.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "923de8a68aed96a3",
+      "id": "castle_tower_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "spire_big",
+        "form": "round",
+        "kingdom": "red",
+        "walk": 33.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
+        "review_file": "reviews/castle_tower.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7300,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          70.5,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          33.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 4228,
+        "lod1": 1478
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 18.635,
+        "y": 72.8,
+        "z": 18.635
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_red_02.fbx",
+        "validation": "exports/castle_tower_red_02.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "7888f06cf4bd5a27",
+      "id": "castle_tower_red_02",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "spire_turret",
+        "form": "round",
+        "kingdom": "red",
+        "walk": 35.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
+        "review_file": "reviews/castle_tower.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7301,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          72.8,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          35.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 5772,
+        "lod1": 2020
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 18.635,
+        "y": 61.1,
+        "z": 18.635
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_yellow_01.fbx",
+        "validation": "exports/castle_tower_yellow_01.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "e04ab1ffee8fb06d",
+      "id": "castle_tower_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "onion",
+        "form": "round",
+        "kingdom": "yellow",
+        "walk": 33.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
+        "review_file": "reviews/castle_tower.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7306,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          61.1,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          33.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 4918,
+        "lod1": 1720
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "castle_tower",
+      "category": "castle",
+      "collision": {
+        "boxes": [],
+        "fidelity": "PreciseConvexDecomposition"
+      },
+      "dimensions_studs": {
+        "x": 18.0,
+        "y": 58.5,
+        "z": 18.0
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/castle_tower_yellow_02.fbx",
+        "validation": "exports/castle_tower_yellow_02.validation.json"
+      },
+      "generator": "castle_tower",
+      "generator_version": 1,
+      "geometry_hash": "cf239f5efc12ef10",
+      "id": "castle_tower_yellow_02",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "crown": "kiosks",
+        "form": "square",
+        "kingdom": "yellow",
+        "walk": 29.0
+      },
+      "preview": "previews/castle_tower.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "All four kingdom silhouettes separate cleanly in grayscale at 93 studs: red round drum + cone(s), blue square + pyramid (02 adds corner pinnacles), green round drum + timber hoarding, yellow onion dome (02 square with corner mini-domes). Crescent check passed: the dome finials are a ball on a stem plus a spike, with no C or crescent shape in colour or grayscale at hero or gameplay distance. Banner emblems are legible at 93 studs (crown, star, ivory oak leaf, sun in a cream roundel; not gold-on-gold). Weakest pair is still green_01 vs green_02: same hoarded round drum, and 02 only adds a lantern. Advisory: make 02 square or two-stage. Tris 4172-5772/6000; red_02 is at 96%.",
+        "review_file": "reviews/castle_tower.md",
+        "reviewer": "fresh-context subagent",
+        "round": 5,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 4,
+          "silhouette": 5,
+          "triangle_cost": 4,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7307,
+      "sockets": {
+        "door": [
+          -0.0,
+          0.1,
+          9.6
+        ],
+        "flag": [
+          -0.0,
+          58.5,
+          0.0
+        ],
+        "top": [
+          -0.0,
+          29.1,
+          -5.6
+        ],
+        "walk_left": [
+          7.4,
+          24.1,
+          0.0
+        ],
+        "walk_right": [
+          -7.4,
+          24.1,
+          0.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 6000,
+        "lod0": 5566,
+        "lod1": 1948
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 8
+  },
+  "generator": "castle_tower",
+  "variation": {
+    "closest_pair": [
+      "castle_tower_blue_01",
+      "castle_tower_blue_02"
+    ],
+    "mean_pair_diff": 0.1638,
+    "min_pair_diff": 0.09,
+    "pass": true,
+    "threshold": 0.08
+  }
+}
