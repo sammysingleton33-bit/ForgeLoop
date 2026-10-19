@@ -19,7 +19,7 @@ FG = (236, 236, 236)
 LETTER = {"S2": "A", "B": "B", "S1": "C", "S3": "D"}  # fixed over the whole review; the reviewer gets letters only
 PANEL_W = 430
 GAP = 8
-CAM_TITLE = {"gameplay82": "82-stud gameplay camera (44 deg down)", "aerial170": "170-stud aerial camera (50 deg down); small inset = the subject at actual pixels"}
+CAM_TITLE = {"gameplay82": "82-stud gameplay camera (44 deg down)", "aerial170": "170-stud aerial camera (50 deg down); the panel is enlarged about 1.5x, the framed inset (when it fits beside the subject) is the subject at actual pixels"}
 
 SHEETS = {
     "sheet_keep_L1": dict(title="Keep, level 1 (footprint 32 x 32 studs), two kingdom hues; four mesh-kit citizens stand in front for scale",
@@ -38,6 +38,8 @@ SHEETS = {
                          rows=[("nature", "gameplay82", ""), ("nature", "aerial170", "")]),
     "sheet_wheat": dict(title="Wheat field, ripe (38 x 28 studs)", sources=("S1", "S3", "B"),
                         rows=[("wheat", "gameplay82", ""), ("wheat", "aerial170", "")]),
+    "sheet_stages": dict(title="Construction stages 1 to 3 (right to left on screen)", sources=("S2", "S3"),
+                         rows=[("stages", "gameplay82", "")]),
     "sheet_town": dict(title="One settlement per set at the 170-stud aerial camera: keep, barracks, two houses, watchtower, field, trees, boulder",
                        rows=[("town", "aerial170", "")]),
 }
@@ -66,8 +68,11 @@ def crop_box(renders, subject, cam, sources, img_w, img_h, aspect=4 / 3):
     x0, y0, x1, y1 = min(xs0), min(ys0), max(xs1), max(ys1)
     cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
     w, h = (x1 - x0) * 1.16, (y1 - y0) * 1.16
-    w = max(w, h * aspect, 170 if cam == "aerial170" else 320)
+    w = max(w, h * aspect, 340 if cam == "aerial170" else 420)
     h = w / aspect
+    if h > img_h:  # a subject taller than the frame: show the whole frame height rather than a crop that leaves the image
+        h = img_h
+        w = h * aspect
     cx = min(max(cx, w / 2), img_w - w / 2)
     cy = min(max(cy, h / 2), img_h - h / 2)
     return (round(cx - w / 2), round(cy - h / 2), round(cx + w / 2), round(cy + h / 2))
@@ -88,11 +93,23 @@ def panel(renders, subject, src, cam, box):
     if cam == "aerial170":  # the subject at actual pixels, so the enlargement cannot flatter or hide anything
         b = load_rep(renders, subject, src)["projected"][cam]["subject"]
         sx0, sy0, sx1, sy1 = (int(b[0] * im.width) - 4, int(b[1] * im.height) - 4, int(b[2] * im.width) + 4, int(b[3] * im.height) + 4)
-        if (sx1 - sx0) <= 190 and (sy1 - sy0) <= 190:
+        if (sx1 - sx0) <= 270 and (sy1 - sy0) <= 270:
             ins = im.crop((sx0, sy0, sx1, sy1))
             fr = Image.new("RGB", (ins.width + 4, ins.height + 4), (255, 255, 255))
             fr.paste(ins, (2, 2))
-            out.paste(fr, (PANEL_W - fr.width - 6, 30))
+            # the corner of the panel the subject covers least (the subject's box in panel pixels)
+            k = out.width / (box[2] - box[0])
+            sb = ((b[0] * im.width - box[0]) * k, (b[1] * im.height - box[1]) * k, (b[2] * im.width - box[0]) * k, (b[3] * im.height - box[1]) * k)
+            corners = [(out.width - fr.width - 6, 30), (6, 30), (out.width - fr.width - 6, out.height - fr.height - 6), (6, out.height - fr.height - 6)]
+
+            def overlap(c):
+                w = min(c[0] + fr.width, sb[2]) - max(c[0], sb[0])
+                h = min(c[1] + fr.height, sb[3]) - max(c[1], sb[1])
+                return max(0.0, w) * max(0.0, h)
+
+            best = min(corners, key=overlap)
+            if overlap(best) <= 0.0:  # shown only where it does not cover the subject
+                out.paste(fr, best)
     return out
 
 

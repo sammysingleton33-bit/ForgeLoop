@@ -80,6 +80,9 @@ def test_pinned_pack_sources_name_the_commit_and_licence():
     src = json.loads((BLENDER / "lib" / "envkit_sources.json").read_text())
     assert src["commit"] == "84fa4e91af6a88989be7c99e0891cede11f2ca38"
     assert len(src["license_sha256"]) == 64 and "CC0" in src["license"]
+    from lib import envkit as E
+
+    assert E.sha256(BLENDER / "lib" / "KAYKIT-HEXAGON-LICENSE.txt") == src["license_sha256"]  # the committed licence text is the pinned one
     assert src["files"] and all(len(v) == 64 for v in src["files"].values())
     assert all(".." not in k and not k.startswith("/") for k in src["files"])
 

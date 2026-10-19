@@ -43,9 +43,10 @@ SUBJECTS = {
     "wheat": dict(family="wheat"),
     "wheat_stages": dict(family="wheat_stages"),
     "town": dict(family="town"),
+    "stages": dict(family="stages"),
 }
 SOURCES = {"buildings": ("S1", "S2", "S3"), "nature": ("S1", "S2", "S3"), "wheat": ("S1", "S3", "B"), "wheat_stages": ("B",),
-           "town": ("S1", "S2", "S3")}
+           "town": ("S1", "S2", "S3"), "stages": ("S2", "S3")}
 
 S1_ID = {"keep": "castle_keep_{h}_01", "house": "house_cottage_01", "barracks": "building_barracks_01", "watchtower": "castle_tower_{h}_01"}
 S2_REL = {"keep": "buildings/{h}/building_castle_{h}", "house": "buildings/{h}/building_home_A_{h}",
@@ -150,38 +151,42 @@ TREE_S3 = ["tree_oak_01", "tree_oak_02", "tree_oak_03", "tree_pine_01", "tree_pi
 STAND = [(-5.0, 4.0, 0), (6.5, 1.0, 40), (-1.0, 12.0, 90), (11.0, 11.5, 15), (-9.5, -4.5, 200), (3.0, -6.0, 130), (-12.0, 11.0, 70), (13.0, -3.5, 300)]
 
 
-def nature_items(src, s3):
-    """A lone oak (left), a stand of trees (centre, 8 trees or 3 pack groves) and a boulder (right)."""
-    items, rep = [], {}
+def nature_items(src, s3, groups=False):
+    """A lone oak (right on screen), a stand of trees (centre, 8 trees or 6 pack pieces) and a boulder (left, by the citizens).
+
+    Returns (items, report); with groups=True returns ({"oak": [...], "stand": [...], "boulder": [...]}, report)."""
+    oak, stand, boulder, rep = [], [], [], {}
     oak_h = E.s3_report(s3["tree_oak_01"])["height"]
     if src == "S1":
-        for i, (aid, (x, z, yaw)) in enumerate(zip(TREE_S1, STAND)):
-            items.append(("M", E.placed(s1(aid), x + 10.0, z + 2.0, yaw), 0, 0, 0))
-        items.append(("M", E.placed(s1("tree_oak_02"), -34.0, -6.0, 20), 0, 0, 0))
-        items.append(("M", E.placed(s1("rock_boulder_m_01"), 42.0, -8.0, 30), 0, 0, 0))
+        for aid, (x, z, yaw) in zip(TREE_S1, STAND):
+            stand.append(("M", E.placed(s1(aid), x + 10.0, z + 2.0, yaw), 0, 0, 0))
+        oak.append(("M", E.placed(s1("tree_oak_02"), -34.0, -6.0, 20), 0, 0, 0))
+        boulder.append(("M", E.placed(s1("rock_boulder_m_01"), 42.0, -8.0, 30), 0, 0, 0))
         rep = {"oak": "tree_oak_02", "stand": TREE_S1, "boulder": "rock_boulder_m_01"}
     elif src == "S2":
-        oak, ro = E.fit_height(s2("decoration/nature/tree_single_B", flat=False), oak_h)
-        items.append(("M", E.placed(oak, -34.0, -6.0, 20), 0, 0, 0))
-        # a forest look from the pack's groves: scale the single tree's factor over the whole group so they match
+        ob, ro = E.fit_height(s2("decoration/nature/tree_single_B", flat=False), oak_h)
+        oak.append(("M", E.placed(ob, -34.0, -6.0, 20), 0, 0, 0))
+        # the pack's groves and singles at the scale that makes its single tree as tall as the Kit's oak
         sc = ro["scale"]
-        for rel, (x, z, yaw) in (("decoration/nature/trees_A_medium", (0.0, 4.0, 0)), ("decoration/nature/trees_B_medium", (17.0, 2.0, 90)),
-                                 ("decoration/nature/trees_A_small", (6.0, -14.0, 40)), ("decoration/nature/tree_single_A", (-14.0, -4.0, 0)),
-                                 ("decoration/nature/tree_single_B", (28.0, 14.0, 200)), ("decoration/nature/tree_single_A", (-13.0, 14.0, 70))):
+        for rel, (x, z, yaw) in (("decoration/nature/trees_A_medium", (-1.0, 4.0, 0)), ("decoration/nature/trees_B_small", (19.0, 3.0, 90)),
+                                 ("decoration/nature/tree_single_A", (-15.0, -3.0, 0)), ("decoration/nature/tree_single_B", (8.0, -12.0, 200)),
+                                 ("decoration/nature/tree_single_A", (-10.0, 15.0, 70)), ("decoration/nature/tree_single_B", (14.0, 17.0, 140))):
             g = s2(rel, flat=False)
             (x0, y0, z0), (x1, y1, z1) = E.bbox(g)
             g.map(lambda p, s=sc, cx=(x0 + x1) / 2, cz=(z0 + z1) / 2, yb=y0: ((p[0] - cx) * s, (p[1] - yb) * s, (p[2] - cz) * s))
-            items.append(("M", E.placed(g, x + 8.0, z + 2.0, yaw), 0, 0, 0))
-        rock, rr = E.fit_footprint(s2("decoration/nature/rock_single_E", flat=False), 7.5, 7.5)
-        items.append(("M", E.placed(rock, 42.0, -8.0, 30), 0, 0, 0))
+            stand.append(("M", E.placed(g, x + 8.0, z + 2.0, yaw), 0, 0, 0))
+        rk, rr = E.fit_footprint(s2("decoration/nature/rock_single_E", flat=False), 7.5, 7.5)
+        boulder.append(("M", E.placed(rk, 42.0, -8.0, 30), 0, 0, 0))
         rep = {"oak": ro, "boulder": rr, "scale": sc}
     else:
         for aid, (x, z, yaw) in zip(TREE_S3, STAND):
-            items.append(("S3", s3[aid], x + 10.0, z + 2.0, yaw))
-        items.append(("S3", s3["tree_oak_02"], -34.0, -6.0, 20))
-        items.append(("S3", s3["rock_boulder_m_01"], 42.0, -8.0, 30))
+            stand.append(("S3", s3[aid], x + 10.0, z + 2.0, yaw))
+        oak.append(("S3", s3["tree_oak_02"], -34.0, -6.0, 20))
+        boulder.append(("S3", s3["rock_boulder_m_01"], 42.0, -8.0, 30))
         rep = {"oak": E.s3_report(s3["tree_oak_02"]), "boulder": E.s3_report(s3["rock_boulder_m_01"]), "stand": TREE_S3}
-    return items, rep
+    if groups:
+        return {"oak": oak, "stand": stand, "boulder": boulder}, rep
+    return oak + stand + boulder, rep
 
 
 def wheat_items(src, s3):
@@ -207,6 +212,19 @@ def wheat_stage_items():
     return items, {"tris": tris, "size": [122, 5, 28], "note": "stages 1, 2, 3 (right to left on screen)"}
 
 
+def stage_items(src, s3):
+    """Construction stages 1 to 3 side by side (right to left on screen): the Kit's keep stages vs the pack's generic stage A / B / C."""
+    items, tris = [], 0
+    for i, x in enumerate((44.0, 0.0, -44.0)):
+        if src == "S3":
+            items.append(("S3", s3[f"keep_L1_crimson_stage{i + 1}"], x, 0, 0))
+        else:
+            m, _ = E.fit_footprint(s2(f"buildings/neutral/building_stage_{'ABC'[i]}"), 30.0, 30.0)
+            items.append(("M", m, x, 0, 0))
+            tris += m.tris
+    return items, {"tris": tris, "size": [118, 0, 30], "note": "S3: Kit.build('keep', 1, stage 1..3); S2: building_stage_A/B/C scaled to 30 x 30 (generic, not per building)"}
+
+
 def town_items(src, s3):
     """A small settlement per source: keep L1, barracks, house, watchtower, a field, a stand of trees, a lone oak and a boulder."""
     items, tris = [], 0
@@ -220,7 +238,10 @@ def town_items(src, s3):
     add(building_items(src, SUBJECTS["house_L1_crimson"], s3)[0], -62.0, 22.0)
     add(building_items(src, SUBJECTS["watchtower_L1_crimson"], s3)[0], -30.0, -22.0)
     add(wheat_items("B" if src == "S2" else src, s3)[0], 10.0, -46.0)
-    add(nature_items(src, s3)[0], -8.0, 62.0)
+    g, _ = nature_items(src, s3, groups=True)
+    add(g["stand"], 66.0, 40.0)  # the wood behind the barracks (screen left)
+    add(g["oak"], -34.0, 46.0)  # a lone oak behind the houses (screen right)
+    add(g["boulder"], -52.0, -34.0)
     return items, {"tris": 0, "size": [0, 0, 0], "note": "settlement; the field is the own style-B wheat for S2"}
 
 
@@ -235,6 +256,8 @@ def citizens_for(sub, kit, items_bounds):
         (x0, z0), (x1, z1) = (-12.0, -10.0), (14.0, 8.0)  # at the foot of the keep
     elif sub["family"] == "wheat_stages":
         (x0, z0), (x1, z1) = (-19.0, -14.0), (19.0, 14.0)
+    elif sub["family"] == "stages":
+        (x0, z0), (x1, z1) = (-30.0, -16.0), (30.0, 16.0)
     front = z0 - 5.5
     spec = [(x0 + 3.0, front + 1.0, 8.0), (x0 + 8.5, front - 0.8, -5.0), (x1 - 9.5, front - 0.5, 15.0), (x1 - 3.0, front + 1.2, -12.0)]
     objs = []
@@ -309,6 +332,8 @@ def render_subject(sid, src, a, s3):
         items, rep = wheat_items(src, s3)
     elif fam == "wheat_stages":
         items, rep = wheat_stage_items()
+    elif fam == "stages":
+        items, rep = stage_items(src, s3)
     else:
         items, rep = town_items(src, s3)
     tris = sum(p.tris for k, p, *_ in items if k == "M")
@@ -325,10 +350,10 @@ def render_subject(sid, src, a, s3):
     sc, objs, cit = make_scene(items, sub, (w, h), samples, a.quick, a.citizens == "on")
     cam = rig.add_camera(sc, 70)
     (x0, z0), (x1, z1) = item_bounds(items)
-    tgt_h = {"keep": 26.0, "house": 13.0, "barracks": 14.0, "watchtower": 24.0}.get(sub.get("kind"), {"nature": 10.0, "wheat": 2.0, "wheat_stages": 2.0, "town": 10.0}.get(fam, 12.0))  # the same camera for every source of a subject
-    cx, cz = {"buildings": (0.0, 0.0), "nature": (10.0, 0.0), "wheat": (0.0, 0.0), "wheat_stages": (0.0, 0.0), "town": (-8.0, 14.0)}[fam]
+    tgt_h = {"keep": 26.0 if sub.get("level") != 3 else 42.0, "house": 13.0, "barracks": 14.0, "watchtower": 24.0}.get(sub.get("kind"), {"nature": 10.0, "wheat": 2.0, "wheat_stages": 2.0, "town": 10.0, "stages": 8.0}.get(fam, 12.0))  # the same camera for every source of a subject
+    cx, cz = {"buildings": (0.0, 0.0), "nature": (10.0, 0.0), "wheat": (0.0, 0.0), "wheat_stages": (0.0, 0.0), "town": (-8.0, 14.0), "stages": (0.0, 0.0)}[fam]
     rep["projected"] = {}
-    for name in (["aerial170"] if fam == "town" else a.cams.split(",")):
+    for name in (["aerial170"] if fam == "town" else ["gameplay82"] if fam in ("stages", "wheat_stages") else a.cams.split(",")):
         cfg = CAMS[name]
         ckit_scene.gameplay(cam, (cx, tgt_h, cz - 4.0), cfg["dist"], cfg["pitch"], az_deg=0.0, fov=70.0)
         bpy.context.view_layer.update()
