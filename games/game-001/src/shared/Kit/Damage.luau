@@ -310,7 +310,7 @@ function Damage.apply(model: Model)
 	end
 
 	-- 2. the corner: the top of the front-right corner falls (state 3 and 4)
-	local cornerX, cornerZ, cornerY = hi.X - 0.15 * width, lo.Z + 0.15 * depth, lo.Y + 0.6 * height
+	local cornerX, cornerZ, cornerY = hi.X - 0.15 * width, lo.Z + 0.15 * depth, lo.Y + 0.72 * height
 	if state >= 3 then
 		local fallen = 0
 		for _, p in kids do

@@ -16,7 +16,7 @@
 	  other part unanchored, Massless and non-colliding, welded to the Root by a Weld "RigWeld". ONE Motor6D, named `Log`
 	  (Root -> Log), carries the log with its iron head, bands and hangers (welded to the Log). Its frame is axis-aligned
 	  with the model (+X right, +Y up, -Z front), so Motor6D.Transform is a translation along the model's Z. Front is -Z.
-	  Thrust: 0 is the log drawn back (the built pose, tip flush with the front of the body), 1 is the log thrust THRUST_TRAVEL
+	  Thrust: 0 is the log drawn back (the built pose, the iron head 1 stud out in front of the roof), 1 is the log thrust THRUST_TRAVEL
 	  (3) studs forward with a 0.35-stud arc lift; Kit.siegePose sets the Transform. The kingdom colour is on the roof, the
 	  ridge, the pennant and the crest (KitTint, so Kit.setKingdomColor recolours a pooled ram; the emblem re-forms with it).
 	Budget: at most MAX_PARTS (45) BaseParts including the Root (measured 39-42, the emerald emblem costs most).
@@ -92,14 +92,14 @@ local function buildRam(color: Color3): Model
 	)
 
 	-- the log group: log, iron head, two iron bands, two hangers up to the ridge; the Log joint carries it
-	local logCF = CFrame.new(0, 3.9, -0.4) * CFrame.Angles(0, PI / 2, 0)
+	local logCF = CFrame.new(0, 3.9, -1.4) * CFrame.Angles(0, PI / 2, 0)
 	local ram = log(ctx, "Log", 0.85, 11.2, logCF, C.bark, M.Wood)
 	local group: { BasePart } = {
-		log(ctx, "RamHead", 1.0, 1.0, CFrame.new(0, 3.9, -6.5) * CFrame.Angles(0, PI / 2, 0), C.iron, M.Metal),
-		log(ctx, "RamBand", 0.95, 0.35, CFrame.new(0, 3.9, -4.4) * CFrame.Angles(0, PI / 2, 0), C.iron, M.Metal),
-		log(ctx, "RamBand", 0.95, 0.35, CFrame.new(0, 3.9, 0.9) * CFrame.Angles(0, PI / 2, 0), C.iron, M.Metal),
-		block(ctx, "Hanger", Vector3.new(0.3, 4.1, 0.3), CFrame.new(0, 6.6, -2.4), C.iron, M.Metal),
-		block(ctx, "Hanger", Vector3.new(0.3, 4.1, 0.3), CFrame.new(0, 6.6, 1.8), C.iron, M.Metal),
+		log(ctx, "RamHead", 1.0, 1.0, CFrame.new(0, 3.9, -7.5) * CFrame.Angles(0, PI / 2, 0), C.iron, M.Metal),
+		log(ctx, "RamBand", 0.95, 0.35, CFrame.new(0, 3.9, -5.4) * CFrame.Angles(0, PI / 2, 0), C.iron, M.Metal),
+		log(ctx, "RamBand", 0.95, 0.35, CFrame.new(0, 3.9, -0.1) * CFrame.Angles(0, PI / 2, 0), C.iron, M.Metal),
+		block(ctx, "Hanger", Vector3.new(0.3, 4.1, 0.3), CFrame.new(0, 6.6, -3.4), C.iron, M.Metal),
+		block(ctx, "Hanger", Vector3.new(0.3, 4.1, 0.3), CFrame.new(0, 6.6, 0.8), C.iron, M.Metal),
 	}
 
 	-- heraldry: the pennant (with the emblem) on the ridge's rear end, the shield crest on the right side
