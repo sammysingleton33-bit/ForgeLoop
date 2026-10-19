@@ -68,7 +68,7 @@ def prop_record(p, standin):
         "standin_size": standin["size"] if standin else None,
         "node": bool(p.node),
         "verts": len(m.v),
-        "placed": bool(standin and standin["placed"]),
+        "placed": bool(getattr(p, "placed", True) and standin and standin["placed"]),  # a spare (split_placed) is never placed, whatever its stand-in says
         "base_y": round(y0, 3),
         "radius_xz": round(radius, 3),
         "reach_bbox": round(corner, 3),

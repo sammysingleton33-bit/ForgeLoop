@@ -10,18 +10,18 @@
 		Kit.damageFromHp(hp, maxHp) -> number   1 - hp / maxHp, clamped
 		Kit.DAMAGE_THRESHOLDS = { 0.25, 0.5, 0.75, 0.95 }
 	Model attribute written: KitDamageState (1..4; absent at state 0). Every added part carries the attribute
-	KitDamage = true and KitDamageKind = "crack" | "soot" | "chip" | "leaf" | "rubble" | "stump"; they are direct children of
+	KitDamage = true and KitDamageKind = "breach" | "crack" | "chip" | "leaf" | "rubble" | "stump"; they are direct children of
 	the model.
 
 	States (cumulative; the numbers are the totals at that state)
-		state  Damage   cracks  soot  chips  rubble  crenellation / roof parts taken  gate leaves   collapse
-		  0    < 0.25     0      0     0      0       0                                0             none (exactly as built)
-		  1    >= 0.25    2      1     1      0       4                                1 (+ bands)
-		  2    >= 0.5     3      2     2      2       7                                1
-		  3    >= 0.75    3      3     2      3       10                               both gone, one broken leaf left   the top of the front-right corner
-		  4    >= 0.95    3      3     3      3       13                               the same                          the same
-	At most MAX_EXTRA_PARTS (14) parts are added (at most 12 marks, chips and rubble, one broken leaf on a gate, one stump slab
-	when a tower cap fell); none at state 0. Real geometry goes missing from state 1, so 0.3 reads differently from 0 at the
+		state  Damage   breaches  cracks  chips  rubble  crenellation / roof parts taken  gate leaves   collapse
+		  0    < 0.25      0        0      0      0       0                                0             none (exactly as built)
+		  1    >= 0.25     1        1      2      0       4                                1 (+ bands)
+		  2    >= 0.5      1        2      3      2       7                                1
+		  3    >= 0.75     2        2      4      3       10                               both gone, one broken leaf left   the top of the front-right corner
+		  4    >= 0.95     2        2      5      3       13                               the same                          the same
+	At most MAX_EXTRA_PARTS (14) parts are added (at most 12 breach marks, cracks, chips and rubble, one broken leaf on a gate,
+	one stump slab when a tower cap fell); none at state 0. Real geometry goes missing from state 1, so 0.3 reads differently from 0 at the
 	170-stud camera: a BITE of merlons (or roof tiles, thatch, lean-to roofs, palisade logs) is taken out of the crenellation
 	or the roof edge, growing from a seed on the front through the nearest parts (so state 2 keeps what state 1 took). A gate's
 	bite starts at the middle of its span and is measured from there, mirror parts alternating, so its two towers wear down
@@ -33,16 +33,18 @@
 	all (when its lowest part stands in that corner: every part of that cap, never a half cone or a turned pyramid; a gate's
 	caps stand in its middle and never fall, so its two roofs stay identical). Never removed: banners, emblems, crests, doors,
 	windows, thrones or the kingdom caps outside the collapsed corner.
-	Marks lie ON the walls the player sees, inside the model's width and below its top (never intersecting roofs or other
-	geometry), picked on the outermost upright wall block at a spread of points, the front face first (up to 4) then the
-	right face, and only where nothing (a turret, a porch, a banner) stands in front of it; a mark that finds no such site
-	goes on the biggest wall. Cracks are thin slabs (0.32 across, 0.1 deep) tilted on the face. Soot is an opaque streak
-	(1.5 to 2.2 across, 0.08 deep, up to 6.5 long) high on the right half, where the fire was. Cracks and soot are LIT dark
-	browns (62,50,43 and 74,59,49), never black (the spec keeps every channel above 40 / 255), in Slate, not Neon. Chips are
-	small pale blocks of freshly broken stone (238,230,212) standing proud of the face at the foot of the marks, so a mark
-	reads as breached masonry and not as a decal. Rubble is up to three blocks, 3.6/2.8/2.0 studs across, in the colour of the
-	biggest wall at the corner's foot (with its tint, so a recolour follows). The stump (state 3 and 4, only when a tower cap
-	fell) is one tilted slab of broken masonry seated on the highest box under where the lowest cap part stood.
+	Marks are BROKEN STONE, not stickers (the FL-0128 defect round B). They lie on the FRONT face of the walls the player sees,
+	wholly inside the wall block they sit on (so nothing overhangs a silhouette) and below the model's top, picked on the
+	outermost upright wall block at a spread of points and only where nothing (a turret, a porch, a banner, a step) stands in
+	front of it; a mark that finds no such site goes on the biggest wall. Every mark is the supporting wall's OWN stone, shaded,
+	and tinted when the wall is (so a recolour follows): the spec KitDamage keeps each inside a band of the wall's value, never
+	black and never Neon. A BREACH is a recess 2.2 to 3.2 wide and up to 4.2 high, 0.09 deep, at 0.64 of the wall (the band is
+	0.5 to 0.9); a CRACK is a hairline (0.14 across, 0.07 deep, up to 3.8 long, tilted) at 0.8 of the wall (0.65 to 0.92); CHIPS
+	are small stone blocks (0.8 to 1.4 by 0.6 to 1.0, 0.4 deep) at 1.25 of the wall (1.05 to 1.6) round the rim of the recesses,
+	standing proud of the face, so the edges read as broken masonry. An untinted dark wall keeps its marks off black (the floor
+	is (44,40,36) / 255). Rubble is up to three blocks, 3.6/2.8/2.0 studs across, in the colour of the biggest wall at the
+	corner's foot (with its tint, so a recolour follows). The stump (state 3 and 4, only when a tower cap fell) is one tilted
+	slab of broken masonry seated on the highest box under where the lowest cap part stood.
 
 	Compatibility
 	- Burning (FORGE-04's FeedbackController reads the model attribute `Burning` and the model's bounding box top): this module
@@ -66,18 +68,17 @@ Damage.ATTRIBUTE = "Damage"
 Damage.STATE_ATTRIBUTE = "KitDamageState"
 Damage.PART_ATTRIBUTE = "KitDamage"
 -- per state 1..4 (state 0 adds and removes nothing)
-Damage.CRACKS = table.freeze({ 2, 3, 3, 3 })
-Damage.SOOT = table.freeze({ 1, 2, 3, 3 })
-Damage.CHIPS = table.freeze({ 1, 2, 2, 3 })
+Damage.BREACH = table.freeze({ 1, 1, 2, 2 })
+Damage.CRACKS = table.freeze({ 1, 2, 2, 2 })
+Damage.CHIPS = table.freeze({ 2, 3, 4, 5 })
 Damage.RUBBLE = table.freeze({ 0, 2, 3, 3 })
 Damage.REMOVED = table.freeze({ 4, 7, 10, 13 })
 
--- lit dark browns, never black (a black slab reads as a hole): the spec keeps every channel above 40 / 255
-Damage.CRACK_COLOR = Color3.fromRGB(62, 50, 43)
-Damage.SOOT_COLOR = Color3.fromRGB(74, 59, 49)
-local CHIP_PALE = Color3.fromRGB(238, 230, 212)
-local CRACK = Damage.CRACK_COLOR
-local SOOT = Damage.SOOT_COLOR
+-- breach marks are the supporting wall's OWN stone, shaded: a recess a shade under the wall, a hairline crack a little under it,
+-- chips a shade lighter (the spec keeps each within a band of the wall's value, luminance above 0.1 and never Neon)
+Damage.BREACH_SHADE = 0.64
+Damage.CRACK_SHADE = 0.8
+Damage.CHIP_LIGHT = 1.25
 -- walls the cracks may sit on, then the parts that go missing and the parts of a collapsing corner
 local BODY =
 	{ Walls = true, Hall = true, Donjon = true, Shaft = true, Curtain = true, GateTower = true, BarnWalls = true }
@@ -466,149 +467,146 @@ function Damage.apply(model: Model)
 		)
 	end
 
-	-- 3. cracks and soot: thin dark slabs lying flat on the walls the player sees, the front face first, then the right face
-	-- (soot: wide streaks high on the right half, where the fire was). Sites are found on the outermost wall block at a
-	-- spread of points (a facade that hides the biggest wall does not hide the mark); a site the walls do not offer falls
-	-- back to the biggest wall.
+	-- 3. breaches: broken stone, not stickers. Pale-ish patches of the wall's OWN stone (a shadowed recess a shade under the
+	-- wall, stone-coloured chips round its rim, a hairline crack or two), on the FRONT face of the walls the player sees and
+	-- wholly inside the wall block they sit on, so nothing overhangs a silhouette. Sites are found on the outermost wall block
+	-- at a spread of points (a facade that hides the biggest wall does not hide the mark); a site the walls do not offer falls
+	-- back to the biggest wall. Colours are the supporting wall's own, shaded (and tinted when the wall is, so a recolour
+	-- follows): never black, never Neon.
 	local body = bodyOf(model, kids)
 	if body then
 		local boxes, walls = boxesOf(model, kids)
-		-- a site on the front (onFront) or right face at the point (u, v) of the model's box, v mapped into y0 .. y0 + ys of
-		-- its height: on the outermost wall block there, and only when nothing (a turret, a porch, a banner, a step) stands
-		-- in front of it. Returns the frame on the face and the mark's length.
+		-- the mark's colour and tint: the wall block it sits on, shaded
+		local function stone(wall: BasePart, factor: number): (Color3, number?)
+			local tint = wall:GetAttribute("KitTint")
+			local c = Parts.shade(wall.Color, factor)
+			if type(tint) == "number" then
+				return c, tint * factor
+			end
+			-- an untinted dark wall keeps its marks off black
+			return Color3.new(math.max(c.R, 44 / 255), math.max(c.G, 40 / 255), math.max(c.B, 36 / 255)), nil
+		end
+		-- a site on the front face at the point (u, v) of the model's box, v mapped into y0 .. y0 + ys of its height: on the
+		-- outermost wall block there with halfW to spare on both sides, and only when nothing (a turret, a porch, a banner, a
+		-- step) stands in front of it. Returns the frame on the face, the mark's length and the wall block.
 		local function site(
-			onFront: boolean,
 			u: number,
 			v: number,
 			y0: number,
 			ys: number,
-			longest: number
-		): (CFrame?, number)
+			longest: number,
+			halfW: number
+		): (CFrame?, number, BasePart?)
 			local best: Box? = nil
 			local bestFace = math.huge
-			local x, y, z =
-				lo.X + (0.1 + 0.8 * u) * width, lo.Y + (y0 + ys * v) * height, lo.Z + (0.1 + 0.8 * u) * depth
+			local x, y = lo.X + (0.1 + 0.8 * u) * width, lo.Y + (y0 + ys * v) * height
 			for _, w in walls do
-				local face, inside
-				if onFront then
-					face, inside = w.cz - w.hz, math.abs(x - w.cx) <= w.hx - 0.4
-				else
-					face, inside = -(w.cx + w.hx), math.abs(z - w.cz) <= w.hz - 0.4
-				end
-				if inside and math.abs(y - w.cy) <= w.hy - 1 and face < bestFace then
+				local face = w.cz - w.hz
+				if math.abs(x - w.cx) <= w.hx - 0.4 - halfW and math.abs(y - w.cy) <= w.hy - 1 and face < bestFace then
 					best, bestFace = w, face
 				end
 			end
 			if best == nil then
-				return nil, 0
+				return nil, 0, nil
 			end
 			local len = math.min(longest, best.hy * 2 * 0.5)
-			y = math.clamp(y, best.cy - best.hy + len / 2 + 0.2, best.cy + best.hy - len / 2 - 0.2) -- the mark stays on the wall
+			y = math.clamp(y, best.cy - best.hy + len / 2 + 0.7, best.cy + best.hy - len / 2 - 0.7) -- the mark (and its chips) stay on the wall
 			local halfLen = len / 2 + 0.3
 			for _, b in boxes do
-				if b ~= best then
-					if onFront then
-						if
-							b.cz - b.hz < best.cz - best.hz - 0.15
-							and math.abs(x - b.cx) < b.hx + 0.5
-							and math.abs(y - b.cy) < b.hy + halfLen
-						then
-							return nil, 0
-						end
-					elseif
-						b.cx + b.hx > best.cx + best.hx + 0.15
-						and math.abs(z - b.cz) < b.hz + 0.5
-						and math.abs(y - b.cy) < b.hy + halfLen
-					then
-						return nil, 0
-					end
+				if
+					b ~= best
+					and b.cz - b.hz < best.cz - best.hz - 0.15
+					and math.abs(x - b.cx) < b.hx + halfW + 0.2
+					and math.abs(y - b.cy) < b.hy + halfLen
+				then
+					return nil, 0, nil
 				end
 			end
-			if onFront then
-				return CFrame.new(x, y, best.cz - best.hz - 0.06), len
-			end
-			return CFrame.new(best.cx + best.hx + 0.06, y, z) * CFrame.Angles(0, -math.pi / 2, 0), len
+			return CFrame.new(x, y, best.cz - best.hz - 0.06), len, best.part
 		end
-		-- the frame of a mark when no exposed site was found: on the biggest wall as it is
-		local function fallback(onFront: boolean, u: number, v: number, y0: number, ys: number): CFrame
+		-- the frame of a mark when no exposed site was found: on the biggest wall as it is, kept inside it
+		local function fallback(u: number, v: number, y0: number, ys: number, halfW: number): CFrame
 			local cf, size = body.CFrame, body.Size
-			local su, sv = u * 0.74 - 0.37, y0 + ys * v
-			return if onFront
-				then cf * CFrame.new(su * size.X, (sv - 0.5) * size.Y, -size.Z / 2 - 0.05)
-				else cf * CFrame.new(size.X / 2 + 0.05, (sv - 0.5) * size.Y, su * size.Z) * CFrame.Angles(
-					0,
-					-math.pi / 2,
-					0
-				)
+			local reach = math.max(size.X / 2 - halfW - 0.3, 0)
+			local su, sv = math.clamp((u * 0.74 - 0.37) * size.X, -reach, reach), y0 + ys * v
+			return cf * CFrame.new(su, (sv - 0.5) * size.Y, -size.Z / 2 - 0.05)
 		end
-		local marks: { { at: CFrame, len: number } } = {} -- every crack and soot streak: the chips sit at their feet
-		for i = 1, Damage.CRACKS[state] do
-			local onFront = i ~= 3
-			local at, len, tilt = nil, 0, 0
+		-- the recesses (patches of broken stone), a shade under the wall
+		local patches: { { at: CFrame, w: number, h: number, wall: BasePart } } = {}
+		for _ = 1, Damage.BREACH[state] do
+			local w = 2.2 + 1.0 * rand()
+			local at, h, wall = nil, 0, nil
 			local u, v = 0.5, 0.5
 			for _ = 1, 24 do -- a fixed number of draws per attempt, so the result depends on the model alone
-				u, v = rand(), rand()
-				tilt = (rand() - 0.5) * 0.7
-				at, len = site(onFront, u, v, 0.2, 0.55, 4.6)
+				u, v = 0.15 + 0.7 * rand(), rand()
+				at, h, wall = site(u, v, 0.3, 0.5, 4.2, w / 2 + 0.7)
 				if at then
 					break
 				end
 			end
 			if at == nil then
-				at, len = fallback(onFront, u, v, 0.3, 0.5), math.min(4.6, body.Size.Y * 0.5)
+				at, h, wall = fallback(u, v, 0.4, 0.4, w / 2 + 0.7), math.min(4.2, body.Size.Y * 0.4), body
 			end
-			table.insert(marks, { at = (at :: CFrame) * CFrame.Angles(0, 0, tilt), len = len })
+			table.insert(patches, { at = at :: CFrame, w = w, h = h, wall = wall :: BasePart })
+			local color, tint = stone(wall :: BasePart, Damage.BREACH_SHADE)
+			make(
+				"breach",
+				Parts.block(ctx, "DamageBreach", Vector3.new(w, h, 0.09), at :: CFrame, color, M.Slate, tint)
+			)
+		end
+		-- hairline cracks, a little under the wall's value
+		for _ = 1, Damage.CRACKS[state] do
+			local at, len, wall, tilt = nil, 0, nil, 0
+			local u, v = 0.5, 0.5
+			for _ = 1, 24 do
+				u, v = rand(), rand()
+				tilt = (rand() - 0.5) * 0.7
+				at, len, wall = site(u, v, 0.2, 0.55, 3.8, 0.8)
+				if at then
+					break
+				end
+			end
+			if at == nil then
+				at, len, wall = fallback(u, v, 0.3, 0.5, 0.8), math.min(3.8, body.Size.Y * 0.4), body
+			end
+			local color, tint = stone(wall :: BasePart, Damage.CRACK_SHADE)
 			make(
 				"crack",
 				Parts.block(
 					ctx,
 					"DamageCrack",
-					Vector3.new(0.32, len, 0.1),
+					Vector3.new(0.14, len, 0.07),
 					(at :: CFrame) * CFrame.Angles(0, 0, tilt),
-					CRACK,
-					M.Slate
+					color,
+					M.Slate,
+					tint
 				)
 			)
 		end
-		for i = 1, Damage.SOOT[state] do
-			local onFront = i ~= 3 -- the third streak goes up the right face
-			local at, len = nil, 0
-			local u, v = 0.5, 0.5
-			for _ = 1, 24 do
-				u, v = 0.45 + 0.55 * rand(), rand()
-				at, len = site(onFront, u, v, 0.5, 0.4, 6.5)
-				if at then
-					break
-				end
-			end
-			if at == nil then
-				at, len = fallback(onFront, 0.5 + 0.5 * u, v, 0.5, 0.4), math.min(6.5, body.Size.Y * 0.5)
-			end
-			table.insert(marks, { at = at :: CFrame, len = len })
-			make(
-				"soot",
-				Parts.block(ctx, "DamageSoot", Vector3.new(1.5 + 0.7 * rand(), len, 0.08), at :: CFrame, SOOT, M.Slate)
-			)
-		end
-		-- chipped stone: pale blocks of the wall's own stone at the foot of the marks, standing a little proud of the face, so
-		-- a mark reads as breached masonry and not as a decal
+		-- chipped stone round the rim of the recesses (the foot, then the left and right edges): stone-coloured blocks a shade
+		-- lighter than the wall, standing proud of the face, so the edges read as broken
 		for i = 1, Damage.CHIPS[state] do
-			local m = marks[1 + ((i - 1) * 2) % #marks]
-			local size = Vector3.new(0.9 + 0.5 * rand(), 0.55 + 0.35 * rand(), 0.4)
-			local chipAt = m.at
-				* CFrame.new((rand() - 0.5) * 0.9, -m.len / 2 + 0.4, -0.2)
-				* CFrame.Angles(0, 0, (rand() - 0.5) * 0.7)
-			-- inside the model's width, whatever the face it sits on
-			chipAt += Vector3.new(math.clamp(chipAt.X, lo.X + 0.6, hi.X - 0.6) - chipAt.X, 0, 0)
+			local p = patches[1 + (i - 1) % #patches]
+			local edge = i % 3
+			local dx, dy
+			if edge == 1 then
+				dx, dy = (rand() - 0.5) * p.w * 0.8, -p.h / 2 + 0.15
+			elseif edge == 2 then
+				dx, dy = -p.w / 2 + 0.1, (rand() - 0.5) * p.h * 0.8
+			else
+				dx, dy = p.w / 2 - 0.1, (rand() - 0.5) * p.h * 0.8
+			end
+			local color, tint = stone(p.wall, Damage.CHIP_LIGHT)
 			make(
 				"chip",
 				Parts.block(
 					ctx,
 					"DamageChip",
-					size,
-					chipAt,
-					CHIP_PALE, -- freshly broken stone: paler than any wall and the soot beside it, whatever the kingdom colour
-					M.Slate
+					Vector3.new(0.8 + 0.6 * rand(), 0.6 + 0.4 * rand(), 0.4),
+					p.at * CFrame.new(dx, dy, -0.2) * CFrame.Angles(0, 0, (rand() - 0.5) * 0.9),
+					color,
+					M.Slate,
+					tint
 				)
 			)
 		end

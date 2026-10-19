@@ -1657,11 +1657,15 @@ end
 --         L3 + portcullis, braziers at the foot, the tallest towers
 -- Budgets (Buildings.PART_BUDGET_BY_LEVEL, enforced by tests/world): wall 30 / 45 / 60, gate 90 / 120 / 150.
 Buildings.GATE_OPEN_ANGLE = math.rad(65) -- how far an open gate leaf stands from the closed plane (about the hinge at the tower face)
--- the passage floor: a light sand on dark stone, a dark earth on light stone, so the open gate reads against every kingdom's wall
-local GATE_FLOOR_LIGHT = Color3.fromRGB(186, 170, 142)
-local GATE_FLOOR_DARK = Color3.fromRGB(78, 68, 60)
+-- the passage floor: a MID tone that differs clearly in value from each kingdom's wall but is never near-black (it read as a black
+-- void at 170 studs): a mid sand on Emberhold's dark stone (luminance 0.57), a mid earth on the light stones (0.39) and a slightly
+-- darker mid earth on Thornwood's mid-value stone (0.34). The spec keeps it in 0.25 to 0.6 and 0.15 or more from the wall.
+local GATE_FLOOR_SAND = Color3.fromRGB(160, 144, 118)
+local GATE_FLOOR_EARTH = Color3.fromRGB(112, 98, 84)
+local GATE_FLOOR_EARTH_DARK = Color3.fromRGB(96, 84, 72)
 local function gateFloor(stone: Color3): Color3
-	return if 0.2126 * stone.R + 0.7152 * stone.G + 0.0722 * stone.B > 0.45 then GATE_FLOOR_DARK else GATE_FLOOR_LIGHT
+	local lum = 0.2126 * stone.R + 0.7152 * stone.G + 0.0722 * stone.B
+	return if lum > 0.6 then GATE_FLOOR_EARTH elseif lum > 0.45 then GATE_FLOOR_EARTH_DARK else GATE_FLOOR_SAND
 end
 Buildings.PART_BUDGET_BY_LEVEL = {
 	wall = { 30, 45, 60 },
@@ -1891,18 +1895,17 @@ BUILDERS.gate = function(ctx, level, color, style, fp)
 			end
 		end
 	end
-	if lv <= 2 then
-		-- the fixed head of the door: a recessed dark stone panel fills the point of the arch above the leaves, so the closed
-		-- gate shows no sky through it (L3 has its portcullis there); it stays when the leaves open
-		block(
-			ctx,
-			"Tympanum",
-			Vector3.new(pass - 0.2, 15.1 - 9.6, 0.6),
-			CFrame.new(0, (15.1 + 9.6) / 2, zf + 0.15),
-			shade(S.base, 0.82),
-			M.Cobblestone
-		)
-	end
+	-- the fixed head of the door: a recessed stone panel fills the point of the arch above the leaves, so the closed gate shows
+	-- no sky through it; it stays when the leaves open. L3 has its portcullis in front of it: the bars hang 0.1 stud behind the
+	-- facade face and the panel stands just behind them, so the grille shows against stone, not grass.
+	block(
+		ctx,
+		"Tympanum",
+		Vector3.new(pass - 0.2, 15.1 - 9.6, 0.6),
+		CFrame.new(0, (15.1 + 9.6) / 2, if lv == 3 then -d / 2 + 1.35 else zf + 0.15),
+		shade(S.base, 0.82),
+		M.Cobblestone
+	)
 	if lv == 3 then
 		-- the portcullis is a grille in the point of the arch above the leaves: short bars that follow the arch, a cross
 		-- bar ties them; raised 7 studs it is hidden inside the lintel (the opening is clear when the gate is open)
@@ -1911,11 +1914,11 @@ BUILDERS.gate = function(ctx, level, color, style, fp)
 		for _, bx in { -4.0, -2.4, -0.8, 0.8, 2.4, 4.0 } do
 			local top = spring + (15 - spring) * (1 - math.abs(bx) / (pass / 2)) - 0.5
 			local len = top - barBottom
-			local barCF = CFrame.new(bx, barBottom + len / 2, -d / 2 + 2.0)
+			local barCF = CFrame.new(bx, barBottom + len / 2, -d / 2 + 0.8)
 			local bar = block(ctx, "PortcullisBar", Vector3.new(0.4, len, 0.4), barCF, C.iron, M.Metal)
 			movable(ctx, bar, lift * barCF)
 		end
-		local crossCF = CFrame.new(0, 11, -d / 2 + 2.0)
+		local crossCF = CFrame.new(0, 11, -d / 2 + 0.8)
 		local cross = block(ctx, "Portcullis", Vector3.new(12, 0.45, 0.45), crossCF, C.iron, M.Metal)
 		movable(ctx, cross, lift * crossCF)
 		for _, sx in { -1, 1 } do

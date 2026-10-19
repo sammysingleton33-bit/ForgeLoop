@@ -595,8 +595,8 @@ What was built:
   slits, L3 its own outline: end piers with slits a tier above the walkway, two stepped buttresses beside them, two wider banners, a
   big brazier on a plinth that rests on the walkway. Footprint 32 x 8 as before.
 - **Gate:** two towers and a pointed arch whose span reaches the tower tops, arch stones flush on its face, a recessed tympanum over the
-  leaves (L1, L2), timber leaves (L1), banded leaves, tower banners and a crest (L2), a portcullis and two braziers at the foot (L3), a
-  passage floor that contrasts with each kingdom's wall. `Kit.setGateOpen` swings
+  leaves (all three levels; at L3 it sits behind the portcullis bars), timber leaves (L1), banded leaves, tower banners and a crest (L2),
+  a portcullis and two braziers at the foot (L3), a MID-tone passage floor in every kingdom (sand or earth, never near-black). `Kit.setGateOpen` swings
   the leaves 65 degrees into the passage (both visible, the middle clear) and raises the portcullis 7 studs into the lintel, by CFrame
   only. Footprint 32 x 12 as before.
 - **Watchtower L2:** hoarding galleries under the parapet, arrow slits instead of arched windows, two braziers at the door.
@@ -606,8 +606,9 @@ What was built:
   fist, large kingdom-coloured shield with a flat light emblem, broad helm and a bigger crest / archer with a round head and a short curved
   three-part bow with a string held below the chin.
 - **Damage:** a bite of merlons or roof tiles gone from 0.25, a gate leaf knocked out (and a broken leaf left standing at 0.75 and above),
-  flat cracks and opaque soot streaks in lit dark browns, pale chips of broken stone beside them, bigger rubble, from 0.75 the
-  collapsed corner top (a tower cap falls whole or not at all) with a stump slab. No translucent smoke.
+  broken stone on the front face (a shadowed recess in the wall's own stone, a hairline crack, pale stone chips round the rim: no black,
+  nothing overhanging), bigger rubble, from 0.75 the collapsed corner top (a tower cap falls whole or not at all) with a stump slab.
+  No translucent smoke.
 
 Specs (headless): `KitWarKit.spec` (levels, wall L3 outline and brazier seat, gate shape, gate poses incl. both open leaves in view and
 the raised portcullis, tower, ram shape, mutants), `KitUnitKinds.spec` (kinds, pose clearance, silhouettes, mutants), `KitDamage.spec`
@@ -658,6 +659,30 @@ Unchanged: `kit_fl0128_tower_ram.jpg`, `kit_fl0128_towers_170.jpg`, `kit_fl0128_
 
 Not chased (per FORGE-00): units at 170 studs, tower L2 against L1 at 170, keep damage at 0.3, the ram at 170. The all-built worst case
 grew from 26,217 to 26,322 (the tympanum, the tower seats and the wall L3 courses), under the 26,900 pin.
+
+### FL-0128 defects round B (after the "any visible defects?" review; branch `forge/02-blender-fl0128-defects`, stacked on the war branch)
+Author: FORGE-02. Scope fixed by FORGE-00: three items only (breach marks, gate L3 closed, open-gate floor). Every image below was opened
+and judged by me; headless evidence only (Lune specs, Blender Cycles previews of Lune dumps), Studio unverified. Re-rendered sheets
+(`img/`): `kit_fl0128_gates.jpg`, `kit_fl0128_damage.jpg`, `kit_fl0128_damage_kingdoms.jpg`, `kit_fl0128_damage_170.jpg`,
+`kit_fl0128_gates_open_170.jpg`, `kit_fl0128_before_after_170.jpg` (its gate is L1 closed; only the render was refreshed), equal scale, nothing cropped.
+
+| # | Defect | Result | What I saw |
+|---|---|---|---|
+| 1 | Breach marks read as stickers or holes | fixed at close range, subtle at 170 | no black and no nail-like stick: a recess in the wall's own stone at 0.64 of its value, a hairline crack at 0.8 of it, 2 to 5 stone chips at 1.25 of it round the rim; all on the front face, wholly inside the wall block, so no silhouette is overhung (a spec). At 170 studs the marks are small, pale-edged notches, not dark patches; on Frostmere and Sunspire they are no longer strong dark patches. Caveat: the recess is still a flat rectangle with sharp corners, the chips are what break its outline |
+| 2 | Gate L3 closed shows grass between the portcullis bars | fixed | a dark stone panel (the tympanum, now at every level) sits just behind the bars (bars at z = -d/2 + 0.8, panel at -d/2 + 1.35, inside the lintel's depth, so the raised-bar rule holds); in all four kingdoms the grille reads dark on dark with the leaves below it, no grass. The closed-arch sampling spec now covers L3 |
+| 3 | Open-gate floor near-black (Frostmere, Thornwood, Sunspire) reads as a void at 170 | fixed | every kingdom gets a MID-tone floor: sand (160,144,118) on the darkest stone, earth (112,98,84) or dark earth (96,84,72) on the rest, luminance 0.34 to 0.57, at least 0.15 from the wall (a spec). The closed-against-open pair and the open row at 170 read as a floor under the arch in all four kingdoms; the passage still shades darker towards its back, as an interior does |
+
+Rule change in `KitDamage.spec`: marks no longer have to be "dark" (the old rule pinned lit dark browns). The rule is now: a breach mark
+stays within a band of the wall's own value (breach 0.5 to 0.9 of the supporting wall's luminance, crack 0.65 to 0.92, chip 1.05 to 1.6 or
+within 0.06 of it), luminance at least 0.1 and not Neon, lies wholly inside a wall block on the front face, and the shapes are thin boxes.
+Mutants killed (KitDamage): a translucent breach, a pure black breach, a dark-brown sticker at a third of the wall's value, black cracks, a
+Neon breach, a thick dark stick for a crack, no chips, chips as dark as the recess, a breach overhanging the wall's edge, a breach turned
+onto the side face. KitWarKit: no tympanum at the closed L1/L2 arch, no panel behind the L3 bars, a near-black, white or wall-valued floor.
+
+Numbers: parts per piece unchanged except the L3 gate, +1 for the tympanum (gate L1 72-77, L2 102-113, L3 121-132 against the 90 / 120 /
+150 caps; wall 26-30 / 36-40 / 52-60; watchtower L1 107-116, L2 105-122); the breach, crack and chip marks add 4 / 6 / 8 / 9 parts at state 1 to 4 (12 with rubble at state 4) within the 14
+extra-part budget. All-built worst case 26,326 of 27,000 (it was 26,322; the four L3 tympana), under the 26,900 pin.
+Not chased (per FORGE-00): shield and bow grip (FL-0135), keep damage, framing, units at 170, tower L2 against L1, the ram at 170.
 
 ## FL-0072 — Crown Arena venue, crowd figures, armour and weapons (G12.6; FORGE-02; Blender previews, not Studio)
 

@@ -16,6 +16,8 @@ RUN = ["lune", "run", "roblox/tests/harness/run.luau", "--project", "games/game-
 M, V, K = U + "HowToPlayModel.luau", U + "HowToPlay.luau", C + "HowToPlayController.luau"
 H = "economy/HowToPlay"
 ROWS = [
+    ("vote length literal", M, "local voteSeconds = if type(c.arena.voteSeconds) == \"number\" then c.arena.voteSeconds else 10",
+     "local voteSeconds = 10", H, "co-rulers' vote works"),
     ("no config Arena fallback", M, "\t\t\tlocal s = c.arena[key]", "\t\t\tlocal s = nil", H, "else config Arena's stages"),
     ("Pacing.arena ignored", M, "\tfor _, s in c.pacing.arena or {} do", "\tfor _, s in {} do", H, "else config Arena's stages"),
     ("config Arena added on top", M, "\tif total <= 0 then\n\t\tfor _, key", "\tif true then\n\t\tfor _, key", H, "else config Arena's stages"),

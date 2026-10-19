@@ -3,10 +3,12 @@
 	parts by Kit.applyDamage (Kit/Damage.luau). This spec pins:
 
 	  1. states     Damage 0 (and anything under 0.25 or not a number) is exactly the model as built; the four thresholds
-	                0.25/0.5/0.75/0.95 add and remove exactly the documented cracks, soot, chips, rubble, a broken gate leaf
-	                and missing parts, at most 14 extra parts, harmless to touch; cracks and soot are lit dark browns (every
-	                channel above 40 / 255, never black), chips are paler stone, a gate keeps one broken leaf at 0.9, a
-	                gate's two tower caps stay identical (a cap falls whole or not at all);
+	                0.25/0.5/0.75/0.95 add and remove exactly the documented breaches, hairline cracks, chips, rubble, a
+	                broken gate leaf and missing parts, at most 14 extra parts, harmless to touch; BREACH MARKS read as broken
+	                stone, not stickers: each is the colour of the wall it sits on (a recess 0.5-0.9x its value, a hairline
+	                crack 0.65-0.92x, chips 1.05-1.6x; luminance above 0.1, never black, never Neon), lies on the
+	                FRONT face and wholly inside that wall block (nothing overhangs a silhouette); a gate keeps one broken leaf
+	                at 0.9, a gate's two tower caps stay identical (a cap falls whole or not at all);
 	  2. repair     deterministic, idempotent and reversible in any order: a repaired model is exactly the model as built;
 	  3. burning    the Burning attribute and the model's top are untouched (FORGE-04's Burning look reads both), every mark
 	                stays inside the model;
@@ -75,6 +77,10 @@ local function halfExtents(p: BasePart): Vector3
 		(math.abs(r.Y) * s.X + math.abs(u.Y) * s.Y + math.abs(l.Y) * s.Z) / 2,
 		(math.abs(r.Z) * s.X + math.abs(u.Z) * s.Y + math.abs(l.Z) * s.Z) / 2
 	)
+end
+
+local function luminance(c: Color3): number
+	return 0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B
 end
 
 local function topOf(model: Instance, skipDamage: boolean?): number
@@ -201,7 +207,7 @@ CHECKS.damage = function(quick: boolean?)
 			table.insert(out, `damageFromHp({c[1]}, {c[2]}) = {Kit.damageFromHp(c[1], c[2])}, want {c[3]}`)
 		end
 	end
-	local cracks, rubble, soot, chips = Damage.CRACKS, Damage.RUBBLE, Damage.SOOT, Damage.CHIPS
+	local cracks, rubble, breach, chips = Damage.CRACKS, Damage.RUBBLE, Damage.BREACH, Damage.CHIPS
 	do
 		for _, e in if quick then QUICK else FULL do
 			local bt, lv, hue = e[1], e[2], e[3]
@@ -260,8 +266,8 @@ CHECKS.damage = function(quick: boolean?)
 				if extras(m, "stump") > (if s >= 3 then 1 else 0) then
 					table.insert(out, `{stag}: {extras(m, "stump")} stump parts`)
 				end
-				if hasBody and extras(m, "soot") ~= soot[s] then
-					table.insert(out, `{stag}: soot {extras(m, "soot")}, want {soot[s]}`)
+				if hasBody and extras(m, "breach") ~= breach[s] then
+					table.insert(out, `{stag}: breaches {extras(m, "breach")}, want {breach[s]}`)
 				end
 				-- parts that went missing: monotone, at least the documented number where the model has them
 				local removed = baseN - (count(m) - ex)
@@ -344,61 +350,91 @@ CHECKS.damage = function(quick: boolean?)
 					end
 				end
 				if s == 1 and hasBody and ex < 3 then
-					table.insert(out, `{stag}: state 1 adds only {ex} marks (cracks and soot)`)
+					table.insert(out, `{stag}: state 1 adds only {ex} marks (a breach, a crack and chips)`)
 				end
-				-- the damage parts: cracks and soot are thin dark slabs lying on a face (opaque, never a wedge or a ball), rubble
-				-- and the stump blocks; all harmless to touch
+				-- the damage parts: breaches, hairline cracks and chips are thin boxes of the wall's own stone lying on its front face
+				-- (opaque, never a wedge or a ball), rubble and the stump blocks; all harmless to touch
+				local supports: { BasePart } = {} -- the wall blocks a mark may sit on: upright blocks at least 3 tall, not a plinth
+				local standIn = m:GetAttribute("KitStandIn") == true -- the VS-2 stand-ins (mine, market, granary, shrine) have posts, not walls
+				for _, q in parts(m) do
+					if
+						not standIn
+						and q:GetAttribute("KitDamage") ~= true
+						and q:IsA("Part")
+						and (q :: Part).Shape == Enum.PartType.Block
+						and q.Size.Y >= 3
+						and q.Name ~= "Plinth"
+						and q.Transparency < 1
+						and math.abs(q.CFrame.UpVector.Y) > 0.99
+						and math.abs(q.CFrame.LookVector.Z) > 0.99
+					then
+						table.insert(supports, q)
+					end
+				end
 				for _, p in m:GetChildren() do
 					if p:IsA("BasePart") and p:GetAttribute("KitDamage") == true then
 						local kind = p:GetAttribute("KitDamageKind")
 						if p.CanCollide or p.CanQuery or p.CanTouch then
 							table.insert(out, `{stag}: a {kind} part can collide or be touched`)
 						end
-						-- a lit dark brown, never black: every channel at least 40 / 255 (32 for blue), the luminance still dark
+						-- breach marks are the supporting wall's own stone, shaded (see `supports` below), never black, never Neon
 						local c = p.Color
-						local lum = 0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B
-						local dark = c.R >= 40 / 255 and c.G >= 36 / 255 and c.B >= 32 / 255 and lum <= 0.3
-						if
-							kind == "crack"
-							and not (
-								shapeOf(p) == "box"
-								and p.ClassName == "Part"
-								and p.Size.Z <= 0.12
-								and p.Size.X <= 0.4
-								and dark
-								and p.Transparency == 0
-								and p.Material ~= Enum.Material.Neon
-							)
-						then
-							table.insert(out, `{stag}: a crack is not a thin dark-brown slab`)
-						elseif
-							kind == "soot"
-							and not (
-								shapeOf(p) == "box"
-								and p.ClassName == "Part"
-								and p.Size.Z <= 0.12
-								and p.Size.X >= 1.2
-								and dark
-								and p.Transparency == 0
-								and p.Material ~= Enum.Material.Neon
-							)
-						then
-							table.insert(
-								out,
-								`{stag}: soot is not a flat dark-brown opaque streak (not black, not Neon)`
-							)
-						elseif
-							kind == "chip"
-							and not (
-								shapeOf(p) == "box"
-								and p.Size.X <= 1.6
-								and p.Size.Y <= 1.2
-								and p.Size.Z <= 0.6
-								and p.Transparency == 0
-								and lum > 0.7
-							)
-						then
-							table.insert(out, `{stag}: a chip is not a small block of pale stone`)
+						local lum = luminance(c)
+						local notBlack = lum >= 0.1 and math.max(c.R, c.G, c.B) >= 40 / 255
+						local lit = p.Transparency == 0
+							and p.Material ~= Enum.Material.Neon
+							and p.Material ~= Enum.Material.Glass
+						if kind == "breach" or kind == "crack" or kind == "chip" then
+							local sizeOk = if kind == "breach"
+								then p.Size.Z <= 0.12 and p.Size.X >= 1.5 and p.Size.Y <= 4.4
+								elseif kind == "crack" then p.Size.Z <= 0.1 and p.Size.X <= 0.2
+								else p.Size.X <= 1.5 and p.Size.Y <= 1.1 and p.Size.Z <= 0.5
+							if shapeOf(p) ~= "box" or p.ClassName ~= "Part" or not sizeOk then
+								table.insert(out, `{stag}: a {kind} is not a thin box of the right size`)
+							elseif not (notBlack and lit) then
+								table.insert(out, `{stag}: a {kind} is black, glowing or see-through`)
+							elseif math.abs(p.CFrame.LookVector.Z) < 0.99 then
+								table.insert(out, `{stag}: a {kind} is not on the front face`)
+							else
+								-- the wall blocks it can sit on: wholly inside one (x and y), on its front face
+								local pe, cp = halfExtents(p), p.CFrame.Position
+								local ok, band = false, false
+								local lo, hi = 0.5, 0.9
+								if kind == "crack" then
+									lo, hi = 0.65, 0.92
+								elseif kind == "chip" then
+									lo, hi = 1.05, 1.6
+								end
+								ok = standIn -- a stand-in has no wall to hold the mark inside
+								for _, sup in supports do
+									local se, sp = halfExtents(sup), sup.CFrame.Position
+									if
+										math.abs(cp.X - sp.X) + pe.X <= se.X + 0.05
+										and math.abs(cp.Y - sp.Y) + pe.Y <= se.Y + 0.05
+										and cp.Z < sp.Z - se.Z + 0.2
+										and cp.Z > sp.Z - se.Z - 0.8
+									then
+										ok = true
+										local ratio = lum / math.max(luminance(sup.Color), 1e-3)
+										band = band
+											or (ratio >= lo and ratio <= hi)
+											or math.abs(lum - luminance(sup.Color)) < 0.06
+									end
+								end
+								if not ok then
+									table.insert(
+										out,
+										`{stag}: a {kind} overhangs or floats off the wall it sits on ({r3(cp.X)}, {r3(
+											cp.Y
+										)})`
+									)
+								elseif not band and not standIn then
+									table.insert(
+										out,
+										`{stag}: a {kind} is not within {lo}-{hi}x of its wall's value (a dark patch, not stone)`
+									)
+								end
+							end
 						elseif
 							kind == "leaf"
 							and not (
@@ -413,8 +449,8 @@ CHECKS.damage = function(quick: boolean?)
 						elseif (kind == "rubble" or kind == "stump") and shapeOf(p) ~= "box" then
 							table.insert(out, `{stag}: rubble is not a block`)
 						elseif
-							kind ~= "crack"
-							and kind ~= "soot"
+							kind ~= "breach"
+							and kind ~= "crack"
 							and kind ~= "chip"
 							and kind ~= "leaf"
 							and kind ~= "rubble"
@@ -467,7 +503,7 @@ CHECKS.damage = function(quick: boolean?)
 			then
 				table.insert(out, `{tag}: damage touched the Burning, Hp or MaxHp attributes`)
 			end
-			-- cracks and soot lie on the walls: inside the model's width and below its top
+			-- breaches, cracks and chips lie on the walls: inside the model's width and below its top
 			do
 				local lo, hi = math.huge, -math.huge
 				for _, q in parts(base) do
@@ -476,7 +512,7 @@ CHECKS.damage = function(quick: boolean?)
 				end
 				for _, p in burning:GetChildren() do
 					local kind = p:GetAttribute("KitDamageKind")
-					if p:IsA("BasePart") and (kind == "crack" or kind == "soot" or kind == "chip") then
+					if p:IsA("BasePart") and (kind == "breach" or kind == "crack" or kind == "chip") then
 						local x = p.CFrame.Position.X
 						if x < lo - 0.2 or x > hi + 0.2 or p.CFrame.Position.Y + halfExtents(p).Y > baseTop + 1e-3 then
 							table.insert(
@@ -597,7 +633,7 @@ describe("Damage mutants are caught", function()
 			original.applyDamage(m)
 			if Damage.stateOf(m:GetAttribute("Damage")) == 0 then
 				local p = Instance.new("Part")
-				p.Name = "Soot"
+				p.Name = "Breach"
 				p:SetAttribute("KitDamage", true)
 				p.Parent = m
 			end
@@ -609,7 +645,7 @@ describe("Damage mutants are caught", function()
 			if Damage.stateOf(m:GetAttribute("Damage")) == 4 then
 				for i = 1, 4 do
 					local p = Instance.new("Part")
-					p.Name = `Soot{i}`
+					p.Name = `Extra{i}`
 					p.Anchored = true
 					p.CanCollide = false
 					p.CanTouch = false
@@ -631,18 +667,6 @@ describe("Damage mutants are caught", function()
 			end
 		end
 	end)
-	caught("soot is a translucent ball again", "damage", function()
-		Kit.applyDamage = function(m)
-			original.applyDamage(m)
-			for _, p in m:GetChildren() do
-				if p:IsA("Part") and p:GetAttribute("KitDamageKind") == "soot" then
-					local ball = p :: Part
-					ball.Shape = Enum.PartType.Ball
-					ball.Transparency = 0.5
-				end
-			end
-		end
-	end)
 	local function eachMark(m: Model, kinds: { string }, fn: (BasePart) -> ())
 		for _, p in m:GetChildren() do
 			if p:IsA("BasePart") and table.find(kinds, tostring(p:GetAttribute("KitDamageKind"))) then
@@ -650,11 +674,29 @@ describe("Damage mutants are caught", function()
 			end
 		end
 	end
-	caught("soot is pure black again", "damage", function()
+	caught("a breach is a translucent ball again", "damage", function()
 		Kit.applyDamage = function(m)
 			original.applyDamage(m)
-			eachMark(m, { "soot" }, function(p)
+			eachMark(m, { "breach" }, function(p)
+				local ball = p :: Part
+				ball.Shape = Enum.PartType.Ball
+				ball.Transparency = 0.5
+			end)
+		end
+	end)
+	caught("a breach is a pure black slab again (a hole)", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "breach" }, function(p)
 				p.Color = Color3.fromRGB(10, 8, 8)
+			end)
+		end
+	end)
+	caught("a breach is a dark-brown sticker, a third of the wall's value", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "breach" }, function(p)
+				p.Color = Color3.fromRGB(58, 46, 40)
 			end)
 		end
 	end)
@@ -666,11 +708,19 @@ describe("Damage mutants are caught", function()
 			end)
 		end
 	end)
-	caught("soot glows (Neon)", "damage", function()
+	caught("a breach glows (Neon)", "damage", function()
 		Kit.applyDamage = function(m)
 			original.applyDamage(m)
-			eachMark(m, { "soot" }, function(p)
+			eachMark(m, { "breach" }, function(p)
 				p.Material = Enum.Material.Neon
+			end)
+		end
+	end)
+	caught("a crack is a thick dark stick again", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "crack" }, function(p)
+				p.Size = Vector3.new(0.32, p.Size.Y, 0.1)
 			end)
 		end
 	end)
@@ -682,11 +732,39 @@ describe("Damage mutants are caught", function()
 			end)
 		end
 	end)
-	caught("the chips are as dark as the soot", "damage", function()
+	caught(
+		"the chips are as dark as the recess (a nail-like pale block is not stone either: no lighter than 1.6x)",
+		"damage",
+		function()
+			Kit.applyDamage = function(m)
+				original.applyDamage(m)
+				eachMark(m, { "chip" }, function(p)
+					p.Color = Color3.fromRGB(250, 246, 236)
+				end)
+			end
+		end
+	)
+	caught("the chips are as dark as the wall's recess", "damage", function()
 		Kit.applyDamage = function(m)
 			original.applyDamage(m)
 			eachMark(m, { "chip" }, function(p)
-				p.Color = Color3.fromRGB(80, 66, 56)
+				p.Color = Color3.new(p.Color.R * 0.55, p.Color.G * 0.55, p.Color.B * 0.55)
+			end)
+		end
+	end)
+	caught("a breach overhangs the wall's edge", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "breach" }, function(p)
+				p.CFrame = p.CFrame + Vector3.new(60, 0, 0)
+			end)
+		end
+	end)
+	caught("a breach is on the side face (turned a quarter)", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			eachMark(m, { "breach" }, function(p)
+				p.CFrame = p.CFrame * CFrame.Angles(0, math.rad(90), 0)
 			end)
 		end
 	end)

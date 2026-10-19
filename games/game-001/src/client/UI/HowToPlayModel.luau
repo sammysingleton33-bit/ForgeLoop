@@ -97,6 +97,7 @@ function HowToPlayModel.cards(cfg: any?): { any }
 	local c = defaults(cfg)
 	local lock = (c.match.rulers and c.match.rulers.newcomerLockSeconds) or 120
 	local caps = c.caps
+	local voteSeconds = if type(c.arena.voteSeconds) == "number" then c.arena.voteSeconds else 10
 	return {
 		{
 			id = "match",
@@ -133,7 +134,7 @@ function HowToPlayModel.cards(cfg: any?): { any }
 			title = "The Crown Arena",
 			icon = "trigger_crowdRally",
 			picture = "rep_courage",
-			body = `The top two kingdoms send one champion each; co-rulers vote. Pick a weapon, armour and perks from loyal citizens. Support gives a small blessing (at most +{percent(
+			body = `The top two kingdoms send one champion each; co-rulers vote for theirs in {voteSeconds} seconds (a tie goes to the higher leadership). Pick a weapon, armour and perks from loyal citizens. Support gives a small blessing (at most +{percent(
 				caps.passivePerStat
 			)}) and up to {caps.maxTriggers} short perks, and never weakens you. Skill decides the duel, and nothing can be bought.`,
 		},
