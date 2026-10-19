@@ -33,4 +33,9 @@ M = [
  ("FL-0071S", SS, 'return config.enabled == true', 'return true', "sim/ArenaService", "stays dark while the arena is switched off"),
  ("FL-0071S", SS, 'function SupportService:_push()\n\tif not self:enabled() then\n\t\treturn\n\tend', 'function SupportService:_push()\n\tif false then\n\t\treturn\n\tend', "sim/ArenaService", "stays dark while the arena is switched off"),
  ("FL-0071S", SS, 'if not self:enabled() then\n\t\t\treturn nil\n\t\tend', 'if false then\n\t\t\treturn nil\n\t\tend', "sim/ArenaService", "stays dark while the arena is switched off"),
+ # --- the real teleport (FORGE-07's low on #241)
+ ("FL-0071S", AS, 'local y = height or root.CFrame.Position.Y', 'local y = root.CFrame.Position.Y', "sim/ArenaService", "the real teleport puts each champion's character"),
+ ("FL-0071S", AS, '\t\t\tadapter.pivot(character, cframe)', '\t\t\tlocal _ = cframe', "sim/ArenaService", "the real teleport puts each champion's character"),
+ ("FL-0071S", AS, 'Vector3.new(towardX, y, towardZ))\n\t\t-- through', 'Vector3.new(x + 1, y, towardZ))\n\t\t-- through', "sim/ArenaService", "the real teleport puts each champion's character"),
+ ("FL-0071S", AS, 'Vector3.new(towardX, y, towardZ))\n\t\t-- through', 'Vector3.new(x - 1, y, towardZ))\n\t\t-- through', "sim/ArenaService", "the real teleport puts each champion's character"),
 ]

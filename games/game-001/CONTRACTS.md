@@ -1,4 +1,4 @@
-# game-001 contracts: AI Kingdoms (v0.4-g11h, 2026-10-19; G12 rows are effective as their PRs merge (#208: Types, Caps, DuelModel, config Duel; #209: SupportModel, config Support; #216: Ledger, LeadershipService; #217: Kit arena, crowd, gear and Layout.arena; #222: acts from sim state; #223: ArenaFlow, DuelAI, config Arena; #224: DuelRunner and the Arena.Events payload; #240: arenaDress fix), the rest is a draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
+# game-001 contracts: AI Kingdoms (v0.4-g11i, 2026-10-19; G12 rows are effective as their PRs merge (#208: Types, Caps, DuelModel, config Duel; #209: SupportModel, config Support; #216: Ledger, LeadershipService; #217: Kit arena, crowd, gear and Layout.arena; #222: acts from sim state; #223: ArenaFlow, DuelAI, config Arena; #224: DuelRunner and the Arena.Events payload; #240: arenaDress fix; #241/#246: ArenaService, SupportService, the Arena and Support remotes, off behind config Arena enabled; #245: ledger fixes), the rest is a draft; G13 VS-1 rows are effective; G13.8 follows FL-0079/FL-0088)
 
 Game-level contracts that sit on top of the framework contracts in `docs/architecture/interfaces.md`. The rules are the same:
 - Code against these contracts now.
@@ -420,7 +420,7 @@ Kit.characterMeshStatus(): { pieces: number, assemblies: number, source: boolean
 - VS-1 has no persistence (D-027): onboarding and settings progress is kept for the session only when DataService is absent.
 
 ## G12. Crown Arena and support (D-029, D-053; design: `design/crown-arena.md`; effective row by row as the arena PRs merge)
-**Effective on main since #208 (v0.4-g11d):** the G12.1 type block, `DuelModel` and `Caps` in G12.2, config `Duel`, and G12.3. **Effective on main since #209 (v0.4-g11e):** `SupportModel` in G12.2 and config `Support`. **Effective on main since #216 (v0.4-g11f):** `Ledger` and `LeadershipService` in G12.2 (FL-0069 slice 1) and config `Support.reputationCategories`. **Effective on main since #217 (v0.4-g11g):** the G12.6 FORGE-02 Kit additions and `Layout.arena`. **Effective on main since #222–#224 (v0.4-g11h):** LeadershipService acts from sim state, `ArenaFlow`, `DuelAI`, config `Arena`, `DuelRunner` in G12.2, and the G12.4 `Arena.Events` payload. **Still a draft** (shapes to build against; a change is announced in a handoff): the other G12.2 services, the G12.4 remotes, the G12.5 events and the G12.6 hooks. A row becomes effective when the PR that implements it merges (Crownfall handoff 2026-10-18).
+**Effective on main since #208 (v0.4-g11d):** the G12.1 type block, `DuelModel` and `Caps` in G12.2, config `Duel`, and G12.3. **Effective on main since #209 (v0.4-g11e):** `SupportModel` in G12.2 and config `Support`. **Effective on main since #216 (v0.4-g11f):** `Ledger` and `LeadershipService` in G12.2 (FL-0069 slice 1) and config `Support.reputationCategories`. **Effective on main since #217 (v0.4-g11g):** the G12.6 FORGE-02 Kit additions and `Layout.arena`. **Effective on main since #222–#224 (v0.4-g11h):** LeadershipService acts from sim state, `ArenaFlow`, `DuelAI`, config `Arena`, `DuelRunner` in G12.2, and the G12.4 `Arena.Events` payload. **Effective on main since #241/#246 (v0.4-g11i):** `ArenaService` and `SupportService` in G12.2, the G12.4 `Arena.*` and `Kingdom.Support`/`GetSupport` remotes (dormant while config Arena `enabled` is false, as on main), and `Duellist.citizens`. **Still a draft** (shapes to build against; a change is announced in a handoff): the other G12.2 services, the G12.4 remotes, the G12.5 events and the G12.6 hooks. A row becomes effective when the PR that implements it merges (Crownfall handoff 2026-10-18).
 
 ### G12.1 Types (`src/shared/Arena/Types.luau`, FORGE-01; on main since #208)
 ```lua
@@ -437,7 +437,10 @@ export type SupportView = { kingdom: KingdomId, userId: number, score: number, t
 export type Weapon = "swordShield" | "greatsword" | "spear" | "mace"
 export type Armour = "light" | "medium" | "heavy"
 export type Duellist = { userId: number, kingdom: KingdomId, isAI: boolean, tier: SupportTier, score: number,
-	weapon: Weapon?, armour: Armour?, triggers: { TriggerId }, reasons: { string } }   -- reasons: top 3 moment texts
+	weapon: Weapon?, armour: Armour?, triggers: { TriggerId }, reasons: { string },   -- reasons: top 3 moment texts
+	triggerCitizens: { [string]: { name: string, role: string } }?,   -- (v0.4-g11h, #223) TriggerId → its key citizen
+	citizens: number? }   -- (v0.4-g11i, #241) the kingdom's living citizens when its champion is picked (the stands
+	--   fill from it, G12.6); nil when no count was given
 export type ArenaStage = "qualify" | "vote" | "loadout" | "intro" | "duel" | "crowning" | "done"
 export type ArenaState = { stage: ArenaStage, endsAt: number?, a: Duellist?, b: Duellist?, coronation: KingdomId?, winner: number? }
 export type DuelAction = "light" | "heavy" | "block" | "blockEnd" | "parry" | "dodge"
@@ -515,13 +518,15 @@ DuelModel.snapshot(state: DuelState): { t, suddenDeath, ended, winner, reason, a
 	-- winner and reason are nil until the duel ends
 DuelModel.CONFIG, DuelModel.WEAPONS, DuelModel.ARMOUR     -- config Duel rules / weapons / armour (v0.4-g11d)
 -- ArenaFlow (src/shared/Arena/ArenaFlow.luau, on main since #223, FL-0071; v0.4-g11h): the arena's stage machine. Pure: no
--- Roblox API, no clock (the caller passes now), no randomness. Only specs build one on main (ArenaService is not built).
+-- Roblox API, no clock (the caller passes now), no randomness. Since #241 ArenaService builds one per arena it runs
+-- (v0.4-g11i; none on main while config Arena `enabled` is false).
 -- It exports one type; Flow and Champion are not exported types (`any`):
 export type Support = { score: number, tier: SupportTier, offers: { TriggerOffer }, slots: number, reasons: { string } }
 ArenaFlow.new(setup, now: number, config?): Flow
 	-- (v0.4-g11h) config? is a whole config Arena table; nil = config Arena. setup = { qualifiers: { KingdomId },
 	--   rulersOf: (KingdomId) -> { userId }, leadership: (userId, KingdomId) -> number,
-	--   support: (userId?, KingdomId) -> Support }.
+	--   support: (userId?, KingdomId) -> Support, citizens: ((KingdomId) -> number?)? }. citizens (v0.4-g11i, #241): read
+	--   once per side when its champion is picked; a number (not NaN) is floored, at least 0, as Duellist.citizens, else nil.
 	-- qualifiers: 1 or 2, else it errors. qualifiers[1] is side "a", the better Crown Points (the caller's order;
 	-- Match:arenaQualifiers gives the two standing kingdoms with the most, ties by kingdom order). rulersOf is read once,
 	-- in new: the candidates (the seated human rulers, sorted by userId). leadership (valour + conduct) only breaks a vote
@@ -590,8 +595,8 @@ AI:decide(snapshot): DuelAction?     -- snapshot = DuelModel.snapshot(state); ni
 	-- facing (DuelInput).
 -- Caps (src/shared/Arena/Caps.luau, on main since #208); G12.3 numbers
 -- DuelRunner (src/shared/Arena/DuelRunner.luau, on main since #224, FL-0071; v0.4-g11h): one duel as the server runs it.
--- Pure: no Roblox API, no clock of its own (the caller passes now), no randomness but the seed. No service uses it on
--- main yet (ArenaService is not built). Runner and RelayEvent are not exported types (`any`). Tuning, config Arena
+-- Pure: no Roblox API, no clock of its own (the caller passes now), no randomness but the seed. Since #241 ArenaService
+-- runs each duel through it (v0.4-g11i; dormant on main). Runner and RelayEvent are not exported types (`any`). Tuning, config Arena
 -- (ReplicatedStorage.Forge.Config.Arena): `tick` (1/30 s), `maxCatchup` (0.25 s), `snapshotEvery` (0.2 s), `reach`
 -- (6.5 studs), `facingMinDot` (0.5), `blockMaxSeconds` (2.5 s), `poseGraceSeconds` (8 s) and `rate` ({ burst = 8,
 -- perSecond = 12 }), all new with #224, and `simultaneousSeconds` (0.5 s).
@@ -640,12 +645,16 @@ Ledger.record(ledger, kingdom: KingdomId, userId: number?, act: string, magnitud
 	-- Any other component (the reputation acts) moves the kingdom offset: starts 0, −20..20. Valour gains per (kingdom,
 	-- userId) in a rolling 60 s add up to at most valourCapPerMinute: a gain is trimmed to the room left; no room gives
 	-- nil, "capped". The moment's delta is the applied one (after magnitude and trim; the 0..100 / ±20 clamp does not
-	-- change it); text is acts[act].text. The last Ledger.MAX_TOTAL (1600) moments of all kingdoms together are kept;
-	-- dropping one leaves levels as they are.
+	-- change it); text is acts[act].text. (v0.4-g11i) The moment is frozen. The last Ledger.MAX_PER_KINGDOM (400)
+	-- moments of each kingdom are kept (that kingdom's oldest dropped, so a busy kingdom never pushes out a quiet one's);
+	-- Ledger.MAX_TOTAL (1600, all kingdoms together) is gone. Dropping one leaves levels as they are.
 Ledger.level(ledger, kingdom, userId: number?, component: string): number    -- 0..100; Ledger.START_LEVEL (50) if never moved
 Ledger.offset(ledger, kingdom, component: string): number                    -- ±Ledger.MAX_OFFSET (20); 0 if never moved
 Ledger.moments(ledger, kingdom, userId: number?, limit: number): { LeadershipMoment }
 	-- newest first, at most floor(limit); userId nil = every moment of the kingdom; a userId = that ruler's and the kingdom's own (userId nil)
+	-- a new list each call; the moments in it are the ledger's own (frozen since v0.4-g11i)
+Ledger.isRulerComponent(ledger, component: string): boolean   -- (v0.4-g11i) true when the ledger config's
+	-- components[component].scope is "ruler" (conduct, valour); false for the kingdom components and an unknown one
 -- LeadershipService (src/server/Services/LeadershipService.luau, on main since #216, FL-0069 slice 1; v0.4-g11f; acts from
 -- sim state since #222, FL-0069 slice 2; v0.4-g11h)
 -- boots with the game services; dependency MatchService, optional ReputationService (registry:find). Clock: the match sim's
@@ -655,22 +664,29 @@ LeadershipService:record(kingdom: KingdomId, userId: number?, act: string, magni
 	-- (v0.4-g11f) Ledger.record at sim.time; fires `acted` and returns the moment. nil for a non-string kingdom or act, a
 	-- kingdom not in sim.kingdoms (an unpopulated or fallen one still records), a userId not among that kingdom's rulers
 	-- (warn once per kingdom and ruler per round) or a Ledger refusal (an unknown act: warn once per act per round).
-	-- userId nil records for the kingdom: a conduct or valour act then moves the no-ruler level, which is sampled only
-	-- while the kingdom has no seated ruler.
+	-- userId nil records for the kingdom. (v0.4-g11i) A conduct or valour act (Ledger.isRulerComponent) with userId nil
+	-- is refused (nil) while the kingdom has a seated ruler (warn once per kingdom and act per round); with no ruler
+	-- seated it moves the no-ruler level, which is sampled only while the kingdom has no seated ruler. A reputation act
+	-- with userId nil records either way.
 LeadershipService:getMoments(kingdom: KingdomId, userId: number?, limit: number): { LeadershipMoment }   -- Ledger.moments (v0.4-g11f)
+	-- a new list each call; the moments in it are the ledger's own (frozen since v0.4-g11i)
 LeadershipService:samples(kingdom: KingdomId, userId: number?): { Sample }   -- SupportModel's Sample (v0.4-g11f)
-	-- the stored series itself (not a copy), oldest first, at most 400 (oldest dropped); {} if none. userId nil = the
-	-- series of a kingdom with no seated ruler. SupportModel.score and trend read exactly this.
+	-- (v0.4-g11i) a copy of the stored series (a new list each call; each sample and its components are frozen), oldest
+	-- first, at most 400 (oldest dropped); {} if none. userId nil = the series of a kingdom with no seated ruler.
+	-- SupportModel.score and trend read exactly this.
 LeadershipService:sample(closing: boolean?)   -- one sampling round (v0.4-g11f; closing v0.4-g11h)
-	-- the service's own loop calls it every sampling.intervalSeconds of wall time (env.wait). It does nothing while
-	-- sim.active is false or less than intervalSeconds of sim.time has passed since the last sample, so a loop round
-	-- that sees less (e.g. after a server hitch over 1 s, which MatchHost does not catch up) is skipped. Else, for each
+	-- (v0.4-g11i) the service's own loop calls it every sampling.pollSeconds (2) of wall time (env.wait; was every
+	-- intervalSeconds). It does nothing while sim.active is false or less than intervalSeconds of sim.time has passed
+	-- since the last sample, so a round is taken at the first poll once intervalSeconds of sim.time have passed
+	-- (sim.time runs behind the wall clock after a hitch: MatchHost clamps a step to 1 s), and the first round after a
+	-- reset at the next poll (was the next intervalSeconds tick). Else, for each
 	-- alive and populated kingdom in sim.kingdomOrder: one { t = sim.time, components } per seated ruler, or one under
 	-- userId nil when none is seated. All seven components, 0..100:
 	--   reputation: mean of ReputationService:getKingdomReputation over config reputationCategories (no service, or no
 	--     number among them: 50), + the kingdom offset
-	--   happiness, morale: the kingdom's conditions; stability: Consequences.effectiveStability (stability − unrestPressure);
-	--     all three 50 when the kingdom has no conditions table
+	--   happiness, morale: the kingdom's conditions (a missing one 50); stability: conditions.stability (nil = 50 since
+	--     v0.4-g11i; Consequences.effectiveStability read nil as 0) − k.unrestPressure (nil = 0); all three 50 when the
+	--     kingdom has no conditions table
 	--   loyalty: mean loyalty of the kingdom's living citizens (50 if none); conduct, valour: that ruler's Ledger.level
 	-- (v0.4-g11h) closing is closeOut's (the loop passes none): it skips the interval check. Each kingdom's act rules
 	-- (below) run before its samples are taken, so an act recorded in a round is already in that round's conduct.
@@ -693,14 +709,58 @@ LeadershipService:closeOut()   -- sample(true): one more round when the arena be
 	-- taken even inside the interval (a second sample at the same t right after a round); credits fedRatioKept for the
 	-- phase the match is in when its streak qualifies, once per phase. Does nothing while sim.active is false. Not the
 	-- last round: while the duel runs the match waits in Endgame with the sim active, so the loop keeps sampling and the
-	-- act rules keep running. ArenaService is to call it when the arena begins (FORGE-01 #241, not merged); nothing
-	-- calls it on main yet.
+	-- act rules keep running. Since #241 (v0.4-g11i) ArenaService's beginArena calls it before it builds the ArenaFlow,
+	-- but only while config Arena `enabled` is set. The flag is false on main, so that call is never reached there and
+	-- no kingdom earns Endgame's fedRatioKept on main.
+LeadershipService:leadership(kingdom: KingdomId, userId: number?): number   -- (v0.4-g11i, #241)
+	-- Ledger.level valour + conduct of that ruler (userId nil: the no-ruler levels), 0..200; ArenaFlow's champion tie-break
+LeadershipService:keyCitizens(kingdom: KingdomId): { KeyCitizen }   -- (v0.4-g11i, #241) always {} on main (key citizens
+	-- are a later FL-0069 slice), so SupportModel.offers offers no perk: only the Crowd Rally, at Adoring
+LeadershipService.sampled: Signal<()>   -- (v0.4-g11i, #241) fired at the end of every round sample() takes (closeOut's
+	-- too; not when it returns early); SupportService pushes Kingdom.Support on it
 LeadershipService.acted: Signal<(kingdom: KingdomId, userId: number?, act: string, component: SupportComponent, delta: number)>
 	-- (v0.4-g11f) fired by every recorded act, delta as applied; G12.5 `LeadershipAct` is not on the GameEvents bus yet
--- services (not on main yet)
-SupportService:getView(kingdom: KingdomId, userId: number): SupportView
-ArenaService:getState(): ArenaState
-ArenaService.stageChanged: Signal<(ArenaState)>
+-- SupportService (src/server/Services/SupportService.luau, on main since #241, FL-0071; gate #246; v0.4-g11i): what a
+-- ruler has earned, as the meter and the arena read it. It computes nothing: SupportModel turns LeadershipService's
+-- samples and key citizens into the view; the moments are LeadershipService's own. Dependencies MatchService,
+-- RemoteService, LeadershipService. Clock: `sim.time`.
+SupportService:getView(kingdom: KingdomId, userId: number?): SupportView?
+	-- (v0.4-g11i) nil for a kingdom not in sim.kingdoms. score, tier, breakdown = SupportModel.score(LeadershipService:
+	-- samples(kingdom, userId), { now = sim.time }); trend = SupportModel.trend of the same; offers, slots =
+	-- SupportModel.offers(LeadershipService:keyCitizens(kingdom), tier); moments = getMoments(kingdom, userId, 5).
+	-- userId nil = the no-ruler series (an AI-held kingdom; its moments are all the kingdom's); the view's userId is then 0.
+SupportService:forChampion(userId: number?, kingdom: KingdomId): Support?   -- ArenaFlow's Support (v0.4-g11i)
+	-- score, tier, offers, slots of getView (nil when it is nil), and reasons: up to three distinct texts from
+	-- getMoments(kingdom, userId, 200), the largest |delta| first, the newest of equals first
+SupportService:enabled(): boolean   -- (v0.4-g11i, #246) config Arena `enabled` == true, read from ArenaService.config
+	-- (registry:find; else config Arena). It gates only the two remotes (G12.4); getView and forChampion answer either way.
+-- ArenaService (src/server/Services/ArenaService.luau, on main since #241, FL-0071; v0.4-g11i): the arena host around
+-- ArenaFlow and DuelRunner. Dormant on main: config Arena `enabled` is false. Dependencies MatchService, RemoteService,
+-- SupportService, LeadershipService. Clock: env.serverTimeNow() for every time handed to ArenaFlow and DuelRunner.
+ArenaService:state(): ArenaState   -- Flow:state(), or a frozen { stage = "done" } when no arena runs (not getState)
+ArenaService.stageChanged: Signal<(ArenaState)>   -- with each Arena.State push of a Flow:rev() change (an accepted
+	-- vote or choice too, not only a stage); not the idle state
+	-- start() always calls MatchService:registerArena({ beginArena, cancelArena }) (G3), handles the Arena.* remotes
+	-- (G12.4) and treats Players.PlayerRemoving as a forfeit (Runner:forfeit while a duel runs, else Flow:forfeit).
+	-- beginArena(qualifiers): false while config Arena `enabled` is false or nil (the Crown Points result at once; it
+	--   tests truthiness, SupportService `== true`), while an arena runs, or when ArenaFlow.new errors (logged). Else
+	--   LeadershipService:closeOut() first, then ArenaFlow.new with rulersOf = the kingdom's seated rulers, leadership =
+	--   LeadershipService:leadership, support = forChampion (else a neutral { score 50, tier "divided", offers {},
+	--   slots 0, reasons {} }) and citizens = the kingdom's living citizens. Side a = qualifiers[1], the one with more
+	--   Crown Points (G3 arenaQualifiers). It pushes the state, returns true and steps the flow every config Arena
+	--   `tick` of wall time.
+	-- intro: at the first step that finds it, each human champion's character is pivoted onto Layout.arena spawnA
+	--   (side a) or spawnB (side b), the venue's SpawnA/SpawnB marks: the mark's position and height, facing the other
+	--   mark. A config `site` { x, z, separation } replaces the marks (height kept); with neither, a fallback at the
+	--   origin, 8 studs apart. AI champions have no body and are not placed.
+	-- duel: one DuelRunner. Per side: SupportModel.modifiers(tier, the chosen triggers at their offer's power) ({} and a
+	--   warn if it errors), weapon, armour, triggerCitizens, skill = config Arena ai.skill; a seed from the clock; the
+	--   pose is the HumanoidRootPart read on the server. Each step's non-empty event list goes to everyone as one
+	--   Arena.Events; a finished runner ends the duel (Flow:endDuel(side or "draw")).
+	-- done (after the crowning): the final Arena.State, then { stage = "done" }, then
+	--   MatchService:arenaEnded(Flow:winnerKingdom()) (nil on a draw: Crown Points). cancelArena(reason) (G3: timeout,
+	--   conquest, phase_jump): Flow:cancel, the cancelled state, then { stage = "done" }; no arenaEnded.
+-- draft (not on main): there is no DuelService; ArenaService runs each duel through DuelRunner
 DuelService.events: Signal<(duelId: string, DuelEvent)>
 ```
 - Producers of acts (BuildingService, ProductionService, MilitaryService, CitizenService, Interaction) call `LeadershipService:record` through `registry:find` and never compute support themselves. No producer service calls it on main yet (v0.4-g11f). Since #222 (FL-0069 slice 2; v0.4-g11h), LeadershipService itself records three conduct acts from sim state: `starvation`, `fedRatioKept` and `overConscription` (G12.2 code block). Nothing records the other 12 config `Support.acts` yet: `keepUpgraded`, `objectiveDefended` (reputation); `defendedRaid`, `petitionFulfilled`, `shelteredCitizens`, `rebuiltRaidDamage`, `abandonedRegion`, `petitionIgnored`, `overwork` (conduct); `defendedOwnLand`, `capturedInPerson`, `foughtBesideTroops` (valour). So on main every kingdom's reputation offset stays 0 and every valour level 50. Still to come in FL-0069: those producers, citizen loyalty from memory events, key citizens per role, petitions and `Kingdom.FulfilPetition`, and the `inspect` additions (G12.1).
@@ -731,9 +791,11 @@ DuelService.events: Signal<(duelId: string, DuelEvent)>
   Every number is PROVISIONAL (BRIEF §16.9). Trim C (FORGE-00 ruling, FL-0076; pinned by `tests/sim/SupportModel.spec`): Adoring's passive equals Loyal's (+1 % damage reduction, +1 % stamina regeneration) and Field Remedy heals 3 % / 5 % of max HP. The same spec checks that every tier × set of distinct picks up to its slots × power (one power per set) passes `Caps.check`. SupportModel does not read `scope`, `intervalSeconds`, `roles[r].building`/`petition`, `acts`, `valourCapPerMinute` or `reputationCategories`. LeadershipService reads `sampling.intervalSeconds` and `reputationCategories`, and its `Arena/Ledger` reads `scope`, `acts` and `valourCapPerMinute` (v0.4-g11f). Nothing reads `roles[r].building`/`petition` yet.
 - Config `Arena.luau` (`ReplicatedStorage.Forge.Config.Arena`, FORGE-01; v0.4-g11h, #223) has this shape:
   - stage seconds: `voteSeconds` (10), `loadoutSeconds` (20), `introSeconds` (12), `duelMaxSeconds` (195), `crowningSeconds` (15); and `simultaneousSeconds` (0.5): a forfeit's winner leaving this soon after it makes a draw
-  - `defaultWeapon`, `defaultArmour` (`"swordShield"`, `"medium"`): a human champion who never chooses; `ai`: `{ weapon, armour }` of an AI champion (the same two)
+  - `defaultWeapon`, `defaultArmour` (`"swordShield"`, `"medium"`): a human champion who never chooses; `ai`: `{ weapon, armour, skill }` of an AI champion (the same two; `skill` 0.5, which ArenaService hands to DuelRunner for DuelAI; v0.4-g11i)
+  - `enabled` (v0.4-g11i, #241; `false` on main): while it is false or nil, ArenaService's `beginArena` answers false (the Crown Points result at once, G3); SupportService serves `Kingdom.GetSupport` and `Kingdom.Support` only while it is exactly `true` (#246). The config keeps it false until the DuelController client, the ring bounds and the Studio gate land.
+  - `site` (v0.4-g11i, #241; not set on main): an optional `{ x, z, separation }` that replaces the `Layout.arena` marks where ArenaService places the champions (G12.2)
 
-  Every timing is PROVISIONAL (config Pacing holds the match phase lengths; these are the stages inside the arena). There is no `enabled` flag: MatchService runs an arena only through a `registerArena` handler (G3), and nothing in `src` registers one on main. `duelMaxSeconds` is a safety clock behind config Duel's `hardCap` (180 s); a clock that runs out is a draw (`duel_clock`). The stage clocks add up to at most 252 s (10 + 20 + 12 + 195 + 15), inside config Match `arena.maxSeconds` (600). ArenaFlow reads all of these; DuelAI reads config Duel only. The file also holds DuelRunner's keys from #224 (`tick`, `maxCatchup`, `snapshotEvery`, `reach`, `facingMinDot`, `blockMaxSeconds`, `poseGraceSeconds`, `rate`).
+  Every timing is PROVISIONAL (config Pacing holds the match phase lengths; these are the stages inside the arena). Since #241 ArenaService calls `registerArena` (G3) at start, but with `enabled` false it declines every arena, so on main the match still ends on Crown Points (v0.4-g11i). `duelMaxSeconds` is a safety clock behind config Duel's `hardCap` (180 s); a clock that runs out is a draw (`duel_clock`). The stage clocks add up to at most 252 s (10 + 20 + 12 + 195 + 15), inside config Match `arena.maxSeconds` (600). ArenaFlow reads the stage seconds, `simultaneousSeconds` and the loadouts; DuelAI reads config Duel only; ArenaService reads `enabled`, `site`, `ai.skill` and `tick` (its step loop) and hands the whole table to ArenaFlow and DuelRunner; SupportService reads `enabled` through ArenaService's table (v0.4-g11i). The file also holds DuelRunner's keys from #224 (`tick`, `maxCatchup`, `snapshotEvery`, `reach`, `facingMinDot`, `blockMaxSeconds`, `poseGraceSeconds`, `rate`).
 - End of a duel (v0.4-g11d):
   - **KO** (`ko`): the side still above 0 HP wins. Defeat is a kneel and a yield (presentation).
   - **Time cap.** At `rules.timeCap` the higher HP wins (`timeCap`). A tie starts sudden death, with all damage × `rules.suddenDeathDamage`.
@@ -779,22 +841,24 @@ DuelModel events (`DuelEvent`; `t` is duel seconds; v0.4-g11d). `Arena.Events` (
 ### G12.4 Client remotes (area `Arena` → FORGE-01; additions to `Kingdom` and `Sim`)
 | Remote | Kind | Args → result, or payload |
 |---|---|---|
-| `Arena.State` / `Arena.GetState` | serverEvent / function | `ArenaState` (public to every player) |
-| `Arena.Vote` | function | `(candidateUserId: integer)` → `boolean`; co-rulers of a qualified kingdom, `vote` stage only |
-| `Arena.Choose` | function | `(weapon: enum Weapon, armour: enum Armour, triggers: array(enum TriggerId, 3))` → `(ok, reason?)`; champion only, `loadout` stage, triggers distinct, ⊆ own offers and ≤ slots (v0.4-g11e) |
-| `Arena.Action` | event | `(action: enum DuelAction)`; champion only, `duel` stage; burst 8, 12/s |
+| `Arena.State` / `Arena.GetState` | serverEvent / function | `ArenaState` (public to every player). **Effective on main since #241 (v0.4-g11i):** `Arena.State` goes to every player when the arena begins and on each later `Flow:rev()` change (a stage, an accepted vote or choice, a forfeit; never twice for one rev), then once `{ stage = "done" }` after the arena ends or is cancelled. Nothing is sent on join: a late client asks `Arena.GetState()` (no arguments; burst 3, 1/s), which answers `ArenaService:state()`: `{ stage = "done" }` while no arena runs, so always on main (config Arena `enabled` is false). |
+| `Arena.Vote` | function | `(candidateUserId: integer 1..2^53 − 1)` → `boolean` only (Flow:vote's reason is not returned; false when no arena runs; nil when the remote layer drops the call, e.g. rate limit or a bad argument). **Effective since #241 (v0.4-g11i):** burst 3, 1/s. The voter is the sender: a candidate of either qualified kingdom (its seated human rulers when the arena began), for a candidate of the same kingdom (oneself too); `vote` stage only, which runs only when a qualifier has two or more candidates. The latest vote counts. Every accepted vote pushes `Arena.State`, a repeat too, though `ArenaState` carries no tally. |
+| `Arena.Choose` | function | `(weapon: enum Weapon, armour: enum Armour, triggers: array(enum TriggerId, 3))` → `(ok, reason?)`. **Effective since #241 (v0.4-g11i):** burst 4, 2/s. The champion is the sender, checked by `Flow:choose` (G12.2): `loadout` stage, a human champion, triggers distinct, ≤ min(slots, 3) and among the champion's own offers. reason: `not_loadout_stage`, `not_champion`, `bad_weapon`, `bad_armour`, `bad_arguments`, `too_many`, `duplicate`, `not_offered`, or `no_arena` when none runs. Each perk's power is the server's offer's. While `LeadershipService:keyCitizens` returns `{}` (all of main), the only offer is the Crowd Rally, at Adoring. |
+| `Arena.Action` | event | `(action: enum DuelAction)`; champion only, `duel` stage; burst 8, 12/s. **Effective since #241 (v0.4-g11i):** passed to `Runner:act(sender, action, now)` while a DuelRunner runs, which rate-limits again per champion (config Arena `rate`). A stranger's action, one outside the duel and a bad action are dropped quietly (no reply, no error). No client sends it on main yet: there is no DuelController (G12.6). |
 | `Arena.Events` | serverEvent | batched `{ { t: number, kind: string, side: "a" \| "b" \| "draw", data: { [string]: any }? } }`; `t` is duel seconds. **Effective on main since #224 (v0.4-g11h):** the entries are what `Runner:step` of `Arena/DuelRunner` returns (G12.2), in order: per tick the relay of DuelModel's events (G12.2), then that tick's `snapshot`. Shares only: no raw HP or stamina, no `impactAt`, no `source` field, nothing a duellist holds in reserve. Kinds: `hit`, `heavyWindup`, `parry`, `stagger`, `staminaOut`, `hype`, `triggerFired`, `ended`, `snapshot`; DuelModel's `miss` and `dodged` are never sent. `hit` (side = the hitter): `{ damageShare: number, hpShare: number, heavy: boolean }` (DuelModel's damage / config Duel `rules.maxHp`, not capped at the HP left; the target's HP share after the hit, ≥ 0). `heavyWindup` (the attacker): `{ impactIn: number, warned: number }` (impactIn = DuelModel's impactAt − t, ≥ 0: the weapon's `heavyWindup`; warned = the defender's telegraph `lead`, else 0). `parry`, `stagger`, `staminaOut`, `hype`: side as DuelModel's, no `data` (`hype` only when the meter fills). `triggerFired` (the side it helps): `trigger` is the modifier `source` without `"perk:"`, one event per source (the Crowd Rally's two effects send one); `citizenName` is that side's `triggerCitizens[trigger].name`, else nil (the Crowd Rally's offer has no citizen). `ended`: `{ reason: "ko" \| "timeCap" \| "hardCap" \| "draw" \| "forfeit" }`, sent once, as the duel's last event. `snapshot` (side `"a"`, unused): `{ t, suddenDeath, a, b }`, each side `{ hpShare, staminaShare (clamped 0..1), state, hype, weapon, armour }` (no `hp`, `stamina`, `ended`, `winner` or `reason`); on the first tick, then on the first tick at least config Arena `snapshotEvery` (0.2 s) of duel time after the last; never on the tick that ends the duel or later. Nothing is sent while the duel is paused for a lost pose or while a forfeit settles, except that forfeit's `ended`. FORGE-00 ruling 2026-10-18 (v0.4-g11d): `ended` has side = the winner, or `"draw"` when the duel was cancelled or both champions dropped, and the match result then falls back to Crown Points (G3 `arenaEnded(nil)`). DuelModel's own `draw` and `hardCap` endings also have side `"draw"` (G12.2). `triggerFired` has `data = { trigger: TriggerId, citizenName: string? }`. A forfeit's `ended` (reason `"forfeit"`) has side = the champion who stayed, or `"draw"` when both left within config Arena `simultaneousSeconds` (0.5 s) or both ran out of pose grace in the same step. DuelRunner has no cancel, so it never sends a cancelled `ended`. FORGE-04's crowd director reads it on main (#221; G12.6). No server code sends the remote yet: ArenaService is not on main. |
-| `Kingdom.Support` / `Kingdom.GetSupport` | serverEvent to the ruler / function | the caller's `SupportView` (in-match meter, perk previews) |
-| `Kingdom.FulfilPetition` | function | `(petitionId: string(1,32))` → `(ok, reason?)`; spends the petition's `need` through TreasuryService |
+| `Kingdom.Support` / `Kingdom.GetSupport` | serverEvent to the ruler / function | the caller's `SupportView` (in-match meter, perk previews). **Effective since #241, gated by #246 (v0.4-g11i):** `Kingdom.GetSupport()` (no arguments; burst 3, 1/s) → `SupportService:getView` for the kingdom the sender rules (seated; the userId is the sender's, never an argument), nil for anyone who rules none. `Kingdom.Support` goes to each player who rules a kingdom, with their own view, after every LeadershipService sample round (`sampled`, `closeOut` too) while the sim is active. While config Arena `enabled` is not exactly `true` (so on main), `GetSupport` answers nil and nothing is pushed (`SupportService:enabled`). |
+| `Kingdom.FulfilPetition` | function | `(petitionId: string(1,32))` → `(ok, reason?)`; spends the petition's `need` through TreasuryService. **Still a draft:** not declared in `Kingdom/Remotes.luau` and not handled on main (petitions come with FL-0069). |
 
 ### G12.5 Events (appended to the GameEvents bus by FORGE-05 when the arena services land, FL-0069 to FL-0071, as D-024)
 | Event | Producer | Payload |
 |---|---|---|
 | `LeadershipAct` | FORGE-01 | (KingdomId, userId?, act, component, delta). Not in `Contracts/GameEvents` and not fired yet; `LeadershipService.acted` carries the same values, delta as applied (v0.4-g11f) |
 | `KeyCitizenChanged` | FORGE-01 | (KingdomId, KeyRole, entityId?, loyalty) |
-| `ArenaStarted` | FORGE-01 | (ArenaState) |
-| `SupportTriggered` | FORGE-01 | (duelId, userId, TriggerId, citizenId?) |
-| `DuelEnded` | FORGE-01 | (duelId, winnerUserId?, loserUserId?, { durationSec, triggersFired, hpLeft, reason }) — both ids nil on a draw (G12.2 end of a duel; v0.4-g11d) |
+| `ArenaStarted` | FORGE-01 | (ArenaState). Draft: not in `Contracts/GameEvents` and not fired. Since #241 `ArenaService.stageChanged` carries each `ArenaState` it pushes on a `Flow:rev()` change (v0.4-g11i) |
+| `SupportTriggered` | FORGE-01 | (duelId, userId, TriggerId, citizenId?). Draft: not fired. There is no duelId on main; `Arena.Events` `triggerFired` carries `{ trigger, citizenName? }` (v0.4-g11i) |
+| `DuelEnded` | FORGE-01 | (duelId, winnerUserId?, loserUserId?, { durationSec, triggersFired, hpLeft, reason }) — both ids nil on a draw (G12.2 end of a duel; v0.4-g11d). Draft: not fired; ArenaService reports a duel's end only through `Arena.Events` `ended` and `Arena.State`, and the arena's result through `MatchService:arenaEnded` after the crowning (v0.4-g11i) |
+
+- (v0.4-g11i) #241 and #246 fire nothing on the GameEvents bus: ArenaService, SupportService and LeadershipService post no G12.5 event, and `Contracts/GameEvents` declares none of the five.
 
 ### G12.6 Client and asset hooks
 - FORGE-01 `src/client/Controllers/DuelController.luau`: `act(action: DuelAction)`, `getState(): ArenaState`, `events: Signal<(ArenaEvent)>`. It is the only sender of `Arena.Action`. FORGE-04's InputMode binds keys, touch and gamepad to `act`; FORGE-03's arena HUD and FORGE-04's crowd director read `events`.
@@ -856,8 +920,13 @@ arena = {
 ```
 - The site is not the map centre, where the roads, the hub plaza and the watchtower zone meet. It is east of the watchtower, with its centre inside `heartland` (x ≤ 150). The part beyond x = 150, including `spawnB` (x = 154) and Gate B, lies outside that polygon.
 - The ground under the site is flat at y = 0 (`ArenaLayout.spec`). So the placed `SpawnA`/`SpawnB` equal `spawnA`/`spawnB`, and the ring floor is at `cframe.Y + Kit.ARENA.FLOOR_TOP` (1.12), which equals `spawnA.Y - 3`.
-- Crowd figures and reactions are client-only (FORGE-04). The server sends no per-figure data; the crowd is derived from `ArenaState`, `Arena.Events` and kingdom population.
-  - **Crowd director (v0.4-g11f, #221; reads the G12.4 draft relay).** `Feedback/CrowdDirector` reads `kind` and `side`, plus `hit` `damageShare`, `hpShare` (else DuelModel's `targetHpShare`) and `heavy`, and `triggerFired` `trigger` (else `source` without `"perk:"`) and `citizenName`. It never reads `hit`'s raw `damage` (HP points) or `ended`'s `reason`. Every field is optional; a missing one degrades quietly. A hit is major when `heavy` is true or `damageShare` ≥ config `Crowd.moments.bigHit`; the HP share drives near-death and comeback. Perk names come from config `Crowd.triggerNames` (every G12.1 TriggerId; design §3 and §4); an unknown id reads "their pledge", a missing `citizenName` "A citizen". `CrowdDirector.spec` fails unless FORGE-03's `UI/ArenaText.TRIGGERS` has the same ids and names. An `ended` with side `"draw"` or no side, and a crowning with no winner, are `Crowd.endings.calledOff` for both stands: no payoff, no sound, and `onEvent`/`finish` return nothing more. Unknown kinds (so `miss`, `dodged`) and sides are ignored.
+- Crowd figures and reactions are client-only (FORGE-04). The server sends no per-figure data; the crowd is derived from `ArenaState` (kingdom population arrives as each duellist's `citizens`, G12.1 `Duellist.citizens`: the kingdom's living citizens, counted once when the champions are picked, at the arena's start or when the vote ends; v0.4-g11i) and `Arena.Events`.
+  - **Crowd director (v0.4-g11f, #221; reads the G12.4 draft relay).** `Feedback/CrowdDirector` reads `kind` and `side`, plus `hit` `damageShare`, `hpShare` (else DuelModel's `targetHpShare`) and `heavy`, and `triggerFired` `trigger` (else `source` without `"perk:"`) and `citizenName`. It never reads `hit`'s raw `damage` (HP points) or `ended`'s `reason`. Every field is optional; a missing one degrades quietly. A hit is major when `heavy` is true or `damageShare` ≥ config `Crowd.moments.bigHit`; the HP share drives near-death and comeback. Perk names come from config `Crowd.triggerNames` (every G12.1 TriggerId; design §3 and §4); an unknown id reads "their pledge", a missing `citizenName`, or (v0.4-g11i, #237) an empty or blank one, "A citizen". `CrowdDirector.spec` fails unless FORGE-03's `UI/ArenaText.TRIGGERS` has the same ids and names. An `ended` with side `"draw"` or no side, and a crowning with no winner, are `Crowd.endings.calledOff` for both stands: no payoff, no sound, and `onEvent`/`finish` return nothing more. Unknown kinds (so `miss`, `dodged`) and sides are ignored.
+  - **Stand figures (v0.4-g11i, #237, FL-0074 part 2c; headless evidence only, Studio E20 and frame cost unverified).** `CrowdFiguresController` fills both stands while `FeedbackCrowdController` has a director (`Arena.State` names both duellists at `intro` or `duel`, or the Studio preview). A new pair refills them; no director (`done`, Results, Lobby) empties them. Stand A holds side `a`'s kingdom. On main config Arena `enabled` is false, so no duel runs and only the Studio preview fills them.
+    - Figures per stand: `CrowdDirector.stands` of the duellist's `citizens` (one per `Crowd.citizensPerFigure` (2), ≤ `maxPerStand` (60), ≤ `maxTotal` (120)), then the tier's `fill` (`CrowdDirector.seated`; hostile 0.5). A missing or invalid `citizens` counts as a full stand. With the `effectsQuality` setting `"reduced"`, each stand seats half of that, rounded down. Both are read once, when the stands fill: a later `citizens` or setting does not refill them.
+    - Ordinary figures only: `Kit.crowdFigure(kingdom colour, nil, (row * 5 + seat * 3) % Kit.CROWD_VARIANTS + 1)` on `StandX_Row<r>_Seat<s>`, the front row first, each row from its centre out. The controller fixes 4 rows × 18 seats and skips a missing attachment. The rail and royal-box attachments stay empty. A kingdom with no colour in config `Kingdoms` gets an empty stand.
+    - No pooling: each director gets new figures in the client folder `Workspace.ForgeCrowdFigures` (not under `CrownArena`), destroyed when the director changes. Until the tagged `CrownArena` and its `Root` have streamed in, the controller retries every step (1/15 s).
+    - Motion: a `reacted` reaction whose kind has a motion moves a fixed share of its own stand for a fixed time (hop, slump, or turn its back); `murmur`, `quiet`, `silence` and `calledOff` move no one. Then every figure is back on its seat. With reduced motion (`SettingsController:reducedMotion()`: the in-game toggle or the platform's), hops are skipped; a slump or a turn is one step.
 
 ## G13. Living kingdom (D-030; design `design/living-kingdom.md`; content `content/SPEC.md`)
 Rows marked **VS-1** are part of the first playable. The rest are VS-2 shapes, published now so that the UI and the content can be built in parallel. All changes are additive to G1–G12.
@@ -1063,6 +1132,9 @@ ReputationService:apply(userId: number, source: string, delta: { [Category]: num
 - **Phase 2 (not B16).** Multi-select (`Build.MoveMany`, all-or-nothing), layout presets within a match, and wall drag (`Build.PlaceLine`/`MoveLine`, with VS-2 walls).
 
 ## Changelog
+- v0.4-g11i (2026-10-19) FORGE-00: G12 follows #241 and #246 as merged together (merge 4dbbd42a; FORGE-01 FL-0071; headless evidence only, not Studio). `ArenaService` and `SupportService` are effective in G12.2, and so are the G12.4 rows `Arena.State`/`GetState`, `Arena.Vote`, `Arena.Choose`, `Arena.Action` and `Kingdom.Support`/`GetSupport`. All of it ships dormant. The new config Arena `enabled` is false on main, so ArenaService's `beginArena` answers false and the match takes the Crown Points result at once, as with no host. With #246, `Kingdom.GetSupport` also answers nil and nothing is pushed. When the flag is on, ArenaService: calls `LeadershipService:closeOut()`; builds the ArenaFlow (side a = the qualifier with more Crown Points); at the intro, places human champions on `Layout.arena` `spawnA`/`spawnB` (a config `site` overrides); runs each duel through DuelRunner with the server's offers and poses; relays `Arena.Events`; and reports `arenaEnded(winnerKingdom)` after the crowning. Renames and additions: the draft `ArenaService:getState` is `state()`. `SupportService:getView` takes an optional userId and may return nil, and the service gains `forChampion` and `enabled`. `Arena.Vote` returns only a boolean (no reason), and `Arena.Choose` adds the reason `no_arena`. LeadershipService gains `leadership`, `keyCitizens` (always `{}`, so the only offer is the Crowd Rally, at Adoring) and `sampled`. ArenaFlow's optional `setup.citizens` fills the new `Duellist.citizens`, and G12.1 now also lists `Duellist.triggerCitizens` (#223). Config Arena gains `enabled`, `ai.skill` (0.5) and an optional `site` (not set). Nothing is fired on the GameEvents bus. Still a draft: DuelService, `Kingdom.FulfilPetition`, the G12.5 events, `MatchPhase` `Arena` and the DuelController. Additive: the replaced rows were a draft.
+- v0.4-g11i (2026-10-19) FORGE-00: G12.2 follows #245 as merged (FORGE-01 FL-0069 fixes to #216), for its Ledger and LeadershipService rows. `Arena/Ledger` keeps the last `Ledger.MAX_PER_KINGDOM` (400) moments of each kingdom instead of `Ledger.MAX_TOTAL` (1600) across all kingdoms, so a busy kingdom no longer pushes out a quiet one's. Moments are frozen, and there is a new `Ledger.isRulerComponent(ledger, component)`. `LeadershipService:record` refuses a conduct or valour act with userId nil while the kingdom has a seated ruler (it warns once per kingdom and act per round). The service's own act rules pass nil only when nobody is seated. `samples` returns a copy of the series (each sample frozen), and `getMoments` hands out frozen moments. The loop polls every `sampling.pollSeconds` (2 s, new in config `Support`) of wall time and takes a round once `intervalSeconds` of `sim.time` have passed, so a lagging sim clock no longer skips a whole round. The first round after a reset comes at the next poll. A conditions table without `stability` now samples 50 − unrest pressure, not 0 − unrest pressure. Not additive: `Ledger.MAX_TOTAL` is removed (nothing on main reads it), and `record` refuses more (no producer calls it on main).
+- v0.4-g11i (2026-10-19) FORGE-00: G12.6 follows #237 as merged (FORGE-04 FL-0074 part 2c; headless evidence only, Studio E20 and frame cost unverified). `CrowdFiguresController` puts ordinary `Kit.crowdFigure`s on the stands' seat attachments while a crowd director runs; with config Arena `enabled` false on main, only the Studio preview runs one. The count per stand comes from `Duellist.citizens` (a missing count gives a full stand of 60), then the tier's `fill`, and is halved with `effectsQuality` `"reduced"`; both are read once, when the stands fill. Figures are not pooled: they are rebuilt for each director in the client folder `Workspace.ForgeCrowdFigures`. Reduced motion skips only the hops. An empty or blank `citizenName` now reads "A citizen". `Pacing.arena` keeps its shape (vote, loadout, intro and crowning now come from config Arena), so G11 is unchanged. #239 (touch edge-pan) adds nothing to G12. Additive.
 - v0.4-g11h (2026-10-19) FORGE-00: G12.2 follows #222 as merged (FORGE-01 FL-0069 slice 2, acts from sim state). LeadershipService now records three conduct acts by itself in each sampling round, with thresholds from the new config `Support.rules` (PROVISIONAL): `starvation` (fed ratio < 0.5 for more than 60 s, once per episode), `overConscription` (soldiers > 35 % of soldiers + citizens for more than 60 s, once per episode) and `fedRatioKept` (fed ratio ≥ 0.9 at every round of an Expansion, Conflict or Endgame, credited at the phase edge or by `closeOut` for the open phase). Phase edges are seen at round resolution. Each act goes to the rulers seated since its streak began, or to the no-ruler series when an AI holds the kingdom. New `LeadershipService:closeOut()` (= `sample(true)`) takes one more round even inside the interval and credits the open phase once; the loop keeps sampling while the duel runs. Endgame is credited only by `closeOut`, which ArenaService is to call when the arena begins (#241, not merged). Nothing calls it on main yet, so on main no kingdom earns Endgame's `fedRatioKept`. `sample` gains an optional `closing`, and a new round also resets the act watches. The other 12 config acts still have no producer. Additive.
 - v0.4-g11h (2026-10-19) FORGE-00: G12.2 follows #223 as merged (FORGE-01 FL-0071; headless evidence only). `Arena/ArenaFlow`, `Arena/DuelAI` and config `Arena` are effective. ArenaFlow is the pure stage machine: `new(setup, now, config?)` takes one or two qualifiers. Side `a` is `qualifiers[1]`, and one qualifier is a coronation that goes straight to the crowning. It also has `state`, `rev`, `champion`, `vote`, `choose` (distinct triggers from the champion's own offers, at most min(slots, 3)), `step`, `endDuel`, `forfeit` (`left`; `both_left` within `simultaneousSeconds`), `cancel`, `winnerKingdom` and `result`. Champion rule: the most votes, then leadership, then the lower userId. A kingdom with no seated human fields an AI champion (`AI_USER_ID` -1000000001 / -1000000002). Stages with nothing to decide are skipped, a choice never ends the loadout early, and a draw still runs the crowning. The duel clock running out is a draw (`duel_clock`), and `qualify` is never reported. DuelAI (`new(side, skill, seed, config?)`, `observe`, `decide`) is seeded and sends only the six DuelActions. Config `Arena`: vote 10 s, loadout 20 s, intro 12 s, duel clock 195 s, crowning 15 s, `simultaneousSeconds` 0.5, plus the default and AI loadouts; it has no `enabled` flag. `Arena/Types` `Duellist` gains an optional `triggerCitizens` (listed with `Flow:state`). Outside the specs nothing builds an ArenaFlow yet: ArenaService, the `Arena.*` remotes and the MatchService wiring are still to come. Additive.
 - v0.4-g11h (2026-10-19) FORGE-00: G12.2 and G12.4 follow #224 as merged (FORGE-01 FL-0071; headless evidence only, not Studio). G12.2 gains `DuelRunner` (`new`, `act`, `step`, `forfeit`, `finished`, `result`, `snapshot`), one duel as the server runs it. It runs `Caps.check` on each side's whole list (a refusal keeps only its passives without `slot`, the tier's blessing) and takes `inRange`/`facing` from a `pose` provider (reach 6.5 studs, facing dot ≥ 0.5). It has a per-champion action bucket (burst 8, 12/s) and releases a block after 2.5 s. It steps in fixed 1/30 s ticks with at most 0.25 s of catch-up per step, and AI champions play through DuelAI. A lost human pose pauses the duel and forfeits after 8 s in one run (16 s in total) of step time. A forfeit settles for 0.5 s (both gone = draw). Config Arena gains `tick`, `maxCatchup`, `snapshotEvery`, `reach`, `facingMinDot`, `blockMaxSeconds`, `poseGraceSeconds` and `rate`. The G12.4 `Arena.Events` payload is effective as DuelRunner sends it: `hit` `{ damageShare, hpShare, heavy }` (`heavy` is always a boolean now), `heavyWindup` `{ impactIn, warned }`, no data for `parry`, `stagger`, `staminaOut` and `hype`, `triggerFired` `{ trigger, citizenName? }`, `ended` `{ reason }` with the new reason `forfeit`, and a new `snapshot` kind (shares only, on the first tick at least 0.2 s of duel time after the last). `miss` and `dodged` are never sent. No server code sends the remote yet (ArenaService is not on main). Additive: the row was a draft, and `heavy` only narrows from optional.
