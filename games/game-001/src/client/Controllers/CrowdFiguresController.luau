@@ -13,10 +13,9 @@
 		  step retries until it is there (FORGE-07 #237 M1), then the stands fill once.
 		- The stands are built Def.BUILD_PER_STEP figures a step, both stands in turn, front rows first
 		  (FORGE-00's B22 note: never 480 parts in one frame); a full arena takes 5 steps.
-		- Each side's citizens come from FORGE-01's DuelController (stateChanged, getState: it asks
-		  Arena.GetState once, so a client that joins or reloads mid-duel still gets them). Without
-		  a DuelController, start() listens to Arena.State and asks Arena.GetState itself (a push that
-		  came first wins).
+		- Each side's citizens come from FORGE-01's DuelController (a dependency; stateChanged and
+		  getState: it asks Arena.GetState once, so a client that joins or reloads mid-duel still
+		  gets them). This controller never asks itself.
 	Who sits
 		- Stand A holds side a's kingdom, stand B side b's (Kit.arena: Stand A at -Z, as the dress and
 		  the intro camera). Figures: CrowdDirector.stands(citizensA, citizensB) (one per two citizens,
@@ -57,13 +56,12 @@ local Crowd = require("@game/ReplicatedStorage/Forge/Config/Crowd")
 local CrowdDirector = require("@game/ReplicatedStorage/Game/Feedback/CrowdDirector")
 local Kingdoms = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
-local RemoteLink = require("@game/ReplicatedStorage/Forge/Experience/RemoteLink")
 local WorldView = require("@game/ReplicatedStorage/Game/Sim/WorldView")
 
 local Controller = {}
 Controller.__index = Controller
 
-local Def = { name = "CrowdFiguresController", dependencies = { "FeedbackCrowdController" } }
+local Def = { name = "CrowdFiguresController", dependencies = { "FeedbackCrowdController", "DuelController" } }
 
 Def.TAG = "CrownArena"
 Def.FOLDER = "ForgeCrowdFigures"
@@ -165,14 +163,11 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_registry = registry,
 		_opts = options,
 		_kit = options.kit or Kit,
-		_links = {},
 		_connections = {},
 		_director = nil :: any,
 		_pending = false, -- a director waits for the arena model (streaming) or is still being built
 		_plan = nil :: { any }?, -- the seats left to build for this director, in build order
 		_warnedSeats = false,
-		_arenaSeen = false,
-		_destroyed = false,
 		_citizens = {} :: { a: number?, b: number? },
 		_motions = {} :: { [string]: any },
 		_folder = nil :: any,
@@ -184,51 +179,31 @@ function Def.new(env: any, registry: any)
 	return Def.create(env, registry, nil)
 end
 
--- FORGE-01's DuelController is the client's one door to the arena: it asks Arena.GetState once and
--- fires stateChanged for every state, the reply and each push. Following it keeps the client to two
--- askers of a remote that answers three a second (FORGE-07 #256 M1). False without it (specs, a
--- build without the duel): then this controller listens and asks for itself.
-function Controller:_followDuel(): boolean
+-- The arena state comes from FORGE-01's DuelController, the client's one door to the arena (G12.6;
+-- FORGE-00's ruling on FORGE-07's #256 M1): it asks Arena.GetState once and fires stateChanged for
+-- the reply and every push, so this controller never asks itself (the remote answers 3 asks a second).
+-- getState() at start seeds a client that joins or reloads mid-duel.
+function Controller:_followDuel()
 	local duel = self._registry:find("DuelController")
 	if duel == nil or type(duel.getState) ~= "function" or type(duel.stateChanged) ~= "table" then
-		return false
+		self._env.log("warn", `{Def.name}: no DuelController; the arena crowd stays idle`)
+		return
 	end
-	local ok = pcall(function()
-		table.insert(
-			self._connections,
-			duel.stateChanged:connect(function(state)
-				self:onArenaState(state)
-			end)
-		)
-	end)
-	if not ok then
-		return false
-	end
-	local got, state = pcall(duel.getState, duel)
-	if got and state ~= nil then
+	table.insert(
+		self._connections,
+		duel.stateChanged:connect(function(state)
+			self:onArenaState(state)
+		end)
+	)
+	local ok, state = pcall(duel.getState, duel)
+	if ok and state ~= nil then
 		self:onArenaState(state)
 	end
-	return true
 end
 
 function Controller:start()
 	local env = self._env
-	if not self:_followDuel() then
-		table.insert(
-			self._links,
-			RemoteLink.on(env, "Arena.State", function(state)
-				self._arenaSeen = true
-				self:onArenaState(state)
-			end)
-		)
-		-- Arena.State is pushed only on a change: a client that joins or reloads mid-duel asks once
-		-- (FORGE-00's B22 verifier note); a push that came first is newer and wins.
-		RemoteLink.request(env, "Arena.GetState", function(state)
-			if not self._destroyed and not self._arenaSeen then
-				self:onArenaState(state)
-			end
-		end)
-	end
+	self:_followDuel()
 	local crowd = self._registry:find("FeedbackCrowdController")
 	if crowd ~= nil and crowd.reacted ~= nil then
 		table.insert(
@@ -251,13 +226,6 @@ end
 
 function Controller:destroy()
 	self._running = false
-	self._destroyed = true
-	for _, link in self._links do
-		pcall(function()
-			link:disconnect()
-		end)
-	end
-	table.clear(self._links)
 	for _, connection in self._connections do
 		pcall(function()
 			if connection.disconnect then

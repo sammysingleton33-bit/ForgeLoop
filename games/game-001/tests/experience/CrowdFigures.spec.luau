@@ -83,7 +83,7 @@ describe("CrowdFiguresController pure helpers (FL-0074 part 2c)", function()
 end)
 
 describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", function()
-	local env, controller, crowd, arena
+	local env, controller, crowd, arena, duel
 
 	local function boot(opts)
 		opts = opts or {}
@@ -91,14 +91,10 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 		if opts.beforeStart then
 			opts.beforeStart(env) -- remotes that exist before the controller starts (a client joining late)
 		end
-		local extra = {}
-		if opts.duel ~= nil then -- FORGE-01's DuelController (a double)
-			table.insert(extra, {
-				name = "DuelController",
-				new = function()
-					return opts.duel
-				end,
-			})
+		-- FORGE-01's DuelController (a double): getState() and stateChanged, the stands' only source of citizens
+		duel = { stateChanged = Signal.new(), state = opts.duelState }
+		function duel.getState(self)
+			return self.state
 		end
 		local values = opts.settings or {}
 		local defs = {
@@ -129,15 +125,18 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 			},
 			{
 				name = "CrowdFiguresController",
-				dependencies = { "FeedbackCrowdController" },
+				dependencies = FiguresDef.dependencies, -- FeedbackCrowdController, DuelController
 				new = function(e, r)
 					return FiguresDef.create(e, r, { model = opts.model, workspace = env.Workspace, kit = opts.kit })
 				end,
 			},
 		}
-		for _, def in extra do
-			table.insert(defs, def)
-		end
+		table.insert(defs, {
+			name = "DuelController",
+			new = function()
+				return duel
+			end,
+		})
 		controller = Loader.load(env, defs):get("CrowdFiguresController")
 	end
 
@@ -213,69 +212,12 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 		expect(warnings()).toBe(1)
 	end)
 
-	it("a client that joins mid-duel asks Arena.GetState once for the citizens; a push wins (FORGE-00 B22)", function()
-		local function remotes(answer, pushed, delay)
-			return function(e)
-				local root = e.newInstance("Folder")
-				root.Name = "ForgeRemotes"
-				root.Parent = e.ReplicatedStorage
-				local area = e.newInstance("Folder")
-				area.Name = "Arena"
-				area.Parent = root
-				local get = e.newInstance("RemoteFunction")
-				get.Name = "GetState"
-				get.Parent = area
-				get.OnServerInvoke = function()
-					if delay then
-						e.wait(delay) -- a slow server
-					end
-					return answer
-				end
-				local push = e.newInstance("RemoteEvent")
-				push.Name = "State"
-				push.Parent = area
-				if pushed ~= nil then
-					push:FireAllClients(pushed)
-				end
-			end
-		end
-		boot({ model = arena, beforeStart = remotes({ stage = "duel", a = { citizens = 40 }, b = { citizens = 20 } }) })
-		env.mock:advance(1)
-		crowd.director = director("loyal", "crimson", "loyal", "azure")
-		fill()
-		expect(#controller.figures.a).toBe(20) -- 40 citizens, one figure per two
-		expect(#controller.figures.b).toBe(10)
-		env = MockEnv.new({ isServer = false, localPlayer = { userId = 1001 } })
-		boot({
-			model = Kit.arena(),
-			beforeStart = remotes(
-				{ stage = "duel", a = { citizens = 40 }, b = { citizens = 20 } },
-				{ stage = "duel", a = { citizens = 100 }, b = { citizens = 80 } }
-			),
-		})
-		env.mock:advance(1)
-		crowd.director = director("loyal", "crimson", "loyal", "azure")
-		fill()
-		expect(#controller.figures.a).toBe(50) -- the push's 100 citizens, not the reply's 40
-		expect(#controller.figures.b).toBe(40)
-		-- destroyed before a slow reply: the reply is ignored (FORGE-07 #256 L1 c)
-		env = MockEnv.new({ isServer = false, localPlayer = { userId = 1001 } })
-		boot({ model = Kit.arena(), beforeStart = remotes({ stage = "duel", a = { citizens = 40 } }, nil, 0.5) })
-		controller:destroy()
-		env.mock:advance(1)
-		expect(controller._citizens.a).toBeNil()
-	end)
-
-	it("with FORGE-01's DuelController the stands follow its state and never ask Arena.GetState (#256 M1)", function()
-		local duel =
-			{ stateChanged = Signal.new(), state = { stage = "duel", a = { citizens = 40 }, b = { citizens = 20 } } }
-		function duel.getState(self)
-			return self.state
-		end
+	it("a late joiner's citizens come from DuelController, then its changes; never Arena.GetState (#256 M1)", function()
+		expect(table.find(FiguresDef.dependencies, "DuelController") ~= nil).toBe(true) -- FORGE-00's ruling
 		local asks = 0
 		boot({
 			model = arena,
-			duel = duel,
+			duelState = { stage = "duel", a = { citizens = 40 }, b = { citizens = 20 } }, -- joined mid-duel
 			beforeStart = function(e)
 				local root = e.newInstance("Folder")
 				root.Name = "ForgeRemotes"
@@ -293,14 +235,19 @@ describe("CrowdFiguresController on FORGE-02's CrownArena (FL-0074 part 2c)", fu
 			end,
 		})
 		env.mock:advance(1)
-		expect(asks).toBe(0)
+		expect(asks).toBe(0) -- one asker on the client: DuelController
 		crowd.director = director("loyal", "crimson", "loyal", "azure")
 		fill()
-		expect(#controller.figures.a).toBe(20) -- getState's 40 citizens
+		expect(#controller.figures.a).toBe(20) -- getState's 40 citizens, one figure per two
+		expect(#controller.figures.b).toBe(10)
 		duel.stateChanged:fire({ stage = "duel", a = { citizens = 100 }, b = { citizens = 80 } })
 		crowd.director = director("loyal", "emerald", "loyal", "gold") -- the next pair
 		fill()
 		expect(#controller.figures.a).toBe(50) -- stateChanged's 100 citizens
+		expect(#controller.figures.b).toBe(40)
+		controller:destroy() -- after destroy, a state changes nothing
+		duel.stateChanged:fire({ stage = "duel", a = { citizens = 10 } })
+		expect(controller._citizens.a).toBe(100)
 	end)
 
 	it("a duel fills both stands: each figure on its seat, Stand A for side a, the tier's fill", function()

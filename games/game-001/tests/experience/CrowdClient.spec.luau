@@ -74,7 +74,7 @@ local function boot(opts)
 	})
 	table.insert(defs, {
 		name = "FeedbackCrowdController",
-		dependencies = {},
+		dependencies = CrowdDef.dependencies, -- DuelController
 		new = function(e, r)
 			return CrowdDef.create(e, r, {
 				playerGui = gui,
@@ -83,15 +83,18 @@ local function boot(opts)
 			})
 		end,
 	})
-	if opts.duel ~= nil then -- FORGE-01's DuelController (a double)
-		table.insert(defs, {
-			name = "DuelController",
-			dependencies = {},
-			new = function()
-				return opts.duel
-			end,
-		})
+	-- FORGE-01's DuelController (a double): getState() and stateChanged, the crowd's only source
+	local duel = { stateChanged = Signal.new(), state = opts.duelState }
+	function duel.getState(self)
+		return self.state
 	end
+	table.insert(defs, {
+		name = "DuelController",
+		dependencies = {},
+		new = function()
+			return duel
+		end,
+	})
 	if opts.beforeStart then
 		opts.beforeStart(env) -- remotes that exist before the controller starts (a client joining late)
 	end
@@ -102,12 +105,12 @@ local function boot(opts)
 		plays = plays,
 		crowd = registry:get("FeedbackCrowdController"),
 		announcer = registry:get("AnnouncerController"),
+		duel = duel,
 	}
 end
 
--- ForgeRemotes/Arena: GetState answers `answer` (after `delay` seconds, if given); `pushed`, when given,
--- is an Arena.State fired before anyone listens (MockRemotes queues it for the first handler).
-local function arenaRemotes(env, answer, pushed, delay, asks)
+-- ForgeRemotes/Arena.GetState, counting the asks (the crowd must never ask: FORGE-07 #256 M1).
+local function arenaRemotes(env, asks)
 	local root = env.newInstance("Folder")
 	root.Name = "ForgeRemotes"
 	root.Parent = env.ReplicatedStorage
@@ -118,19 +121,8 @@ local function arenaRemotes(env, answer, pushed, delay, asks)
 	get.Name = "GetState"
 	get.Parent = area
 	get.OnServerInvoke = function()
-		if asks then
-			asks.n += 1
-		end
-		if delay then
-			env.wait(delay) -- a slow server: the reply comes after the caller moved on
-		end
-		return answer
-	end
-	local push = env.newInstance("RemoteEvent")
-	push.Name = "State"
-	push.Parent = area
-	if pushed ~= nil then
-		push:FireAllClients(pushed)
+		asks.n += 1
+		return nil
 	end
 end
 
@@ -164,50 +156,15 @@ describe("FeedbackCrowdController: the duel's director (FL-0074 part 2a)", funct
 		expect(t.crowd.director).toBeNil()
 	end)
 
-	it("a client that joins mid-duel asks Arena.GetState once and gets its director (FORGE-00 B22)", function()
-		local t = boot({
-			beforeStart = function(env)
-				arenaRemotes(env, state("duel"))
-			end,
-		})
-		t.env.mock:advance(1)
-		assert(t.crowd.director ~= nil, "a director from the GetState reply")
-		expect(t.crowd.director:side("a").kingdom).toBe("crimson")
-		-- a push that came first is newer: the late reply never replaces it
-		local pushed = state("duel")
-		pushed.b = duellist(7600, "loyal", "gold")
-		local u = boot({
-			beforeStart = function(env)
-				arenaRemotes(env, state("duel"), pushed)
-			end,
-		})
-		u.env.mock:advance(1)
-		assert(u.crowd.director ~= nil, "a director from the push")
-		expect(u.crowd.director:side("b").kingdom).toBe("gold")
-		-- destroyed before the reply: nothing is made
-		local w = boot({
-			beforeStart = function(env)
-				arenaRemotes(env, state("duel"), nil, 0.5)
-			end,
-		})
-		expect(w.crowd.director).toBeNil() -- still waiting for the slow reply
-		w.crowd:destroy()
-		w.env.mock:advance(1)
-		expect(w.crowd.director).toBeNil()
-	end)
-
 	it(
-		"with FORGE-01's DuelController it follows that state and never asks Arena.GetState (FORGE-07 #256 M1)",
+		"a late joiner seeds its director from DuelController and follows it; never asks Arena.GetState (#256 M1)",
 		function()
-			local duel = { stateChanged = Signal.new(), state = state("duel") }
-			function duel.getState(self)
-				return self.state
-			end
+			expect(table.find(CrowdDef.dependencies, "DuelController") ~= nil).toBe(true) -- FORGE-00's ruling
 			local asks = { n = 0 }
 			local t = boot({
-				duel = duel,
+				duelState = state("duel"), -- the client joins mid-duel: DuelController already has the state
 				beforeStart = function(env)
-					arenaRemotes(env, state("duel"), nil, nil, asks)
+					arenaRemotes(env, asks)
 				end,
 			})
 			t.env.mock:advance(1)
@@ -216,9 +173,12 @@ describe("FeedbackCrowdController: the duel's director (FL-0074 part 2a)", funct
 			expect(t.crowd.director:side("a").kingdom).toBe("crimson")
 			local other = state("duel")
 			other.b = duellist(7600, "loyal", "gold")
-			duel.stateChanged:fire(other)
+			t.duel.stateChanged:fire(other) -- a push, through DuelController
 			expect(t.crowd.director:side("b").kingdom).toBe("gold")
-			duel.stateChanged:fire(state("done"))
+			t.duel.stateChanged:fire(state("done"))
+			expect(t.crowd.director).toBeNil()
+			t.crowd:destroy() -- after destroy, a state makes nothing
+			t.duel.stateChanged:fire(state("duel"))
 			expect(t.crowd.director).toBeNil()
 		end
 	)
