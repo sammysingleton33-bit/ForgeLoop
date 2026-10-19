@@ -1,0 +1,53 @@
+{
+ "letters": {
+  "A": "part-built Kit stand-ins (before)",
+  "B": "style-B meshes from games/game-001/art/env_kit (after)"
+ },
+ "column_order": {
+  "settlement_crimson": [
+   "A",
+   "B"
+  ],
+  "settlement_emerald": [
+   "B",
+   "A"
+  ],
+  "forest_broadleaf": [
+   "A",
+   "B"
+  ],
+  "forest_pine": [
+   "B",
+   "A"
+  ],
+  "trees_lineup": [
+   "A",
+   "B"
+  ],
+  "trees_close": [
+   "B",
+   "A"
+  ],
+  "bushes_lineup": [
+   "A",
+   "B"
+  ],
+  "rocks_lineup": [
+   "B",
+   "A"
+  ],
+  "nodes_lineup": [
+   "A",
+   "B"
+  ],
+  "crops": [
+   "B",
+   "A"
+  ],
+  "wheat_stages": [
+   "A",
+   "B"
+  ]
+ },
+ "note": "Withheld from the image folder until the three replies were saved. Letters are fixed over all sheets; column_order is the left-to-right order on that sheet."
+}

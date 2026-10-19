@@ -62,7 +62,7 @@
         "render_fidelity": {"type": "string", "enum": ["Automatic", "Precise", "Performance"]},
         "files": {
           "type": "object", "required": ["mesh", "validation"], "additionalProperties": false,
-          "properties": {"mesh": {"type": "string"}, "validation": {"type": "string"}, "rig": {"type": "string"}, "mesh_committed": {"type": "string"}}
+          "properties": {"mesh": {"type": "string"}, "validation": {"type": "string"}, "rig": {"type": "string"}, "mesh_committed": {"type": "string"}, "env": {"type": "string"}}
         },
         "preview": {"type": "string"},
         "license": {"type": "string", "enum": ["CC0-1.0", "project-original"]},

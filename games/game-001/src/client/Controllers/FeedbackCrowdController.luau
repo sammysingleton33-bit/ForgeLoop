@@ -8,7 +8,9 @@
 
 	When
 		- A director is made when Arena.State first names both duellists (a and b) at the intro or duel
-		  stage; a different pair starts a new one. Tiers, kingdoms and ruler names come from the state
+		  stage; a different pair starts a new one. The state comes from FORGE-01's DuelController
+		  (a dependency; stateChanged and getState: it asks Arena.GetState once, so a client that
+		  joins or reloads mid-duel still gets its crowd). This controller never asks itself. Tiers, kingdoms and ruler names come from the state
 		  (an AI duellist has no name to chant, so its stand uses a line without one).
 		- Arena.Events (batched) feed it during the duel; events with no director are dropped.
 		- Crowning ends it: finish(the winner's side), or finish(nil) when `winner` names nobody. The
@@ -55,7 +57,7 @@ local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Controller = {}
 Controller.__index = Controller
 
-local Def = { name = "FeedbackCrowdController", dependencies = {} }
+local Def = { name = "FeedbackCrowdController", dependencies = { "DuelController" } }
 
 Def.CAPTION_SEC = 2.5
 Def.PRIORITY_SEC = 4
@@ -128,14 +130,31 @@ function Def.new(env: any, registry: any)
 	return Def.create(env, registry, nil)
 end
 
-function Controller:start()
-	local env = self._env
+-- The arena state comes from FORGE-01's DuelController, the client's one door to the arena (G12.6;
+-- FORGE-00's ruling on FORGE-07's #256 M1): it asks Arena.GetState once and fires stateChanged for
+-- the reply and every push, so this controller never asks itself (the remote answers 3 asks a second).
+-- getState() at start seeds a client that joins or reloads mid-duel.
+function Controller:_followDuel()
+	local duel = self._registry:find("DuelController")
+	if duel == nil or type(duel.getState) ~= "function" or type(duel.stateChanged) ~= "table" then
+		self._env.log("warn", `{Def.name}: no DuelController; the arena crowd stays idle`)
+		return
+	end
 	table.insert(
-		self._links,
-		RemoteLink.on(env, "Arena.State", function(state)
+		self._connections,
+		duel.stateChanged:connect(function(state)
 			self:onArenaState(state)
 		end)
 	)
+	local ok, state = pcall(duel.getState, duel)
+	if ok and state ~= nil then
+		self:onArenaState(state)
+	end
+end
+
+function Controller:start()
+	local env = self._env
+	self:_followDuel()
 	table.insert(
 		self._links,
 		RemoteLink.on(env, "Arena.Events", function(batch)

@@ -310,7 +310,7 @@ for _, ds in datasets do
 							expect(p.ClassName).toBe("MeshPart")
 							expect(p.Transparency).toBe(0)
 							expect(p.Material).toBe(Enum.Material.SmoothPlastic)
-							expect(p.CollisionFidelity).toBe(Enum.CollisionFidelity.Box)
+							expect(p.CollisionFidelity).toBe(Enum.CollisionFidelity.Hull) -- the template's own: a game script cannot write it
 							expect(p.Reflectance).toBe(0)
 							for _, child in p:GetChildren() do
 								expect(child:IsA("Weld") or child:IsA("Motor6D")).toBe(true) -- nothing from the import rides along

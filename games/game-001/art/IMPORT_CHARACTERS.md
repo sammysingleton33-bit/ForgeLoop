@@ -38,6 +38,11 @@ match, stop and report what you see. Nothing here costs money or needs an API ke
 5. Delete the leftover `citizen_kit` model from Workspace, **File > Save**, and Publish if you play from Roblox.
 
 ## 3. Look at it (Play, F5)
+**First, the Play-test check (a game script has fewer rights than the command bar, so a smoke test that passes in the command bar can still fall back in
+Play):** in the server command bar `print(require(game.ReplicatedStorage.Game.Kit.Kit).characterMeshStatus())` must show mesh builds (`meshBuilds` above 0)
+and no fallback reason (`lastFallback` empty) once citizens exist. CollisionFidelity (Box) is set by the import script, not by the Kit: a game script cannot
+write it, and the saved `CitizenKit.rbxm` carries it. If the Kit fell back, send the status output to FORGE-02.
+
 Citizens by job at the **aerial camera** (farmer hat, woodcutter, miner, builder, hauler sack read apart; the kingdom colour
 shows on torsos from above), a **conversation portrait**, the **ruler** (crown, cape), each kingdom's **soldiers** (crest and
 armour), the walk and work animations, kingdom recolouring. In Explorer, `Workspace.KingdomEntities.<citizen_...>` holding

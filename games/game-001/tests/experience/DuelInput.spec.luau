@@ -5,6 +5,7 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local D = require("./RulerDoubles")
 local ArenaDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/InputModeArenaController")
 local InputModeDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/InputModeController")
+local DuelDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/DuelController")
 
 local ME = 7501
 local RIVAL = 7502
@@ -25,7 +26,8 @@ local function state(stage, a, b)
 	return { stage = stage, a = a, b = b }
 end
 
--- FORGE-01's DuelController (G12.6), as a double: records every act()
+-- FORGE-01's DuelController (G12.6), as a double: records every act() and, like the real one,
+-- returns true for an action it sent
 local function duelDef(initial, fails)
 	return {
 		name = "DuelController",
@@ -38,6 +40,7 @@ local function duelDef(initial, fails)
 						error("arena remote missing")
 					end
 					table.insert(self.acts, action)
+					return true
 				end,
 				getState = function()
 					return initial
@@ -68,7 +71,15 @@ local function boot(opts)
 			end,
 		},
 	}
-	if opts.duel ~= false then
+	if opts.realDuel then -- FORGE-01's real DuelController, with its client copy of the Arena.Action bucket
+		table.insert(extra, 1, {
+			name = "DuelController",
+			dependencies = {},
+			new = function(e, r)
+				return DuelDef.new(e, r)
+			end,
+		})
+	elseif opts.duel ~= false then
 		table.insert(extra, 1, duelDef(opts.initial, opts.fails))
 	end
 	local registry = D.boot(env, {
@@ -249,6 +260,62 @@ describe("InputModeArenaController: keys, gamepad and DuelController:act (FL-007
 		expect(t.duel.acts).toEqual({ "block", "blockEnd", "block", "blockEnd" })
 		t.actions:press(name, Enum.UserInputState.Cancel, { KeyCode = Enum.KeyCode.ButtonL1 })
 		expect(#t.duel.acts).toBe(4)
+	end)
+
+	it("a blockEnd the real DuelController's empty bucket refuses is sent once a token returns (#249)", function()
+		local function run(after)
+			local t = boot({ realDuel = true })
+			local sent = {}
+			local realAct = t.duel.act
+			t.duel.act = function(self, action)
+				local ok = realAct(self, action)
+				if ok then
+					table.insert(sent, action)
+				end
+				return ok
+			end
+			local duel = state("duel", duellist(ME), duellist(RIVAL))
+			t.duel:setState(duel)
+			t.arena:onArenaState(duel)
+			expect(t.arena:press("block", true, "key")).toBe(true)
+			for _ = 2, t.duel.BURST do
+				expect(t.arena:press("light", true)).toBe(true) -- the bucket is now empty
+			end
+			expect(t.arena:press("light", true)).toBe(false) -- refused: press() reports act()'s answer
+			expect(t.arena:press("block", false, "key")).toBe(false) -- blockEnd refused for now
+			after(t, duel)
+			return sent
+		end
+		local function count(list, action)
+			local n = 0
+			for _, a in list do
+				n += if a == action then 1 else 0
+			end
+			return n
+		end
+		-- a token comes back within 1/12 s: blockEnd goes out then, once
+		local sent = run(function(t)
+			t.env.mock:advance(0.05)
+			t.env.mock:advance(0.1)
+			t.env.mock:advance(1)
+		end)
+		expect(sent[#sent]).toBe("blockEnd")
+		expect(count(sent, "blockEnd")).toBe(1)
+		-- block pressed again before a token: the pending blockEnd must not end the new block
+		sent = run(function(t)
+			t.arena:press("block", true, "key")
+			t.env.mock:advance(1)
+		end)
+		expect(count(sent, "blockEnd")).toBe(0)
+		-- the duel ends first: nothing more is tried
+		sent = run(function(t, duel)
+			local over = table.clone(duel)
+			over.stage = "crowning"
+			t.duel:setState(over)
+			t.arena:onArenaState(over)
+			t.env.mock:advance(1)
+		end)
+		expect(count(sent, "blockEnd")).toBe(0)
 	end)
 
 	it("press() sends nothing outside arena mode or for an unknown action", function()
