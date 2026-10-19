@@ -505,10 +505,7 @@ end
 
 -- A pose with one joint set (numbers, degrees) and the rest at zero.
 local function poseWith(spec)
-	local numbers = {}
-	for joint, v in spec do
-		numbers[joint] = v
-	end
+	local numbers = table.clone(spec)
 	return { pose = DuelPoses.pose(numbers), weight = 1, body = 1 }
 end
 
