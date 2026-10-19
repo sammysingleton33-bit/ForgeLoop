@@ -1552,19 +1552,51 @@ BUILDERS.watchtower = function(ctx, level, color, style, fp)
 	local pl = 1.8
 	stonePlinth(ctx, w + 1.6, w + 1.6, pl, 0, 0, S, 3, 4)
 	block(ctx, "Shaft", Vector3.new(w, h - 0.03, w), CFrame.new(0, pl + h / 2 + 0.015, 0), S.base, M.Cobblestone)
-	quoins(ctx, w, w, pl, h - 1, S.light, if big then 6 else 5)
+	quoins(ctx, w, w, pl, h - 1, S.light, 5)
 	block(ctx, "StringCourse", Vector3.new(w + 0.6, 0.6, w + 0.6), CFrame.new(0, pl + h * 0.48, 0), S.light, M.Slate)
 	local gy = pl + h
 	block(ctx, "Gallery", Vector3.new(w + 2.4, 1.3, w + 2.4), CFrame.new(0, gy + 0.65, 0), S.light, M.Slate)
 	local tf = wallFrames(w, w, gy)
-	for _, side in { "front", "back", "left", "right" } do
-		for _, u in { -hw * 0.55, hw * 0.55 } do
-			bracket(ctx, tf[side] * CFrame.new(u, 0, 0), 1.2, 1.6, S.light, M.Slate)
+	if big then
+		-- L2 is war-ready (FL-0128): a timber war gallery (hoarding) slung under the gallery on all four faces
+		-- instead of the stone brackets, a tighter parapet with more merlons, slits for windows, braziers at the door
+		for _, sz in { -1, 1 } do
+			block(
+				ctx,
+				"WarGallery",
+				Vector3.new(w + 2.3, 2.6, 1.2),
+				CFrame.new(0, gy - 1.3, sz * (hw + 0.6)),
+				C.wood,
+				M.WoodPlanks
+			)
+			block(
+				ctx,
+				"WarGallery",
+				Vector3.new(1.2, 2.6, w),
+				CFrame.new(sz * (hw + 0.6), gy - 1.3, 0),
+				C.wood,
+				M.WoodPlanks
+			)
+		end
+	else
+		for _, side in { "front", "back", "left", "right" } do
+			for _, u in { -hw * 0.55, hw * 0.55 } do
+				bracket(ctx, tf[side] * CFrame.new(u, 0, 0), 1.2, 1.6, S.light, M.Slate)
+			end
 		end
 	end
 	-- the cap rises from inside the parapet (its eave over the merlons); emerald's hoarding replaces it
 	if style ~= "emerald" then
-		crenellate(ctx, w + 2.4, w + 2.4, gy + 1.3, S.light, 0, 0, { m = 1.9, h = 2.4, t = 0.9, gap = 1.4 })
+		crenellate(
+			ctx,
+			w + 2.4,
+			w + 2.4,
+			gy + 1.3,
+			S.light,
+			0,
+			0,
+			if big then { m = 1.5, h = 2.4, t = 0.9, gap = 1.0 } else { m = 1.9, h = 2.4, t = 0.9, gap = 1.4 }
+		)
 	end
 	towerCap(ctx, style, w + 0.4, if style == "emerald" then gy + 1.3 else gy + 2.6, color, 0, 0, 5.5)
 	doorAt(ctx, CFrame.new(0, pl, -hw), {
@@ -1578,14 +1610,23 @@ BUILDERS.watchtower = function(ctx, level, color, style, fp)
 	banner(ctx, 0, gy - 0.7, -hw - 0.05, 0, color, if big then 8 else 6.5, style, 3)
 	local sf = wallFrames(w, w, pl)
 	for _, side in { "left", "right", "back" } do
-		windowAt(
-			ctx,
-			sf[side] * CFrame.new(0, h * 0.62, 0),
-			{ arched = true, w = 2, h = 3.4, frame = S.light, frameMaterial = M.Slate, simple = true }
-		)
+		if big then
+			windowAt(ctx, sf[side] * CFrame.new(0, h * 0.62, 0), { slit = true, frame = S.light }) -- war: slits
+		else
+			windowAt(
+				ctx,
+				sf[side] * CFrame.new(0, h * 0.62, 0),
+				{ arched = true, w = 2, h = 3.4, frame = S.light, frameMaterial = M.Slate, simple = true }
+			)
+		end
 		windowAt(ctx, sf[side] * CFrame.new(0, 5.5, 0), { slit = true, frame = S.light })
 	end
 	windowAt(ctx, sf.front * CFrame.new(0, 10.4, 0), { slit = true, frame = S.light })
+	if big then
+		for _, sx in { -1, 1 } do
+			Pieces.brazier(ctx, Vector3.new(sx * 4.7, 0, -hw - 1.5), 0.85)
+		end
+	end
 	local ww = fp.X - 4
 	attach(ctx, "Door", Vector3.new(0, 0, -ww / 2 - 2.5))
 	workSpots(ctx, { Vector3.new(0, 0, -ww / 2 - 4) })
