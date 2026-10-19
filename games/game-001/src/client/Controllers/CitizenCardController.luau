@@ -25,6 +25,12 @@
 	(the walking view). A tap goes to the next one (cycleRequests(1): the camera centres on them and the
 	card opens). Without the indicator controller there is no button.
 
+	Arena perk preview and petition (FL-0073; CONTRACTS G12 v0.4-g11e: inspect gains `role` and `petition`): a key
+	citizen's card shows the perk they lend in the arena at 80 / 95 loyalty (UI/PetitionModel.perk, FORGE-01's
+	SupportModel.offers words) and their open petition with Fulfil → `Kingdom.FulfilPetition(petitionId)` →
+	(ok, reason?). Dark until served: no Fulfil box while the remote is not declared. One call at a time; on success
+	a notice and a fresh inspect (the petition is gone, loyalty moved), on a refusal the reason under the button.
+
 	Depends on KingdomHudController (remotes, drawer, layout, notices). Optional: InputModeController,
 	CitizenBubbleIndicatorController.
 	Never decodes Sim.* events (only EntityController does, G4); Sim.Inspect is a function call.
@@ -34,6 +40,8 @@
 		card:close()                   closes the card if it is open
 		card:onTalk(fn(entityId)) -> () -> ()    the Talk/Ask handler; returns its remover
 		card:setTalkState("idle" | "loading")    Talk shows a busy state while a conversation loads
+		card:fulfil()                  fulfils the open petition (what Fulfil does; yields nothing, spawns the call)
+		card.petition = { state: "idle" | "loading", error: string? }
 		card.entityId  card.view (the last CitizenView)  card.model (UI/CitizenModel Card)
 		card.card (UI/CitizenCard)     CitizenCardController.MENU = "citizen"
 		CitizenCardController.REFRESH_SEC
@@ -43,6 +51,7 @@ local CitizenCard = require("../UI/CitizenCard")
 local CitizenModel = require("../UI/CitizenModel")
 local CitizenText = require("../UI/CitizenText")
 local HudModel = require("../UI/HudModel")
+local PetitionModel = require("../UI/PetitionModel")
 local Signature = require("../UI/Signature")
 
 local CitizenCardController = {}
@@ -52,6 +61,10 @@ local Def = { name = "CitizenCardController", dependencies = { "KingdomHudContro
 
 CitizenCardController.MENU = "citizen"
 CitizenCardController.REFRESH_SEC = 4
+CitizenCardController.FULFIL = "Kingdom.FulfilPetition"
+-- A Fulfil with no answer by then is given up: the button comes back with "Couldn't reach the server" and a late
+-- answer is ignored (the periodic refresh shows the petition's real state; FORGE-07 L4 on #227).
+CitizenCardController.FULFIL_TIMEOUT_SEC = 10
 CitizenCardController.WAITING_SEC = 0.5
 CitizenCardController.WAITING_RAIL = table.freeze({
 	id = "waiting",
@@ -70,6 +83,8 @@ function Def.new(env: any, registry: any)
 		view = nil :: any,
 		model = nil :: any,
 		talkState = "idle",
+		petition = { state = "idle", error = nil :: string? },
+		_fulfilToken = 0,
 		card = nil :: any,
 		_token = 0, -- the newest open() request
 		_refreshToken = 0, -- the newest refresh; an open() also invalidates refreshes
@@ -307,6 +322,8 @@ function CitizenCardController:_inspect(entityId: number, refresh: boolean)
 		end
 		if self.entityId ~= entityId then
 			self.talkState = "idle"
+			self._fulfilToken += 1 -- a Fulfil still on its way belongs to the citizen before
+			self.petition = { state = "idle", error = nil }
 		end
 		self.entityId = entityId
 		self.view = view
@@ -335,6 +352,56 @@ function CitizenCardController:setTalkState(state: string)
 	end
 end
 
+function CitizenCardController:_balances(): { [string]: number }?
+	local store = self.hud.store
+	return if store:hasTreasury() then store:balances() else nil
+end
+
+function CitizenCardController:_petition(): any
+	return PetitionModel.petition(self.view, self._env.serverTimeNow(), self:_balances())
+end
+
+function CitizenCardController:fulfil()
+	local hud = self.hud
+	local entityId = self.entityId
+	local p = if self:isOpen() then self:_petition() else nil
+	if p == nil or entityId == nil or not hud:hasRemote(CitizenCardController.FULFIL) then
+		return
+	end
+	if self.petition.state == "loading" or not p.canFulfil then
+		return
+	end
+	self._fulfilToken += 1
+	local token = self._fulfilToken
+	self.petition = { state = "loading", error = nil }
+	hud:render()
+	self._env.spawn(function()
+		self._env.wait(CitizenCardController.FULFIL_TIMEOUT_SEC)
+		if token == self._fulfilToken and self.petition.state == "loading" and not self._destroyed then
+			self._fulfilToken += 1 -- the late answer no longer counts
+			self.petition = { state = "idle", error = CitizenText.unreachable() }
+			hud:render()
+		end
+	end)
+	self._env.spawn(function()
+		local called, ok, reason = pcall(function()
+			return hud.remotes:invoke(CitizenCardController.FULFIL, p.id)
+		end)
+		if token ~= self._fulfilToken then
+			return -- another citizen's card is open now
+		end
+		if called and ok == true then
+			self.petition = { state = "idle", error = nil }
+			hud:notify({ kind = "success", title = PetitionModel.FULFILLED, body = p.text })
+			self:_inspect(entityId, true) -- the petition is gone and loyalty moved
+		else
+			local message = if called and ok ~= nil then PetitionModel.reason(reason) else CitizenText.unreachable()
+			self.petition = { state = "idle", error = message }
+		end
+		hud:render()
+	end)
+end
+
 function CitizenCardController:_kingdomColor(): Color3?
 	local kingdom = self.hud.store:mine()
 	return if kingdom then HudModel.color(kingdom) else nil
@@ -354,6 +421,14 @@ function CitizenCardController:render(metrics: any)
 	local entityId = self.entityId
 	local color = self:_kingdomColor()
 	local talkView = { visible = self._talk ~= nil, state = self.talkState }
+	local perk = PetitionModel.perk(self.view)
+	local petition = self:_petition()
+	local petitionView = {
+		visible = petition ~= nil and hud:hasRemote(CitizenCardController.FULFIL),
+		model = petition,
+		state = self.petition.state,
+		error = self.petition.error,
+	}
 	-- The HUD re-renders on every treasury or construction push: rebuild the card only when what
 	-- it shows changed, so the Talk button under the player's finger survives (FORGE-05 M1).
 	local key = Signature.of({
@@ -361,6 +436,8 @@ function CitizenCardController:render(metrics: any)
 		model = self.model,
 		color = color,
 		talk = talkView,
+		perk = perk,
+		petition = petitionView,
 		breakpoint = metrics.breakpoint,
 		drawer = metrics.drawer,
 		width = metrics.width,
@@ -373,6 +450,16 @@ function CitizenCardController:render(metrics: any)
 	self.card:render(self.model, metrics, {
 		color = color,
 		talk = talkView,
+		perk = perk,
+		petition = {
+			visible = petitionView.visible,
+			model = petition,
+			state = petitionView.state,
+			error = petitionView.error,
+			onFulfil = function()
+				self:fulfil()
+			end,
+		},
 		onTalk = function()
 			local talk = self._talk
 			if talk and entityId and self.talkState ~= "loading" then
