@@ -202,7 +202,7 @@ describe("Crown Arena: intro card and duel HUD (FL-0073)", function()
 		Create.setConnector(previous)
 	end)
 
-	local function duellists(world)
+	local function duellists()
 		local a = ArenaDoubles.duellist(1, "crimson", "adoring", {
 			weapon = "spear",
 			armour = "light",
@@ -215,7 +215,7 @@ describe("Crown Arena: intro card and duel HUD (FL-0073)", function()
 
 	it("the intro shows both sides with tier, reasons, loadout and perks; the kingdom HUD steps aside", function()
 		world = newWorld({ userId = 9 }) -- a watching ruler
-		local a, b = duellists(world)
+		local a, b = duellists()
 		world.arenaServer:setState({ stage = "intro", endsAt = world.env.serverTimeNow() + 12, a = a, b = b })
 		world:advance(0.3)
 		local intro = find(modals(world), "ArenaIntro")
@@ -233,7 +233,7 @@ describe("Crown Arena: intro card and duel HUD (FL-0073)", function()
 
 	it("the duel HUD follows hits, snapshots and perks; it sits at the top, clear of the duel buttons", function()
 		world = newWorld({ width = 667, height = 375 })
-		local a, b = duellists(world)
+		local a, b = duellists()
 		world.arenaServer:setState({ stage = "duel", endsAt = world.env.serverTimeNow() + 120, a = a, b = b })
 		world:advance(0.3)
 		local hud = find(modals(world), "ArenaHud")
