@@ -88,6 +88,7 @@
       "geometry_hash": "30e81a98b6aea8b7",
       "id": "farm_field_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "wattle",
@@ -224,6 +225,7 @@
       "geometry_hash": "06c9b9f0128d5183",
       "id": "farm_field_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "wattle",
@@ -360,6 +362,7 @@
       "geometry_hash": "197a143684dfe7f7",
       "id": "farm_field_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "stones",
@@ -497,6 +500,7 @@
       "geometry_hash": "d34bac4e98c22afb",
       "id": "farm_field_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "wattle",
@@ -634,6 +638,7 @@
       "geometry_hash": "a8d28b1db18cf13e",
       "id": "farm_field_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "wattle",
@@ -770,6 +775,7 @@
       "geometry_hash": "9869fcb412ea7fba",
       "id": "farm_field_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "border": "wattle",

@@ -937,39 +937,42 @@ describe(
 )
 
 describe("mesh rig textures: a palette texture is allowed, never required", function()
-	it("keeps a piece's TextureID and SurfaceAppearance as imported, and strips everything else it carries", function()
-		local data = MeshKit.fixture()
-		local assets = MeshKit.assets(data)
-		local kit = assets.CitizenKit
-		for _, id in { "torso_01", "head_01", "head_02", "head_03", "head_04", "hair_01" } do
-			(kit[id] :: MeshPart).TextureID = "rbxassetid://424242" -- a shared palette atlas
+	it(
+		"keeps a piece's TextureID (a shared palette) but strips a SurfaceAppearance (no PBR, D-057 (17)) and everything else it carries",
+		function()
+			local data = MeshKit.fixture()
+			local assets = MeshKit.assets(data)
+			local kit = assets.CitizenKit
+			for _, id in { "torso_01", "head_01", "head_02", "head_03", "head_04", "hair_01" } do
+				(kit[id] :: MeshPart).TextureID = "rbxassetid://424242" -- a shared palette atlas
+			end
+			local appearance = Instance.new("SurfaceAppearance")
+			appearance.Parent = kit.torso_01
+			for _, id in { "torso_01", "arm_l" } do
+				local script = Instance.new("Script")
+				script.Parent = kit[id]
+				Instance.new("Attachment").Parent = kit[id]
+			end
+			kit.torso_01:SetAttribute("Payload", "fetch me") -- attributes and tags on the imported piece are payload too
+			kit.torso_01:AddTag("RemoteLoader")
+			MeshKit.install(data, assets)
+			local rig = meshRig("citizen", "idle", AZURE, { skin = 1, hair = 1, hairColor = 1, outfit = 1 })
+			expect(rig.Torso:GetAttribute("Payload")).toBeNil()
+			expect(#rig.Torso:GetTags()).toBe(0)
+			expect(rig.Torso.TextureID).toBe("rbxassetid://424242")
+			expect(rig.Torso:FindFirstChildWhichIsA("SurfaceAppearance")).toBeNil()
+			expect(rig.Torso:FindFirstChildWhichIsA("Script")).toBeNil()
+			expect(rig.Torso:FindFirstChildWhichIsA("Attachment")).toBeNil()
+			expect(rig.LeftArm:FindFirstChildWhichIsA("Script")).toBeNil()
+			-- the tint rules are the same with or without a texture: Color is still the only interface
+			expect(rig.Torso.Color:ToHex()).never.toBe("ffffff")
+			expect(rig.Torso:GetAttribute("KitTint")).never.toBeNil()
+			-- a textured and a plain piece sit together in one rig, and the plain kit builds as before
+			expect(rig.Head.TextureID).toBe("rbxassetid://424242")
+			MeshKit.install(data, MeshKit.assets(data))
+			expect(meshRig("citizen", "idle", AZURE):GetAttribute("KitMesh")).toBe(true)
 		end
-		local appearance = Instance.new("SurfaceAppearance")
-		appearance.Parent = kit.torso_01
-		for _, id in { "torso_01", "arm_l" } do
-			local script = Instance.new("Script")
-			script.Parent = kit[id]
-			Instance.new("Attachment").Parent = kit[id]
-		end
-		kit.torso_01:SetAttribute("Payload", "fetch me") -- attributes and tags on the imported piece are payload too
-		kit.torso_01:AddTag("RemoteLoader")
-		MeshKit.install(data, assets)
-		local rig = meshRig("citizen", "idle", AZURE, { skin = 1, hair = 1, hairColor = 1, outfit = 1 })
-		expect(rig.Torso:GetAttribute("Payload")).toBeNil()
-		expect(#rig.Torso:GetTags()).toBe(0)
-		expect(rig.Torso.TextureID).toBe("rbxassetid://424242")
-		expect(rig.Torso:FindFirstChildWhichIsA("SurfaceAppearance")).never.toBeNil()
-		expect(rig.Torso:FindFirstChildWhichIsA("Script")).toBeNil()
-		expect(rig.Torso:FindFirstChildWhichIsA("Attachment")).toBeNil()
-		expect(rig.LeftArm:FindFirstChildWhichIsA("Script")).toBeNil()
-		-- the tint rules are the same with or without a texture: Color is still the only interface
-		expect(rig.Torso.Color:ToHex()).never.toBe("ffffff")
-		expect(rig.Torso:GetAttribute("KitTint")).never.toBeNil()
-		-- a textured and a plain piece sit together in one rig, and the plain kit builds as before
-		expect(rig.Head.TextureID).toBe("rbxassetid://424242")
-		MeshKit.install(data, MeshKit.assets(data))
-		expect(meshRig("citizen", "idle", AZURE):GetAttribute("KitMesh")).toBe(true)
-	end)
+	)
 end)
 
 -- ------------------------------------------------------------------ budgets (D-057 (5))
@@ -1058,7 +1061,7 @@ for _, ds in datasets do
 			expect(result.tris).toBeGreaterThan(0)
 			expect(result.meshTris).toBeLessThanOrEqual(20000)
 			expect(CharacterMesh.MAX_PIECES).toBe(16) -- D-057 (5), pinned here on purpose
-			-- D-057 amendment (9): citizens 1,000 (body 900, tool 150), soldiers and rulers up to 1,500. The ONE place to change.
+			-- D-057 amendment (15): citizens 1,000 (body 900, tool 150), soldiers and rulers up to 1,500. The ONE place to change.
 			expect(CharacterMesh.BUDGET.citizen).toEqual({ total = 1000, body = 900, tool = 150 })
 			expect(CharacterMesh.BUDGET.soldier).toEqual({ total = 1500 })
 			expect(CharacterMesh.BUDGET.governor).toEqual({ total = 1500 })

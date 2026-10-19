@@ -22,6 +22,7 @@
       "geometry_hash": "5b16465b4dbed5da",
       "id": "prop_goods_barrels_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue",
@@ -84,6 +85,7 @@
       "geometry_hash": "4ec783e2dc9e233c",
       "id": "prop_goods_crates_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -146,6 +148,7 @@
       "geometry_hash": "ede846e17b0f54bd",
       "id": "prop_goods_merchant_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "red",
@@ -208,6 +211,7 @@
       "geometry_hash": "fd1d8875d68d9650",
       "id": "prop_goods_produce_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "yellow",
@@ -270,6 +274,7 @@
       "geometry_hash": "df49ab43697f1bcd",
       "id": "prop_goods_sacks_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "green",
@@ -332,6 +337,7 @@
       "geometry_hash": "6e5b8a5dd6294066",
       "id": "prop_goods_storehouse_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kingdom": "blue",

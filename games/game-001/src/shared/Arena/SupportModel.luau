@@ -146,6 +146,9 @@ end
 function SupportModel.offers(keyCitizens: { KeyCitizen }, tier: SupportTier, config: any?): ({ TriggerOffer }, number)
 	local cfg = config or Support
 	local tierDef = cfg.tiers[tier]
+	if tierDef == nil then
+		error(`SupportModel: unknown tier '{tostring(tier)}'`, 2)
+	end
 	local offers: { TriggerOffer } = {}
 	local byRole: { [string]: KeyCitizen } = {}
 	for _, citizen in keyCitizens do
@@ -208,7 +211,7 @@ local function perkModifiers(trigger: string, power: string, cfg: any): { Modifi
 	if perk == nil then
 		error(`SupportModel: unknown trigger '{tostring(trigger)}'`, 3)
 	end
-	local magnitude = perk[power]
+	local magnitude = if power == "pledged" or power == "empowered" then perk[power] else nil
 	if type(magnitude) ~= "number" then
 		error(`SupportModel: power must be "pledged" or "empowered" (got {tostring(power)})`, 3)
 	end
@@ -259,7 +262,15 @@ function SupportModel.modifiers(
 			table.insert(out, { source = `tier:{tier}`, kind = "passive", stat = stat, magnitude = magnitude })
 		end
 	end
+	local picked: { [string]: boolean } = {}
 	for _, pick in picks do
+		if type(pick.trigger) ~= "string" then
+			error(`SupportModel: unknown trigger '{tostring(pick.trigger)}'`, 2)
+		end
+		if picked[pick.trigger] then
+			error(`SupportModel: '{tostring(pick.trigger)}' is picked twice; each trigger fires once per duel`, 2)
+		end
+		picked[pick.trigger] = true
 		if pick.trigger == "crowdRally" and not tierDef.crowdRally then
 			error(`SupportModel: the Crowd Rally needs the Adoring tier (got {tier})`, 2)
 		end

@@ -22,6 +22,7 @@
       "geometry_hash": "b93fbd5fe2c984eb",
       "id": "bridge_wood_humped_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "length": 40.0,
@@ -89,6 +90,7 @@
       "geometry_hash": "0064c86bc374b97d",
       "id": "bridge_wood_plank_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "length": 32.0,
@@ -156,6 +158,7 @@
       "geometry_hash": "7abd4b80d4d534ca",
       "id": "bridge_wood_trestle_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "length": 44.0,

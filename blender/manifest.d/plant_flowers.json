@@ -22,6 +22,7 @@
       "geometry_hash": "46744b18a65536df",
       "id": "plant_flowers_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "wildflowers"
@@ -83,6 +84,7 @@
       "geometry_hash": "98f88f3e75ae4720",
       "id": "plant_flowers_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "tulips"
@@ -144,6 +146,7 @@
       "geometry_hash": "69692887bcb7b241",
       "id": "plant_flowers_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "daisies"
@@ -205,6 +208,7 @@
       "geometry_hash": "8ffc9ce3ac8af636",
       "id": "plant_flowers_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "sunflowers"
@@ -266,6 +270,7 @@
       "geometry_hash": "30843e52dcfafe20",
       "id": "plant_flowers_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "lavender"
@@ -327,6 +332,7 @@
       "geometry_hash": "41b4907fcdf89878",
       "id": "plant_flowers_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "poppies"
