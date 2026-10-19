@@ -110,7 +110,7 @@ The game fills placeholders in at runtime. Which ones a column may use depends o
 | `citizen.trait.<trait_id>` | bool | trait from `traits.csv` | citizen |
 | `citizen.memory.<tag>` | bool | any tag (lint warns if nothing sets it) | citizen |
 | `citizen.has_family` `citizen.has_friend` `citizen.has_rival` | bool | | citizen |
-| `event.<tag>` | bool | `raid shortage keep_upgraded building_completed objective_captured soldiers_recruited strike riot` | kingdom |
+| `event.<tag>` | bool | `raid shortage keep_upgraded building_completed objective_captured soldiers_recruited strike riot war_declared siege objective_lost` | kingdom |
 | `decision.<decision_id>` | bool | decision from `decisions.csv` (chosen this match) | ruler (§6.8) |
 
 **Checks.**
