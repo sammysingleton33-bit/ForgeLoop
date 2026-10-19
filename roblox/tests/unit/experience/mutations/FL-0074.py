@@ -163,8 +163,6 @@ M = [
  ("FL-0074", C2+"CrowdFiguresController.luau", '\tself._pending = false\n\tself._plan = nil\n', '\tself._pending = false\n', 'CrowdFigures', 'a new pair refills the stands', 'game'),
  ("FL-0074", G + "config/Pacing.luau", 'qualify = 5,', 'qualify = 4,', 'CrowdDirector', 'arena stage timings in Pacing', 'game'),
  # FORGE-07 #256 M1: follow DuelController (one GetState asker); L1 a-c
- ("FL-0074", K2, 'duel.stateChanged:connect(function(state)', 'duel.stateChanged:connect(function(_state)', 'CrowdClient', "with FORGE-01's DuelController", 'game'),
- ("FL-0074", C2+"CrowdFiguresController.luau", 'duel.stateChanged:connect(function(state)', 'duel.stateChanged:connect(function(_state)', 'CrowdFigures', "with FORGE-01's DuelController", 'game'),
  ("FL-0074", C2+"CrowdFiguresController.luau", 'Def.BUILD_PER_STEP = 24', 'Def.BUILD_PER_STEP = 12', 'CrowdFigures', 'builds BUILD_PER_STEP figures a step', 'game'),
  ("FL-0074", C2+"CrowdFiguresController.luau", '\t\tfor _, side in { "a", "b" } do\n\t\t\tif perSide[side][i] ~= nil then', '\t\tfor _, side in { "b", "a" } do\n\t\t\tif perSide[side][i] ~= nil then', 'CrowdFigures', 'builds BUILD_PER_STEP figures a step', 'game'),
  # FORGE-00's ruling on FORGE-07 #256 M1: DuelController is a dependency and the crowd's only source (no GetState ask)
