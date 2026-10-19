@@ -45,6 +45,7 @@ local Caps = require("./Caps")
 local Types = require("./Types")
 
 type ArenaState = Types.ArenaState
+type VoteSide = Types.VoteSide
 type Duellist = Types.Duellist
 type TriggerOffer = Types.TriggerOffer
 
@@ -265,6 +266,28 @@ local function duellist(champion: any): Duellist
 	}
 end
 
+-- The vote stage's public view (CONTRACTS G12.4): for each side with two or more candidates, who may be voted for and who
+-- has voted, never for whom (the ballot is secret).
+function ArenaFlow:_voteView(): { [string]: VoteSide }?
+	if self._stage ~= "vote" then
+		return nil
+	end
+	local view: { [string]: VoteSide } = {}
+	for _, side in self._sides do
+		local kingdom, candidates = self._kingdoms[side], self._candidates[side]
+		if kingdom and candidates and #candidates > 1 then
+			local voted = {}
+			for _, candidate in candidates do
+				if self._votes[candidate] ~= nil then
+					table.insert(voted, candidate)
+				end
+			end
+			view[side] = { kingdom = kingdom, candidates = table.clone(candidates), voted = voted }
+		end
+	end
+	return if next(view) ~= nil then view else nil
+end
+
 function ArenaFlow:state(): ArenaState
 	local a, b = self._champions.a, self._champions.b
 	return {
@@ -274,6 +297,7 @@ function ArenaFlow:state(): ArenaState
 		b = if b then duellist(b) else nil,
 		coronation = self._coronation,
 		winner = self._winnerUser,
+		vote = self:_voteView(),
 	}
 end
 
