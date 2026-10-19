@@ -249,10 +249,21 @@ describe("ArenaService: the host", function()
 		expect(state.b.citizens > 0).toBe(true)
 	end)
 
-	it("ships switched off: the match goes to Crown Points at once, as with no host", function()
+	it("ships switched on, and runs the arena on the shipped config", function()
 		local world = boot({ 1, 2 })
-		world.arena.config = ArenaConfig -- the shipped config
-		expect(ArenaConfig.enabled).toBe(false)
+		local shipped = table.clone(ArenaConfig)
+		expect(shipped.enabled).toBe(true)
+		world.arena.config = shipped
+		reachArena(world)
+		expect(world.arena._flow).never.toBeNil()
+		expect(world.arena:state().stage).never.toBe("done")
+	end)
+
+	it("switched off: the match goes to Crown Points at once, as with no host", function()
+		local world = boot({ 1, 2 })
+		local off = table.clone(ArenaConfig)
+		off.enabled = false
+		world.arena.config = off
 		local phases = watchPhases(world)
 		reachArena(world)
 		expect(world.arena:state().stage).toBe("done")
@@ -571,7 +582,9 @@ describe("SupportService", function()
 
 	it("stays dark while the arena is switched off: GetSupport answers nil and nothing is pushed", function()
 		local world = boot({ 1, 2 })
-		world.arena.config = ArenaConfig -- the shipped config: enabled = false
+		local off = table.clone(ArenaConfig)
+		off.enabled = false
+		world.arena.config = off
 		expect(world.support:enabled()).toBe(false)
 		local before = #received(world.env, "Kingdom.Support", world.players[1])
 		world.leadership:sample()

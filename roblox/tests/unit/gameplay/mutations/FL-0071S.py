@@ -24,7 +24,7 @@ M = [
  ("FL-0071S", SS, 'if #reasons >= REASONS then', 'if #reasons >= REASONS + 5 then', "sim/ArenaService", "names the three moments that moved the score most"),
  ("FL-0071S", SS, 'self._leadership.sampled:connect(function()', 'self._leadership.acted:connect(function()', "sim/ArenaService", "pushes Kingdom.Support to every ruler after each leadership sample"),
  # --- review fixes: switched off by default, the venue's marks, support into the duel
- ("FL-0071S", AS, 'if not self.config.enabled then', 'if false then', "sim/ArenaService", "ships switched off"),
+ ("FL-0071S", AS, 'if not self.config.enabled then', 'if false then', "sim/ArenaService", "switched off: the match goes to Crown Points"),
  ("FL-0071S", AS, 'local marks = if site == nil then WorldLayout.arena else nil', 'local marks = nil', "sim/ArenaService", "stand on the venue's marks"),
  ("FL-0071S", AS, 'place(a.userId, from.X, from.Z, to.X, to.Z, from.Y)', 'place(a.userId, from.X, from.Z, to.X, to.Z)', "sim/ArenaService", "stand on the venue's marks"),
  ("FL-0071S", AS, 'place(b.userId, to.X, to.Z, from.X, from.Z, to.Y)', 'place(b.userId, to.X, to.Z, from.X, from.Z)', "sim/ArenaService", "stand on the venue's marks"),
