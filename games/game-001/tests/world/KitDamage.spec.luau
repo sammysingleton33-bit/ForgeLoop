@@ -42,6 +42,14 @@ local function count(model: Instance): number
 	return #parts(model)
 end
 
+local function hist(model: Instance): { [string]: number }
+	local h: { [string]: number } = {}
+	for _, p in parts(model) do
+		h[p.Name] = (h[p.Name] or 0) + 1
+	end
+	return h
+end
+
 local function halfExtents(p: BasePart): Vector3
 	local cf, s = p.CFrame, p.Size
 	local r, u, l = cf.RightVector, cf.UpVector, cf.LookVector
@@ -116,7 +124,8 @@ end
 for _, bt in { "keep", "house", "wall", "gate" } do
 	table.insert(FULL, { bt, MAX_LEVEL[bt] or 2, "emerald" })
 end
-local QUICK = { { "house", 2, "crimson" }, { "wall", 2, "crimson" }, { "watchtower", 2, "crimson" } }
+local QUICK =
+	{ { "house", 2, "crimson" }, { "wall", 2, "crimson" }, { "watchtower", 2, "crimson" }, { "gate", 3, "crimson" } }
 
 local function damaged(bt: string, lv: number, hue: string, d: any): Model
 	local m = Kit.build(bt, lv, "complete", CANON[hue])
@@ -175,7 +184,7 @@ CHECKS.damage = function(quick: boolean?)
 			table.insert(out, `damageFromHp({c[1]}, {c[2]}) = {Kit.damageFromHp(c[1], c[2])}, want {c[3]}`)
 		end
 	end
-	local cracks, rubble, smoke = Damage.CRACKS, Damage.RUBBLE, Damage.SMOKE
+	local cracks, rubble, soot = Damage.CRACKS, Damage.RUBBLE, Damage.SOOT
 	do
 		for _, e in if quick then QUICK else FULL do
 			local bt, lv, hue = e[1], e[2], e[3]
@@ -190,6 +199,7 @@ CHECKS.damage = function(quick: boolean?)
 				end
 			end
 			local removedBefore = 0
+			local baseHist = hist(base)
 			local pool, topPart, topAt = 0, nil, -math.huge
 			for _, p in parts(base) do
 				if p.CFrame.Position.Y + p.Size.Y / 2 > topAt then
@@ -226,8 +236,8 @@ CHECKS.damage = function(quick: boolean?)
 				if extras(m, "stump") > (if s >= 3 then 1 else 0) then
 					table.insert(out, `{stag}: {extras(m, "stump")} stump parts`)
 				end
-				if extras(m, "smoke") ~= smoke[s] then
-					table.insert(out, `{stag}: smoke {extras(m, "smoke")}, want {smoke[s]}`)
+				if hasBody and extras(m, "soot") ~= soot[s] then
+					table.insert(out, `{stag}: soot {extras(m, "soot")}, want {soot[s]}`)
 				end
 				-- parts that went missing: monotone, at least the documented number where the model has them
 				local removed = baseN - (count(m) - ex)
@@ -235,38 +245,97 @@ CHECKS.damage = function(quick: boolean?)
 					table.insert(out, `{stag}: {removed} parts removed, fewer than state {s - 1} ({removedBefore})`)
 				end
 				removedBefore = removed
+				-- a gate loses one leaf (with its bands) at state 1 and both from state 3
+				local hm = hist(m)
+				local leafGone = (baseHist.GateLeaf or 0)
+					- (hm.GateLeaf or 0)
+					+ (baseHist.LeafBand or 0)
+					- (hm.LeafBand or 0)
+				if (baseHist.GateLeaf or 0) > 0 then
+					local wantLeaves = if s >= 3 then 0 else (baseHist.GateLeaf :: number) - 1
+					if (hm.GateLeaf or 0) ~= wantLeaves then
+						table.insert(out, `{stag}: {hm.GateLeaf or 0} gate leaves left, want {wantLeaves}`)
+					end
+				end
 				-- the parts that can go missing (not the highest part of the model): exactly the documented number, or all of
 				-- them; the collapsed corner (state 3 and 4) takes more on top
 				local want = math.min(Damage.REMOVED[s], pool)
-				if removed < want or (s <= 2 and removed ~= want) then
+				if removed - leafGone < want or (s <= 2 and removed - leafGone ~= want) then
 					table.insert(
 						out,
-						`{stag}: {removed} parts removed, want {want} (pool {pool}, table {Damage.REMOVED[s]})`
+						`{stag}: {removed - leafGone} parts removed besides the leaves, want {want} (pool {pool}, table {Damage.REMOVED[s]})`
 					)
 				end
-				-- the damage parts: thin dark wedges, grey translucent balls, blocks; all harmless to touch
+				-- state 1 is a bite, not a scatter: the removed parts lie close together, and the model visibly differs
+				if s == 1 and want >= 3 then
+					local keyOf = function(p: BasePart): string
+						local at = p.CFrame.Position
+						return `{p.Name}|{string.format("%.2f,%.2f,%.2f", at.X, at.Y, at.Z)}`
+					end
+					local present: { [string]: boolean } = {}
+					for _, p in parts(m) do
+						present[keyOf(p)] = true
+					end
+					local gone: { Vector3 } = {}
+					for _, p in parts(base) do
+						if Damage.MISSING[p.Name] and not present[keyOf(p)] then
+							table.insert(gone, p.CFrame.Position)
+						end
+					end
+					local sum = Vector3.zero
+					for _, v in gone do
+						sum += v
+					end
+					local centre = sum / math.max(#gone, 1)
+					for _, v in gone do
+						if (v - centre).Magnitude > 10 then
+							table.insert(
+								out,
+								`{stag}: the bite is scattered ({r3((v - centre).Magnitude)} from its centre)`
+							)
+							break
+						end
+					end
+				end
+				if s == 1 and hasBody and ex < 3 then
+					table.insert(out, `{stag}: state 1 adds only {ex} marks (cracks and soot)`)
+				end
+				-- the damage parts: cracks and soot are thin dark slabs lying on a face (opaque, never a wedge or a ball), rubble
+				-- and the stump blocks; all harmless to touch
 				for _, p in m:GetChildren() do
 					if p:IsA("BasePart") and p:GetAttribute("KitDamage") == true then
 						local kind = p:GetAttribute("KitDamageKind")
 						if p.CanCollide or p.CanQuery or p.CanTouch then
 							table.insert(out, `{stag}: a {kind} part can collide or be touched`)
 						end
+						local dark = p.Color.R < 0.2 and p.Color.G < 0.2
 						if
 							kind == "crack"
 							and not (
-								p.ClassName == "WedgePart"
-								and math.min(p.Size.X, p.Size.Z) <= 0.15
-								and p.Color.R < 0.2
+								shapeOf(p) == "box"
+								and p.ClassName == "Part"
+								and p.Size.Z <= 0.12
+								and p.Size.X <= 0.4
+								and dark
 							)
 						then
-							table.insert(out, `{stag}: a crack is not a thin dark wedge`)
+							table.insert(out, `{stag}: a crack is not a thin dark slab`)
 						elseif
-							kind == "smoke"
-							and not (shapeOf(p) == "ball" and p.Transparency >= 0.4 and p.Transparency < 1)
+							kind == "soot"
+							and not (
+								shapeOf(p) == "box"
+								and p.ClassName == "Part"
+								and p.Size.Z <= 0.12
+								and p.Size.X >= 1.2
+								and dark
+								and p.Transparency == 0
+							)
 						then
-							table.insert(out, `{stag}: smoke is not a translucent ball`)
+							table.insert(out, `{stag}: soot is not a flat dark opaque streak`)
 						elseif (kind == "rubble" or kind == "stump") and shapeOf(p) ~= "box" then
 							table.insert(out, `{stag}: rubble is not a block`)
+						elseif kind ~= "crack" and kind ~= "soot" and kind ~= "rubble" and kind ~= "stump" then
+							table.insert(out, `{stag}: unknown damage kind {kind}`)
 						end
 					end
 				end
@@ -313,18 +382,36 @@ CHECKS.damage = function(quick: boolean?)
 			then
 				table.insert(out, `{tag}: damage touched the Burning, Hp or MaxHp attributes`)
 			end
-			-- smoke stays inside the model's footprint box
-			for _, p in burning:GetChildren() do
-				if p:IsA("BasePart") and p:GetAttribute("KitDamageKind") == "smoke" then
-					local ext = {}
-					for _, q in parts(base) do
-						ext.lo = math.min(ext.lo or math.huge, q.CFrame.Position.X - halfExtents(q).X)
-						ext.hi = math.max(ext.hi or -math.huge, q.CFrame.Position.X + halfExtents(q).X)
+			-- cracks and soot lie on the walls: inside the model's width and below its top
+			do
+				local lo, hi = math.huge, -math.huge
+				for _, q in parts(base) do
+					lo = math.min(lo, q.CFrame.Position.X - halfExtents(q).X)
+					hi = math.max(hi, q.CFrame.Position.X + halfExtents(q).X)
+				end
+				for _, p in burning:GetChildren() do
+					local kind = p:GetAttribute("KitDamageKind")
+					if p:IsA("BasePart") and (kind == "crack" or kind == "soot") then
+						local x = p.CFrame.Position.X
+						if x < lo - 0.2 or x > hi + 0.2 or p.CFrame.Position.Y + halfExtents(p).Y > baseTop + 1e-3 then
+							table.insert(
+								out,
+								`{tag}: a {kind} mark lies outside the model ({r3(x)} in {r3(lo)}..{r3(hi)})`
+							)
+						end
 					end
-					local x = p.CFrame.Position.X
-					if x < ext.lo or x > ext.hi then
-						table.insert(out, `{tag}: smoke at x {r3(x)} outside the model {r3(ext.lo)}..{r3(ext.hi)}`)
-					end
+				end
+			end
+			-- a gate opened while a leaf is knocked out comes back from repair in the open pose
+			if bt == "gate" then
+				local g = damaged(bt, lv, hue, 0.3)
+				Kit.setGateOpen(g, true)
+				g:SetAttribute("Damage", 0)
+				Kit.applyDamage(g)
+				local ref = Kit.build(bt, lv, "complete", CANON[hue])
+				Kit.setGateOpen(ref, true)
+				if signature(g) ~= signature(ref) then
+					table.insert(out, `{tag}: a gate opened while a leaf was out is not the open gate after repair`)
 				end
 			end
 			-- the kingdom colour still works on a damaged model, before and after the repair
@@ -445,6 +532,75 @@ describe("Damage mutants are caught", function()
 					p:SetAttribute("KitDamage", true)
 					p:SetAttribute("KitDamageKind", "rubble")
 					p.Parent = m
+				end
+			end
+		end
+	end)
+	caught("a crack is a jutting wedge again", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			for _, p in m:GetChildren() do
+				if p:IsA("BasePart") and p:GetAttribute("KitDamageKind") == "crack" then
+					p.Size = Vector3.new(0.3, p.Size.Y, 0.6)
+				end
+			end
+		end
+	end)
+	caught("soot is a translucent ball again", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			for _, p in m:GetChildren() do
+				if p:IsA("Part") and p:GetAttribute("KitDamageKind") == "soot" then
+					local ball = p :: Part
+					ball.Shape = Enum.PartType.Ball
+					ball.Transparency = 0.5
+				end
+			end
+		end
+	end)
+	caught("state 1 takes nothing off the model", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			if Damage.stateOf(m:GetAttribute("Damage")) == 1 then
+				for _, p in Damage.stashed(m) do
+					p.Parent = m
+				end
+			end
+		end
+	end)
+	caught("the bite is scattered along the crenellation", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			if Damage.stateOf(m:GetAttribute("Damage")) == 1 then
+				for _, p in Damage.stashed(m) do
+					p.Parent = m
+				end
+				local merlons = {}
+				for _, p in m:GetChildren() do
+					if p:IsA("BasePart") and p.Name == "Merlon" then
+						table.insert(merlons, p)
+					end
+				end
+				table.sort(merlons, function(a, b)
+					return a.CFrame.X < b.CFrame.X
+				end)
+				for i = 1, 4 do
+					local p = merlons[1 + (i - 1) * math.max(1, math.floor(#merlons / 4))]
+					if p then
+						p.Parent = nil
+					end
+				end
+			end
+		end
+	end)
+	caught("a gate keeps both its leaves under fire", "damage", function()
+		Kit.applyDamage = function(m)
+			original.applyDamage(m)
+			if Damage.stateOf(m:GetAttribute("Damage")) >= 1 then
+				for _, p in Damage.stashed(m) do
+					if p.Name == "GateLeaf" or p.Name == "LeafBand" then
+						p.Parent = m
+					end
 				end
 			end
 		end

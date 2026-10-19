@@ -57,19 +57,25 @@
 		Kit.NEUTRAL_COLOR, Kit.setKingdomColor(model, color)
 	War kit (FL-0128, Operation Crownfall; additive, the contract rows are in
 	production/handoffs/2026-10-19-forge-02-to-forge-00-04-fl0128-war-kit.md; part-built, D-026):
-		Kit.build("wall" | "gate", 1..3, ...)          -- wall 30/45/60 parts (L1 palisade, L2 stone, L3 buttresses), gate 90/120/150
-		                                                  (L1 timber leaves, L2 banded leaves + banners, L3 portcullis + braziers);
+		Kit.build("wall" | "gate", 1..3, ...)          -- wall 30/45/60 parts (L1 palisade, L2 stone, L3 its own outline: end piers,
+		                                                  buttresses, pedestal brazier), gate 90/120/150
+		                                                  (L1 timber leaves, L2 banded leaves + banners, L3 portcullis + braziers; open leaves
+		                                                  swing 65 degrees into the passage);
 		                                                  Buildings.PART_BUDGET_BY_LEVEL; footprints unchanged (32x8, 32x12)
 		Kit.build("watchtower", 2, ...)                -- war-ready: hoarding galleries, braziers, banner, more merlons; <= 130
 		Kit.setGateOpen(model, open)                   -- model attribute KitGateOpen (false as built); leaves and portcullis
-		                                                  move by CFrame alone (no part added), relative to the Root
+		                                                  move by CFrame alone (no part added), relative to the Root; open, the
+		                                                  portcullis is raised into the lintel; also poses leaves a damaged gate
+		                                                  has parked (they come back posed)
 		Kit.siege("ram", kingdomColor) -> Model        -- client entity rig, <= 45 parts, Root anchored and invisible, feet pivot,
-		                                                  front -Z, ONE Motor6D "Log" (the swinging log); Kit.SIEGE_KINDS
+		                                                  front -Z, ONE Motor6D "Log" (the pale log with its iron wedge head, 7 studs
+		                                                  past a low pent roof; the roof alone carries the kingdom); Kit.SIEGE_KINDS
 		Kit.siegePose(model, thrust 0..1)              -- sets the Log joint; Kit.siegeTransform(thrust) -> CFrame is the same
 		                                                  value for a driver with its own Transform adapter
-		Kit.character("soldier", "knight" | "archer", ...) -- unit kinds by job (soldier = spear and pennant, knight = sword,
-		                                                  shield with the kingdom's mark and a plumed great helm, archer = bow, quiver,
-		                                                  cap); still <= 11 parts with the kingdom crest; any other job = the spear soldier
+		Kit.character("soldier", "knight" | "archer", ...) -- unit kinds by job (soldier = spear (1.3x body height) and pennant, knight = sword,
+		                                                  bulky, a large kingdom-coloured shield, a broad great helm with a big crest,
+		                                                  archer = curved bow with a string, round head, no quiver); still <= 11 parts
+		                                                  with the kingdom crest; any other job = the spear soldier
 		Kit.applyDamage(model)                         -- reads the model attribute `Damage` (0..1) and builds or removes damage parts
 		                                                  at 0.25 / 0.5 / 0.75 / 0.95 (<= 14 extra parts, none at 0; repairable);
 		                                                  Kit.damageState(d), Kit.damageFromHp(hp, maxHp), Kit.DAMAGE_THRESHOLDS
@@ -183,7 +189,11 @@ Kit.WEAPONS = Gear.WEAPONS
 Kit.footprint = Buildings.footprint
 Kit.build = Buildings.build
 -- FL-0128 war kit (additive): gate open/closed poses, siege engines and their pose helper
-Kit.setGateOpen = Buildings.setGateOpen -- (model, open: boolean): leaves and portcullis by CFrame only; attribute KitGateOpen
+-- (model, open: boolean): leaves and portcullis by CFrame only; attribute KitGateOpen. Leaves a damaged gate has lost
+-- (Kit.applyDamage) are posed too, so a repair brings them back in the current pose.
+function Kit.setGateOpen(model: Model, open: boolean)
+	Buildings.setGateOpen(model, open, Damage.stashed(model))
+end
 Kit.siege = Siege.build -- (kind "ram", kingdomColor) -> Model: client entity rig with one Motor6D "Log"
 Kit.siegePose = Siege.pose -- (model, thrust 0..1): places the swinging log
 Kit.siegeTransform = Siege.thrustTransform -- (thrust 0..1) -> CFrame: the Log joint's Transform (for a pose driver with its own adapter)

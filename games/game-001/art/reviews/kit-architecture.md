@@ -570,51 +570,64 @@ moss) are unchecked.
 
 ## FL-0128 — the war kit: walls, gates, war-ready tower, ram, soldier kinds, damage states (Operation Crownfall)
 Author: FORGE-02. Part-built (D-026), all kingdom-tinted through `KingdomStyle`. Renders are Blender Cycles approximations of
-the Lune part dumps (no Roblox material textures, no Future lighting; the preview draws partial transparency, so the smoke
-shows) at the gameplay-range views noted on each row and at the overview camera (170 studs, 50 deg, the game's 70 deg field of
-view). In the close rows the kingdoms run left to right Emberhold (crimson), Frostmere (azure), Thornwood (emerald), Sunspire
-(gold); in the damage rows Damage runs 0 / 0.3 / 0.6 / 0.9 left to right. Nothing here was seen in Studio.
+the Lune part dumps (no Roblox material textures, no Future lighting). Close rows are shot front on (azimuth 0) with a narrow
+field of view and the four kingdoms on one line across the view, so every piece in a sheet has the same scale and nothing
+recedes in depth or is cropped; the 170-stud sheets use the game's camera (170 studs, 50 deg down, 70 deg field of view) at
+1:1 pixels. In the close rows the kingdoms run left to right Emberhold (crimson), Frostmere (azure), Thornwood (emerald),
+Sunspire (gold); in the damage rows Damage runs 0 / 0.3 / 0.6 / 0.9 left to right. Nothing here was seen in Studio.
 
-Images (`img/`): `kit_fl0128_walls.jpg` (wall L1-3), `kit_fl0128_gates.jpg` (gate L1-3, closed and open),
-`kit_fl0128_tower_ram.jpg` (watchtower L1 against the war-ready L2; the ram drawn back and at thrust 1),
-`kit_fl0128_units.jpg` (soldier, knight, archer in the four kingdoms), `kit_fl0128_aerial_170.jpg` (walls, tower and gates, each
-kingdom, at the overview camera), `kit_fl0128_units_aerial_170.jpg` (the units and the rams at the overview camera, 4x enlarged),
-`kit_fl0128_damage.jpg` (keep, house, wall, tower at Damage 0 / 0.3 / 0.6 / 0.9, Emberhold) and `kit_fl0128_damage_kingdoms.jpg`
-(the keep in the other three kingdoms, the barracks, the gate).
+Images (`img/`): close, equal scale: `kit_fl0128_walls.jpg` (wall L1-3), `kit_fl0128_gates.jpg` (gate L1-3 closed and open),
+`kit_fl0128_tower_ram.jpg` (watchtower L1 and L2; the ram from the side, 3/4, thrust 1, front), `kit_fl0128_units.jpg` (soldier, knight,
+archer, front and 3/4), `kit_fl0128_damage.jpg` (wall, tower, gate, house, keep) and `kit_fl0128_damage_kingdoms.jpg` (wall and gate in
+pale Frostmere stone). At 170 studs: `kit_fl0128_damage_170.jpg` (wall, gate, tower, house, keep at 0 / 0.3 / 0.6 / 0.9),
+`kit_fl0128_towers_170.jpg` (plain L1 against war-ready L2), `kit_fl0128_walls_170.jpg` (wall L1 / L2 / L3), `kit_fl0128_gates_open_170.jpg`
+(gate L1 / L2 / L3 open), `kit_fl0128_units_170.jpg` (true scale, not enlarged: units and ram, rendered at 4K and shown 1:1 and as a
+1080p screen would show it) and `kit_fl0128_before_after_170.jpg` (what origin/main shows today, against this branch, for the walls,
+the gate, the towers and the keep, two kingdoms, same camera).
 
-Part counts (Kit.partCount, all four kingdoms): wall L1 / L2 / L3 26-30 / 36-40 / 52-60 (caps 30 / 45 / 60), gate 71-76 /
-101-112 / 120-131 (caps 90 / 120 / 150), watchtower L2 105-121 (cap 130), ram 38-43 (cap 45), soldier / knight / archer 11 with the
-crest (cap 11), damage at most 14 extra parts and none at Damage 0. All-built worst case (D-047): 26,313 of 27,000
-(`tests/world/KitCeiling.spec.luau`: WorldService 6,869 + four kingdoms 19,111 + three neutral towers 333).
+Part counts (Kit.partCount, all four kingdoms): wall L1 / L2 / L3 26-30 / 36-40 / 50-58 (caps 30 / 45 / 60), gate 71-76 /
+101-112 / 120-131 (caps 90 / 120 / 150), watchtower L2 105-121 (cap 130), ram 37-42 (cap 45), soldier / knight / archer 11 with the
+crest (cap 11), damage at most 14 extra parts and none at Damage 0. All-built worst case (D-047): 26,217 of 27,000
+(`tests/world/KitCeiling.spec.luau`: WorldService 6,869 + four kingdoms 19,015 + three neutral towers 333).
 
 What was built:
-- **Wall:** L1 timber palisade (13 logs of 12-15 studs behind two lashed rails and a plank walk), L2 crenellated stone curtain on a
-  batter with a banner and slits, L3 four buttresses, two banners and a walkway brazier. Footprint 32 x 8 as before.
-- **Gate:** two towers and a pointed arch with timber leaves (L1), banded leaves, tower banners and a crest (L2), a portcullis and two
-  braziers at the foot (L3). `Kit.setGateOpen` swings the leaves to lie along the passage walls and lifts the portcullis 7 studs, by
-  CFrame only. Footprint 32 x 12 as before.
+- **Wall:** L1 timber palisade, L2 crenellated stone curtain on a batter with a banner and slits, L3 its own outline: end piers with
+  slits a tier above the walkway, four buttress piers reaching the walkway, two wider banners, a big brazier on a plinth that
+  rests on the walkway. Footprint 32 x 8 as before.
+- **Gate:** two towers and a pointed arch whose span reaches the tower tops, arch stones flush on its face, timber leaves (L1), banded
+  leaves, tower banners and a crest (L2), a portcullis and two braziers at the foot (L3), a light stone floor. `Kit.setGateOpen` swings
+  the leaves 65 degrees into the passage (both visible, the middle clear) and raises the portcullis 7 studs into the lintel, by CFrame
+  only. Footprint 32 x 12 as before.
 - **Watchtower L2:** hoarding galleries under the parapet, arrow slits instead of arched windows, two braziers at the door.
-- **Ram:** a covered wagon with the kingdom's gabled roof and pennant, the iron-headed log on two hangers; one `Motor6D "Log"`.
-- **Soldier kinds:** spear and pennant / sword and a shield with the kingdom's mark and a taller plume / bow, quiver and cap.
-- **Damage:** cracks, missing merlons and roof tiles, rubble, a collapsed front-right corner top with a stump, smoke.
+- **Ram:** the pale log with its iron wedge head is the silhouette, projecting 7 studs past a low open-sided pent roof in the kingdom
+  colour on four posts and four wheels; one `Motor6D "Log"`.
+- **Soldier kinds:** spear (1.3x the body's height, at the fist) and pennant / bulky knight, sword at the fist, large kingdom-coloured
+  shield with a light emblem, broad helm and a bigger crest / archer with a round head and a curved three-part bow with a string.
+- **Damage:** a bite of merlons or roof tiles gone from 0.25, a gate leaf knocked out, flat cracks, opaque soot streaks, bigger
+  rubble, from 0.75 the collapsed corner top with a stump slab. No translucent smoke.
 
-Specs (headless): `KitWarKit.spec` (levels, gate poses, tower, ram, mutants), `KitUnitKinds.spec` (kinds, pose clearance of the
-shield, quiver, bow and sword in every `Pose` action, mutants), `KitDamage.spec` (states, determinism, repair, Burning, recolour,
-mutants), `KitCeiling.spec`; `KitBuildings`, `KitEmblems`, `KitStyles`, `KitCharacter` extended for the new levels and kinds.
+Specs (headless): `KitWarKit.spec` (levels, wall L3 outline and brazier seat, gate shape, gate poses incl. both open leaves in view and
+the raised portcullis, tower, ram shape, mutants), `KitUnitKinds.spec` (kinds, pose clearance, silhouettes, mutants), `KitDamage.spec`
+(states, real geometry loss, determinism, repair, Burning, recolour, mutants), `KitCeiling.spec`; `KitBuildings`, `KitEmblems`,
+`KitStyles`, `KitCharacter` extended for the new levels and kinds.
 
-D-019 status: not scored here. The coordinator runs the fresh image-only reviewer on the sheets above. Author rounds: two (the first
-round fixed the palisade height, a shield that went through the torso in the cheer pose, smoke that looked like cannonballs, cracks
-hidden behind towers; the second a ram log that did not show at rest and a black hole on a collapsed tower top). My own reading,
-not a score:
-- walls, gates (closed and open) and the damage states read clearly at close range; at 170 studs the wall levels separate by
-  timber against stone and the buttress and brazier cues, the gate levels by banners and braziers, open against closed by the arch;
-- the ram reads as a kingdom-coloured cart with a log; from 170 studs it is a roof, the log is a dark spot at the front;
-- the three soldier kinds differ at close range (spear, shield with a mark, bow and quiver, helm against bare head); at 170 studs
-  they are about 15 pixels and the differences are the shield, the plume and the brown jerkin, not the weapons;
-- weak: the sword is a plain pale plank (the 11-part cap leaves no cross guard), the bow is a straight stave with a string (one
-  cylinder cannot bend), the knight's great helm is a plain block, smoke puffs read as grey balls rather than smoke, cracks are
-  invisible beyond about 100 studs, the watchtower L2 differs from L1 mainly by the galleries and braziers (subtle at 170 studs),
-  Thornwood's watchtower L2 has fewer parts than its L1 (its hoarded roofs replace merlons).
+D-019 history: round 1 (first author pass) was scored NEEDS-WORK by a fresh image-only reviewer for every family (walls 3/3/3, gates
+4/3/3, tower L2 4/3/3, ram 2/2/2, soldier kinds 3/3/3, damage 3/3/3: silhouette / variation / readability), with defects: a brazier in a
+merlon gap, a missing open leaf, portcullis bars hanging in the open gap, a floating A-frame over the gate door and a saddle span, a black
+shield disc, translucent smoke balls through roofs, jutting crack shards, a 2.5x spear beside the body and floating swords, a cannon-like
+plume, a ball on a box. This is the ONE fix round: all of the above were addressed (see the handoff and the list below); the
+coordinator runs the second fresh review. My own reading of the new sheets, not a score:
+- walls: L1 timber, L2 stone and L3 (piers, buttresses, brazier on top) separate by outline in the close rows and at 170 studs;
+- gates: open against closed reads at 170 studs (two brown leaves inside the arch, a light floor, the portcullis gone); closed L3 shows the grille;
+- ram: the pale log with a dark wedge head is the silhouette from the side, the 3/4 and the front, and at 170 studs; it still carries a
+  cannon-like reading from the side for a moment because the log is thick and its head is dark;
+- soldier kinds: knight against soldier is clear at close range (width, shield, helm, crest); at 170 studs the unit is about 25-40 pixels
+  tall and the knight's shield and width still show, the archer reads as a smaller brown figure, but the weapons do not;
+- damage: at 0.3 a wall, a gate (one leaf gone), a house (roof tiles) and a tower (the front merlons and soot) are visibly different from 0
+  at 170 studs; the keep at 0.3 is still almost identical to 0 (cracks on the donjon only);
+- weak: the sword is still a plain slab at the fist, soot streaks are plain rectangles, the ram head reads as a drill bit from some
+  angles, tower L2 against L1 at 170 studs is mostly the braziers and the gallery shadow, Thornwood's watchtower L2 has fewer parts
+  than its L1 (its hoarded roofs replace merlons).
 
 ## FL-0072 — Crown Arena venue, crowd figures, armour and weapons (G12.6; FORGE-02; Blender previews, not Studio)
 

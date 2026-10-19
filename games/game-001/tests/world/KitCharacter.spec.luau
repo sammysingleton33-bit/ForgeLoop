@@ -425,8 +425,9 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032, D-048)", function(
 			if crest then -- rises clearly above the helm, still under the spear tip
 				local _, top = bounds(crest)
 				local _, spearTop = bounds(child(rig, "Tool"))
+				local _, headTop = bounds(child(rig, "Detail1")) -- the spearhead on the shaft's tip
 				expect(top.Y).toBeGreaterThan(mx.Y + 0.3)
-				expect(top.Y).toBeLessThan(spearTop.Y)
+				expect(top.Y).toBeLessThan(math.max(spearTop.Y, headTop.Y))
 			end
 		end)
 	end)
@@ -541,7 +542,14 @@ describe("Kit.character jobs and tools", function()
 				expect(tool:GetAttribute("KitTool")).toBe(if kind == "soldier" then "spear" else "staff")
 				expect(motorOf(rig, "Tool").Part0).toBe(child(rig, "RightArm"))
 				local _, top = bounds(tool)
-				expect(top.Y).toBeGreaterThan(if kind == "soldier" then 7.5 else 5.5)
+				if kind == "soldier" then
+					-- FL-0128: a 5.4 shaft planted at the fist, its steel tip about 1.3 x the body's 5.5 (7.0 to 7.8)
+					local _, tip = bounds(child(rig, "Detail1"))
+					expect(tip.Y).toBeGreaterThan(7.0)
+					expect(tip.Y).toBeLessThan(7.8)
+				else
+					expect(top.Y).toBeGreaterThan(5.5)
+				end
 				if kind == "soldier" then
 					expect(rig:FindFirstChild("Hair")).toBeNil()
 					expect(child(rig, "Head").Material).toBe(Enum.Material.Metal)
@@ -1042,10 +1050,11 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 			expect(pos(strap).Z).toBeLessThan(-0.55) -- in front of the chest (the torso's front face is at -0.575)
 			expect(primitive(tie)).toBe("Part/Ball")
 			expect(pos(tie).Y).toBeGreaterThan(pos(sack).Y + 1.0) -- at the sack's top
-			-- the soldier's spear: 9 long, pale, with a steel spearhead and a kingdom pennant
+			-- the soldier's spear: a 5.4 shaft (FL-0128, was 9), pale, with a steel spearhead and a kingdom pennant
 			local soldier = Kit.character("soldier", "soldier", CRIMSON, nil, "crimson")
 			local spear, head, pennant = child(soldier, "Tool"), child(soldier, "Detail1"), child(soldier, "Detail2")
-			expect(spear.Size.X).toBeGreaterThanOrEqual(8.5)
+			expect(spear.Size.X).toBeGreaterThanOrEqual(5.0)
+			expect(spear.Size.X).toBeLessThanOrEqual(6.2)
 			expect(lum(spear.Color)).toBeGreaterThan(0.6)
 			expect(primitive(head)).toBe("CornerWedgePart")
 			expect(lum(head.Color)).toBeGreaterThan(0.6) -- a pale steel head
@@ -2281,8 +2290,13 @@ describe("Kit.character soldier kingdom crest (CONTRACTS G13.2, D-033(3))", func
 		-- each in its tower style: the spire is the tallest and a pointed wedge, taller than wide
 		local spire, square, plume, dome = rows.crimson, rows.azure, rows.emerald, rows.gold
 		expect(spire.kind == "CornerWedgePart" or spire.kind == "WedgePart").toBe(true)
+		-- (measured above the helm: the dome is a ball sunk into it, so only its top half shows)
+		local function rise(row: any): number
+			local _, topMax = bounds(row.crest)
+			return topMax.Y
+		end
 		for _, other in { square, plume, dome } do
-			expect(spire.h).toBeGreaterThan(other.h + 0.3)
+			expect(rise(spire)).toBeGreaterThan(rise(other) + 0.3)
 		end
 		expect(spire.h).toBeGreaterThan(spire.w)
 		-- the square is a level, flat-topped block, wider than the helm and lower than it is wide
@@ -2290,17 +2304,17 @@ describe("Kit.character soldier kingdom crest (CONTRACTS G13.2, D-033(3))", func
 		expect(square.crest.CFrame.UpVector.Y).toBeNear(1, 1e-6)
 		expect(square.w).toBeGreaterThan(1.45 + 0.3)
 		expect(square.h).toBeLessThan(square.w / 2)
-		-- the plume is narrow and swept back past the helm's back face (+Z is the back)
-		local _, plumeMax = bounds(plume.crest)
-		expect(plumeMax.Z).toBeGreaterThan(1.45 / 2 + 0.3)
+		-- the plume stands up (FL-0128, a swept-back cylinder read as a cannon): a thin upright wedge fin along the helm,
+		-- high at the back, at least 1.0 tall and narrower than half the helm
+		expect(plume.kind).toBe("WedgePart")
+		expect(plume.crest.CFrame.UpVector.Y).toBeNear(1, 1e-6)
+		expect(plume.h).toBeGreaterThanOrEqual(1.0)
 		expect(plume.w).toBeLessThan(1.45 / 2)
-		-- the dome is round, and wider than its seat on the helm (it bulges)
+		-- the dome is a ball that caps the helm (FL-0128, was a knob on a narrower seat): wider than the helm all round, its
+		-- centre at the helm top (at most 0.2 either way)
 		expect(dome.kind).toBe("Part/Ball")
-		local r = dome.crest.Size.X / 2
-		local over = pos(dome.crest).Y - HELM_TOP -- ball centre above the helm top
-		expect(over).toBeGreaterThan(0)
-		expect(over).toBeLessThan(r)
-		expect(2 * math.sqrt(r * r - over * over)).toBeLessThan(dome.w - 0.2)
+		expect(dome.w).toBeGreaterThanOrEqual(1.45 + 0.3)
+		expect(math.abs(pos(dome.crest).Y - HELM_TOP)).toBeLessThan(0.2)
 	end)
 
 	it("keeps today's plain helm (10 parts with its spear details) with no kingdom or an unknown one", function()

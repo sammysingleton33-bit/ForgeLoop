@@ -1645,6 +1645,8 @@ end
 --   gate  L1 a gatehouse with timber leaves, low towers   L2 + banners, crest, banded leaves, taller towers
 --         L3 + portcullis, braziers at the foot, the tallest towers
 -- Budgets (Buildings.PART_BUDGET_BY_LEVEL, enforced by tests/world): wall 30 / 45 / 60, gate 90 / 120 / 150.
+Buildings.GATE_OPEN_ANGLE = math.rad(65) -- how far an open gate leaf stands from the closed plane (about the hinge at the tower face)
+local GATE_FLOOR = Color3.fromRGB(186, 170, 142)
 Buildings.PART_BUDGET_BY_LEVEL = {
 	wall = { 30, 45, 60 },
 	gate = { 90, 120, 150 },
@@ -1657,19 +1659,27 @@ local function movable(ctx: Ctx, part: BasePart, openCF: CFrame)
 	part:SetAttribute("KitGateOpenCF", ctx.root.CFrame:ToObjectSpace(openCF))
 end
 
-function Buildings.setGateOpen(model: Model, open: boolean)
+-- `waiting`: parts of the gate that are off the model (a leaf Kit.applyDamage knocked out) are posed too, so a repaired gate
+-- comes back in the pose it is in now.
+function Buildings.setGateOpen(model: Model, open: boolean, waiting: { BasePart }?)
 	local root = model.PrimaryPart
 	if root == nil or model:GetAttribute("KitGateOpen") == nil then -- only a finished gate carries the attribute
 		return
 	end
 	local key = if open then "KitGateOpenCF" else "KitGateClosedCF"
-	for _, d in model:GetDescendants() do
+	local function pose(d: Instance)
 		if d:IsA("BasePart") then
 			local rel = d:GetAttribute(key)
 			if typeof(rel) == "CFrame" then
 				d.CFrame = root.CFrame * rel
 			end
 		end
+	end
+	for _, d in model:GetDescendants() do
+		pose(d)
+	end
+	for _, d in waiting or {} do
+		pose(d)
 	end
 	model:SetAttribute("KitGateOpen", open)
 end
@@ -1735,31 +1745,43 @@ BUILDERS.wall = function(ctx, level, color, style, fp)
 	block(ctx, "Curtain", Vector3.new(w, h, d), CFrame.new(0, 3 + h / 2, 0), S.base, M.Cobblestone)
 	block(ctx, "StringCourse", Vector3.new(w - 0.1, 0.6, d + 0.6), CFrame.new(0, 3 + h * 0.55, 0), S.light, M.Slate)
 	block(ctx, "Walkway", Vector3.new(w, 1, d + 1.6), CFrame.new(0, 3 + h + 0.5, 0), S.light, M.Slate)
-	for _, u in { -w * 0.3, 0, w * 0.3 } do
-		bracket(ctx, CFrame.new(u, 3 + h, -d / 2), 0.8, 1.3, S.light, M.Slate)
-	end
-	crenellate(ctx, w, d + 1.6, 3 + h + 1, S.light, 0, 0, { m = 2.6, h = 2.8, t = 1, gap = 1.8 })
-	windowAt(ctx, CFrame.new(-w * 0.15, 3 + h * 0.62, -d / 2), { slit = true, frame = S.light })
-	windowAt(ctx, CFrame.new(w * 0.15, 3 + h * 0.62, -d / 2), { slit = true, frame = S.light })
 	if lv == 2 then
+		for _, u in { -w * 0.3, 0, w * 0.3 } do
+			bracket(ctx, CFrame.new(u, 3 + h, -d / 2), 0.8, 1.3, S.light, M.Slate)
+		end
+		crenellate(ctx, w, d + 1.6, 3 + h + 1, S.light, 0, 0, { m = 2.6, h = 2.8, t = 1, gap = 1.8 })
+		windowAt(ctx, CFrame.new(-w * 0.15, 3 + h * 0.62, -d / 2), { slit = true, frame = S.light })
+		windowAt(ctx, CFrame.new(w * 0.15, 3 + h * 0.62, -d / 2), { slit = true, frame = S.light })
 		banner(ctx, 0, 3 + h - 1.2, -d / 2 - 0.05, 0, color, 7, style, 3)
 		return
 	end
-	-- L3: four buttresses, a banner either side of the centre and a brazier on the walkway
-	for _, bx in { -0.4, -0.2, 0.2, 0.4 } do
-		wedge(
+	-- L3 (its own outline, taller at both ends and in the middle): two end piers carrying an arrow slit each and a cap,
+	-- four buttress piers up the front that reach the walkway, two full-width banners between them, merlons only between
+	-- the end piers, and a big brazier on a stone pedestal in the middle (never in a gap of the crenellation)
+	local topY = 3 + h + 1 -- the walkway top
+	local pierH = topY + 4.5
+	for _, sx in { -1, 1 } do
+		local px = sx * (w / 2 - 2.05) -- 0.1 inside the wall's end, so no face is coplanar with the curtain's
+		block(ctx, "EndPier", Vector3.new(3.9, pierH, d + 2.4), CFrame.new(px, pierH / 2, 0), S.base, M.Cobblestone)
+		block(ctx, "PierCap", Vector3.new(4, 0.7, d + 2.8), CFrame.new(px, pierH + 0.35, 0), S.light, M.Slate)
+		windowAt(ctx, CFrame.new(px, 3 + h * 0.62, -(d + 2.4) / 2), { slit = true, frame = S.light })
+	end
+	for _, bx in { -10, -3.4, 3.4, 10 } do
+		block(
 			ctx,
 			"Buttress",
-			Vector3.new(2.4, 9, 1.35),
-			CFrame.new(bx * w, 3 + 4.5, -d / 2 - 0.675),
+			Vector3.new(2.2, topY - 0.3, 1.8),
+			CFrame.new(bx, (topY - 0.3) / 2, -d / 2 - 0.9),
 			S.base,
 			M.Cobblestone
 		)
 	end
+	crenellate(ctx, w - 8.4, d + 1.6, topY, S.light, 0, 0, { m = 2.6, h = 2.8, t = 1, gap = 1.8 })
 	for _, sx in { -1, 1 } do
-		banner(ctx, sx * w * 0.3, 3 + h - 1.2, -d / 2 - 0.05, 0, color, 6, style, 2.6)
+		banner(ctx, sx * 6.7, topY - 2.2, -d / 2 - 0.05, 0, color, 6, style, 3.4)
 	end
-	Pieces.brazier(ctx, Vector3.new(0, 3 + h + 1, 0.4), 0.8)
+	block(ctx, "BrazierPlinth", Vector3.new(4.3, 2.8, 4.3), CFrame.new(0, topY + 1.4, 0), S.light, M.Slate)
+	Pieces.brazier(ctx, Vector3.new(0, topY + 2.8, 0), 1.3)
 end
 
 BUILDERS.gate = function(ctx, level, color, style, fp)
@@ -1790,8 +1812,10 @@ BUILDERS.gate = function(ctx, level, color, style, fp)
 		end
 		windowAt(ctx, CFrame.new(x, 6, -d / 2), { slit = true, frame = S.light })
 	end
-	-- pointed arch: lintel above, spandrel wedges, voussoirs along the two chords
-	block(ctx, "Lintel", Vector3.new(pass, h - 15, d - 1), CFrame.new(0, 15 + (h - 15) / 2, 0), S.base, M.Cobblestone)
+	-- pointed arch: lintel above (up to the tower bodies' top, so the span is not a saddle between the towers), spandrel
+	-- wedges, voussoirs flush on the facade along the two chords
+	local lintelH = h + 4 - 15
+	block(ctx, "Lintel", Vector3.new(pass, lintelH, d - 1), CFrame.new(0, 15 + lintelH / 2, 0), S.base, M.Cobblestone)
 	local spring = 9
 	for _, sx in { -1, 1 } do
 		wedge(
@@ -1809,24 +1833,26 @@ BUILDERS.gate = function(ctx, level, color, style, fp)
 			block(
 				ctx,
 				if i == 3 then "Keystone" else "Voussoir",
-				Vector3.new(2.3, 1.2, 1.2),
-				CFrame.new(px, py + 0.35, -d / 2 + 0.4) * CFrame.Angles(0, 0, -sx * math.atan2(15 - spring, pass / 2)),
+				Vector3.new(2.3, 1.2, 0.5),
+				CFrame.new(px, py + 0.35, -(d - 1) / 2 - 0.25)
+					* CFrame.Angles(0, 0, -sx * math.atan2(15 - spring, pass / 2)),
 				if i % 2 == 0 then S.light else S.base,
 				M.Slate
 			)
 		end
 	end
-	-- the leaves: two timber doors hinged at the tower faces (closed across the arch; open they lie along the
-	-- passage walls), iron-banded from L2. Kit.setGateOpen swings them, with the portcullis, by CFrame alone.
+	-- the leaves: two timber doors hinged at the tower faces (closed across the arch; open they stand OPEN_ANGLE
+	-- degrees into the passage, so both show their face and the middle of the passage is clear), iron-banded from L2.
+	-- Kit.setGateOpen swings them, with the portcullis, by CFrame alone.
 	local zf = -d / 2 + 0.9
 	local leafW, leafH = pass / 2 - 0.15, 9.4
 	for _, sx in { -1, 1 } do
 		local hinge = Vector3.new(sx * pass / 2, 0, zf)
 		local function swung(cf: CFrame): CFrame
-			return CFrame.new(hinge) * CFrame.Angles(0, sx * PI / 2, 0) * CFrame.new(-hinge) * cf
+			return CFrame.new(hinge) * CFrame.Angles(0, sx * Buildings.GATE_OPEN_ANGLE, 0) * CFrame.new(-hinge) * cf
 		end
 		local leafCF = CFrame.new(sx * (pass / 4 - 0.02), 0.2 + leafH / 2, zf)
-		local leaf = block(ctx, "GateLeaf", Vector3.new(leafW, leafH, 0.6), leafCF, C.wood, M.WoodPlanks)
+		local leaf = block(ctx, "GateLeaf", Vector3.new(leafW, leafH, 0.6), leafCF, C.woodLight, M.WoodPlanks)
 		movable(ctx, leaf, swung(leafCF))
 		if lv >= 2 then
 			for _, by in { 2.2, 7.4 } do
@@ -1837,17 +1863,18 @@ BUILDERS.gate = function(ctx, level, color, style, fp)
 		end
 	end
 	if lv == 3 then
-		-- the portcullis hangs behind the leaves: bars follow the pointed arch, a cross bar ties them; raised 7 studs
-		-- (inside the lintel and spandrels) when the gate is open
+		-- the portcullis is a grille in the point of the arch above the leaves: short bars that follow the arch, a cross
+		-- bar ties them; raised 7 studs it is hidden inside the lintel (the opening is clear when the gate is open)
 		local lift = CFrame.new(0, 7, 0)
-		for i = 0, 5 do
-			local bx = -5 + i * 2
-			local top = spring + (15 - spring) * (1 - math.abs(bx) / (pass / 2)) - 0.6
-			local barCF = CFrame.new(bx, 0.2 + top / 2, -d / 2 + 2.0)
-			local bar = block(ctx, "PortcullisBar", Vector3.new(0.4, top, 0.4), barCF, C.iron, M.Metal)
+		local barBottom = 9.7 -- just above the leaves
+		for _, bx in { -4.0, -2.4, -0.8, 0.8, 2.4, 4.0 } do
+			local top = spring + (15 - spring) * (1 - math.abs(bx) / (pass / 2)) - 0.5
+			local len = top - barBottom
+			local barCF = CFrame.new(bx, barBottom + len / 2, -d / 2 + 2.0)
+			local bar = block(ctx, "PortcullisBar", Vector3.new(0.4, len, 0.4), barCF, C.iron, M.Metal)
 			movable(ctx, bar, lift * barCF)
 		end
-		local crossCF = CFrame.new(0, 5.4, -d / 2 + 2.0)
+		local crossCF = CFrame.new(0, 11, -d / 2 + 2.0)
 		local cross = block(ctx, "Portcullis", Vector3.new(12, 0.45, 0.45), crossCF, C.iron, M.Metal)
 		movable(ctx, cross, lift * crossCF)
 		for _, sx in { -1, 1 } do
@@ -1855,10 +1882,11 @@ BUILDERS.gate = function(ctx, level, color, style, fp)
 		end
 	end
 	if lv >= 2 then
-		crenellate(ctx, pass - 0.2, d, h, S.light, 0, 0, { m = 2.2, h = 2.4, t = 1, gap = 1.6, xOnly = true })
+		crenellate(ctx, pass - 1.6, d, h + 5, S.light, 0, 0, { m = 2.2, h = 2.4, t = 1, gap = 1.6, xOnly = true })
 	end
-	crest(ctx, CFrame.new(0, h - 2.6, -d / 2 + 0.3), 3, color, style)
-	block(ctx, "GateRoad", Vector3.new(pass, 0.2, fp.Y), CFrame.new(0, 0.1, 0), C.stoneDark, M.Cobblestone)
+	crest(ctx, CFrame.new(0, h - 0.6, -d / 2 + 0.3), 3, color, style)
+	-- a light floor: the passage reads against dark stone when the leaves stand open
+	block(ctx, "GateRoad", Vector3.new(pass, 0.2, fp.Y), CFrame.new(0, 0.1, 0), GATE_FLOOR, M.Cobblestone)
 	ctx.model:SetAttribute("KitGateOpen", false)
 	attach(ctx, "Door", Vector3.new(0, 0, -fp.Y / 2 - 2))
 	attach(ctx, "Rally", Vector3.new(0, 0, fp.Y / 2 + 4))

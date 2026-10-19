@@ -5,13 +5,21 @@
 	  1. levels    wall L1-3 and gate L1-3: distinct (level-specific parts, rising height), within their per-level part
 	               caps (wall 30/45/60, gate 90/120/150) for every kingdom, footprints unchanged (32x8, 32x12), the Door
 	               (and the gate's Rally) attachments where they were;
+	  1b. wallL3   the L3 wall has its OWN outline (end piers and a pedestal brazier above the L2 crenellation, buttresses
+	               up the front that reach the walkway, fuller banners between them) and the brazier sits on a plinth that
+	               rests on the walkway, never in a gap of the crenellation;
+	  1c. gateShape the lintel reaches the tower tops (no saddle), the voussoirs lie flush on the lintel face (nothing floats
+	               in front of the facade), the passage floor is a light stone;
 	  2. gatePose  Kit.setGateOpen moves leaves and portcullis by CFrame alone: no part added or removed, exactly the
-	               movable parts move, the round trip is exact, a moved and turned gate still opens, the open leaves clear
-	               the passage and the closed ones span it, the portcullis lifts, the recolour keeps the pose;
+	               movable parts move, the round trip is exact, a moved and turned gate still opens, BOTH open leaves stand
+	               swung into the passage (face to the front, middle clear, outside the towers), the closed ones span it,
+	               the portcullis lifts clear of the opening (hidden in the lintel), the recolour keeps the pose;
 	  3. tower     watchtower L2 is war-ready (hoarding galleries, braziers, more merlons, slits) within its cap;
 	  4. ram       Kit.siege("ram"): at most 45 parts, the character rig conventions (Root anchored and invisible, feet
 	               at y = 0, front -Z, every other part welded, Massless, non-colliding) and ONE Motor6D "Log" that
-	               Kit.siegePose drives (clamped, monotone, exactly Siege.THRUST_TRAVEL forward at 1);
+	               Kit.siegePose drives (clamped, monotone, exactly Siege.THRUST_TRAVEL forward at 1); the LOG is the
+	               silhouette (long, thick, pale, an iron WEDGE head, projecting well past a low roof, visible from the
+	               side at thrust 0), the kingdom colour on the roof only;
 	  5. mutants   the key rules above are caught when broken.
 	The soldier unit kinds are pinned by KitUnitKinds.spec, the damage states by KitDamage.spec, and the all-built part
 	ceiling (D-047) by the world spec; footprints and placement of every other building are in KitBuildings.spec.
@@ -194,7 +202,7 @@ CHECKS.levels = function()
 	if table.concat(caps.wall, ",") ~= "30,45,60" or table.concat(caps.gate, ",") ~= "90,120,150" then
 		table.insert(out, "the per-level budget table is not wall 30/45/60, gate 90/120/150")
 	end
-	local rise = { wall = { 0, 4, 0 }, gate = { 0, 1.5, 1.5 } } -- the model's top must rise at least this much per level
+	local rise = { wall = { 0, 4, 3 }, gate = { 0, 1.5, 1.5 } } -- the model's top must rise at least this much per level
 	for _, bt in { "wall", "gate" } do
 		local want = if bt == "wall" then Vector2.new(32, 8) else Vector2.new(32, 12)
 		for _, hue in HUES do
@@ -223,7 +231,7 @@ CHECKS.levels = function()
 				if bt == "wall" then
 					if lv == 1 then
 						need(out, tag, hs, "Palisade", atLeast(10), "a timber palisade")
-						for _, absent in { "Merlon", "Curtain", "Buttress", "BrazierBowl" } do
+						for _, absent in { "Merlon", "Curtain", "Buttress", "BrazierBowl", "EndPier", "BrazierPlinth" } do
 							need(out, tag, hs, absent, NONE, "stone parts belong to L2+")
 						end
 					else
@@ -231,6 +239,16 @@ CHECKS.levels = function()
 						need(out, tag, hs, "Curtain", exactly(1), "the stone curtain")
 						need(out, tag, hs, "Merlon", atLeast(12), "crenellations")
 						need(out, tag, hs, "Buttress", exactly(if lv == 3 then 4 else 0), "four buttresses at L3 only")
+						need(out, tag, hs, "EndPier", exactly(if lv == 3 then 2 else 0), "two end piers at L3 only")
+						need(out, tag, hs, "PierCap", exactly(if lv == 3 then 2 else 0), "their caps at L3 only")
+						need(
+							out,
+							tag,
+							hs,
+							"BrazierPlinth",
+							exactly(if lv == 3 then 1 else 0),
+							"the brazier's plinth at L3 only"
+						)
 						need(
 							out,
 							tag,
@@ -282,6 +300,247 @@ CHECKS.levels = function()
 	return out
 end
 
+-- ------------------------------------------------------------------ 1b. the L3 wall's own outline
+
+-- the front silhouette: for each 1-stud column of x, the highest point of any visible part there
+local function profile(model: Model): { [number]: number }
+	local out: { [number]: number } = {}
+	for col = -16, 15 do
+		local top = 0
+		for _, p in parts(model) do
+			if p.Transparency < 1 then
+				local e, x = halfExtents(p), p.CFrame.Position.X
+				if x - e.X < col + 1 - 0.01 and x + e.X > col + 0.01 then
+					top = math.max(top, p.CFrame.Position.Y + e.Y)
+				end
+			end
+		end
+		out[col] = top
+	end
+	return out
+end
+
+local function named(model: Instance, name: string): { BasePart }
+	local out = {}
+	for _, p in parts(model) do
+		if p.Name == name then
+			table.insert(out, p)
+		end
+	end
+	return out
+end
+
+local function boxOverlap(a: BasePart, b: BasePart, slack: number): boolean
+	local ea, eb = halfExtents(a), halfExtents(b)
+	local pa, pb = a.CFrame.Position, b.CFrame.Position
+	return math.abs(pa.X - pb.X) < ea.X + eb.X - slack
+		and math.abs(pa.Y - pb.Y) < ea.Y + eb.Y - slack
+		and math.abs(pa.Z - pb.Z) < ea.Z + eb.Z - slack
+end
+
+CHECKS.wallL3 = function()
+	local out: { string } = {}
+	for _, hue in HUES do
+		local tag = `wall L3 {hue}`
+		local w2, w3 = Kit.build("wall", 2, "complete", CANON[hue]), Kit.build("wall", 3, "complete", CANON[hue])
+		-- an outline of its own, readable at distance: columns that differ from L2 by a clear height
+		local p2, p3 = profile(w2), profile(w3)
+		local differ, endsTaller, midTaller = 0, 0, 0
+		for col = -16, 15 do
+			if math.abs(p3[col] - p2[col]) >= 1.5 then
+				differ += 1
+			end
+			if math.abs(col + 0.5) >= 11.5 and p3[col] - p2[col] >= 1.0 then
+				endsTaller += 1
+			end
+			if math.abs(col + 0.5) <= 2.5 and p3[col] - p2[col] >= 3 then
+				midTaller += 1
+			end
+		end
+		if differ < 12 then
+			table.insert(out, `{tag}: only {differ} of 32 columns differ from the L2 outline by 1.5 (want 12)`)
+		end
+		if endsTaller < 6 then
+			table.insert(out, `{tag}: the ends are taller than L2 in only {endsTaller} columns (want 6: two piers)`)
+		end
+		if midTaller < 2 then
+			table.insert(
+				out,
+				`{tag}: the middle is taller than L2 by 3 in only {midTaller} columns (want 2: the brazier)`
+			)
+		end
+		-- the brazier sits on its plinth and the plinth on the walkway: never in a gap of the crenellation
+		local walkway, plinth, bowl =
+			named(w3, "Walkway")[1], named(w3, "BrazierPlinth")[1], named(w3, "BrazierBowl")[1]
+		if walkway and plinth and bowl then
+			local walkTop = walkway.CFrame.Position.Y + halfExtents(walkway).Y
+			local pe, be = halfExtents(plinth), halfExtents(bowl)
+			local plinthBottom, plinthTop = plinth.CFrame.Position.Y - pe.Y, plinth.CFrame.Position.Y + pe.Y
+			if math.abs(plinthBottom - walkTop) > 0.05 then
+				table.insert(
+					out,
+					`{tag}: the plinth is not on the walkway (bottom {r3(plinthBottom)}, walkway {r3(walkTop)})`
+				)
+			end
+			if bowl.CFrame.Position.Y - be.Y < plinthTop - 0.05 then
+				table.insert(
+					out,
+					`{tag}: the brazier bowl sinks into its plinth (bottom {r3(bowl.CFrame.Position.Y - be.Y)})`
+				)
+			end
+			local legBottom = math.huge
+			for _, leg in named(w3, "BrazierLeg") do
+				legBottom = math.min(legBottom, leg.CFrame.Position.Y - halfExtents(leg).Y)
+			end
+			if legBottom < plinthTop - 0.05 or legBottom > plinthTop + 0.1 then
+				table.insert(
+					out,
+					`{tag}: the brazier legs do not stand on the plinth top (bottom {r3(legBottom)}, plinth top {r3(
+						plinthTop
+					)})`
+				)
+			end
+			local dx = math.abs(bowl.CFrame.Position.X - plinth.CFrame.Position.X)
+			local dz = math.abs(bowl.CFrame.Position.Z - plinth.CFrame.Position.Z)
+			if dx > 0.3 or dz > 0.3 or be.X > pe.X + 0.01 or be.Z > pe.Z + 0.01 then
+				table.insert(out, `{tag}: the brazier is not centred on its plinth (off {r3(dx)}, {r3(dz)})`)
+			end
+			if pe.X < 1.5 or pe.Z < 1.5 then
+				table.insert(out, `{tag}: the plinth is only {r3(pe.X * 2)} x {r3(pe.Z * 2)} (a flat seat of 3+)`)
+			end
+			for _, merlon in named(w3, "Merlon") do
+				if boxOverlap(merlon, plinth, 0.05) or boxOverlap(merlon, bowl, 0.05) then
+					table.insert(out, `{tag}: a merlon overlaps the brazier's seat`)
+					break
+				end
+			end
+		else
+			table.insert(out, `{tag}: no Walkway, BrazierPlinth and BrazierBowl to check the seat`)
+		end
+		-- buttress piers: project from the front face and reach the walkway; the end piers stand a tier above it
+		local curtain = named(w3, "Curtain")[1]
+		if curtain and walkway then
+			local frontZ = curtain.CFrame.Position.Z - halfExtents(curtain).Z
+			local walkTop = walkway.CFrame.Position.Y + halfExtents(walkway).Y
+			for _, b in named(w3, "Buttress") do
+				local e = halfExtents(b)
+				if b.CFrame.Position.Z - e.Z > frontZ - 1.5 then
+					table.insert(
+						out,
+						`{tag}: a buttress projects only {r3(frontZ - (b.CFrame.Position.Z - e.Z))} (want 1.5)`
+					)
+				end
+				if b.CFrame.Position.Y + e.Y < walkTop - 0.5 then
+					table.insert(
+						out,
+						`{tag}: a buttress stops {r3(walkTop - (b.CFrame.Position.Y + e.Y))} short of the walkway`
+					)
+				end
+			end
+			for _, pier in named(w3, "EndPier") do
+				local e = halfExtents(pier)
+				if pier.CFrame.Position.Y + e.Y < walkTop + 3.5 then
+					table.insert(
+						out,
+						`{tag}: an end pier rises only {r3(pier.CFrame.Position.Y + e.Y - walkTop)} over the walkway (want 3.5)`
+					)
+				end
+			end
+		end
+		-- fuller banners: two, wider than the L2 banner, hanging between the buttresses (not across one)
+		local bannersL2 = named(w2, "Banner")
+		local wide2 = if bannersL2[1] then bannersL2[1].Size.X else 0
+		local banners = named(w3, "Banner")
+		for _, b in banners do
+			if b.Size.X < wide2 + 0.3 then
+				table.insert(out, `{tag}: a banner is {r3(b.Size.X)} wide, not fuller than L2's {r3(wide2)}`)
+			end
+			for _, bt in named(w3, "Buttress") do
+				if boxOverlap(b, bt, 0.05) then
+					table.insert(out, `{tag}: a banner hangs across a buttress`)
+					break
+				end
+			end
+		end
+		-- the L3 crenellation stays between the end piers (no merlon inside a pier)
+		for _, merlon in named(w3, "Merlon") do
+			for _, pier in named(w3, "EndPier") do
+				if boxOverlap(merlon, pier, 0.05) then
+					table.insert(out, `{tag}: a merlon is inside an end pier`)
+					break
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- ------------------------------------------------------------------ 1c. the gate's lintel, voussoirs and floor
+
+local function luminance(c: Color3): number
+	return 0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B
+end
+
+CHECKS.gateShape = function()
+	local out: { string } = {}
+	for _, hue in HUES do
+		for lv = 1, 3 do
+			local tag = `gate L{lv} {hue}`
+			local m = Kit.build("gate", lv, "complete", CANON[hue])
+			local lintel, tower = named(m, "Lintel")[1], named(m, "GateTower")[1]
+			if lintel == nil or tower == nil then
+				table.insert(out, `{tag}: no Lintel or GateTower`)
+				continue
+			end
+			local lintelTop = lintel.CFrame.Position.Y + halfExtents(lintel).Y
+			local towerTop = tower.CFrame.Position.Y + halfExtents(tower).Y
+			if lintelTop < towerTop - 0.01 then
+				table.insert(
+					out,
+					`{tag}: the span tops out at {r3(lintelTop)}, below the tower bodies ({r3(towerTop)}): a saddle`
+				)
+			end
+			-- the voussoirs lie flush on the lintel face (their back against it), nothing floats in front of the facade
+			local frontZ = lintel.CFrame.Position.Z - halfExtents(lintel).Z
+			local stones = 0
+			for _, p in parts(m) do
+				if p.Name == "Voussoir" or p.Name == "Keystone" then
+					stones += 1
+					local e = halfExtents(p)
+					local back = p.CFrame.Position.Z + e.Z
+					if math.abs(back - frontZ) > 0.12 then
+						table.insert(out, `{tag}: a {p.Name} floats {r3(frontZ - back)} off the lintel face`)
+						break
+					end
+					if frontZ - (p.CFrame.Position.Z - e.Z) > 0.9 then
+						table.insert(
+							out,
+							`{tag}: a {p.Name} stands {r3(frontZ - (p.CFrame.Position.Z - e.Z))} proud of the facade`
+						)
+						break
+					end
+				end
+			end
+			if stones ~= 8 then
+				table.insert(out, `{tag}: {stones} arch stones (want 8: 3 voussoirs and a keystone each side)`)
+			end
+			-- a light floor in the passage and light leaves (they have to read against the stone when open)
+			local road = named(m, "GateRoad")[1]
+			if road == nil or luminance(road.Color) < 0.55 then
+				table.insert(
+					out,
+					`{tag}: the passage floor is not a light stone (luminance {road and r3(luminance(road.Color))})`
+				)
+			end
+			local leaf = named(m, "GateLeaf")[1]
+			if leaf and luminance(leaf.Color) < 0.3 then
+				table.insert(out, `{tag}: the leaves are dark ({r3(luminance(leaf.Color))})`)
+			end
+		end
+	end
+	return out
+end
+
 -- ------------------------------------------------------------------ 2. gate poses
 
 local MOVABLE_NAMES = {
@@ -302,6 +561,28 @@ local function insideFootprint(model: Model, fp: Vector2): string?
 			or cf.Y - e.Y < -0.3
 		then
 			return `{p.Name} at {cf.Position}`
+		end
+	end
+	return nil
+end
+
+-- The name of the first part standing in front of (toward -Z of) any of nine points on a leaf's front face, or nil: the
+-- face is seen from the front. Boxes are the world-axis boxes of the parts (conservative for turned ones).
+local function visibleBlocker(model: Model, leaf: BasePart): string?
+	local root = model.PrimaryPart :: BasePart
+	for _, u in { 0.25, 0.5, 0.75 } do
+		for _, v in { 0.2, 0.5, 0.8 } do
+			local world = leaf.CFrame
+				* CFrame.new((u - 0.5) * leaf.Size.X, (v - 0.5) * leaf.Size.Y, -leaf.Size.Z / 2 - 0.02)
+			local o = root.CFrame:ToObjectSpace(world).Position
+			for _, q in parts(model) do
+				if q ~= leaf and q.Transparency < 1 and q.Name ~= "LeafBand" then
+					local c, e = rel(model, q).Position, halfExtents(q)
+					if math.abs(o.X - c.X) < e.X and math.abs(o.Y - c.Y) < e.Y and c.Z - e.Z < o.Z - 0.02 then
+						return q.Name
+					end
+				end
+			end
 		end
 	end
 	return nil
@@ -355,26 +636,58 @@ CHECKS.gatePose = function()
 					table.insert(out, `{tag}: {name} moves but is not a leaf, band or portcullis part`)
 				end
 			end
-			-- the passage (x within +-6.4): leaves span it closed, clear it open; the portcullis rises
-			local leafOpen, leafClosed = {}, {}
+			-- the passage (the towers' inner faces at x = +-7): closed, the leaves span it; open, BOTH leaves stand swung into it,
+			-- face to the front (not edge-on), the middle clear, nothing in front of them, and they stay out of the towers
+			local leafClosed = {}
+			local sides = { [-1] = 0, [1] = 0 }
+			local reach = {}
 			for p, was in closed do
 				if p.Name == "GateLeaf" then
+					table.insert(leafClosed, (was :: CFrame).Position)
 					local e = halfExtents(p)
-					table.insert(leafOpen, { math.abs(rel(m, p).X) - e.X, e.X })
-					local ec = (was :: CFrame).Position
-					table.insert(leafClosed, ec)
+					local x = rel(m, p).X
+					sides[if x < 0 then -1 else 1] += 1
+					table.insert(reach, math.abs(x))
+					if math.abs(x) - e.X < 3.0 then
+						table.insert(
+							out,
+							`{tag}: an open leaf still reaches into the middle of the passage (inner edge {r3(
+								math.abs(x) - e.X
+							)} < 3)`
+						)
+					end
+					if math.abs(x) + e.X > 7.5 then
+						table.insert(out, `{tag}: an open leaf pokes {r3(math.abs(x) + e.X - 7)} into the tower`)
+					end
+					if e.X * 2 < 2.0 then
+						table.insert(
+							out,
+							`{tag}: an open leaf is only {r3(e.X * 2)} studs across from the front (edge-on): it must show its face`
+						)
+					end
+					local normal =
+						math.abs((m.PrimaryPart :: BasePart).CFrame:VectorToObjectSpace(p.CFrame.LookVector).Z)
+					if normal < 0.3 or normal > 0.75 then
+						table.insert(
+							out,
+							`{tag}: an open leaf's face points {r3(normal)} to the front (want 0.3..0.75: swung, not edge-on, not still closed)`
+						)
+					end
+					-- nothing stands in front of the leaf's face (rays along -Z from nine points of the leaf, at 20/50/80 %)
+					local blocked = visibleBlocker(m, p)
+					if blocked then
+						table.insert(out, `{tag}: an open leaf is hidden behind {blocked}`)
+					end
 				end
 			end
-			for _, l in leafOpen do
-				if l[1] < 6.4 then
-					table.insert(
-						out,
-						`{tag}: an open leaf still reaches into the passage (inner edge {r3(l[1])} < 6.4)`
-					)
-				end
-				if l[2] > 1.0 then
-					table.insert(out, `{tag}: an open leaf is {r3(l[2] * 2)} studs across (should lie along the wall)`)
-				end
+			if sides[-1] ~= 1 or sides[1] ~= 1 then
+				table.insert(out, `{tag}: want one open leaf each side, got {sides[-1]} left and {sides[1]} right`)
+			end
+			if #reach == 2 and math.abs(reach[1] - reach[2]) > 0.05 then
+				table.insert(
+					out,
+					`{tag}: the open leaves are not mirrored ({r3(reach[1])} and {r3(reach[2])} from the centre)`
+				)
 			end
 			local xs = {}
 			for _, c in leafClosed do
@@ -385,11 +698,48 @@ CHECKS.gatePose = function()
 				table.insert(out, `{tag}: closed leaves are not either side of the centre ({xs[1]}, {xs[2]})`)
 			end
 			if lv == 3 then
+				local lintel = named(m, "Lintel")[1]
+				local leafTop = 0
 				for p, was in closed do
-					if p.Name == "PortcullisBar" then
-						local rise = rel(m, p).Y - (was :: CFrame).Y
-						if math.abs(rise - 7) > 1e-3 then
-							table.insert(out, `{tag}: a portcullis bar rises {r3(rise)} (want 7)`)
+					if p.Name == "GateLeaf" then
+						leafTop = math.max(leafTop, (was :: CFrame).Y + p.Size.Y / 2)
+					end
+				end
+				for p, was in closed do
+					if p.Name == "PortcullisBar" or p.Name == "Portcullis" then
+						local e = halfExtents(p)
+						local at = rel(m, p)
+						if p.Name == "PortcullisBar" and math.abs(at.Y - (was :: CFrame).Y - 7) > 1e-3 then
+							table.insert(out, `{tag}: a portcullis bar rises {r3(at.Y - (was :: CFrame).Y)} (want 7)`)
+						end
+						-- raised clear of the opening: inside the lintel block above the arch
+						if lintel then
+							local le = halfExtents(lintel)
+							local lc = rel(m, lintel)
+							if at.Y - e.Y < lc.Y - le.Y - 0.01 then
+								table.insert(
+									out,
+									`{tag}: a raised {p.Name} hangs down to y {r3(at.Y - e.Y)} in the opening (the lintel starts at {r3(
+										lc.Y - le.Y
+									)})`
+								)
+							end
+							if
+								at.Y + e.Y > lc.Y + le.Y + 0.01
+								or math.abs(at.Z - lc.Z) + e.Z > le.Z
+								or math.abs(at.X) + e.X > le.X
+							then
+								table.insert(out, `{tag}: a raised {p.Name} sticks out of the lintel`)
+							end
+						end
+						-- closed, it hangs in the arch above the leaves
+						if (was :: CFrame).Y - e.Y < leafTop - 0.01 then
+							table.insert(
+								out,
+								`{tag}: a closed {p.Name} reaches below the leaves' tops ({r3((was :: CFrame).Y - e.Y)} < {r3(
+									leafTop
+								)})`
+							)
 						end
 					end
 				end
@@ -657,6 +1007,125 @@ local function ramViolations(): { string }
 				table.insert(out, `{tag}: NaN thrust is not the built pose`)
 			end
 		end
+		-- the LOG is the silhouette: long, thick, pale, an iron WEDGE head well past a low roof, visible from the side at thrust 0
+		local logP, head, roofP = named(m, "Log")[1], named(m, "RamHead")[1], named(m, "RoofSlab")[1]
+		if logP and head and roofP then
+			if not logP:IsA("Part") or (logP :: Part).Shape ~= Enum.PartType.Cylinder then
+				table.insert(out, `{tag}: the Log is not a cylinder`)
+			end
+			local length, thick = logP.Size.X, logP.Size.Y
+			if length < 14 or thick < 2.4 then
+				table.insert(out, `{tag}: the log is {r3(length)} x {r3(thick)} (want 14+ long, 2.4+ thick)`)
+			end
+			if luminance(logP.Color) < 0.5 then
+				table.insert(out, `{tag}: the log is dark ({r3(luminance(logP.Color))}); it must be the pale shape`)
+			end
+			if head.ClassName ~= "WedgePart" then
+				table.insert(out, `{tag}: the head is a {head.ClassName}, not a wedge (a round cap reads as a cannon)`)
+			end
+			if luminance(head.Color) > 0.25 or luminance(logP.Color) - luminance(head.Color) < 0.35 then
+				table.insert(
+					out,
+					`{tag}: the head ({r3(luminance(head.Color))}) is not a dark iron cap on the pale log ({r3(
+						luminance(logP.Color)
+					)})`
+				)
+			end
+			local headFront = head.CFrame.Position.Z - halfExtents(head).Z
+			local roofFront = math.huge
+			for _, name in { "RoofSlab", "RoofEdge" } do
+				for _, q in named(m, name) do
+					roofFront = math.min(roofFront, q.CFrame.Position.Z - halfExtents(q).Z)
+				end
+			end
+			if roofFront - headFront < 6 then
+				table.insert(out, `{tag}: the head projects only {r3(roofFront - headFront)} past the roof (want 6+)`)
+			end
+			local roofTop = roofP.CFrame.Position.Y + halfExtents(roofP).Y
+			if roofTop > 7.8 then
+				table.insert(out, `{tag}: the roof tops out at {r3(roofTop)} (a low roof: 7.8)`)
+			end
+			for _, q in parts(m) do
+				if q ~= root and q.Transparency < 1 then
+					if q.CFrame.Position.Z - halfExtents(q).Z < headFront - 0.01 then
+						table.insert(out, `{tag}: {q.Name} projects past the head`)
+						break
+					end
+					if
+						q:IsA("Part")
+						and (q :: Part).Shape == Enum.PartType.Ball
+						and q.CFrame.Position.Z < roofFront
+					then
+						table.insert(out, `{tag}: {q.Name} is a ball out in front of the roof (a cap on the log)`)
+						break
+					end
+					if q:IsA("Part") and (q :: Part).Shape == Enum.PartType.Cylinder and q.Name ~= "Wheel" then
+						-- bands ring the log; none caps its front end
+						if q.CFrame.Position.Z < logP.CFrame.Position.Z - length / 2 + 0.3 then
+							table.insert(out, `{tag}: a round {q.Name} caps the log's front end`)
+							break
+						end
+					end
+				end
+			end
+			-- open sides: from +X and from -X the log's axis is seen along at least 75 % of its length (posts only)
+			local logTop, logBottom = logP.CFrame.Position.Y + thick / 2, logP.CFrame.Position.Y - thick / 2
+			for _, side in { 1, -1 } do
+				local seen, total = 0, 0
+				for i = 0, 29 do
+					local z = logP.CFrame.Position.Z - length / 2 + (i + 0.5) * length / 30
+					local y = (logTop + logBottom) / 2
+					total += 1
+					local hidden = false
+					for _, q in parts(m) do
+						if
+							q ~= root
+							and q.Transparency < 1
+							and q.Name ~= "Log"
+							and q.Name ~= "Hanger"
+							and q.Name ~= "RamBand"
+							and q.Name ~= "RamHead"
+						then
+							local c, e = q.CFrame.Position, halfExtents(q)
+							if
+								math.abs(y - c.Y) < e.Y
+								and math.abs(z - c.Z) < e.Z
+								and side * (c.X + side * e.X) > thick / 2 + 0.01
+							then
+								hidden = true
+								break
+							end
+						end
+					end
+					if not hidden then
+						seen += 1
+					end
+				end
+				if seen / total < 0.75 then
+					table.insert(
+						out,
+						`{tag}: the log is seen along only {r3(seen / total)} of its length from the side`
+					)
+				end
+			end
+			-- kingdom colour (and heraldry) on the roof only: nothing tinted below the log's top, nothing tinted on the log group
+			for _, q in parts(m) do
+				if q:GetAttribute("KitTint") ~= nil or q:GetAttribute("KitEmblem") ~= nil then
+					if q.CFrame.Position.Y < logTop + 0.3 then
+						table.insert(
+							out,
+							`{tag}: {q.Name} carries the kingdom at y {r3(q.CFrame.Position.Y)}, level with the log`
+						)
+						break
+					end
+				end
+			end
+		else
+			table.insert(out, `{tag}: no Log, RamHead and RoofSlab`)
+		end
+		if #named(m, "Wheel") ~= 4 then
+			table.insert(out, `{tag}: {#named(m, "Wheel")} wheels (want 4)`)
+		end
 		-- kingdom colour on the roof, ridge, pennant and crest; the emblem re-forms with the recolour
 		local tinted = 0
 		for _, p in parts(m) do
@@ -711,7 +1180,13 @@ describe("Wall and gate at three levels (FL-0128)", function()
 	it("keeps the levels distinct, within their caps, footprints and attachments as they were", function()
 		expectClean(CHECKS.levels())
 	end)
-	it("opens and closes the gate by CFrame alone", function()
+	it("gives the L3 wall its own outline, with the brazier seated on a plinth on the walkway", function()
+		expectClean(CHECKS.wallL3())
+	end)
+	it("seats the gate's span at the tower tops and its voussoirs flush on the facade, over a light floor", function()
+		expectClean(CHECKS.gateShape())
+	end)
+	it("opens and closes the gate by CFrame alone, both leaves swung open and in view", function()
 		expectClean(CHECKS.gatePose())
 	end)
 	it("builds the walls and gates without yielding, as one Model with a Root", function()
@@ -755,8 +1230,10 @@ describe("War kit structure mutants are caught", function()
 		setGateOpen = Kit.setGateOpen,
 		siege = Kit.siege,
 		siegePose = Kit.siegePose,
+		angle = Buildings.GATE_OPEN_ANGLE,
 	}
 	local function restore()
+		Buildings.GATE_OPEN_ANGLE = original.angle
 		Kit.build = original.build
 		Kit.footprint = original.footprint
 		Kit.setGateOpen = original.setGateOpen
@@ -787,7 +1264,7 @@ describe("War kit structure mutants are caught", function()
 	end
 
 	it("passes unmutated (the baseline)", function()
-		for _, name in { "levels", "gatePose", "tower", "ram" } do
+		for _, name in { "levels", "wallL3", "gateShape", "gatePose", "tower", "ram" } do
 			expectClean(CHECKS[name]())
 		end
 	end)
@@ -861,6 +1338,46 @@ describe("War kit structure mutants are caught", function()
 						p.CFrame = p.CFrame + Vector3.new(0.5, 0, 0)
 					end
 				end
+			end
+		end
+	end)
+	caught("the leaves open edge-on (90 degrees)", "gatePose", function()
+		Buildings.GATE_OPEN_ANGLE = math.rad(88)
+	end)
+	caught("the leaves barely open (15 degrees)", "gatePose", function()
+		Buildings.GATE_OPEN_ANGLE = math.rad(15)
+	end)
+	caught("one leaf is left closed when the gate opens", "gatePose", function()
+		Kit.setGateOpen = function(m, open)
+			original.setGateOpen(m, open)
+			local done = false
+			for _, p in parts(m) do
+				if p.Name == "GateLeaf" and open and not done then
+					done = true
+					p.CFrame = (m.PrimaryPart :: BasePart).CFrame * (p:GetAttribute("KitGateClosedCF") :: CFrame)
+				end
+			end
+		end
+	end)
+	caught("the portcullis only half lifts", "gatePose", function()
+		Kit.setGateOpen = function(m, open)
+			original.setGateOpen(m, open)
+			for _, p in parts(m) do
+				if (p.Name == "PortcullisBar" or p.Name == "Portcullis") and open then
+					p.CFrame = p.CFrame - Vector3.new(0, 4, 0)
+				end
+			end
+		end
+	end)
+	caught("a part stands in front of an open leaf", "gatePose", function()
+		Kit.setGateOpen = function(m, open)
+			original.setGateOpen(m, open)
+			if open then
+				local p = Instance.new("Part")
+				p.Name = "Screen"
+				p.Size = Vector3.new(10, 10, 0.5)
+				p.CFrame = (m.PrimaryPart :: BasePart).CFrame * CFrame.new(0, 5, -8)
+				p.Parent = m
 			end
 		end
 	end)
@@ -980,5 +1497,168 @@ describe("War kit structure mutants are caught", function()
 			(m.PrimaryPart :: BasePart).PivotOffset = CFrame.new(0, -1, 0)
 			return m
 		end
+	end)
+	caught("the ram head is a round dark cap", "ram", function()
+		Kit.siege = function(kind, color)
+			local m = original.siege(kind, color)
+			local head = m:FindFirstChild("RamHead") :: BasePart
+			local cap = Instance.new("Part")
+			cap.Name = "RamHead"
+			cap.Shape = Enum.PartType.Cylinder
+			cap.Size = Vector3.new(1, 3, 3)
+			cap.Color = head.Color
+			cap.CFrame = head.CFrame
+			cap.Massless, cap.CanCollide, cap.Anchored = true, false, false
+			cap.Parent = m
+			local weld = Instance.new("Weld")
+			weld.Name = "RigWeld"
+			weld.Part0 = m:FindFirstChild("Log") :: BasePart
+			weld.Part1 = cap
+			weld.Parent = cap
+			head:Destroy()
+			return m
+		end
+	end)
+	caught("the log is a short stub", "ram", function()
+		Kit.siege = function(kind, color)
+			local m = original.siege(kind, color);
+			(m:FindFirstChild("Log") :: BasePart).Size = Vector3.new(8, 3, 3)
+			return m
+		end
+	end)
+	caught("the log is dark like the iron", "ram", function()
+		Kit.siege = function(kind, color)
+			local m = original.siege(kind, color);
+			(m:FindFirstChild("Log") :: BasePart).Color = Color3.fromRGB(40, 40, 46)
+			return m
+		end
+	end)
+	caught("the sides are boarded over the log", "ram", function()
+		Kit.siege = function(kind, color)
+			local m = original.siege(kind, color)
+			for _, sx in { -1, 1 } do
+				local p = Instance.new("Part")
+				p.Name = "Cover"
+				p.Size = Vector3.new(0.4, 4, 12)
+				p.CFrame = (m.PrimaryPart :: BasePart).CFrame * CFrame.new(sx * 2.6, 3.4, -2.8)
+				p.Massless, p.CanCollide, p.Anchored = true, false, false
+				p.Parent = m
+			end
+			return m
+		end
+	end)
+	caught("the roof reaches over the whole log", "ram", function()
+		Kit.siege = function(kind, color)
+			local m = original.siege(kind, color)
+			for _, name in { "RoofSlab", "RoofEdge" } do
+				local p = m:FindFirstChild(name) :: BasePart
+				p.CFrame = p.CFrame - Vector3.new(0, 0, 6)
+			end
+			return m
+		end
+	end)
+	caught("the roof is a tall cabin", "ram", function()
+		Kit.siege = function(kind, color)
+			local m = original.siege(kind, color)
+			local p = m:FindFirstChild("RoofSlab") :: BasePart
+			p.CFrame = p.CFrame + Vector3.new(0, 3, 0)
+			return m
+		end
+	end)
+	caught("the kingdom colour is on the log", "ram", function()
+		Kit.siege = function(kind, color)
+			local m = original.siege(kind, color);
+			(m:FindFirstChild("Log") :: BasePart):SetAttribute("KitTint", 1)
+			return m
+		end
+	end)
+
+	-- the L3 wall and the gate's shape
+	caught("the L3 wall has the L2 outline", "wallL3", function()
+		Kit.build = function(bt, lv, ...)
+			return original.build(bt, if bt == "wall" and lv == 3 then 2 else lv, ...)
+		end
+	end)
+	local function tweakWall(name: string, fn: (BasePart) -> ())
+		Kit.build = function(bt, lv, ...)
+			local m = original.build(bt, lv, ...)
+			if bt == "wall" and lv == 3 then
+				for _, p in parts(m) do
+					if p.Name == name then
+						fn(p)
+					end
+				end
+			end
+			return m
+		end
+	end
+	caught("the L3 brazier sinks into the crenellation", "wallL3", function()
+		tweakWall("BrazierBowl", function(p)
+			p.CFrame = p.CFrame - Vector3.new(0, 5, 0)
+		end)
+	end)
+	caught("the L3 brazier legs stand in the crenellation, not on the plinth", "wallL3", function()
+		tweakWall("BrazierLeg", function(p)
+			p.CFrame = p.CFrame - Vector3.new(0, 2.8, 0)
+		end)
+	end)
+	caught("the L3 brazier plinth sunk into the walkway", "wallL3", function()
+		tweakWall("BrazierPlinth", function(p)
+			p.CFrame = p.CFrame - Vector3.new(0, 2, 0)
+		end)
+	end)
+	caught("the L3 brazier slid off its plinth", "wallL3", function()
+		tweakWall("BrazierBowl", function(p)
+			p.CFrame = p.CFrame + Vector3.new(2.5, 0, 0)
+		end)
+	end)
+	caught("the L3 buttresses stop halfway", "wallL3", function()
+		tweakWall("Buttress", function(p)
+			p.Size = Vector3.new(p.Size.X, 4, p.Size.Z)
+		end)
+	end)
+	caught("the L3 end piers are only wall height", "wallL3", function()
+		tweakWall("EndPier", function(p)
+			p.Size = Vector3.new(p.Size.X, 10, p.Size.Z)
+		end)
+	end)
+	caught("the L3 banners are no wider than L2's", "wallL3", function()
+		tweakWall("Banner", function(p)
+			p.Size = Vector3.new(2.6, p.Size.Y, p.Size.Z)
+		end)
+	end)
+	local function tweakGate(name: string, fn: (BasePart) -> ())
+		Kit.build = function(bt, lv, ...)
+			local m = original.build(bt, lv, ...)
+			if bt == "gate" then
+				for _, p in parts(m) do
+					if p.Name == name then
+						fn(p)
+					end
+				end
+			end
+			return m
+		end
+	end
+	caught("the gate's span sits lower than its towers (a saddle)", "gateShape", function()
+		tweakGate("Lintel", function(p)
+			p.Size = Vector3.new(p.Size.X, p.Size.Y - 4, p.Size.Z)
+			p.CFrame = p.CFrame - Vector3.new(0, 2, 0)
+		end)
+	end)
+	caught("the voussoirs float in front of the facade", "gateShape", function()
+		tweakGate("Voussoir", function(p)
+			p.CFrame = p.CFrame - Vector3.new(0, 0, 0.8)
+		end)
+	end)
+	caught("the passage floor is dark", "gateShape", function()
+		tweakGate("GateRoad", function(p)
+			p.Color = Color3.fromRGB(40, 38, 36)
+		end)
+	end)
+	caught("the gate leaves are dark", "gateShape", function()
+		tweakGate("GateLeaf", function(p)
+			p.Color = Color3.fromRGB(30, 26, 22)
+		end)
 	end)
 end)

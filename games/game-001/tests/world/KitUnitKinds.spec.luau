@@ -1,12 +1,15 @@
 --[[
 	The soldier unit kinds (FL-0128, FORGE-02, Operation Crownfall): Kit.character("soldier", job, ...) builds the spear
-	soldier, the knight (sword, shield with the kingdom's mark, plumed great helm, heavier torso) or the archer (bow, quiver,
-	cap, no helm) by unit kind (job = unit kind, the same convention as CharacterMesh's soldier_<job>). This spec pins:
+	soldier (a 5.4 spear planted at the fist), the knight (bulky, a sword held at the ready, a large shield with the kingdom's
+	mark, a broad great helm and a tall plume) or the archer (a curved three-part bow with a visible string, round head, cap,
+	no helm) by unit kind (job = unit kind, the same convention as CharacterMesh's soldier_<job>). This spec pins:
 
-	  1. units      the three kinds differ (weapon, shield or quiver, helm or bare head, width, torso colour, crest height),
+	  1. units      the three kinds differ (weapon, shield, helm or bare head, width, torso colour, crest height, outline),
 	                stay within the 11-part rig with the kingdom crest (D-033), keep the Pose joints and the rig conventions,
-	                recolour like a fresh build, and unknown jobs are the spear soldier;
-	  2. clearance  the shield, quiver, bow and sword keep clear of the head, torso, legs and arms in every Pose action;
+	                recolour like a fresh build, and unknown jobs are the spear soldier; the spear tip stands about 1.3 x the
+	                body's height, the sword and the bow are held at the fist, the bow is curved (two limbs and a string in
+	                front), the plume stands up, the dome caps the helm, no shield mark is dark;
+	  2. clearance  the shield, bow and sword keep clear of the head, torso, legs and arms in every Pose action;
 	  3. mutants    the key rules above are caught when broken.
 ]]
 
@@ -125,12 +128,22 @@ local TOOL_OF = { soldier = "spear", knight = "sword", archer = "bow" }
 local DETAILS = {
 	soldier = { pennant = "Tool", spearhead = "Tool" },
 	knight = { shield = "LeftArm", shieldmark = "LeftArm" },
-	archer = { bowstring = "Tool", quiver = "Torso" },
+	archer = { bowlimb = "Tool", bowstring = "Tool" },
 }
 local POSE_JOINTS = { "Torso", "Head", "LeftArm", "RightArm", "LeftLeg", "RightLeg", "Tool" }
 
 local function unit(kind: string, hue: string?): Model
 	return Kit.character("soldier", kind, if hue then CANON[hue] else CANON.crimson, nil, hue)
+end
+
+-- half extents along the world axes of a part's box
+local function halfY(p: BasePart): number
+	local cf, sz = p.CFrame, p.Size
+	return (math.abs(cf.RightVector.Y) * sz.X + math.abs(cf.UpVector.Y) * sz.Y + math.abs(cf.LookVector.Y) * sz.Z) / 2
+end
+local function halfX(p: BasePart): number
+	local cf, sz = p.CFrame, p.Size
+	return (math.abs(cf.RightVector.X) * sz.X + math.abs(cf.UpVector.X) * sz.Y + math.abs(cf.LookVector.X) * sz.Z) / 2
 end
 
 local function crestOf(rig: Model): BasePart?
@@ -254,6 +267,123 @@ CHECKS.units = function()
 			end
 			if ca.Size.Y > cs.Size.Y then
 				table.insert(out, `{hue}: the archer's cap is taller than the soldier's crest`)
+			end
+		end
+		-- bulk: the knight's helm is broader than the soldier's, the shield is large and kingdom-coloured
+		if head(k).Size.X < head(s).Size.X + 0.4 then
+			table.insert(out, `{hue}: the knight's helm ({r3(head(k).Size.X)}) is not broader than the soldier's`)
+		end
+		local shield, mark
+		for _, p in parts(k) do
+			if p:GetAttribute("KitDetailKind") == "shield" then
+				shield = p
+			elseif p:GetAttribute("KitDetailKind") == "shieldmark" then
+				mark = p
+			end
+		end
+		if shield == nil or shield.Size.X < 1.8 or shield.Size.Y < 2.4 then
+			table.insert(out, `{hue}: the knight's shield is not large (1.8 x 2.4 at least)`)
+		elseif shield:GetAttribute("KitTint") ~= 1 then
+			table.insert(out, `{hue}: the knight's shield is not in the kingdom colour`)
+		end
+		if mark and mark.Color.R * 0.3 + mark.Color.G * 0.59 + mark.Color.B * 0.11 < 0.5 then
+			table.insert(out, `{hue}: the shield mark is dark (it reads as a hole)`)
+		end
+		-- the spear: its tip about 1.3 x the body's height, planted near the ground, held at the fist
+		local spear = s:FindFirstChild("Tool") :: BasePart
+		local arm = s:FindFirstChild("RightArm") :: BasePart
+		local tip = -math.huge
+		for _, p in parts(s) do
+			if p == spear or p:GetAttribute("KitDetailKind") == "spearhead" then
+				tip = math.max(tip, p.CFrame.Position.Y + halfY(p))
+			end
+		end
+		if tip < 7.0 or tip > 7.8 then
+			table.insert(out, `{hue}: the spear tip is at {r3(tip)} (about 7.3, 1.3 x the body's 5.5)`)
+		end
+		if spear.CFrame.Position.Y - halfY(spear) > 0.8 or spear.Size.X > 6.2 then
+			table.insert(out, `{hue}: the spear is not a short shaft planted near the ground`)
+		end
+		if
+			math.abs(spear.CFrame.Position.X - arm.CFrame.Position.X) > 0.8
+			or math.abs(spear.CFrame.Position.Z - arm.CFrame.Position.Z) > 0.8
+		then
+			table.insert(out, `{hue}: the spear is not at the fist`)
+		end
+		-- the sword points forward and up, its lower end at the fist
+		local sword, swordArm = k:FindFirstChild("Tool") :: BasePart, k:FindFirstChild("RightArm") :: BasePart
+		if sword.CFrame.UpVector.Z > -0.4 or sword.CFrame.UpVector.Y < 0.5 then
+			table.insert(out, `{hue}: the sword is not held forward and up (up vector {sword.CFrame.UpVector})`)
+		end
+		local lowEnd = sword.CFrame.Position - sword.CFrame.UpVector * (sword.Size.Y / 2)
+		local fist = swordArm.CFrame.Position - Vector3.new(0, swordArm.Size.Y / 2 - 0.2, 0)
+		if (lowEnd - fist).Magnitude > 1.1 then
+			table.insert(out, `{hue}: the sword's lower end is {r3((lowEnd - fist).Magnitude)} from the fist`)
+		end
+		-- the bow: two limbs and a string, curved: the limbs' tips and the string lie in front of the grip
+		local bow, limb, stringPart = a:FindFirstChild("Tool") :: BasePart, nil, nil
+		for _, p in parts(a) do
+			if p:GetAttribute("KitDetailKind") == "bowlimb" then
+				limb = p
+			elseif p:GetAttribute("KitDetailKind") == "bowstring" then
+				stringPart = p
+			end
+		end
+		if limb == nil or stringPart == nil then
+			table.insert(out, `{hue}: the bow is not limb, limb and string`)
+		else
+			-- the upper limb runs from the grip (its lower end) up to its tip; both are on the limb's own axis (a cylinder's X)
+			local axis = bow.CFrame.RightVector
+			axis = if axis.Y > 0 then axis else -axis
+			local tipZ = (bow.CFrame.Position + axis * (bow.Size.X / 2)).Z
+			local grip = bow.CFrame.Position - axis * (bow.Size.X / 2)
+			if grip.Z - tipZ < 0.6 then
+				table.insert(
+					out,
+					`{hue}: the bow is not curved (the upper tip is only {r3(grip.Z - tipZ)} in front of the grip)`
+				)
+			end
+			if (stringPart :: BasePart).Size.X < 4.0 or (stringPart :: BasePart).CFrame.Position.Z > grip.Z - 0.6 then
+				table.insert(out, `{hue}: the bowstring is short or not in front of the limbs`)
+			end
+		end
+		-- outline at a distance: each kind's front silhouette (width x height of the whole figure) differs from the others'
+		local function outline(r: Model): (number, number)
+			local lo = Vector3.new(math.huge, math.huge, math.huge)
+			local hi = -lo
+			for _, p in parts(r) do
+				if p ~= r.PrimaryPart then
+					local e = Vector3.new(halfX(p), halfY(p), 0)
+					lo = lo:Min(p.CFrame.Position - e)
+					hi = hi:Max(p.CFrame.Position + e)
+				end
+			end
+			return hi.X - lo.X, hi.Y - lo.Y
+		end
+		local sw, sh = outline(s)
+		local kw, kh = outline(k)
+		local aw, ah = outline(a)
+		if math.abs(sw - kw) < 0.4 and math.abs(sh - kh) < 0.4 then
+			table.insert(out, `{hue}: soldier and knight have the same outline ({r3(sw)} x {r3(sh)})`)
+		end
+		if math.abs(sw - aw) < 0.3 and math.abs(sh - ah) < 0.4 then
+			table.insert(out, `{hue}: soldier and archer have the same outline`)
+		end
+		if math.abs(kw - aw) < 0.4 and math.abs(kh - ah) < 0.4 then
+			table.insert(out, `{hue}: knight and archer have the same outline`)
+		end
+		-- the crests: the plume stands up, the dome caps the helm
+		if hue == "emerald" and cs then
+			if cs.CFrame.UpVector.Y < 0.99 or cs.Size.Y < 1.0 or cs.Size.X > 0.6 then
+				table.insert(out, `{hue}: the plume does not stand up as a thin fin`)
+			end
+		elseif hue == "gold" and cs then
+			if
+				(cs :: Part).Shape ~= Enum.PartType.Ball
+				or cs.Size.X < head(s).Size.X + 0.3
+				or cs.CFrame.Position.Y - head(s).CFrame.Position.Y > head(s).Size.Y / 2
+			then
+				table.insert(out, `{hue}: the dome is not a cap over the helm`)
 			end
 		end
 	end
@@ -489,18 +619,16 @@ local function groupClearance(
 	return low, where
 end
 
--- shield and mark (on the left arm) vs the head assembly, torso, legs and the right arm; the quiver (on the torso) vs the
--- head assembly, both arms and the bow; the bow and sword vs the torso and legs
+-- shield and mark (on the left arm) vs the head assembly, torso, legs and the right arm; the sword and the bow (limb, limb and
+-- string) vs the head assembly, torso and legs
 local CLEARANCES = {
-	{ "knight", { "shield", "shieldmark" }, { "Head", "Hair" }, 0.05 },
+	{ "knight", { "shield", "shieldmark" }, { "Head", "Hair" }, 0.1 },
 	{ "knight", { "shield", "shieldmark" }, { "Torso" }, 0.0 },
 	{ "knight", { "shield", "shieldmark" }, { "LeftLeg", "RightLeg" }, 0.1 },
 	{ "knight", { "shield", "shieldmark" }, { "RightArm", "Tool" }, 0.1 },
-	{ "knight", { "Tool" }, { "Torso", "LeftLeg", "RightLeg" }, 0.0 },
-	{ "archer", { "quiver" }, { "Head", "Hair" }, 0.04 },
-	{ "archer", { "quiver" }, { "LeftArm", "RightArm" }, 0.0 },
-	{ "archer", { "quiver" }, { "Tool", "bowstring" }, 0.0 },
-	{ "archer", { "Tool", "bowstring" }, { "Torso", "LeftLeg", "RightLeg" }, 0.0 },
+	{ "knight", { "Tool" }, { "Torso", "LeftLeg", "RightLeg", "Head", "Hair" }, 0.0 },
+	{ "archer", { "Tool", "bowlimb", "bowstring" }, { "Torso", "LeftLeg", "RightLeg" }, 0.0 },
+	{ "archer", { "Tool", "bowlimb", "bowstring" }, { "Head", "Hair" }, 0.05 },
 }
 
 CHECKS.clearance = function()

@@ -10,35 +10,38 @@
 		Kit.damageFromHp(hp, maxHp) -> number   1 - hp / maxHp, clamped
 		Kit.DAMAGE_THRESHOLDS = { 0.25, 0.5, 0.75, 0.95 }
 	Model attribute written: KitDamageState (1..4; absent at state 0). Every added part carries the attribute
-	KitDamage = true and KitDamageKind = "crack" | "rubble" | "smoke" | "stump"; they are direct children of the model.
+	KitDamage = true and KitDamageKind = "crack" | "soot" | "rubble" | "stump"; they are direct children of the model.
 
 	States (cumulative; the numbers are the totals at that state)
-		state  Damage   cracks  rubble  smoke  roof / merlon parts removed        collapse
-		  0    < 0.25     0       0       0     0                                  none (the model is exactly as built)
-		  1    >= 0.25    2       0       0     2
-		  2    >= 0.5     4       0       1     5
-		  3    >= 0.75    6       3       2     8                                  the top of one front corner
-		  4    >= 0.95    7       3       3     10                                 the same, with more smoke
-	At most MAX_EXTRA_PARTS (14) parts are added (13 at state 4, 14 with the stump below); none at state 0. Removed parts are the merlons, roof tiles,
-	thatch, lean-to roofs and palisade logs of the model (never a banner, emblem, crest, door, window, throne or the
-	kingdom caps outside the collapsed corner), picked by a deterministic shuffle seeded from the model's type, level
-	and variant, so state 2 keeps what state 1 removed. The collapsed corner removes the caps, merlons and roof parts in
-	the top half of the front-right corner (x >= right edge - 30 %, z <= front edge + 30 %).
-	The removed number is min(table, the parts of the model that can go missing, Damage.MISSING, without the highest part);
-	the collapsed corner (state 3 and 4) takes more on top.
-	Cracks are thin dark wedges on the walls the player sees: at a spread of points of the model's box the outermost
-	upright wall block there, and only where nothing (a turret, a porch, a banner) stands in front of it; the front face
-	first (up to 4), then the right face; a crack that finds no such site goes on the biggest wall. Rubble is three blocks
-	in the colour of the biggest wall at the corner's foot (with its tint, so a recolour follows); smoke is up to three
-	translucent light-grey Balls rising from the corner, kept inside the model's bounding box (the client may tween them:
-	they are anchored, non-colliding parts). The stump (state 3 and 4, only when a tower cap fell: Drum, Dome, Spire ...) is one
-	tilted slab of broken masonry where the lowest cap part stood, so the bare top of the tower (flat, often flush with its
-	corbel) does not show.
+		state  Damage   cracks  soot  rubble  crenellation / roof parts taken  gate leaves  collapse
+		  0    < 0.25     0      0      0       0                                0            none (exactly as built)
+		  1    >= 0.25    2      1      0       4                                1 (+ its bands)
+		  2    >= 0.5     4      2      2       7                                1
+		  3    >= 0.75    6      3      3       10                               both         the top of the front-right corner
+		  4    >= 0.95    7      3      3       13                               both         the same
+	At most MAX_EXTRA_PARTS (14) parts are added (at most 13 marks and rubble, one more with the stump); none at state 0.
+	Real geometry goes missing from state 1, so 0.3 reads differently from 0 at the 170-stud camera: a BITE of merlons (or
+	roof tiles, thatch, lean-to roofs, palisade logs) is taken out of the crenellation or the roof edge, growing from a seed
+	on the front through the nearest parts (nearest to the bite's centre first, so it stays one contiguous gap and state 2
+	keeps what state 1 took). A gate loses one leaf (with its iron bands) at state 1 and both at state 3, so the passage is
+	seen through. The removed number is min(table, the parts that can go missing, without the highest part); the model's
+	top never moves. The collapsed corner (state 3 and 4) takes the caps, merlons and roof parts in the top half of the
+	front-right corner (x >= right edge - 30 %, z <= front edge + 30 %) on top. Never removed: banners, emblems, crests,
+	doors, windows, thrones or the kingdom caps outside the collapsed corner.
+	Marks lie ON the walls the player sees, inside the model's width and below its top (never intersecting roofs or other
+	geometry), picked on the outermost upright wall block at a spread of points, the front face first (up to 4) then the
+	right face, and only where nothing (a turret, a porch, a banner) stands in front of it; a mark that finds no such site
+	goes on the biggest wall. Cracks are thin dark slabs (0.32 across, 0.1 deep) tilted on the face. Soot is an opaque
+	warm-charcoal streak (1.5 to 2.2 across, 0.08 deep, up to 6.5 long) high on the right half, where the fire was; it
+	replaces the old translucent smoke balls (nothing translucent or round is added any more). Rubble is up to three
+	blocks, 3.6/2.8/2.0 studs across, in the colour of the biggest wall at the corner's foot (with its tint, so a recolour
+	follows). The stump (state 3 and 4, only when a tower cap fell: Drum, Dome, Spire ...) is one tilted slab of broken
+	masonry seated on the highest box under where the lowest cap part stood, so the bare top of the tower shows broken.
 
 	Compatibility
 	- Burning (FORGE-04's FeedbackController reads the model attribute `Burning` and the model's bounding box top): this module
-	  touches neither the attribute nor the box's top (it never removes the highest part of the model and puts the smoke
-	  inside the box), so a damaged model still burns, with the flames at the same roof.
+	  touches neither the attribute nor the box's top (it never removes the highest part of the model and every mark
+	  lies inside the box), so a damaged model still burns, with the flames at the same roof.
 	- Kit.setKingdomColor recolours the removed parts too (they wait in a weak table until the damage is repaired) and
 	  never touches the damage parts (they are not kingdom-coloured).
 	- Repair: set Damage lower and call applyDamage again; the removed parts come back where they were.
@@ -58,12 +61,12 @@ Damage.STATE_ATTRIBUTE = "KitDamageState"
 Damage.PART_ATTRIBUTE = "KitDamage"
 -- per state 1..4 (state 0 adds and removes nothing)
 Damage.CRACKS = table.freeze({ 2, 4, 6, 7 })
-Damage.RUBBLE = table.freeze({ 0, 0, 3, 3 })
-Damage.SMOKE = table.freeze({ 0, 1, 2, 3 })
-Damage.REMOVED = table.freeze({ 2, 5, 8, 10 })
+Damage.RUBBLE = table.freeze({ 0, 2, 3, 3 })
+Damage.SOOT = table.freeze({ 1, 2, 3, 3 })
+Damage.REMOVED = table.freeze({ 4, 7, 10, 13 })
 
 local CRACK = Color3.fromRGB(30, 26, 24)
-local SMOKE = Color3.fromRGB(150, 148, 146)
+local SOOT = Color3.fromRGB(48, 42, 38) -- warm charcoal: a scorch, not a hole
 -- walls the cracks may sit on, then the parts that go missing and the parts of a collapsing corner
 local BODY =
 	{ Walls = true, Hall = true, Donjon = true, Shaft = true, Curtain = true, GateTower = true, BarnWalls = true }
@@ -284,7 +287,9 @@ function Damage.apply(model: Model)
 	local lo, hi = visibleBounds(model)
 	local width, depth, height = hi.X - lo.X, hi.Z - lo.Z, hi.Y - lo.Y
 
-	-- 1. parts that go missing (a deterministic shuffle: state 2 keeps what state 1 took)
+	-- 1. parts that go missing: a bite out of the crenellation or the roof edge that grows from a seed (on the front when
+	-- there is one) through the nearest parts, so state 2 keeps what state 1 took; a gate loses a leaf at state 1 and both
+	-- at state 3
 	local kids = ownParts(model)
 	local pool: { BasePart } = {}
 	local topPart, topY = nil, -math.huge
@@ -298,10 +303,41 @@ function Damage.apply(model: Model)
 			table.insert(pool, p)
 		end
 	end
-	for i = #pool, 2, -1 do
-		local j = 1 + math.floor(rand() * i)
-		pool[i], pool[j] = pool[j], pool[i]
+	local order: { BasePart } = {}
+	if #pool > 0 then
+		local front: { BasePart } = {}
+		for _, p in pool do
+			if p.CFrame.Position.Z <= lo.Z + 0.4 * depth then
+				table.insert(front, p)
+			end
+		end
+		local seeds = if #front > 0 then front else pool
+		local seed = seeds[1 + math.floor(rand() * #seeds)]
+		local remaining = table.clone(pool)
+		table.remove(remaining, table.find(remaining, seed) :: number)
+		table.insert(order, seed)
+		local sum = seed.CFrame.Position
+		while #remaining > 0 do
+			local centroid = sum / #order
+			local bestAt, bestDistance = 1, math.huge
+			for i, p in remaining do
+				local d = (p.CFrame.Position - centroid).Magnitude
+				if d < bestDistance - 1e-6 then
+					bestAt, bestDistance = i, d
+				end
+			end
+			local chosen = table.remove(remaining, bestAt) :: BasePart
+			table.insert(order, chosen)
+			sum += chosen.CFrame.Position
+		end
 	end
+	local leaves: { BasePart } = {}
+	for _, p in kids do
+		if p.Name == "GateLeaf" then
+			table.insert(leaves, p)
+		end
+	end
+	local firstLeaf = if #leaves > 0 then math.floor(rand() * #leaves) + 1 else 0
 	local parked: { BasePart } = {}
 	local function take(p: BasePart)
 		if p ~= topPart and p.Parent == model then
@@ -310,12 +346,23 @@ function Damage.apply(model: Model)
 		end
 	end
 	local wantRemoved = Damage.REMOVED[state]
-	for i = 1, math.min(wantRemoved, #pool) do
-		take(pool[i])
+	for i = 1, math.min(wantRemoved, #order) do
+		take(order[i])
+	end
+	for i, leaf in leaves do
+		if i == firstLeaf or state >= 3 then
+			local side = root.CFrame:ToObjectSpace(leaf.CFrame).X
+			take(leaf)
+			for _, p in kids do -- its iron bands go with it
+				if p.Name == "LeafBand" and root.CFrame:ToObjectSpace(p.CFrame).X * side > 0 then
+					take(p)
+				end
+			end
+		end
 	end
 
 	-- 2. the corner: the top of the front-right corner falls (state 3 and 4)
-	local cornerX, cornerZ, cornerY = hi.X - 0.15 * width, lo.Z + 0.15 * depth, lo.Y + 0.72 * height
+	local cornerX = hi.X - 0.15 * width
 	local stump: Box? = nil -- the lowest tower cap part that fell: the broken top of what stands under it
 	if state >= 3 then
 		local fallen = 0
@@ -342,19 +389,28 @@ function Damage.apply(model: Model)
 		stash[model] = parked
 	end
 
-	-- 3. cracks: thin dark wedges on the walls the player sees, the front face first, then the right face. Sites are found
-	-- on the outermost wall block at a spread of points (a facade that hides the biggest wall does not hide the crack);
-	-- a site the walls do not offer falls back to the biggest wall.
+	-- 3. cracks and soot: thin dark slabs lying flat on the walls the player sees, the front face first, then the right face
+	-- (soot: wide streaks high on the right half, where the fire was). Sites are found on the outermost wall block at a
+	-- spread of points (a facade that hides the biggest wall does not hide the mark); a site the walls do not offer falls
+	-- back to the biggest wall.
 	local body = bodyOf(model, kids)
 	if body then
 		local boxes, walls = boxesOf(model, kids)
-		-- a crack site on the front (onFront) or right face at the point (u, v) of the model's box: on the outermost wall
-		-- block there, and only when nothing (a turret, a porch, a banner, a step) stands in front of it
-		local function site(onFront: boolean, u: number, v: number): (CFrame?, number)
+		-- a site on the front (onFront) or right face at the point (u, v) of the model's box, v mapped into y0 .. y0 + ys of
+		-- its height: on the outermost wall block there, and only when nothing (a turret, a porch, a banner, a step) stands
+		-- in front of it. Returns the frame on the face and the mark's length.
+		local function site(
+			onFront: boolean,
+			u: number,
+			v: number,
+			y0: number,
+			ys: number,
+			longest: number
+		): (CFrame?, number)
 			local best: Box? = nil
 			local bestFace = math.huge
 			local x, y, z =
-				lo.X + (0.1 + 0.8 * u) * width, lo.Y + (0.2 + 0.55 * v) * height, lo.Z + (0.1 + 0.8 * u) * depth
+				lo.X + (0.1 + 0.8 * u) * width, lo.Y + (y0 + ys * v) * height, lo.Z + (0.1 + 0.8 * u) * depth
 			for _, w in walls do
 				local face, inside
 				if onFront then
@@ -369,7 +425,8 @@ function Damage.apply(model: Model)
 			if best == nil then
 				return nil, 0
 			end
-			local len = math.min(4.2, best.hy * 2 * 0.55)
+			local len = math.min(longest, best.hy * 2 * 0.5)
+			y = math.clamp(y, best.cy - best.hy + len / 2 + 0.2, best.cy + best.hy - len / 2 - 0.2) -- the mark stays on the wall
 			local halfLen = len / 2 + 0.3
 			for _, b in boxes do
 				if b ~= best then
@@ -395,52 +452,80 @@ function Damage.apply(model: Model)
 			end
 			return CFrame.new(best.cx + best.hx + 0.06, y, z) * CFrame.Angles(0, -math.pi / 2, 0), len
 		end
-		local function place(at: CFrame, len: number, tilt: number)
-			local crack = Parts.wedge(
-				ctx,
-				"DamageCrack",
-				Vector3.new(0.12, len, 0.6),
-				at * CFrame.Angles(0, 0, tilt) * CFrame.Angles(0, math.pi / 2, 0),
-				CRACK,
-				M.SmoothPlastic
-			)
-			make("crack", crack)
+		-- the frame of a mark when no exposed site was found: on the biggest wall as it is
+		local function fallback(onFront: boolean, u: number, v: number, y0: number, ys: number): CFrame
+			local cf, size = body.CFrame, body.Size
+			local su, sv = u * 0.74 - 0.37, y0 + ys * v
+			return if onFront
+				then cf * CFrame.new(su * size.X, (sv - 0.5) * size.Y, -size.Z / 2 - 0.05)
+				else cf * CFrame.new(size.X / 2 + 0.05, (sv - 0.5) * size.Y, su * size.Z) * CFrame.Angles(
+					0,
+					-math.pi / 2,
+					0
+				)
 		end
-		local want = Damage.CRACKS[state]
-		for i = 1, want do
+		for i = 1, Damage.CRACKS[state] do
 			local onFront = i <= 4
 			local at, len, tilt = nil, 0, 0
+			local u, v = 0.5, 0.5
 			for _ = 1, 24 do -- a fixed number of draws per attempt, so the result depends on the model alone
-				local u, v = rand(), rand()
+				u, v = rand(), rand()
 				tilt = (rand() - 0.5) * 0.7
-				at, len = site(onFront, u, v)
+				at, len = site(onFront, u, v, 0.2, 0.55, 4.6)
 				if at then
 					break
 				end
 			end
-			if at == nil then -- nothing exposed was found: the biggest wall, as it is
-				local cf, size = body.CFrame, body.Size
-				local su, sv = rand() * 0.74 - 0.37, 0.28 + rand() * 0.5
-				len = math.min(4.2, size.Y * 0.55)
-				at = if onFront
-					then cf * CFrame.new(su * size.X, (sv - 0.5) * size.Y, -size.Z / 2 - 0.05)
-					else cf * CFrame.new(size.X / 2 + 0.05, (sv - 0.5) * size.Y, su * size.Z) * CFrame.Angles(
-						0,
-						-math.pi / 2,
-						0
-					)
+			if at == nil then
+				at, len = fallback(onFront, u, v, 0.3, 0.5), math.min(4.6, body.Size.Y * 0.5)
 			end
-			place(at :: CFrame, len, tilt)
+			make(
+				"crack",
+				Parts.block(
+					ctx,
+					"DamageCrack",
+					Vector3.new(0.32, len, 0.1),
+					(at :: CFrame) * CFrame.Angles(0, 0, tilt),
+					CRACK,
+					M.SmoothPlastic
+				)
+			)
+		end
+		for i = 1, Damage.SOOT[state] do
+			local onFront = i ~= 3 -- the third streak goes up the right face
+			local at, len = nil, 0
+			local u, v = 0.5, 0.5
+			for _ = 1, 24 do
+				u, v = 0.45 + 0.55 * rand(), rand()
+				at, len = site(onFront, u, v, 0.5, 0.4, 6.5)
+				if at then
+					break
+				end
+			end
+			if at == nil then
+				at, len = fallback(onFront, 0.5 + 0.5 * u, v, 0.5, 0.4), math.min(6.5, body.Size.Y * 0.5)
+			end
+			make(
+				"soot",
+				Parts.block(
+					ctx,
+					"DamageSoot",
+					Vector3.new(1.5 + 0.7 * rand(), len, 0.08),
+					at :: CFrame,
+					SOOT,
+					M.SmoothPlastic
+				)
+			)
 		end
 		-- 4. rubble at the corner's foot, in the wall's own colour
 		local bodyTint = body:GetAttribute("KitTint")
 		for i = 1, Damage.RUBBLE[state] do
-			local s = Vector3.new(2.6 - i * 0.5, 1.8 - i * 0.3, 2.2 - i * 0.4)
+			local s = Vector3.new(4.4 - i * 0.8, 2.8 - i * 0.45, 3.8 - i * 0.7)
 			local rubble = Parts.block(
 				ctx,
 				"DamageRubble",
 				s,
-				CFrame.new(cornerX - (i - 1) * 1.9, s.Y / 2 - 0.2, lo.Z - 0.2 - (i % 2) * 0.9)
+				CFrame.new(cornerX - (i - 1) * 2.6, s.Y / 2 - 0.2, lo.Z - 0.2 - (i % 2) * 1.2)
 					* CFrame.Angles(0, rand() * math.pi, 0),
 				Parts.shade(body.Color, 0.78),
 				M.Slate,
@@ -476,22 +561,6 @@ function Damage.apply(model: Model)
 				make("stump", slab)
 			end
 		end
-	end
-
-	-- 5. smoke: translucent grey Balls rising from the corner, inside the model's bounding box
-	for i = 1, Damage.SMOKE[state] do
-		local d = 3.2 + i * 1.4
-		local y = math.min(cornerY + (i - 1) * 2.4, hi.Y - d / 2)
-		local puff = Parts.ball(
-			ctx,
-			"DamageSmoke",
-			d,
-			Vector3.new(cornerX - i * 0.6, y, cornerZ + i * 0.5),
-			SMOKE,
-			M.SmoothPlastic
-		)
-		puff.Transparency = 0.45 + 0.1 * i
-		make("smoke", puff)
 	end
 end
 
