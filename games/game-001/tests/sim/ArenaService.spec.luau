@@ -139,6 +139,10 @@ local function boot(humans: { number }, parties: { [number]: string }?): any
 			root.Name = "HumanoidRootPart"
 			root.CFrame = CFrame.new(0, 5, 100 + player.UserId)
 			root.Parent = character
+			local humanoid = env.newInstance("Humanoid")
+			humanoid.Name = "Humanoid"
+			humanoid.WalkSpeed = 40
+			humanoid.Parent = character
 			character.Parent = env.Workspace
 			player.Character = character
 			return character
@@ -374,6 +378,143 @@ describe("ArenaService: the duel", function()
 		expect(math.abs(second.toX - marks.spawnA.Position.X) < 1e-6).toBe(true)
 		expect(math.abs(first.height - marks.spawnA.Position.Y) < 1e-6).toBe(true)
 		expect(math.abs(second.height - marks.spawnB.Position.Y) < 1e-6).toBe(true)
+	end)
+
+	it("puts a champion who walks out of the ring back at its edge, and leaves one inside alone", function()
+		local world = boot({ 1, 2 })
+		reachArena(world)
+		advanceTo(world, "duel")
+		local root = world.players[1].Character.HumanoidRootPart
+		local placedBefore = #world.placed
+		root.CFrame = CFrame.new(1, 5, 1) -- well inside
+		world.env.mock:advance(0.2)
+		expect(#world.placed).toBe(placedBefore)
+		local ring = world.arena.config.ring
+		root.CFrame = CFrame.new(60, 5, 80) -- 100 studs out
+		world.env.mock:advance(0.2)
+		expect(#world.placed).toBe(placedBefore + 1)
+		local back = world.placed[#world.placed]
+		expect(back.userId).toBe(1)
+		expect(math.abs(math.sqrt(back.x * back.x + back.z * back.z) - ring.fallbackRadius) < 1e-6).toBe(true)
+		expect(math.abs(back.x / back.z - 60 / 80) < 1e-6).toBe(true) -- along the way out, not anywhere
+		expect(back.toX).toBe(0) -- facing the ring's centre
+		local at = root.CFrame.Position
+		expect(math.sqrt(at.X * at.X + at.Z * at.Z) <= ring.fallbackRadius + ring.margin).toBe(true)
+		-- the margin is allowed: just inside radius + margin stays where it is
+		local count = #world.placed
+		root.CFrame = CFrame.new(ring.fallbackRadius + ring.margin - 0.1, 5, 0)
+		world.env.mock:advance(0.2)
+		expect(#world.placed).toBe(count)
+	end)
+
+	it("bounds a champion by the venue ring when there is no site override", function()
+		local world = boot({ 1, 2 })
+		local config = shortConfig()
+		config.site = nil
+		world.arena.config = config
+		reachArena(world)
+		advanceTo(world, "duel")
+		local venue = WorldLayout.arena
+		local centre = venue.cframe.Position
+		local root = world.players[1].Character.HumanoidRootPart
+		root.CFrame = CFrame.new(centre.X + 200, 5, centre.Z)
+		world.env.mock:advance(0.2)
+		local back = world.placed[#world.placed]
+		expect(math.abs(back.x - (centre.X + venue.duelRadius)) < 1e-6).toBe(true)
+		expect(math.abs(back.z - centre.Z) < 1e-6).toBe(true)
+		expect(math.abs(back.height - venue.spawnA.Position.Y) < 1e-6).toBe(true)
+	end)
+
+	it("fixes the champions' WalkSpeed for the intro and the duel and gives it back afterwards", function()
+		local world = boot({ 1, 2 })
+		reachArena(world)
+		local humanoid = world.players[1].Character.Humanoid
+		expect(humanoid.WalkSpeed).toBe(40) -- the loadout stage leaves it alone
+		advanceTo(world, "intro")
+		expect(humanoid.WalkSpeed).toBe(world.arena.config.ring.walkSpeed)
+		expect(world.players[2].Character.Humanoid.WalkSpeed).toBe(world.arena.config.ring.walkSpeed)
+		advanceTo(world, "duel")
+		expect(humanoid.WalkSpeed).toBe(world.arena.config.ring.walkSpeed)
+		advanceTo(world, "crowning")
+		world.env.mock:advance(0.2)
+		expect(humanoid.WalkSpeed).toBe(40)
+		expect(world.players[2].Character.Humanoid.WalkSpeed).toBe(40)
+	end)
+
+	it("a champion who resets is placed on their mark again with the fixed WalkSpeed", function()
+		local world = boot({ 1, 2 })
+		reachArena(world)
+		advanceTo(world, "duel")
+		local placedBefore = #world.placed
+		local env = world.env
+		local character = env.newInstance("Model")
+		character.Name = "reset"
+		local root = env.newInstance("Part")
+		root.Name = "HumanoidRootPart"
+		root.CFrame = CFrame.new(300, 5, 300) -- the spawn point, far from the ring
+		root.Parent = character
+		local humanoid = env.newInstance("Humanoid")
+		humanoid.Name = "Humanoid"
+		humanoid.WalkSpeed = 40
+		humanoid.Parent = character
+		character.Parent = env.Workspace
+		world.players[1].Character = character
+		env.mock:advance(0.2)
+		expect(#world.placed).toBe(placedBefore + 1)
+		local again = world.placed[#world.placed]
+		expect(again.userId).toBe(1)
+		local site = world.arena.config.site
+		expect(math.abs(again.x - (site.x - site.separation / 2)) < 1e-6).toBe(true) -- side a's mark
+		expect(humanoid.WalkSpeed).toBe(world.arena.config.ring.walkSpeed)
+		-- and it is given back at the end
+		advanceTo(world, "crowning")
+		env.mock:advance(0.2)
+		expect(humanoid.WalkSpeed).toBe(40)
+	end)
+	it("stands a seated champion up, off the throne, before placing them", function()
+		local world = boot({ 1, 2 })
+		world.arena.placeAt = nil -- the real ArenaService:_place
+		reachArena(world)
+		local adapter = world.kingdoms.adapter
+		local humanoid = world.players[1].Character.Humanoid
+		local seat = world.env.newInstance("Seat")
+		local seated = world.players[1].Character
+		humanoid.Jump = false
+		local log: { string } = {}
+		local jumpAtPivot = false
+		adapter.seatOf = function(character: any): any?
+			return if character == seated and seat ~= nil then seat else nil
+		end
+		adapter.unseat = function(character: any, from: any)
+			expect(character).toBe(seated)
+			expect(from).toBe(seat)
+			table.insert(log, "unseat")
+			seat = nil -- the character is free
+		end
+		local pivot = adapter.pivot
+		adapter.pivot = function(character: any, cframe: any)
+			if character == seated then
+				table.insert(log, "pivot")
+				jumpAtPivot = humanoid.Jump
+			end
+			pivot(character, cframe)
+		end
+		advanceTo(world, "intro")
+		expect(log[1]).toBe("unseat")
+		expect(log[2]).toBe("pivot")
+		expect(jumpAtPivot).toBe(true) -- a jump besides, in case Sit = false alone leaves the weld
+	end)
+
+	it("gives the champions their WalkSpeed back when the match calls the arena off mid-duel", function()
+		local world = boot({ 1, 2 })
+		reachArena(world)
+		advanceTo(world, "duel")
+		local humanoid = world.players[1].Character.Humanoid
+		expect(humanoid.WalkSpeed).toBe(world.arena.config.ring.walkSpeed)
+		world.match.host.match:_cancelArena("spec")
+		world.env.mock:advance(0.2)
+		expect(humanoid.WalkSpeed).toBe(40)
+		expect(world.players[2].Character.Humanoid.WalkSpeed).toBe(40)
 	end)
 
 	it(
