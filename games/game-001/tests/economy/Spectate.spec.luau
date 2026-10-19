@@ -267,10 +267,17 @@ describe("The spectate screen (FL-0129)", function()
 		fall(world, { reason = "match_full", standing = { "crimson", "azure", "emerald", "gold" } })
 		expect(texts(find(menus(world), "FallenCard"))).toContain("This match is full")
 		expect(find(menus(world), "WatchPanel")).toBeNil()
+		-- 44 px touch targets (L7 audit): Stay, Leave, then Prev, Next and the panel's Leave
+		for _, name in { "Stay", "Leave" } do
+			expect(find(find(menus(world), "FallenCard"), name).Size.Y.Offset >= 44).toBe(true)
+		end
 		world.spectate:stay()
 		world:advance(0.1)
 		local panel = find(menus(world), "WatchPanel")
 		expect(panel).toBeTruthy()
+		for _, name in { "Prev", "Next", "Leave" } do
+			expect(find(panel, name).Size.Y.Offset >= 44).toBe(true)
+		end
 		expect(panel.Size.X.Offset).toBe(224)
 		expect(find(menus(world), "FallenCard")).toBeNil()
 	end)
