@@ -77,9 +77,11 @@ def asset_id_for(gen, i, params):
 def build_generator(name, args, expect=None):
     import bpy  # noqa: F401  (import here so --list / tests work without bpy)
 
-    from lib import asset, contact, export, manifest, rig, validate
+    from lib import asset, ckit_kit, contact, export, manifest, rig, validate
 
     gen = importlib.import_module(f"generators.{name}")
+    if getattr(gen, "KIT", False):  # multi-piece kits (one FBX, rig.json): lib/ckit_kit.py
+        return ckit_kit.run_generator(gen, args, expect)
     n = args.variants or getattr(gen, "DEFAULT_VARIANTS", 6)
     out = Path(args.out)
     rdir = Path(args.renders) / name
@@ -139,6 +141,7 @@ def build_generator(name, args, expect=None):
             "validation_pass": rep["pass"],
             "geometry_hash": ghash,
             "review": manifest.review_for(gen.NAME, aid, ghash),
+            "license": getattr(gen, "LICENSE", "project-original"),
         })
         objs.append(ob)
         fails = [c["check"] for c in rep["checks"] if not c["pass"]]

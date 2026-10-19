@@ -22,6 +22,7 @@
       "geometry_hash": "7acd5d64107e3e60",
       "id": "castle_tower_blue_01",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "pyramid_big",
@@ -106,6 +107,7 @@
       "geometry_hash": "e889d06203126994",
       "id": "castle_tower_blue_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "bartizans",
@@ -190,6 +192,7 @@
       "geometry_hash": "98d32b9aadac8212",
       "id": "castle_tower_green_01",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "hoarding",
@@ -274,6 +277,7 @@
       "geometry_hash": "4524e210e7cbacca",
       "id": "castle_tower_green_02",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "hoarding_lookout",
@@ -358,6 +362,7 @@
       "geometry_hash": "923de8a68aed96a3",
       "id": "castle_tower_red_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "spire_big",
@@ -442,6 +447,7 @@
       "geometry_hash": "7888f06cf4bd5a27",
       "id": "castle_tower_red_02",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "spire_turret",
@@ -526,6 +532,7 @@
       "geometry_hash": "e04ab1ffee8fb06d",
       "id": "castle_tower_yellow_01",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "onion",
@@ -610,6 +617,7 @@
       "geometry_hash": "cf239f5efc12ef10",
       "id": "castle_tower_yellow_02",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "crown": "kiosks",

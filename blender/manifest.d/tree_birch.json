@@ -36,6 +36,7 @@
       "geometry_hash": "f6bba29dcf51100a",
       "id": "tree_birch_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch",
@@ -117,6 +118,7 @@
       "geometry_hash": "0daf472bdea51ab1",
       "id": "tree_birch_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch",
@@ -198,6 +200,7 @@
       "geometry_hash": "06328fab39a090bc",
       "id": "tree_birch_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch",
@@ -279,6 +282,7 @@
       "geometry_hash": "1f51a1d4c82ca556",
       "id": "tree_birch_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch",
@@ -360,6 +364,7 @@
       "geometry_hash": "63155736abc35d46",
       "id": "tree_birch_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch",
@@ -441,6 +446,7 @@
       "geometry_hash": "73941da9b28e72d1",
       "id": "tree_birch_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "leaves": "birch_gold",

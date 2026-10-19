@@ -22,6 +22,7 @@
       "geometry_hash": "1bbf266ad8a9880c",
       "id": "building_barracks_01",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "gable",
@@ -99,6 +100,7 @@
       "geometry_hash": "92ada1cdcf1f0a19",
       "id": "building_barracks_02",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "keep",
@@ -176,6 +178,7 @@
       "geometry_hash": "66269b38e98d60a8",
       "id": "building_barracks_03",
       "kingdom": "green",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "keep",
@@ -253,6 +256,7 @@
       "geometry_hash": "7c1b8762011fd412",
       "id": "building_barracks_04",
       "kingdom": "yellow",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "gable",
@@ -330,6 +334,7 @@
       "geometry_hash": "e44e26ef998750c6",
       "id": "building_barracks_05",
       "kingdom": "red",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "keep",
@@ -407,6 +412,7 @@
       "geometry_hash": "ab1c5270d79c41af",
       "id": "building_barracks_06",
       "kingdom": "blue",
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "bay": "gable",
