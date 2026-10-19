@@ -1611,7 +1611,7 @@ describe("ConversationService: war and consequence event tags (FL-0134)", functi
 	end
 
 	it("raises war_declared for both sides of a declaration, and nobody else", function()
-		local env, conversations, host = setup()
+		local _, conversations, host = setup()
 		host.events:fire("WarDeclared", { kingdomId = "crimson", targetId = "azure", by = 1 })
 		expect(tags(conversations, "crimson")).toEqual({ "war_declared" })
 		expect(tags(conversations, "azure")).toEqual({ "war_declared" })
@@ -1619,7 +1619,7 @@ describe("ConversationService: war and consequence event tags (FL-0134)", functi
 	end)
 
 	it("raises siege and raid when they start, for that kingdom only; their end raises nothing new", function()
-		local env, conversations, host = setup()
+		local _, conversations, host = setup()
 		host.events:fire(
 			"SiegeChanged",
 			{ kingdomId = "crimson", on = true, byKingdomIds = { "azure" }, buildingId = 1 }
@@ -1639,7 +1639,7 @@ describe("ConversationService: war and consequence event tags (FL-0134)", functi
 	end)
 
 	it("raises objective_lost for the previous owner of a captured objective", function()
-		local env, conversations, host = setup()
+		local _, conversations, host = setup()
 		host.events:fire(
 			"ObjectiveCaptured",
 			{ objectiveId = "watchtower", kingdomId = "crimson", previousOwner = "azure" }
@@ -1651,7 +1651,7 @@ describe("ConversationService: war and consequence event tags (FL-0134)", functi
 	end)
 
 	it("raises strike and riot when ConsequenceService starts them, not when they end or for other rules", function()
-		local env, conversations, _, registry = setup(true)
+		local _, conversations, _, registry = setup(true)
 		local consequences = registry:find("ConsequenceService")
 		assert(consequences ~= nil, "this spec boots ConsequenceService")
 		consequences.changed:fire("crimson", "strike", true, {})
