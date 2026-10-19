@@ -14,7 +14,7 @@ One duel as the server will run it, and the exact `Arena.Events` payload the cli
 | `triggerFired` | who it helps | `{ trigger = TriggerId, citizenName? }` (`citizenName` from the duellist's offer; none for the Crowd Rally) |
 | `ended` | `"a"`, `"b"` or `"draw"` | `{ reason = "ko" \| "timeCap" \| "hardCap" \| "draw" \| "forfeit" }` |
 | `snapshot` | `"a"` | the public picture (`DuelModel.snapshot`): both sides' hp / hpShare / stamina / staminaShare / state / hype / weapon / armour, `suddenDeath`, every 0.2 duel seconds while the duel runs |
-`miss` and `dodged` stay inside. No raw HP, no `impactAt`, no trigger `source`, nothing about a duellist's reserve.
+`miss` and `dodged` stay inside. No raw HP or stamina (the `snapshot` event carries shares, state, hype, weapon and armour), no `impactAt`, no trigger `source`, nothing about a duellist's reserve.
 
 ## Done
 - `Arena/DuelRunner`: `new`, `act`, `step`, `forfeit`, `finished`, `result`, `snapshot`.
@@ -39,3 +39,10 @@ Headless only. Local: `sim/DuelRunner` 28/0, selene 0 warnings. `mutations.py FL
 
 ## Files to read
 - `games/game-001/src/shared/Arena/DuelRunner.luau` (header)
+
+## Review fixes (FORGE-07, #224)
+- **Unknown pose pauses the duel.** `step` does not advance the model while a human champion's pose is nil; after config `Arena.poseGraceSeconds` (8) that champion forfeits (both lost together = draw). `act` keeps working. A pose that returns resumes the duel and restarts the grace. AI champions need no pose. The wiring should still stop the reset button for champions.
+- **Both gone = draw** is reachable: the declared winner leaving within `Arena.simultaneousSeconds` (0.5) of the forfeit turns the result into a draw (one more `ended` event, side `draw`).
+- **Snapshot event is shares only** (no raw `hp` / `stamina`, stamina share clamped).
+- **Facing** is normalised in the runner; a zero vector is not facing.
+- AI champion ids come from `ArenaFlow.AI_USER_ID`.

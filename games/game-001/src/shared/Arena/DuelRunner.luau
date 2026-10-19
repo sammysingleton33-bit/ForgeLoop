@@ -14,7 +14,8 @@
 			setup.seed        number
 			setup.pose        (userId) -> { x, z, fx, fz }?   where a duellist stands and which way they face
 			                  (fx, fz a unit vector); nil = unknown. Without `pose`, or when an AI duellist has none,
-			                  the duel is virtual: always in range and facing. A human with no pose cannot land a hit.
+			                  the duel is virtual: always in range and facing. A human with no pose pauses the duel
+			                  (config Arena `poseGraceSeconds`), then forfeits.
 			setup.log         (level, message, fields)?
 		Runner:act(userId, action, now) -> (ok, reason?)
 			a champion's action: refused quietly (false + a reason, never an error) when the duel has not started
@@ -111,6 +112,7 @@ function DuelRunner.new(setup: any, config: any?): any
 	self._nextSnapshot = 0
 	self._started = false
 	self._forfeitAt = nil :: number?
+	self._poseLostFor = { a = 0, b = 0 }
 	self._result = nil :: { side: string, reason: string }?
 	return self
 end
@@ -180,12 +182,8 @@ function DuelRunner:_geometry(side: string): (boolean, boolean)
 	local other = if side == "a" then "b" else "a"
 	local mine, theirs = pose(self._sides[side].userId), pose(self._sides[other].userId)
 	if mine == nil or theirs == nil then
-		-- an AI has no body to measure: that part of the duel is virtual. A human who cannot be found cannot hit.
-		local missingHuman = (mine == nil and not self._sides[side].isAI)
-			or (theirs == nil and not self._sides[other].isAI)
-		if missingHuman then
-			return false, false
-		end
+		-- an AI has no body to measure: that part of the duel is virtual (a human without a pose never gets here:
+		-- _poseLost pauses the duel)
 		return true, true
 	end
 	local dx, dz = theirs.x - mine.x, theirs.z - mine.z
@@ -193,7 +191,9 @@ function DuelRunner:_geometry(side: string): (boolean, boolean)
 	local inRange = distance <= self._cfg.reach
 	local facing = false
 	if distance > 1e-6 then
-		facing = (mine.fx * dx + mine.fz * dz) / distance >= self._cfg.facingMinDot
+		-- the provider's vector is not trusted to be unit length (a pitched look vector is shorter); zero = not facing
+		local length = math.sqrt(mine.fx * mine.fx + mine.fz * mine.fz)
+		facing = length > 1e-6 and (mine.fx * dx + mine.fz * dz) / (distance * length) >= self._cfg.facingMinDot
 	else
 		facing = true
 	end
@@ -239,6 +239,22 @@ local function relay(model: any, citizens: { [string]: any }, event: DuelEvent, 
 	-- miss and dodged stay inside
 end
 
+-- The snapshot event carries shares only (no raw hp or stamina), like every other event of the relay.
+function DuelRunner:_publicSnapshot(): any
+	local snapshot = DuelModel.snapshot(self._model)
+	local function side(view: any): any
+		return {
+			hpShare = view.hpShare,
+			staminaShare = math.clamp(view.staminaShare, 0, 1),
+			state = view.state,
+			hype = view.hype,
+			weapon = view.weapon,
+			armour = view.armour,
+		}
+	end
+	return { t = snapshot.t, suddenDeath = snapshot.suddenDeath, a = side(snapshot.a), b = side(snapshot.b) }
+end
+
 function DuelRunner:_tick(out: { any })
 	local model = self._model
 	local cfg = self._cfg
@@ -274,12 +290,44 @@ function DuelRunner:_tick(out: { any })
 	end
 	if model.t >= self._nextSnapshot and not model.ended then
 		self._nextSnapshot = model.t + cfg.snapshotEvery
-		table.insert(out, { t = model.t, kind = "snapshot", side = "a", data = DuelModel.snapshot(model) })
+		table.insert(out, { t = model.t, kind = "snapshot", side = "a", data = self:_publicSnapshot() })
 	end
 	if model.ended and self._result == nil then
 		local winner = if model.winner == "a" or model.winner == "b" then model.winner else "draw"
 		self._result = { side = winner, reason = model.reason or "draw" }
 	end
+end
+
+-- A human champion the pose provider cannot find (a reset, a respawn gap) pauses the duel instead of becoming a target
+-- nobody can hit; after `poseGraceSeconds` without a pose that champion forfeits. True while the duel is paused.
+function DuelRunner:_poseLost(elapsed: number, now: number, out: { any }): boolean
+	if self._pose == nil then
+		return false
+	end
+	local paused = false
+	for _, side in { "a", "b" } do
+		local duellist = self._sides[side]
+		if duellist.isAI or duellist.gone then
+			continue
+		end
+		if self._pose(duellist.userId) == nil then
+			paused = true
+			self._poseLostFor[side] += elapsed
+		else
+			self._poseLostFor[side] = 0
+		end
+	end
+	if not paused then
+		return false
+	end
+	for _, side in { "a", "b" } do
+		if self._poseLostFor[side] >= self._cfg.poseGraceSeconds then
+			for _, event in self:forfeit(self._sides[side].userId, now) do
+				table.insert(out, event)
+			end
+		end
+	end
+	return true
 end
 
 function DuelRunner:step(now: number): { any }
@@ -294,6 +342,9 @@ function DuelRunner:step(now: number): { any }
 	end
 	local elapsed = math.min(math.max(0, now - (self._last :: number)), self._cfg.maxCatchup)
 	self._last = now
+	if self:_poseLost(elapsed, now, out) then
+		return out
+	end
 	self._acc += elapsed
 	local tick = self._cfg.tick
 	while self._acc >= tick - 1e-9 and self._result == nil do

@@ -17,9 +17,7 @@ M = [
  ("FL-0071R", DR, 'local inRange = distance <= self._cfg.reach', 'local inRange = distance < self._cfg.reach - 1', "sim/DuelRunner", "a swing from too far away"),
  ("FL-0071R", DR, '>= self._cfg.facingMinDot', '>= -1', "sim/DuelRunner", "facing away"),
  ("FL-0071R", DR, '>= self._cfg.facingMinDot', '>= 0.99', "sim/DuelRunner", "a swing 45 degrees off the line"),
- ("FL-0071R", DR, 'if missingHuman then\n\t\t\treturn false, false', 'if false then\n\t\t\treturn false, false', "sim/DuelRunner", "cannot hit"),
  ("FL-0071R", DR, 'if pose == nil then\n\t\treturn true, true', 'if pose == nil then\n\t\treturn false, false', "sim/DuelRunner", "virtual"),
- ("FL-0071R", DR, 'local missingHuman = (mine == nil and not self._sides[side].isAI)\n\t\t\tor (theirs == nil and not self._sides[other].isAI)', 'local missingHuman = (mine == nil and not self._sides[side].isAI)', "sim/DuelRunner", "cannot hit"),
  ("FL-0071R", DR, '\t\tfacing = true\n\tend', '\t\tfacing = false\n\tend', "sim/DuelRunner", "the same position is in range and facing"),
  # --- the caps
  ("FL-0071R", DR, 'local ok, reason = Caps.check(list)\n\tif ok then\n\t\treturn list\n\tend', 'local ok, reason = true, nil\n\tif ok then\n\t\treturn list\n\tend', "sim/DuelRunner", "drops the perks"),
@@ -47,4 +45,13 @@ M = [
  ("FL-0071R", DR, 'and now - self._forfeitAt <= self._cfg.simultaneousSeconds', 'and true', "sim/DuelRunner", "after the moment has passed"),
  ("FL-0071R", DR, 'and result.side == side\n', 'and true\n', "sim/DuelRunner", "both champions gone is a draw"),
  ("FL-0071R", DR, 'self._result = { side = other, reason = "forfeit" }', 'self._result = { side = side, reason = "forfeit" }', "sim/DuelRunner", "a champion who leaves loses"),
+ # --- a champion the world cannot find
+ ("FL-0071R", DR, 'if self:_poseLost(elapsed, now, out) then\n\t\treturn out\n\tend', 'if false then\n\t\treturn out\n\tend', "sim/DuelRunner", "pauses the duel"),
+ ("FL-0071R", DR, 'if self._pose(duellist.userId) == nil then', 'if false then', "sim/DuelRunner", "pauses the duel"),
+ ("FL-0071R", DR, 'self._poseLostFor[side] = 0\n', 'self._poseLostFor[side] += 0\n', "sim/DuelRunner", "pauses the duel"),
+ ("FL-0071R", DR, 'if self._poseLostFor[side] >= self._cfg.poseGraceSeconds then', 'if self._poseLostFor[side] >= self._cfg.poseGraceSeconds * 100 then', "sim/DuelRunner", "forfeits that champion"),
+ ("FL-0071R", DR, 'if duellist.isAI or duellist.gone then', 'if duellist.gone then', "sim/DuelRunner", "needs no pose"),
+ ("FL-0071R", DR, 'local length = math.sqrt(mine.fx * mine.fx + mine.fz * mine.fz)', 'local length = 1', "sim/DuelRunner", "shorter than a unit vector"),
+ ("FL-0071R", DR, 'hpShare = view.hpShare,', 'hpShare = view.hpShare, hp = view.hp,', "sim/DuelRunner", "public snapshot"),
+ ("FL-0071R", DR, 'staminaShare = math.clamp(view.staminaShare, 0, 1),', 'staminaShare = view.staminaShare, stamina = view.stamina,', "sim/DuelRunner", "public snapshot"),
 ]
