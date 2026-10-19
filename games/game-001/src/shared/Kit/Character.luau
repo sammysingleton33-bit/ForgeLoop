@@ -50,11 +50,34 @@
 	colour dyes the clothes instead (see `individual`): shirt tone, trousers and panel, and whether neutral sleeves
 	take the job panel (odd) or the kingdom tint (even).
 
+Soldier unit kinds (FL-0128): Kit.character("soldier", unitKind, ...) takes the unit kind in `job` (the same key the mesh
+	kit uses for `soldier_<job>`): "soldier" (and any other job) is today's spear soldier, "knight" and "archer" are the
+	other two part-built kinds. All three keep the soldier rig (Root, Torso, Head, two arms, two legs, Tool; the crest as
+	Hair; at most 11 parts with their two details), the Pose joints and the kingdom crest, and differ by silhouette:
+		soldier  steel great helm, a spear carried at the fist (tip 1.3x the body's height, butt 1 stud off the ground, leaning
+		         forward and a little outward) with a steel head and a pennant that HANGS under the head (Detail1 spearhead,
+		         Detail2 pennant, both on the Tool)
+		knight   bulky (2.9 across), a broad great helm (1.95 wide) under the kingdom crest at 1.32x, kingdom-dark torso under
+		         steel plate sleeves, a sword (the Tool is the blade, its lower end in the fist, rising OUTWARD and forward, beside
+		         the arm and clear of the torso) and a LARGE kingdom-coloured
+		         shield (1.9 x 2.6) on the left arm: Detail1 shield (welded to the LeftArm), Detail2 shieldmark (welded to the
+		         LeftArm): one FLAT primitive per kingdom in an emblem colour that is never dark (crimson a wedge, azure a diamond,
+		         emerald a slanted leaf-bar, gold an ivory disc; never a glossy ball), as the 11-part cap leaves no room for the
+		         3-5 part emblem
+		archer   lean (1.95), no helm (a bare ROUND head in the kingdom crest worn as a cap or hood), a leather jerkin under
+		         kingdom sleeves, a CURVED bow of three parts at the fist: the Tool is the upper limb, Detail1 bowlimb the
+		         lower (both angled 30 degrees forward from the grip, 1.25 long: the whole bow ends under the chin, away from
+		         the face), Detail2 bowstring across their tips (both on the Tool)
+	The knight's shield details are welded to the LeftArm, not only the Head or the Tool (D-048 allows two rigid parts,
+	FL-0128 widens where they may be welded for the knight; never a joint). The archer has no quiver any more (the bow and
+	its string use both detail slots).
+
 Soldier kingdom crest (CONTRACTS G13.2, D-033(3)): Kit.character(kind, job, kingdomColor, look?, kingdom?)
 	takes an optional KingdomId. A soldier given one wears a crest on the helm in the kingdom's tower style, so
 	friend and foe read apart without colour: crimson a tall pointed spire (CornerWedgePart turned 45°, point at
-	the front), azure a wide flat square plate overhanging the helm (Block), emerald a plume swept up and back
-	(Cylinder), gold a round dome knob (Ball). One primitive each, welded to the Head as `Hair` (D-032, so still
+	the front), azure a wide flat square plate overhanging the helm (Block), emerald an UPRIGHT plume fin along the
+	helm (WedgePart, high at the back: a cylinder swept back read as a cannon), gold a dome cap (a Ball 1.8 sunk into
+	the helm top so it covers and overhangs the helm). One primitive each, welded to the Head as `Hair` (D-032, so still
 	≤ 9 parts) with KitHeadwear "crest_spire" | "crest_square" | "crest_plume" | "crest_dome" and the kingdom
 	colour (KitTint 1). Without a kingdom, or with an unknown one, soldiers keep the plain helm (8 parts);
 	citizens and governors ignore it. Character.CRESTS maps KingdomId → crest name.
@@ -354,10 +377,10 @@ local GREAT_HELM: PartSpec = { -- soldier's Head: a steel great helm (a steel sq
 -- Soldier kingdom crests (G13.2, D-033(3)): one primitive welded on top of the helm, offsets from the helm
 -- centre (its top is at +0.8). They differ in outline, not only colour (Blender grayscale review, art/reviews/
 -- kit-characters.md): the spire is tallest and pointed, the square low and wider than the helm, the plume a
--- narrow tail swept back past the helm, the dome a round knob wider than its seat.
+-- upright fin along the helm, the dome a cap that covers the helm and overhangs it.
 local HELM_TOP = GREAT_HELM.size.Y / 2
 local SPIRE = Vector3.new(1.0, 1.6, 1.0) -- base 1.41 across the diagonal, 1.55 above the helm: a low crest, not a gnome's hat
-local PLUME_LEN, PLUME_D, PLUME_TILT = 2.5, 0.7, math.rad(70) -- a near-horizontal tail
+local PLUME = Vector3.new(0.4, 1.2, 1.9) -- an upright wedge fin along the helm, high at the back: it stands up (a cylinder swept back read as a cannon)
 local CRESTS: { [string]: PartSpec } = {
 	crimson = { -- tall spire (2.05 above the helm): a CornerWedge turned 45°, its point over the front corner;
 		-- the base overhangs the helm a little at the corners, like the crimson towers' spires
@@ -377,26 +400,22 @@ local CRESTS: { [string]: PartSpec } = {
 		material = Enum.Material.Metal,
 		offset = CFrame.new(0, HELM_TOP + 0.24 - 0.02, 0),
 	},
-	emerald = { -- plume: a horsehair tail from the front of the helm top, swept back 70° and 1.4 past its back
+	emerald = { -- plume: an upright horsehair fin along the helm's length, 1.2 tall at the back, 0.4 across
 		name = "crest_plume",
-		class = "Part",
-		shape = Enum.PartType.Cylinder,
-		size = Vector3.new(PLUME_LEN, PLUME_D, PLUME_D),
+		class = "WedgePart",
+		size = PLUME,
 		color = 1,
 		material = Enum.Material.Fabric,
-		offset = CFrame.new(0, HELM_TOP - 0.1, -0.3)
-			* CFrame.Angles(PLUME_TILT, 0, 0)
-			* CFrame.new(0, PLUME_LEN / 2, 0)
-			* UPRIGHT,
+		offset = CFrame.new(0, HELM_TOP + PLUME.Y / 2 - 0.05, 0),
 	},
-	gold = { -- dome: a 1.3 ball set 0.4 above the helm top, so it bulges over a narrower seat (an onion dome)
+	gold = { -- dome: a 1.8 ball sunk 0.1 into the helm top, so it caps the helm and overhangs it all round (a dome, not a knob)
 		name = "crest_dome",
 		class = "Part",
 		shape = Enum.PartType.Ball,
-		size = Vector3.new(1.3, 1.3, 1.3),
+		size = Vector3.new(1.8, 1.8, 1.8),
 		color = 1,
 		material = Enum.Material.Metal,
-		offset = CFrame.new(0, HELM_TOP + 0.4, 0),
+		offset = CFrame.new(0, HELM_TOP - 0.1, 0),
 	},
 }
 Character.CRESTS = table.freeze({
@@ -420,6 +439,105 @@ local OUTFITS: { Outfit } = {
 
 local SOLDIER_OUTFIT: Outfit =
 	{ name = "tabard", torso = 1, sleeves = 0.85, legs = STEEL_DARK, legMaterial = Enum.Material.Metal }
+-- knight: a heavy kingdom-dark surcoat over steel plate sleeves and legs; archer: a leather jerkin under kingdom sleeves
+local KNIGHT_OUTFIT: Outfit =
+	{ name = "surcoat", torso = 0.58, sleeves = STEEL, legs = STEEL_DARK, legMaterial = Enum.Material.Metal }
+local ARCHER_OUTFIT: Outfit = { name = "jerkin", torso = LEATHER, sleeves = 0.8, legs = Color3.fromRGB(84, 62, 44) }
+
+-- Unit kinds of the part-built soldier (FL-0128). The kind rides in Kit.character's `job`; any job but "knight" and
+-- "archer" builds today's spear soldier.
+local EMBLEM_IVORY_FIXED = Color3.fromRGB(240, 232, 212) -- the emblems' ivory (Pieces.EMBLEM_IVORY)
+local SHIELD_SIZE = Vector3.new(1.9, 2.6, 0.25)
+-- In the LeftArm frame: held out in front of the forearm (a gap of 0.66 to the arm, so that the cheer, which folds the arm up
+-- and out about the shoulder, never sweeps it through the torso), outside the arm and below the shoulder, facing forward.
+-- tests/world/KitUnitKinds.spec sweeps every Pose action for its clearance to the head, torso, legs and the other arm.
+local SHIELD_OFFSET = CFrame.new(-0.7, -0.8, -1.2)
+local SHIELD: PartSpec = {
+	name = "shield",
+	class = "Part",
+	shape = Enum.PartType.Block,
+	size = SHIELD_SIZE,
+	color = 1,
+	material = Enum.Material.Metal,
+	offset = SHIELD_OFFSET,
+}
+-- one primitive per kingdom on the shield's face (the emblem builders need 3-5 parts; the rig has none to spare)
+local SHIELD_MARKS: { [string]: PartSpec } = {
+	crimson = { -- a rising wedge: the crown's spike
+		name = "shieldmark",
+		class = "WedgePart",
+		size = Vector3.new(0.16, 1.5, 1.35),
+		color = EMBLEM_IVORY_FIXED,
+		material = Enum.Material.Metal,
+		offset = SHIELD_OFFSET * CFrame.new(0, 0.1, -0.2) * CFrame.Angles(0, math.rad(90), 0),
+	},
+	azure = { -- a diamond: the star
+		name = "shieldmark",
+		class = "Part",
+		shape = Enum.PartType.Block,
+		size = Vector3.new(1.1, 1.1, 0.16),
+		color = EMBLEM_IVORY_FIXED,
+		material = Enum.Material.Metal,
+		offset = SHIELD_OFFSET * CFrame.new(0, 0.1, -0.2) * CFrame.Angles(0, 0, math.rad(45)),
+	},
+	emerald = { -- a slanted flat leaf-bar: the oak leaf (flat like the others: a round boss shone like glass)
+		name = "shieldmark",
+		class = "Part",
+		shape = Enum.PartType.Block,
+		size = Vector3.new(0.6, 1.8, 0.16),
+		color = EMBLEM_IVORY_FIXED,
+		material = Enum.Material.Metal,
+		offset = SHIELD_OFFSET * CFrame.new(0, 0.1, -0.2) * CFrame.Angles(0, 0, math.rad(-22)),
+	},
+	gold = { -- a flat ivory disc: the sun (never a dark disc, which read as a hole)
+		name = "shieldmark",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(0.16, 1.35, 1.35),
+		color = EMBLEM_IVORY_FIXED,
+		material = Enum.Material.Metal,
+		offset = SHIELD_OFFSET * CFrame.new(0, 0.1, -0.2) * CFrame.Angles(0, math.rad(90), 0),
+	},
+}
+-- the knight's great helm: broader than the soldier's (1.45), the same height, so every crest keeps its seat
+local KNIGHT_HELM: PartSpec = {
+	name = "greathelm",
+	class = "Part",
+	shape = Enum.PartType.Block,
+	size = Vector3.new(1.95, 1.6, 1.75),
+	color = STEEL,
+	material = Enum.Material.Metal,
+	offset = CFrame.new(0, 0.8, 0),
+}
+type UnitStyle = { outfit: Outfit, width: number, tool: string, helm: PartSpec?, crestScale: number }
+local UNIT_STYLES: { [string]: UnitStyle } = {
+	soldier = { outfit = SOLDIER_OUTFIT, width = 2.15, tool = "spear", helm = GREAT_HELM, crestScale = 1 },
+	knight = { outfit = KNIGHT_OUTFIT, width = 2.9, tool = "sword", helm = KNIGHT_HELM, crestScale = 1.32 },
+	archer = { outfit = ARCHER_OUTFIT, width = 1.95, tool = "bow", helm = nil, crestScale = 0.95 },
+}
+Character.UNIT_KINDS = table.freeze({ "soldier", "knight", "archer" })
+
+-- The part-built unit kind of a soldier's `job` (the wire's job; unknown jobs and "soldier" are the spear soldier).
+function Character.unitKind(job: string): string
+	return if job == "knight" or job == "archer" then job else "soldier"
+end
+
+-- The kingdom crest scaled for a unit kind: the same primitive, bigger (a knight's plume) or smaller (an archer's cap),
+-- sitting on the same seat.
+local function scaledCrest(spec: PartSpec, k: number): PartSpec
+	if k == 1 then
+		return spec
+	end
+	return {
+		name = spec.name,
+		class = spec.class,
+		shape = spec.shape,
+		size = spec.size * k,
+		color = spec.color,
+		material = spec.material,
+		offset = CFrame.new(0, (k - 1) * spec.size.Y / 2 + (if k > 1 then 0.1 else -0.05), 0) * spec.offset,
+	}
+end
 local GOVERNOR_OUTFIT: Outfit = { name = "regal", torso = 1, sleeves = ERMINE, legs = 0.55 }
 
 Character.LOOK_RANGES = table.freeze({
@@ -526,11 +644,18 @@ Character.JOB_TOOLS = table.freeze((function()
 end)())
 
 local GRIP = CFrame.new(0, 0, -0.55) -- in front of the fist, so a held shaft clears the arm
+local GRIP_UNIT = CFrame.new(0, 0, -0.45) -- a soldier's spear, sword and bow overlap the hand a little: they are gripped
 
 -- Hand tools (D-048): the Tool part is the HANDLE (a cylinder held in front of the fist, leaning out a few degrees);
 -- its head is a detail part welded to it (`details`, offsets in the joint frame, KitDetail = true). The heads sit at
 -- head height beside the body, so a tool reads as a tool from the air. Handle colours and head shapes differ per job.
 local LEAN = CFrame.Angles(0, 0, math.rad(-6)) -- the top leans outwards (+X), away from the body
+-- the sword rises from the fist outward (+X) and forward (-Z): beside the arm and clear of the torso, never across them
+local SWORD_LEAN = CFrame.Angles(math.rad(-22), 0, math.rad(-28))
+-- the spear is carried at the fist, its butt off the ground, leaning forward and a little outward
+local SPEAR_LEAN = CFrame.Angles(math.rad(-14), 0, math.rad(-5))
+-- each bow limb is 1.25 long and leans 30 degrees forward from the grip (the whole bow ends under the chin)
+local BOW_LIMB, BOW_TILT = 1.25, math.rad(30)
 -- the hoe leans out 14 degrees: its handle clears the straw brim of every hat roll in every pose (0.04 or more with the
 -- brim's bounding box, 0.15 or more with the exact disc)
 local HOE_LEAN = CFrame.Angles(0, 0, math.rad(-14))
@@ -665,31 +790,79 @@ local TOOLS: { [string]: PartSpec } = {
 			},
 		},
 	},
-	spear = { -- 9 long pale ash shaft, a steel spearhead and a kingdom pennant streaming from it
+	spear = { -- a 4.8 pale ash shaft carried at the fist (its butt 1 stud off the ground), a steel spearhead and a hanging
+		-- kingdom pennant under the head (tip 1.3 x the body's height)
 		name = "spear",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
-		size = Vector3.new(9.0, 0.4, 0.4),
+		size = Vector3.new(4.8, 0.4, 0.4),
 		color = ASH,
 		material = Enum.Material.Wood,
-		offset = GRIP * CFrame.new(0, 2.2, 0) * UPRIGHT,
+		offset = GRIP_UNIT * SPEAR_LEAN * CFrame.new(0, 1.3, 0) * UPRIGHT,
 		details = {
 			{
 				name = "spearhead",
 				class = "CornerWedgePart",
-				size = Vector3.new(0.75, 1.9, 0.75),
+				size = Vector3.new(0.75, 1.6, 0.75),
 				color = STEEL,
 				material = Enum.Material.Metal,
-				offset = GRIP * CFrame.new(0, 7.6, 0) * CFrame.Angles(0, math.rad(45), 0),
+				offset = GRIP_UNIT * SPEAR_LEAN * CFrame.new(0, 4.5, 0) * CFrame.Angles(0, math.rad(45), 0),
 			},
 			{
 				name = "pennant",
 				class = "Part",
 				shape = Enum.PartType.Block,
-				size = Vector3.new(1.2, 0.1, 0.8),
+				size = Vector3.new(0.85, 1.5, 0.1),
 				color = 0.9,
 				material = Enum.Material.Fabric,
-				offset = GRIP * CFrame.new(0.7, 5.5, 0) * CFrame.Angles(0, 0, math.rad(-12)),
+				offset = GRIP_UNIT * SPEAR_LEAN * CFrame.new(0.48, 2.95, 0),
+			},
+		},
+	},
+	sword = { -- knight: a broad steel blade held at the ready, its lower end in the fist and its point forward and up
+		name = "sword",
+		class = "Part",
+		shape = Enum.PartType.Block,
+		size = Vector3.new(0.7, 3.8, 0.16),
+		color = STEEL,
+		material = Enum.Material.Metal,
+		offset = GRIP_UNIT * SWORD_LEAN * CFrame.new(0, 1.5, 0),
+	},
+	bow = { -- archer: a bow of three parts held at the fist: two limbs (the Tool is the upper) angled forward from the grip
+		-- and a string across their tips, in front of the limbs where it shows from the front and the air
+		name = "bow",
+		class = "Part",
+		shape = Enum.PartType.Cylinder,
+		size = Vector3.new(BOW_LIMB, 0.34, 0.34),
+		color = C.woodLight,
+		material = Enum.Material.Wood,
+		offset = GRIP_UNIT
+			* CFrame.new(0, -0.1, 0)
+			* CFrame.Angles(-BOW_TILT, 0, 0)
+			* CFrame.new(0, BOW_LIMB / 2, 0)
+			* UPRIGHT,
+		details = {
+			{
+				name = "bowlimb",
+				class = "Part",
+				shape = Enum.PartType.Cylinder,
+				size = Vector3.new(BOW_LIMB, 0.34, 0.34),
+				color = C.woodLight,
+				material = Enum.Material.Wood,
+				offset = GRIP_UNIT * CFrame.new(0, -0.1, 0) * CFrame.Angles(BOW_TILT, 0, 0) * CFrame.new(
+					0,
+					-BOW_LIMB / 2,
+					0
+				) * UPRIGHT,
+			},
+			{
+				name = "bowstring",
+				class = "Part",
+				shape = Enum.PartType.Cylinder,
+				size = Vector3.new(2 * BOW_LIMB * math.cos(BOW_TILT), 0.13, 0.13),
+				color = LINEN,
+				material = Enum.Material.Fabric,
+				offset = GRIP_UNIT * CFrame.new(0, -0.1, -BOW_LIMB * math.sin(BOW_TILT)) * UPRIGHT,
 			},
 		},
 	},
@@ -968,12 +1141,14 @@ function Character.character(
 	local skin, hairColor = SKIN[l.skin], HAIR_COLORS[l.hairColor]
 	local jobSpec = JOBS[job] or JOBS.idle
 	local crest = if style == "soldier" then crestOf(kingdom) else nil
+	local unit = if style == "soldier" then UNIT_STYLES[Character.unitKind(job)] else nil -- FL-0128: soldier, knight, archer
 	local outfit: Outfit, headwear: PartSpec?, width: number, tool: string?
 	local hatRoll = 0 -- the working hat's tilt about the head: its head details follow it
 	local accentJob: string? = nil -- the job whose accent colours the outfit (working citizens only)
 	local panelTorso, panelSleeves = false, false -- where the job's panel colour landed
-	if style == "soldier" then
-		outfit, headwear, width, tool = SOLDIER_OUTFIT, crest, 2.15, "spear"
+	if unit then
+		outfit, width, tool = unit.outfit, unit.width, unit.tool
+		headwear = if crest then scaledCrest(crest, unit.crestScale) else nil
 	elseif style == "governor" then
 		outfit, headwear, width, tool = GOVERNOR_OUTFIT, GOVERNOR_CROWN, 2.4, "staff"
 	else
@@ -1032,8 +1207,8 @@ function Character.character(
 	local headCF = CFrame.new(0, HEAD_Y, 0)
 	local neck = CFrame.new(0, NECK_Y, 0)
 	local head
-	if style == "soldier" then
-		head = specPart(model, "Head", GREAT_HELM, neck * GREAT_HELM.offset, kingdomColor, skin, hairColor)
+	if unit and unit.helm then
+		head = specPart(model, "Head", unit.helm, neck * unit.helm.offset, kingdomColor, skin, hairColor)
 	else
 		head = rigPart(
 			model,
@@ -1188,6 +1363,14 @@ function Character.character(
 		motor(if spec.onBack then torso else rarm, part, joint)
 		for _, detail in spec.details or {} do
 			addDetail(detail, part, joint)
+		end
+	end
+	-- the knight's shield and its kingdom mark on the left arm (FL-0128): rigid welds like every detail, never a joint
+	if unit and Character.unitKind(job) == "knight" then
+		addDetail(SHIELD, larm, larm.CFrame)
+		local mark = if type(kingdom) == "string" and crest then SHIELD_MARKS[kingdom] else nil
+		if mark then
+			addDetail(mark, larm, larm.CFrame)
 		end
 	end
 	return model

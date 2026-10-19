@@ -331,14 +331,14 @@ function KingdomStyle.skin(style: string?, c: Color3): Color3
 end
 
 -- Re-skins every untinted part of a freshly built model with the kingdom's palette. Idempotent per build (a
--- building is painted once, by Buildings.build); kingdom-coloured parts (KitTint) and emblems are left alone.
+-- building is painted once, by Buildings.build); kingdom-coloured parts (KitTint), parts marked KitNoSkin (fixed colours, such as the L1 palisade) and emblems are left alone.
 function KingdomStyle.paint(model: Instance, style: string?)
 	local st = STYLES[style or "neutral"]
 	if not st or st == NEUTRAL then
 		return
 	end
 	for _, d in model:GetDescendants() do
-		if d:IsA("BasePart") and d:GetAttribute("KitTint") == nil then
+		if d:IsA("BasePart") and d:GetAttribute("KitTint") == nil and d:GetAttribute("KitNoSkin") == nil then
 			local c = KingdomStyle.skin(style, d.Color)
 			if c ~= d.Color then
 				d.Color = c
