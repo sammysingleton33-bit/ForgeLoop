@@ -373,5 +373,33 @@ phone emulator (667 × 375) and with a gamepad.
    phone emulator the strip stays clear of the duel buttons (bottom right) and the crowd captions.
 8. After the duel the strip goes and the kingdom HUD returns.
 
+## U25 — Support meter and breakdown (FL-0073; needs FORGE-01's SupportService serving `Kingdom.Support` / `Kingdom.GetSupport`)
+Without those remotes nothing shows and the HUD keeps no gap (dark launch): check that first on today's build.
+Then, with SupportService on, run a desktop window and the phone emulator (667 × 375).
+1. Under the reputation strip a chip reads "Support <Tier> <score>" with a coloured dot and a trend arrow (▲ green,
+   ▼ red, ▬ steady); on the phone it drops the word "Support". The tier is always written, never colour alone.
+2. Tap it: the drawer "Support" opens with "<Tier> support · <score>", the trend ("Rising +3 in 5 min"), the points to
+   the next tier, the arena line ("Blessing +1% · 3 perk slots in the arena"), "What it is made of" (seven rows: icon,
+   name, bar, share in %, value) and "What moved it" (latest first, signed and coloured). Tap the chip again: it closes.
+3. Do something that moves support (let food run out; fulfil a petition): within a push the chip's score and arrow
+   move and the moment appears at the top of the open drawer without it jumping back to the top of its scroll.
+4. Treasury income ticking does not flicker the chip or reset the drawer's scroll.
+5. Phone emulator: the chip stays clear of the pills and the objective tracker; the drawer scrolls to the last moment.
+
+## U26 — Citizen card: arena perk preview and petitions (FL-0073; needs FORGE-01's `role` / `petition` on Sim.Inspect and `Kingdom.FulfilPetition`)
+Run on a desktop window and the phone emulator (667 × 375).
+1. Open the card of a key citizen (the blacksmith, healer, captain, provisioner, elder or merchant). A box
+   "<Role> · arena perk" says "At 80 loyalty, <Name> will lend you <Perk>" (below 80, with "N more loyalty"), or
+   "<Name> stands with you: <Perk> (Pledged)" with an "At 95: …" line, or "(Empowered)". The effect and the "When …"
+   line match the loadout picker's card for that perk (U24). An ordinary citizen has no such box.
+2. A key citizen with an open petition shows a "Petition" box: their request, its cost, the time left and Fulfil.
+   Before FORGE-01 serves `Kingdom.FulfilPetition` there is no Petition box at all (check this on today's build).
+3. With the treasury short: the missing amount in red ("Need 500 Gold") and Fulfil greyed; nothing happens on a tap.
+4. With enough: Fulfil shows a busy state, then "Petition fulfilled"; the treasury drops by the cost, the Petition box
+   goes and loyalty rises. A second quick tap sends nothing more.
+5. Let a petition lapse, then press Fulfil: the reason ("That petition has lapsed.") appears under the button.
+6. Phone emulator: the card is one scrolling column; an open Petition comes first (Fulfil in view without scrolling),
+   then the opinion and the perk box; Fulfil is 44 px tall.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.
