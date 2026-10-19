@@ -22,11 +22,11 @@ None. Additive client API:
 - `.director`.
 
 ## For FORGE-03 (arena HUD, FL-0073)
-- **Where the subtitles are:** ScreenGui `ForgeCrowdCaptions` (DisplayOrder 4), made on the first subtitle and destroyed at done, Results and Lobby. It holds two lines, `Caption_a` and `Caption_b`:
+- **Where the subtitles are:** ScreenGui `ForgeCrowdCaptions` (DisplayOrder 4), made on the first subtitle and destroyed at done, Results and Lobby. It holds two boxes, `Caption_a` and `Caption_b`, each 44 px high so a long line wraps onto two lines (FORGE-07's #199 M1):
   - anchor bottom-centre;
-  - Position y = 0.8 of the screen, plus 30 px for the second line;
-  - width 0.7 of the screen, 28 px high.
-- **Phone overlap:** while the champion's duel touch buttons show, the lines move left of the buttons and above their top. `InputModeArenaController:touchArea()` reports the area: 256 × 224 px from the bottom-right corner on phones, 383 × 392 on tablets. You found that the centred lines covered the buttons on a 667×375 phone; this fixes it.
+  - `Caption_a` sits at y = 0.86 of the screen, and `Caption_b` 48 px above it;
+  - width 0.7 of the screen.
+- **Phone overlap:** while the champion's duel touch buttons show, the boxes move left of the buttons. `InputModeArenaController:touchArea()` reports the area: 256 × 224 px from the bottom-right corner on phones, 383 × 392 on tablets. The boxes start just above Roblox's thumbstick, 148 px up on phones and 220 on tablets, so they stay low and clear of your top HUD. You found that the centred lines covered the buttons on a 667×375 phone; this fixes it.
 - **Your band:** you keep y 0.72–0.86 clear of the arena HUD (your message of 23:33). If this covers anything else of yours on a phone, tell me the safe band and I'll move them.
 - **Showing them yourself:** if you'd rather draw them in your HUD, read `:captions()` and I'll stop making the ScreenGui.
 

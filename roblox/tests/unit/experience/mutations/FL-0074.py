@@ -66,7 +66,12 @@ M = [
  ("FL-0074", K2, 'if self._previewOwned then', 'if false then', "CrowdClient", "the Studio preview plays the scripted duel", "game"),
  # subtitles keep clear of the duel's touch buttons (FORGE-03 on #199)
  ("FL-0074", K2, 'if area ~= nil then -- left of the duel buttons', 'if false then -- left of the duel buttons', "CrowdClient", "left of and above the duel's touch buttons", "game"),
- ("FL-0074", K2, 'label.Position = UDim2.new(0, rule.edge, 1, -(area.top + rule.clear) - (index - 1) * rule.step)', 'label.Position = UDim2.new(0, rule.edge, 1, -area.top - (index - 1) * rule.step)', "CrowdClient", "left of and above the duel's touch buttons", "game"),
+ ("FL-0074", K2, 'label.Position = UDim2.new(0, rule.edge, 1, -bottom - (index - 1) * rule.step)', 'label.Position = UDim2.new(0, rule.edge, 1, -(index - 1) * rule.step)', "CrowdClient", "left of and above the duel's touch buttons", "game"),
  ("FL-0074", K2, 'label.Size = UDim2.new(1, -(area.left + rule.clear + rule.edge), 0, rule.height)', 'label.Size = UDim2.new(1, -area.left, 0, rule.height)', "CrowdClient", "left of and above the duel's touch buttons", "game"),
  ("FL-0074", K2, 'local ok, area = pcall(arena.touchArea, arena)', 'local ok, area = true, arena:touchArea()', "CrowdClient", "left of and above the duel's touch buttons", "game"),
+ # two-line boxes, short names, above the thumbstick (FORGE-07's #199 M1)
+ ("FL-0074", K2, 'else rule.thumbClear.large', 'else rule.thumbClear.small', "CrowdClient", "left of and above the duel's touch buttons", "game"),
+ ("FL-0074", K2, 'NAMES[identity.id] = (string.gsub(identity.name, "%s+Kingdom$", ""))', 'NAMES[identity.id] = identity.name', "CrowdClient", "one line per stand with the kingdom's name", "game"),
+ ("FL-0074", K2, '\theight = 44,', '\theight = 28,', "CrowdClient", "every subtitle fits a two-line box", "game"),
+ ("FL-0074", K2, '\tmaxChars = 80,', '\tmaxChars = 40,', "CrowdClient", "every subtitle fits a two-line box", "game"),
 ]

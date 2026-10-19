@@ -155,15 +155,15 @@ describe("FeedbackCrowdController: sounds and subtitles (FL-0074 part 2a)", func
 		expect(ids(t.plays)).toEqual({ "crowd.roar", "crowd.boo" })
 		expect(t.plays[1].volume).toBe(1)
 		expect(t.crowd:captions()).toEqual({
-			"Crimson Kingdom: (The crowd roars)",
-			"Azure Kingdom: (The stand turns its back)",
+			"Crimson: (The crowd roars)",
+			"Azure: (The stand turns its back)",
 		})
 		expect(seen).toEqual({ "a:roar:crimson", "b:turnBack:azure" })
 		local screen = t.gui:FindFirstChild(CrowdDef.GUI_NAME)
 		assert(screen ~= nil, "the subtitles are shown")
 		expect(screen.ResetOnSpawn).toBe(false)
 		local label = screen:FindFirstChild("Caption_a")
-		expect(label.Text).toBe("Crimson Kingdom: (The crowd roars)")
+		expect(label.Text).toBe("Crimson: (The crowd roars)")
 		expect(label.Visible).toBe(true)
 		expect(label.RichText).toBe(false)
 	end)
@@ -176,7 +176,7 @@ describe("FeedbackCrowdController: sounds and subtitles (FL-0074 part 2a)", func
 		t.crowd:onArenaState(s)
 		t.crowd:onEvents({ { kind = "parry", side = "a" } }) -- hostile good = silence (no sound)
 		expect(ids(t.plays)).toEqual({ "crowd.gasp" })
-		expect(t.crowd:captions()[1]).toBe("Crimson Kingdom: (The stand stays silent)")
+		expect(t.crowd:captions()[1]).toBe("Crimson: (The stand stays silent)")
 	end)
 
 	it("the announcer and a perk stinger duck the crowd's volume", function()
@@ -201,9 +201,9 @@ describe("FeedbackCrowdController: sounds and subtitles (FL-0074 part 2a)", func
 				data = { trigger = "reforge", triggerName = "Reforge", citizenName = "Mara" },
 			},
 		})
-		expect(t.crowd:captions()).toEqual({ "Crimson Kingdom: Mara steps up: Reforge!" })
+		expect(t.crowd:captions()).toEqual({ "Crimson: Mara steps up: Reforge!" })
 		t.crowd:onEvents({ { kind = "hit", side = "a", data = { damage = 0.05 } } }) -- a minor in the same stand
-		expect(t.crowd:captions()).toEqual({ "Crimson Kingdom: Mara steps up: Reforge!" })
+		expect(t.crowd:captions()).toEqual({ "Crimson: Mara steps up: Reforge!" })
 		t.crowd:step(now + CrowdDef.PRIORITY_SEC + 0.01)
 		expect(#t.crowd:captions()).toBe(0)
 		local label = t.gui:FindFirstChild(CrowdDef.GUI_NAME):FindFirstChild("Caption_a")
@@ -224,13 +224,13 @@ describe("FeedbackCrowdController: sounds and subtitles (FL-0074 part 2a)", func
 		t.crowd:onEvents({ { kind = "hype", side = "a", data = { full = true } } })
 		t.env.mock:advance(Crowd.majorGapSec)
 		t.crowd:onEvents({ { kind = "hype", side = "a", data = { full = true } } })
-		expect(t.crowd:captions()[1]).toBe("Crimson Kingdom: Burn bright, Sam!")
+		expect(t.crowd:captions()[1]).toBe("Crimson: Burn bright, Sam!")
 		t.env.mock:advance(Crowd.majorGapSec)
 		t.crowd:onEvents({ { kind = "hype", side = "b", data = { full = true } } })
 		t.env.mock:advance(Crowd.majorGapSec)
 		t.crowd:onEvents({ { kind = "hype", side = "b", data = { full = true } } })
 		-- no name for the AI champion's stand
-		expect(table.find(t.crowd:captions(), "Azure Kingdom: For the kingdom!") ~= nil).toBe(true)
+		expect(table.find(t.crowd:captions(), "Azure: For the kingdom!") ~= nil).toBe(true)
 	end)
 end)
 
@@ -246,20 +246,25 @@ describe("FeedbackCrowdController: where the subtitles sit (FL-0074 part 2a)", f
 		t.crowd:onEvents({ { kind = "parry", side = "a" } })
 		local screen = t.gui:FindFirstChild(CrowdDef.GUI_NAME)
 		local a, b = screen:FindFirstChild("Caption_a"), screen:FindFirstChild("Caption_b")
-		expect(a.Position).toEqual(UDim2.fromScale(0.5, 0.8))
-		expect(b.Position).toEqual(UDim2.new(0.5, 0, 0.8, CrowdDef.LINE.step))
+		expect(a.Position).toEqual(UDim2.fromScale(0.5, 0.86))
+		expect(b.Position).toEqual(UDim2.new(0.5, 0, 0.86, -CrowdDef.LINE.step)) -- stacked upwards
 		expect(a.Size).toEqual(UDim2.new(0.7, 0, 0, CrowdDef.LINE.height))
 		area = { left = 256, top = 224 } -- a phone's duel buttons (InputModeArenaController)
 		t.env.mock:advance(Crowd.majorGapSec)
 		t.crowd:onEvents({ { kind = "parry", side = "b" } })
 		expect(a.AnchorPoint).toEqual(Vector2.new(0, 1))
-		expect(a.Position).toEqual(UDim2.new(0, 16, 1, -232))
-		expect(b.Position).toEqual(UDim2.new(0, 16, 1, -262))
-		expect(a.Size).toEqual(UDim2.new(1, -280, 0, 28)) -- on 667 px: x 16..387, clear of the buttons at 411
+		expect(a.Position).toEqual(UDim2.new(0, 16, 1, -148)) -- just above the thumbstick (~140 px up)
+		expect(b.Position).toEqual(UDim2.new(0, 16, 1, -196))
+		expect(a.Size).toEqual(UDim2.new(1, -280, 0, 44)) -- on 667 px: x 16..387, clear of the buttons at 411
 		area = nil -- the duel is over, the buttons are gone
 		t.env.mock:advance(Crowd.majorGapSec)
 		t.crowd:onEvents({ { kind = "parry", side = "a" } })
-		expect(a.Position).toEqual(UDim2.fromScale(0.5, 0.8))
+		expect(a.Position).toEqual(UDim2.fromScale(0.5, 0.86))
+		-- a tablet's buttons (383 x 392): the boxes start higher, above its bigger thumbstick
+		area = { left = 383, top = 392 }
+		t.env.mock:advance(Crowd.majorGapSec)
+		t.crowd:onEvents({ { kind = "parry", side = "b" } })
+		expect(a.Position).toEqual(UDim2.new(0, 16, 1, -CrowdDef.LINE.thumbClear.large))
 		local broken = boot({
 			touchArea = function()
 				error("not ready")
@@ -268,7 +273,38 @@ describe("FeedbackCrowdController: where the subtitles sit (FL-0074 part 2a)", f
 		broken.crowd:onArenaState(state("duel"))
 		broken.crowd:onEvents({ { kind = "parry", side = "a" } })
 		local caption = broken.gui:FindFirstChild(CrowdDef.GUI_NAME):FindFirstChild("Caption_a")
-		expect(caption.Position).toEqual(UDim2.fromScale(0.5, 0.8))
+		expect(caption.Position).toEqual(UDim2.fromScale(0.5, 0.86))
+	end)
+
+	it("every subtitle fits a two-line box, even with the longest names (FORGE-07's #199 M1)", function()
+		local rule = CrowdDef.LINE
+		expect(rule.height >= 2 * rule.textSize).toBe(true) -- two wrapped lines, not one
+		local prefix = 0
+		for _, kingdom in { "crimson", "azure", "emerald", "gold" } do
+			prefix = math.max(prefix, #CrowdDef.kingdomName(kingdom) + 2)
+		end
+		expect(CrowdDef.kingdomName("emerald")).toBe("Emerald")
+		local name = string.rep("W", 20) -- a long Roblox display name
+		local longest, worst = 0, ""
+		local function check(text)
+			if #text + prefix > longest then
+				longest, worst = #text + prefix, text
+			end
+		end
+		for _, reaction in Crowd.reactions do
+			if reaction.caption ~= nil then
+				check((string.gsub(reaction.caption, "{(%w+)}", string.rep("W", 16))))
+			end
+		end
+		for _, ending in Crowd.endings do
+			check(ending.caption)
+		end
+		for _, lines in Crowd.chants do
+			for _, line in lines do
+				check((string.gsub(line, "{ruler}", name)))
+			end
+		end
+		assert(longest <= rule.maxChars, `{longest} characters with the prefix: "{worst}"`)
 	end)
 end)
 
@@ -279,8 +315,8 @@ describe("FeedbackCrowdController: the ending (FL-0074 part 2a)", function()
 		t.crowd:onArenaState(state("crowning", { winner = A }))
 		expect(ids(t.plays)).toEqual({ "crowd.flood" }) -- a flood for adoring a; hostile b empties (no sound)
 		expect(t.crowd:captions()).toEqual({
-			"Crimson Kingdom: (The stand floods the arena to crown its ruler)",
-			"Azure Kingdom: (The stand empties)",
+			"Crimson: (The stand floods the arena to crown its ruler)",
+			"Azure: (The stand empties)",
 		})
 		t.crowd:onArenaState(state("crowning", { winner = A })) -- a repeated push
 		expect(#t.plays).toBe(1)
@@ -298,8 +334,8 @@ describe("FeedbackCrowdController: the ending (FL-0074 part 2a)", function()
 		t.crowd:onArenaState(state("duel"))
 		t.crowd:onArenaState(state("crowning"))
 		expect(t.crowd:captions()).toEqual({
-			"Crimson Kingdom: (The stand is quiet)",
-			"Azure Kingdom: (The stand is quiet)",
+			"Crimson: (The stand is quiet)",
+			"Azure: (The stand is quiet)",
 		})
 		t.crowd:onEvents({ { kind = "parry", side = "a" } })
 		expect(#t.plays).toBe(0)
@@ -317,8 +353,8 @@ describe("FeedbackCrowdController: Studio preview and headless (FL-0074 part 2a)
 		local now = t.env.clock()
 		t.crowd:step(now + CrowdDef.PREVIEW_STEP_SEC) -- the heavy hit: both tiers from the attribute
 		expect(t.crowd:captions()).toEqual({
-			"Crimson Kingdom: (The crowd roars)",
-			"Azure Kingdom: (The stand turns its back)",
+			"Crimson: (The crowd roars)",
+			"Azure: (The stand turns its back)",
 		})
 		for step = 2, #CrowdDef.PREVIEW + 1 do
 			t.crowd:step(now + step * CrowdDef.PREVIEW_STEP_SEC)
@@ -334,7 +370,7 @@ describe("FeedbackCrowdController: Studio preview and headless (FL-0074 part 2a)
 		t.crowd:onArenaState(state("duel"))
 		expect(t.crowd:preview("loyal,divided")).toBe(false)
 		t.crowd:onEvents({ { kind = "parry", side = "a" } })
-		expect(t.crowd:captions()[1]).toBe("Crimson Kingdom: (The crowd roars)")
+		expect(t.crowd:captions()[1]).toBe("Crimson: (The crowd roars)")
 	end)
 
 	it("without PlayerGui or AudioController it presents nothing and never errors", function()

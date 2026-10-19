@@ -18,14 +18,19 @@
 	Presenting a reaction
 		- Sound: AudioController:play(sound, { volume = director:volume(now) }), a factor on the sound's
 		  own volume. Every crowd sound is "needed" (silent until the owner picks them).
-		- Subtitle: one line per stand in a ScreenGui `ForgeCrowdCaptions` under PlayerGui, made on the
-		  first subtitle: "<Kingdom name>: <caption>", shown CAPTION_SEC; a priority line (a perk, the
-		  ending) shows PRIORITY_SEC and is not replaced by a lesser line meanwhile. RichText is off, so a
-		  display name inside a chant is shown as typed.
-		- Where: bottom-centre (y 0.8, 0.7 wide; FORGE-03 keeps y 0.72–0.86 clear of the arena HUD).
-		  While the champion's duel touch buttons show (InputModeArenaController:touchArea), the lines
-		  move left of the buttons and above their top, which also keeps them off the thumbstick
-		  (FORGE-03 on #199: on a 667x375 phone the centred lines covered the buttons).
+		- Subtitle: one box per stand in a ScreenGui `ForgeCrowdCaptions` under PlayerGui, made on the
+		  first subtitle: "<Kingdom>: <caption>" with the kingdom's short name ("Emerald", not "Emerald
+		  Kingdom"), shown CAPTION_SEC; a priority line (a perk, the ending) shows PRIORITY_SEC and is not
+		  replaced by a lesser line meanwhile. RichText is off, so a display name inside a chant is shown
+		  as typed. Each box holds two wrapped lines (Def.LINE.height), and every caption, with the
+		  longest kingdom name and a 20-character ruler name, stays within Def.LINE.maxChars, about two
+		  lines in the narrowest layout (387 px on a 667x375 phone at ~9.5 px a character; an estimate
+		  until E17: FORGE-07's #199 M1, the 28 px one-line box cut the longest lines off).
+		- Where: bottom-centre, stacked upwards from y 0.86 (0.7 wide; FORGE-03 keeps y 0.72–0.86 clear
+		  of the arena HUD, which sits at the top). While the champion's duel touch buttons show
+		  (InputModeArenaController:touchArea), the boxes move left of the buttons (all buttons are right
+		  of that edge) and sit just above Roblox's thumbstick (Def.LINE.thumbClear), well below the top
+		  HUD (FORGE-03 on #199: on a 667x375 phone the centred lines covered the buttons).
 		- reacted: Signal<(reaction, kingdomId?)>, for the stand figures (part 2b) and FORGE-03's HUD.
 	Studio preview (E17): in Studio only, the local player's attribute ForgeCrowdPreview = "tierA,tierB"
 	(for example "adoring,hostile") plays Def.PREVIEW, a short scripted duel, through the same path,
@@ -56,7 +61,18 @@ Def.CAPTION_SEC = 2.5
 Def.PRIORITY_SEC = 4
 Def.STEP_SEC = 0.25
 Def.GUI_NAME = "ForgeCrowdCaptions"
-Def.LINE = table.freeze({ height = 28, step = 30, edge = 16, clear = 8 }) -- px
+-- px: a box holds two lines at textSize; thumbClear = how far above the bottom the duel layout starts
+-- (Roblox's thumbstick reaches about 140 px up on a phone; tablets have more room). DRAFT until E17.
+Def.LINE = table.freeze({
+	height = 44,
+	step = 48,
+	edge = 16,
+	clear = 8,
+	textSize = 18,
+	maxChars = 80,
+	thumbClear = table.freeze({ small = 148, large = 220 }),
+})
+Def.SMALL_TOUCH_LEFT = 300 -- touchArea().left below this is the phone layout
 Def.DUEL_STAGES = table.freeze({ intro = true, duel = true })
 Def.END_PHASES = table.freeze({ Results = true, Lobby = true })
 Def.PREVIEW_ATTRIBUTE = "ForgeCrowdPreview"
@@ -79,7 +95,12 @@ Def.PREVIEW = table.freeze({
 
 local NAMES: { [string]: string } = {}
 for _, identity in Kingdoms.identities do
-	NAMES[identity.id] = identity.name
+	NAMES[identity.id] = (string.gsub(identity.name, "%s+Kingdom$", "")) -- "Emerald Kingdom" -> "Emerald"
+end
+
+-- The short name a subtitle starts with ("Emerald"), or the id for a kingdom the config lacks.
+function Def.kingdomName(kingdom: string): string
+	return NAMES[kingdom] or kingdom
 end
 
 -- opts (specs): { playerGui, userNames: { [userId]: string }, studio: boolean?, player }
@@ -359,7 +380,7 @@ function Controller:_render()
 				label.BackgroundColor3 = Color3.fromRGB(16, 14, 20)
 				label.BackgroundTransparency = 0.35
 				label.TextColor3 = Color3.fromRGB(255, 255, 255)
-				label.TextSize = 18
+				label.TextSize = Def.LINE.textSize
 				label.Font = Enum.Font.GothamMedium
 				label.TextWrapped = true
 				label.RichText = false
@@ -383,13 +404,16 @@ function Controller:_render()
 			local label = gui:FindFirstChild(`Caption_{stand}`)
 			local line = self._lines[stand]
 			if label ~= nil then
-				if area ~= nil then -- left of the duel buttons and above them, stacking upwards
+				if area ~= nil then -- left of the duel buttons, above the thumbstick, stacking upwards
+					local bottom = if area.left < Def.SMALL_TOUCH_LEFT
+						then rule.thumbClear.small
+						else rule.thumbClear.large
 					label.AnchorPoint = Vector2.new(0, 1)
-					label.Position = UDim2.new(0, rule.edge, 1, -(area.top + rule.clear) - (index - 1) * rule.step)
+					label.Position = UDim2.new(0, rule.edge, 1, -bottom - (index - 1) * rule.step)
 					label.Size = UDim2.new(1, -(area.left + rule.clear + rule.edge), 0, rule.height)
 				else
 					label.AnchorPoint = Vector2.new(0.5, 1)
-					label.Position = UDim2.new(0.5, 0, 0.8, (index - 1) * rule.step)
+					label.Position = UDim2.new(0.5, 0, 0.86, -(index - 1) * rule.step)
 					label.Size = UDim2.new(0.7, 0, 0, rule.height)
 				end
 				label.Text = if line ~= nil then line.text else ""
