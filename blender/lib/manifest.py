@@ -8,6 +8,8 @@ UNREVIEWED automatically.
 
 import json
 import os
+import re
+import struct
 from pathlib import Path
 
 from . import palette, schema
@@ -194,12 +196,109 @@ def kit_budget_errors(doc, measured, looks=None):
     return errs
 
 
+# ---- FL-0136: the environment mesh kit (trees, bushes, rocks, nodes, crops) is gated the same way: every number env.json declares is MEASURED from the
+# shipped FBX. Constants here on purpose (D-057 (19): trees 300-900 triangles; the contract: bushes, rocks and flowers 40-400), independent of env.json.
+ENV_LIMITS = {"tree": (300, 900), "bush": (40, 400), "rock": (40, 400), "flower": (40, 400), "node": (40, 500), "crop": (200, 3000), "prop": (40, 400)}
+ENV_MESH_MAX = 20000
+ENV_FIT = {"radius": 0.15, "height": 0.25}  # the contract's fit window against the part-built stand-in, unless env.json gives the prop a `fit_note`
+ENV_SINK_MAX = 0.6
+ENV_PATH_RE = re.compile(r"(/home/|/Users/|/root/|/tmp/|/mnt/|/var/folders/|(?<![A-Za-z0-9])[A-Za-z]:[\\/][A-Za-z0-9_.-]+)")  # applied to the FBX's text values only (fbxtris.strings)
+ENV_ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
+
+
+def env_budget_errors(doc, measured, bounds=None):
+    """Errors of an env.json document against what the FBX holds ({object name: triangles}, optionally {object name: vertex box}).
+
+    Every prop: present in both, id shape, known family, declared `tris` equals measured and sits inside its family's budget, mesh <= 20,000, base not sunk further than
+    0.6, the footprint within the contract's window of its stand-in (or explained by `fit_note`), the declared box equal to the measured one."""
+    errs = []
+    props = doc.get("props", {})
+    for k in sorted(set(props) - set(measured)):
+        errs.append(f"prop {k} is in env.json but not in the FBX")
+    for k in sorted(set(measured) - set(props)):
+        errs.append(f"FBX object {k} is not a prop of env.json")
+    for k in sorted(set(props) & set(measured)):
+        p = props[k]
+        fam = p.get("family")
+        if not ENV_ID_RE.match(k):
+            errs.append(f"prop {k}: not a valid asset id")
+        if fam not in ENV_LIMITS:
+            errs.append(f"prop {k}: unknown family {fam!r}")
+            continue
+        lo, hi = ENV_LIMITS[fam]
+        if p.get("tris") != measured[k]:
+            errs.append(f"prop {k}: env.json declares {p.get('tris')} triangles, the FBX has {measured[k]}")
+        if not lo <= measured[k] <= hi:
+            errs.append(f"prop {k}: {measured[k]} measured triangles outside the {fam} budget {lo}..{hi}")
+        if not 1 <= measured[k] <= ENV_MESH_MAX:
+            errs.append(f"prop {k}: {measured[k]} triangles is outside 1..{ENV_MESH_MAX}")
+        if p.get("base_y", 0) < -ENV_SINK_MAX:
+            errs.append(f"prop {k}: base_y {p.get('base_y')} sinks further than {ENV_SINK_MAX}")
+        f = p.get("fit")
+        if f and not p.get("fit_note"):
+            if abs(f["radius_ratio"] - 1) > ENV_FIT["radius"]:
+                errs.append(f"prop {k}: footprint radius {f['radius']} vs stand-in {f['standin_radius']} is outside +-{ENV_FIT['radius']:.0%} and has no fit_note")
+            if abs(f["height_ratio"] - 1) > ENV_FIT["height"]:
+                errs.append(f"prop {k}: height {f['height']} vs stand-in {f['standin_height']} is outside +-{ENV_FIT['height']:.0%} and has no fit_note")
+        if bounds and k in bounds:
+            (x0, y0, z0), (x1, y1, z1) = bounds[k]
+            size = [x1 - x0, z1 - z0, y1 - y0]  # Blender object space (z up) -> rig axes
+            if max(abs(a - b) for a, b in zip(size, p.get("size", [0, 0, 0]))) > 0.02:
+                errs.append(f"prop {k}: env.json size {p.get('size')} differs from the FBX vertices {[round(v, 3) for v in size]}")
+    return errs
+
+
+def env_kit_errors(a, repo=REPO):
+    """Measure the committed FBX of the env kit row and compare everything it declares (env.json, the row's own `kit` summary, the file's sha256, no personal paths)."""
+    import hashlib
+
+    from . import fbxtris
+
+    files = a.get("files") or {}
+    if not files.get("env"):
+        return []
+    fbx, env = Path(repo) / files.get("mesh_committed", ""), Path(repo) / files["env"]
+    if not fbx.is_file() or not env.is_file():
+        return [f"{a['id']}: the committed FBX or env.json named by the row is missing ({files.get('mesh_committed')}, {files.get('env')})"]
+    raw = fbx.read_bytes()
+    errs = []
+    try:
+        texts = fbxtris.strings(fbx)
+    except (fbxtris.FbxError, OSError, ValueError, IndexError, struct.error) as e:
+        return [f"{a['id']}: cannot read the FBX: {e}"]
+    for t in texts:  # node names and string properties only: binary vertex data is full of accidental byte pairs
+        if ENV_PATH_RE.search(t):
+            errs.append(f"{a['id']}: the FBX contains a path-like string ({t[:60]!r}): export without a personal path")
+            break
+    sha = hashlib.sha256(raw).hexdigest()
+    doc = json.loads(env.read_text())
+    if doc.get("fbx_sha256") != sha:
+        errs.append(f"{a['id']}: env.json fbx_sha256 {str(doc.get('fbx_sha256'))[:12]} is not the sha256 of the committed FBX {sha[:12]}")
+    kit = a.get("kit") or {}
+    if kit.get("fbx_sha256") != sha:
+        errs.append(f"{a['id']}: the row's kit.fbx_sha256 {str(kit.get('fbx_sha256'))[:12]} is not the sha256 of the committed FBX {sha[:12]}")
+    try:
+        measured = fbxtris.measure(fbx)
+        bounds = fbxtris.measure_bounds(fbx)
+    except (fbxtris.FbxError, OSError, ValueError, IndexError) as e:
+        return errs + [f"{a['id']}: cannot read the FBX: {e}"]
+    errs += [f"{a['id']}: {e}" for e in env_budget_errors(doc, measured, bounds)]
+    if not errs:
+        if kit.get("total_tris") != sum(measured.values()):
+            errs.append(f"{a['id']}: kit.total_tris declares {kit.get('total_tris')}, the FBX has {sum(measured.values())}")
+        if kit.get("max_mesh_tris") != max(measured.values()):
+            errs.append(f"{a['id']}: kit.max_mesh_tris declares {kit.get('max_mesh_tris')}, the FBX has {max(measured.values())}")
+        if kit.get("props") != len(measured):
+            errs.append(f"{a['id']}: kit.props declares {kit.get('props')}, the FBX has {len(measured)} meshes")
+    return errs
+
+
 def kit_errors(a, repo=REPO):
     """Measure the committed FBX of a kit row and compare everything it declares (rig.json, the row's own `kit` summary)."""
     from . import fbxtris
 
     files = a.get("files") or {}
-    if not files.get("mesh_committed"):
+    if files.get("env") or not files.get("mesh_committed"):
         return []
     fbx, rig = Path(repo) / files["mesh_committed"], Path(repo) / files.get("rig", "")
     if not fbx.exists() or not rig.is_file():
@@ -233,6 +332,7 @@ def check(manifest_path=MANIFEST):
     for a in data.get("assets", []):
         errs += provenance_errors(a)
         errs += kit_errors(a)
+        errs += env_kit_errors(a)
     ids = [a["id"] for a in data.get("assets", [])]
     if len(ids) != len(set(ids)):
         errs.append("duplicate ids in manifest")

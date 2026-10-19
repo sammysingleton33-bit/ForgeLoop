@@ -113,7 +113,7 @@ def oak(variant, rng, height=25.0):
              a[2] + (t[2] - a[2]) * (0.92 if forked else 0.8))
         parts.append(S.paint_ramp(S.tube([a, ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 0.4, (a[2] + b[2]) / 2), b], [1.0, 0.8, 0.55], seg=5, color=S.BARK, n=2.5,
                                          tag="limb"), [S.BARK_DARK, S.BARK, S.BARK_LIGHT], rng, 0, tip_y, up=0.2, height=0.3, noise=0.1))
-    return merge(*parts), {"archetype": arch, "lobes": len(lobes)}
+    return S.assemble(parts), {"archetype": arch, "lobes": len(lobes)}
 
 
 # ------------------------------------------------------------------ pine
@@ -157,23 +157,29 @@ def _tier(rng, y0, r0, h, teeth, depth, rot, tip_r, col_lo, col_hi, tag="bough")
     return m
 
 
-def pine(variant, rng, height=30.0):
+PINE_H = [29.6, 32.3, 30.0, 32.6, 30.3, 28.0]  # the stand-in's heights per id (Kit/Props.luau `pine`: 28 to 33)
+BIRCH_H = [22.2, 20.8, 22.6, 21.2, 23.0, 21.6]
+
+
+def pine(variant, rng, height=None):
     """tree_pine_NN: a short bare trunk and 6 to 7 stacked bough tiers with jagged skirts narrowing to a tip (blue-green, lighter on top)."""
+    height = (PINE_H[(variant - 1) % 6] if height is None else height)
     tiers = 6 + (variant % 2)  # 6 or 7
-    lean = rng.uniform(0.015, 0.05)
+    lean = rng.uniform(0.012, 0.035)
     la = rng.uniform(0, math.tau)
     base_r = rng.uniform(7.6, 8.4)
 
     def axis(y):
         return (math.cos(la) * lean * y, math.sin(la) * lean * y)
 
+    H = height - 4.5  # the tiers rise about 4.5 above their last base: the tip lands on `height`
     trunk_h = rng.uniform(3.4, 4.2)
-    trunk_top = height * 0.74
+    trunk_top = H * 0.74
     path = [(0.0, -0.3, 0.0)] + [(axis(y)[0], y, axis(y)[1]) for y in (1.4, trunk_h + 1.0, trunk_top)]
     parts = [S.paint_ramp(S.tube(path, [1.35, 1.1, 0.85, 0.5], seg=6, color=S.BARK, n=2.4, tag="trunk"), [S.BARK_DARK, S.BARK, S.BARK_LIGHT], rng,
                           0, trunk_top, up=0.2, height=0.3, noise=0.1)]
     y = trunk_h - 0.6
-    top = height - 2.6  # the last tier's base; the tip sits above it
+    top = H - 2.6  # the last tier's base; the tip sits above it
     span = top - y
     for i in range(tiers):
         t = i / max(1, tiers - 1)
@@ -190,13 +196,14 @@ def pine(variant, rng, height=30.0):
     ax = axis(height - 3.4)
     parts.append(S.flat(S.paint_ramp(cone(1.1, 3.6, seg=5, y0=height - 3.6, color=S.PINE_LIGHT, smooth=False, tag="tip").move(ax[0], 0, ax[1]),
                                     [S.PINE_MID, S.PINE_LIGHT, S.mix(S.PINE_LIGHT, S.OAK_SUN, 0.3)], rng, height - 3.6, height, up=0.2, height=0.6)))
-    return merge(*parts), {"tiers": tiers}
+    return S.assemble(parts), {"tiers": tiers}
 
 
 # ------------------------------------------------------------------ birch
 
-def birch(variant, rng, height=21.5):
+def birch(variant, rng, height=None):
     """tree_birch_NN: a slim white trunk with dark bark marks and a side stub, a crown of four to five yellow-green lobes."""
+    height = (BIRCH_H[(variant - 1) % 6] - 2.0) if height is None else height  # the crown rises about 2 above the nominal top
     lean = math.radians(rng.uniform(2.0, 5.0))
     la = rng.uniform(0, math.tau)
     ldir = (math.sin(lean) * math.cos(la), math.cos(lean), math.sin(lean) * math.sin(la))
@@ -209,7 +216,7 @@ def birch(variant, rng, height=21.5):
     parts = [S.paint_ramp(S.tube(path, [1.0, 0.8, 0.6, 0.42], seg=6, color=S.BIRCH, n=2.4, tag="trunk"),
                           [S.mix(S.BIRCH, S.BARK_LIGHT, 0.25), S.BIRCH, S.mix(S.BIRCH, (1, 1, 1), 0.25)], rng, 0, top_y, up=0.1, height=0.2, noise=0.05)]
     # dark bark marks: small slabs hugging the trunk at different heights and sides (the birch giveaway)
-    for k in range(5 + variant % 2):
+    for k in range(6 + variant % 2):
         y = rng.uniform(1.6, top_y * 0.82)
         a = rng.uniform(0, math.tau)
         w = rng.uniform(0.55, 0.9)
@@ -235,10 +242,10 @@ def birch(variant, rng, height=21.5):
         y = height - 5.4 + f * 4.6 + rng.uniform(-0.3, 0.3)
         rad = rng.uniform(2.5, 3.2) * (1 - 0.15 * f)
         p = at(y)
-        pts = 16
+        pts = 20
         lobes.append(S.blob(rng, pts, rad, rad * 1.08, rad, p[0] + math.cos(ang) * r, y, p[2] + math.sin(ang) * r, jitter=0.12, squash_bottom=0.25,
                             color=S.BIRCH_LEAF, tag="canopy", yaw=rng.uniform(0, math.tau)))
-    side = S.blob(rng, 14, rng.uniform(2.1, 2.5), rng.uniform(1.9, 2.2), rng.uniform(2.1, 2.5), b[0] + math.cos(sa) * 0.6, b[1] + 0.8, b[2] + math.sin(sa) * 0.6,
+    side = S.blob(rng, 18, rng.uniform(2.1, 2.5), rng.uniform(1.9, 2.2), rng.uniform(2.1, 2.5), b[0] + math.cos(sa) * 0.6, b[1] + 0.8, b[2] + math.sin(sa) * 0.6,
                   jitter=0.12, squash_bottom=0.25, color=S.BIRCH_LEAF, tag="canopy", yaw=rng.uniform(0, math.tau))
     lobes.append(side)
     ymin = min(b_.bounds()[0][1] for b_ in lobes)
@@ -246,4 +253,4 @@ def birch(variant, rng, height=21.5):
     for b_ in lobes:
         S.paint_ramp(b_, S.BIRCH_RAMP, rng, ymin, ymax, up=0.38, height=0.5, noise=0.09)
     parts += lobes
-    return merge(*parts), {"lobes": len(lobes)}
+    return S.assemble(parts), {"lobes": len(lobes)}

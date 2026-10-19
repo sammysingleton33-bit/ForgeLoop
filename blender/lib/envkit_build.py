@@ -80,6 +80,8 @@ def prop_record(p, standins):
     for k, v in p.info.items():
         if k in ("archetype", "shape", "kind", "stage", "rows", "along", "tiers", "lobes", "colours", "stones"):
             rec.setdefault("variant_info", {})[k] = v
+    if p.info.get("fit_scale"):
+        rec["fit_scale"] = p.info["fit_scale"]
     if p.info.get("fit_note"):
         rec["fit_note"] = p.info["fit_note"]
     return rec

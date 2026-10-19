@@ -242,7 +242,8 @@ def test_committed_fbx_matches_rig_json_and_the_manifest_row():
     doc = json.loads(RIG_JSON.read_text())
     rt = ckit_kit.roundtrip_fbx(FBX_COMMITTED, doc)
     assert rt["pass"], rt
-    rows = [a for a in json.loads(MANIFEST.read_text())["assets"] if a.get("files", {}).get("mesh_committed")]
+    # exactly one row owns THIS FBX (the environment kit, FL-0136, is a second committed kit with its own row and its own gate: test_env_kit_budget.py)
+    rows = [a for a in json.loads(MANIFEST.read_text())["assets"] if a.get("files", {}).get("mesh_committed") == FBX_COMMITTED.relative_to(REPO).as_posix()]
     assert [a["id"] for a in rows] == ["char_kit_01"]
     assert rows[0]["files"]["mesh_committed"] == FBX_COMMITTED.relative_to(REPO).as_posix()
     assert rows[0]["geometry_hash"] == doc["geometry_hash"]

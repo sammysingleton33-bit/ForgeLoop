@@ -13,8 +13,9 @@ from generators import _envkit_style as S
 from lib.ckit import M, merge
 
 
-def lump(rng, rx, ry, rz, x=0.0, z=0.0, bottom=-0.35, n=16, jitter=0.15, tilt=(0.0, 0.0), yaw=None, sharp=2.7, flat_bottom=True, color=S.ROCK_MID):
-    """One faceted rock mass standing with its lowest point at y = `bottom`, centred on (x, z)."""
+def lump(rng, rx, ry, rz, x=0.0, z=0.0, bottom=-0.35, n=24, jitter=0.16, tilt=(0.0, 0.0), yaw=None, sharp=3.0, flat_bottom=True, color=S.ROCK_MID, cuts=2):
+    """One faceted rock mass standing with its lowest point at y = `bottom`, centred on (x, z): the hull of jittered super-ellipsoid points, with `cuts`
+    random planes shaving it (points beyond a plane are flattened onto it), so the mass has a few big flat cut faces and sharp edges like split stone."""
     yaw = rng.uniform(0, math.tau) if yaw is None else yaw
     pts = []
     golden = math.pi * (3 - math.sqrt(5))
@@ -28,10 +29,22 @@ def lump(rng, rx, ry, rz, x=0.0, z=0.0, bottom=-0.35, n=16, jitter=0.15, tilt=(0
         sy = math.copysign(abs(uy) ** e, uy)
         sz = math.copysign(abs(uz) ** e, uz)
         k = 1.0 + rng.uniform(-jitter, jitter)
-        pts.append((sx * rx * k, sy * ry * k, sz * rz * k))
+        pts.append([sx * rx * k, sy * ry * k, sz * rz * k])
+    for _ in range(cuts):  # a shaving plane through a random direction, 62-80 % of the way out
+        a = rng.uniform(0, math.tau)
+        el = rng.uniform(-0.2, 0.9)
+        nx, ny, nz = math.cos(a) * math.cos(el), math.sin(el), math.sin(a) * math.cos(el)
+        reach = max(abs(p[0] * nx + p[1] * ny + p[2] * nz) for p in pts) * rng.uniform(0.62, 0.8)
+        for p in pts:
+            d = p[0] * nx + p[1] * ny + p[2] * nz
+            if d > reach:
+                p[0] -= (d - reach) * nx
+                p[1] -= (d - reach) * ny
+                p[2] -= (d - reach) * nz
     if flat_bottom:
-        pts = [(p[0], max(p[1], -ry * 0.62), p[2]) for p in pts]
-    m = S.flat(S.hull(pts, color=color, smooth=False, tag="rock"), "rock")
+        for p in pts:
+            p[1] = max(p[1], -ry * 0.62)
+    m = S.flat(S.hull([tuple(p) for p in pts], color=color, smooth=False, tag="rock"), "rock")
     if tilt[0]:
         m.rot(math.degrees(tilt[0]), "x")
     if tilt[1]:
@@ -41,8 +54,9 @@ def lump(rng, rx, ry, rz, x=0.0, z=0.0, bottom=-0.35, n=16, jitter=0.15, tilt=(0
     return m.move(x, bottom - lo, z)
 
 
-def paint_rock(m, rng, y0, y1, warm=0.0, moss=0.0, ramp=None, noise=0.10, strata=0.0):
-    """Colour a rock mass: height ramp (cool dark foot to warm light top), up-facing faces lighter, per-facet noise, optional strata bands and moss."""
+def paint_rock(m, rng, y0, y1, warm=0.0, moss=0.0, ramp=None, noise=0.11, strata=0.0, tone=0.0):
+    """Colour a rock mass: height ramp (cool dark foot to warm light top), up-facing faces lighter, per-facet noise, optional strata bands, moss on the
+    flatter upper faces and a per-mass tone shift (`tone` > 0 warmer, < 0 cooler) so a pile of lumps is never one grey."""
     stops = ramp or S.ROCK_RAMP
     stops = [S.mix(c, S.ROCK_WARM, warm) for c in stops] if warm else stops
     for i, f in enumerate(m.f):
@@ -50,10 +64,14 @@ def paint_rock(m, rng, y0, y1, warm=0.0, moss=0.0, ramp=None, noise=0.10, strata
         n = S.face_normal(m, f)
         h = (c[1] - y0) / max(1e-6, y1 - y0)
         band = strata * (0.5 - abs((h * 3.0) % 1.0 - 0.5)) if strata else 0.0
-        t = 0.45 * h + 0.35 * (0.5 + 0.5 * n[1]) + rng.uniform(-noise, noise) + 0.1 + band
+        t = 0.32 * h + 0.52 * (0.5 + 0.5 * n[1]) + rng.uniform(-noise, noise) + 0.04 + band
         col = S.ramp(stops, t)
-        if moss and n[1] > 0.55 and h > 0.45 and rng.random() < moss:
-            col = S.mix(col, S.MOSS, rng.uniform(0.7, 1.0))
+        if tone:
+            col = S.mix(col, (0.62, 0.52, 0.42) if tone > 0 else (0.42, 0.5, 0.62), abs(tone))
+        if h < 0.18:  # dirt at the foot
+            col = S.mix(col, S.rgb(88, 78, 62), 0.35)
+        if moss and n[1] > 0.5 and h > 0.4 and rng.random() < moss:
+            col = S.mix(col, S.MOSS, rng.uniform(0.65, 1.0))
         m.c[i] = col
     return m
 
@@ -64,63 +82,80 @@ def _stack(rng, specs, warm=0.0, moss=0.0, strata=0.0):
     y0 = min(m.bounds()[0][1] for m in lumps)
     y1 = max(m.bounds()[1][1] for m in lumps)
     for m in lumps:
-        paint_rock(m, rng, y0, y1, warm=warm, moss=moss, strata=strata)
+        paint_rock(m, rng, y0, y1, warm=warm, moss=moss, strata=strata, tone=rng.uniform(-0.12, 0.14))
     return lumps
 
 
 # ------------------------------------------------------------------ boulders
 
+def _chips(rng, n, r_in, r_out, size, bottom=-0.25):
+    """Small rocks scattered on the ground round a mass (specs for _stack)."""
+    out = []
+    for _ in range(n):
+        a = rng.uniform(0, math.tau)
+        d = rng.uniform(r_in, r_out)
+        s_ = size * rng.uniform(0.6, 1.1)
+        out.append((s_, s_ * 0.7, s_ * 0.9, math.cos(a) * d, math.sin(a) * d, bottom, dict(n=12, cuts=1, tilt=(rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4)))))
+    return out
+
+
 def boulder(size, variant, rng):
-    """rock_boulder_{s,m,l}_NN. The three variants of a size differ in structure (pair / slab / cairn), not only in scale."""
+    """rock_boulder_{s,m,l}_NN. The three variants of a size differ in structure (pair / slab / cairn, stack / wedge / cluster, massif / spire / ledge), not only in scale."""
     k = rng.uniform(0.94, 1.08)
     a = rng.uniform(0, math.tau)
     tilt = lambda mag: mag * rng.uniform(0.75, 1.15) * (1 if rng.random() < 0.5 else -1)  # noqa: E731
-    warm = [0.0, 0.35, 0.15][(variant - 1) % 3]
+    warm = [0.0, 0.3, 0.12][(variant - 1) % 3]
+    strata = [0.0, 0.0, 0.2][(variant - 1) % 3]
     if size == "s":
         shape = ["pair", "slab", "cairn"][(variant - 1) % 3]
         if shape == "pair":
-            specs = [(2.5 * k, 1.5, 2.1 * k, -0.4, 0.0, -0.4, dict(n=16, tilt=(tilt(0.22), tilt(0.2)))),
-                     (1.8 * k, 1.35, 1.55 * k, 1.6, 0.9, -0.3, dict(n=14, tilt=(tilt(0.3), tilt(0.3)), color=S.ROCK_TOP))]
+            specs = [(2.8 * k, 1.9, 2.4 * k, -0.4, 0.0, -0.4, dict(n=28, tilt=(tilt(0.22), tilt(0.2)))),
+                     (2.0 * k, 1.5, 1.7 * k, 1.8, 1.0, -0.3, dict(n=22, tilt=(tilt(0.3), tilt(0.3)), color=S.ROCK_TOP))]
         elif shape == "slab":
-            specs = [(3.2 * k, 1.2, 2.3 * k, 0.0, 0.0, -0.4, dict(n=16, sharp=3.4, tilt=(tilt(0.12), tilt(0.18)))),
-                     (1.3 * k, 1.0, 1.1 * k, 2.4, 1.3, -0.3, dict(n=12, tilt=(tilt(0.3), tilt(0.3))))]
+            specs = [(3.5 * k, 1.4, 2.5 * k, 0.0, 0.0, -0.4, dict(n=28, sharp=3.6, tilt=(tilt(0.12), tilt(0.18)), cuts=3)),
+                     (1.5 * k, 1.1, 1.3 * k, 2.6, 1.4, -0.3, dict(n=16, tilt=(tilt(0.3), tilt(0.3))))]
         else:
-            specs = [(2.0 * k, 1.6, 1.8 * k, -0.7, 0.2, -0.4, dict(n=14)), (1.6 * k, 1.3, 1.4 * k, 1.5, -0.5, -0.35, dict(n=12, tilt=(tilt(0.3), 0.0))),
-                     (1.2 * k, 1.0, 1.1 * k, 0.4, 1.6, -0.3, dict(n=12, tilt=(0.0, tilt(0.3))))]
-        lumps = _stack(rng, specs, warm=warm, moss=0.25 if variant == 2 else 0.0)
+            specs = [(2.2 * k, 1.8, 2.0 * k, -0.8, 0.2, -0.4, dict(n=24)), (1.8 * k, 1.5, 1.6 * k, 1.6, -0.5, -0.35, dict(n=20, tilt=(tilt(0.3), 0.0))),
+                     (1.4 * k, 1.2, 1.3 * k, 0.4, 1.8, -0.3, dict(n=18, tilt=(0.0, tilt(0.3))))]
+        specs += _chips(rng, 2 + variant % 2, 3.0, 4.2, 0.55)
+        lumps = _stack(rng, specs, warm=warm, moss=0.3 if variant == 2 else 0.0, strata=strata)
     elif size == "m":
         shape = ["stack", "wedge", "cluster"][(variant - 1) % 3]
         pa = a + rng.uniform(2.2, 4.0)
         if shape == "stack":
-            specs = [(3.5 * k, 1.9, 2.9 * k, 0.0, 0.0, -0.4, dict(n=18, tilt=(tilt(0.2), tilt(0.2)))),
-                     (2.4 * k, 1.8, 1.9 * k, 0.5, -0.3, 1.1, dict(n=16, tilt=(tilt(0.3), tilt(0.28)), color=S.ROCK_TOP))]
+            specs = [(3.9 * k, 2.2, 3.2 * k, 0.0, 0.0, -0.4, dict(n=30, tilt=(tilt(0.2), tilt(0.2)))),
+                     (2.7 * k, 2.0, 2.1 * k, 0.5, -0.3, 1.3, dict(n=26, tilt=(tilt(0.3), tilt(0.28)), color=S.ROCK_TOP))]
         elif shape == "wedge":
-            specs = [(3.3 * k, 2.6, 2.6 * k, 0.0, 0.0, -0.4, dict(n=18, sharp=3.0, tilt=(tilt(0.3), tilt(0.14)))),
-                     (1.8 * k, 1.4, 1.5 * k, -1.8, 1.0, 1.0, dict(n=12, tilt=(tilt(0.3), tilt(0.3))))]
+            specs = [(3.7 * k, 3.0, 2.9 * k, 0.0, 0.0, -0.4, dict(n=30, sharp=3.2, tilt=(tilt(0.3), tilt(0.14)), cuts=3)),
+                     (2.0 * k, 1.6, 1.7 * k, -2.0, 1.1, 1.0, dict(n=18, tilt=(tilt(0.3), tilt(0.3))))]
         else:
-            specs = [(2.6 * k, 2.0, 2.4 * k, -1.0, 0.3, -0.4, dict(n=16)), (2.3 * k, 1.9, 2.0 * k, 1.8, -0.6, -0.4, dict(n=16, tilt=(tilt(0.25), tilt(0.25)))),
-                     (1.7 * k, 1.5, 1.5 * k, 0.4, 0.2, 1.2, dict(n=14, tilt=(tilt(0.3), tilt(0.3))))]
-        specs.append((0.95, 0.7, 0.9, math.cos(pa) * 4.2, math.sin(pa) * 4.2, -0.25, dict(n=10, tilt=(0.3, 0.3))))
-        lumps = _stack(rng, specs, warm=warm, moss=0.35 if variant == 3 else 0.0)
+            specs = [(2.9 * k, 2.2, 2.7 * k, -1.1, 0.3, -0.4, dict(n=26)), (2.6 * k, 2.1, 2.2 * k, 2.0, -0.6, -0.4, dict(n=26, tilt=(tilt(0.25), tilt(0.25)))),
+                     (1.9 * k, 1.7, 1.7 * k, 0.4, 0.2, 1.4, dict(n=20, tilt=(tilt(0.3), tilt(0.3))))]
+        specs.append((1.0, 0.8, 0.95, math.cos(pa) * 4.2, math.sin(pa) * 4.2, -0.25, dict(n=14, tilt=(0.3, 0.3))))
+        specs += _chips(rng, 2, 3.2, 4.4, 0.6)
+        lumps = _stack(rng, specs, warm=warm, moss=0.35 if variant == 3 else 0.0, strata=strata)
     else:  # l
         shape = ["massif", "spire", "ledge"][(variant - 1) % 3]
-        g = 1.0
         if shape == "massif":
-            specs = [(6.4 * k, 2.1, 5.2 * k, 0.0, 0.0, -0.45, dict(n=24, sharp=2.9, tilt=(tilt(0.12), tilt(0.1)))),
-                     (4.1 * k, 2.6, 3.4 * k, -0.9, 0.7, 1.2, dict(n=22, sharp=2.9, tilt=(tilt(0.28), tilt(0.24)))),
-                     (2.9 * k, 1.9, 2.5 * k, math.cos(a + 2.6) * 6.4, math.sin(a + 2.6) * 6.4, -0.4, dict(n=16, tilt=(tilt(0.3), tilt(0.3)), color=S.ROCK_TOP))]
+            specs = [(6.9 * k, 2.5, 5.6 * k, 0.0, 0.0, -0.45, dict(n=36, sharp=3.1, tilt=(tilt(0.12), tilt(0.1)), cuts=3)),
+                     (4.5 * k, 3.0, 3.7 * k, -0.9, 0.7, 1.3, dict(n=32, sharp=3.1, tilt=(tilt(0.28), tilt(0.24)), cuts=3)),
+                     (3.3 * k, 2.2, 2.8 * k, math.cos(a + 2.6) * 7.0, math.sin(a + 2.6) * 7.0, -0.4, dict(n=24, tilt=(tilt(0.3), tilt(0.3)), color=S.ROCK_TOP)),
+                     (2.2 * k, 1.6, 1.9 * k, math.cos(a - 0.6) * 7.4, math.sin(a - 0.6) * 7.4, -0.35, dict(n=16, tilt=(tilt(0.3), tilt(0.3))))]
         elif shape == "spire":
-            specs = [(5.4 * k, 2.2, 4.6 * k, 0.0, 0.0, -0.45, dict(n=22, sharp=2.9, tilt=(tilt(0.12), tilt(0.1)))),
-                     (2.8 * k, 4.2, 2.6 * k, 0.6, 0.2, 0.6, dict(n=20, sharp=3.2, tilt=(tilt(0.12), tilt(0.14)))),
-                     (3.0 * k, 1.9, 2.5 * k, math.cos(a + 2.2) * 6.0, math.sin(a + 2.2) * 6.0, -0.4, dict(n=16, tilt=(tilt(0.3), tilt(0.3)))),
-                     (2.0 * k, 1.5, 1.8 * k, math.cos(a - 1.0) * 6.8, math.sin(a - 1.0) * 6.8, -0.4, dict(n=14, tilt=(tilt(0.3), tilt(0.3))))]
+            specs = [(5.8 * k, 2.4, 5.0 * k, 0.0, 0.0, -0.45, dict(n=34, sharp=3.1, tilt=(tilt(0.12), tilt(0.1)), cuts=3)),
+                     (3.1 * k, 4.6, 2.9 * k, 0.6, 0.2, 0.7, dict(n=30, sharp=3.3, tilt=(tilt(0.12), tilt(0.14)), cuts=3)),
+                     (3.4 * k, 2.2, 2.8 * k, math.cos(a + 2.2) * 6.8, math.sin(a + 2.2) * 6.8, -0.4, dict(n=22, tilt=(tilt(0.3), tilt(0.3)))),
+                     (2.3 * k, 1.7, 2.0 * k, math.cos(a - 1.0) * 7.6, math.sin(a - 1.0) * 7.6, -0.4, dict(n=18, tilt=(tilt(0.3), tilt(0.3)))),
+                     (1.7 * k, 1.3, 1.5 * k, math.cos(a + 0.6) * 5.2, math.sin(a + 0.6) * 5.2, -0.3, dict(n=14, tilt=(tilt(0.4), tilt(0.4))))]
         else:
-            specs = [(6.0 * k, 2.0, 4.6 * k, 0.0, 0.0, -0.45, dict(n=22, sharp=3.2, tilt=(tilt(0.1), tilt(0.1)))),
-                     (4.6 * k, 1.9, 3.4 * k, -0.6, 0.4, 1.2, dict(n=20, sharp=3.2, tilt=(tilt(0.14), tilt(0.2)))),
-                     (3.2 * k, 1.8, 2.5 * k, 0.2, 0.0, 2.7, dict(n=16, sharp=3.0, tilt=(tilt(0.2), tilt(0.2)), color=S.ROCK_TOP)),
-                     (2.8 * k, 1.8, 2.4 * k, math.cos(a + 2.7) * 6.8, math.sin(a + 2.7) * 6.8, -0.4, dict(n=14, tilt=(tilt(0.3), tilt(0.3))))]
-        lumps = _stack(rng, specs, warm=warm, moss=0.5, strata=0.18 if shape == "ledge" else 0.0)
-    return merge(*lumps), {"shape": shape, "lumps": len(lumps)}
+            specs = [(6.5 * k, 2.3, 5.0 * k, 0.0, 0.0, -0.45, dict(n=34, sharp=3.4, tilt=(tilt(0.1), tilt(0.1)), cuts=3)),
+                     (5.0 * k, 2.2, 3.8 * k, -0.6, 0.4, 1.3, dict(n=32, sharp=3.4, tilt=(tilt(0.14), tilt(0.2)), cuts=3)),
+                     (3.5 * k, 2.1, 2.8 * k, 0.2, 0.0, 3.0, dict(n=26, sharp=3.2, tilt=(tilt(0.2), tilt(0.2)), color=S.ROCK_TOP)),
+                     (3.1 * k, 2.1, 2.7 * k, math.cos(a + 2.7) * 7.4, math.sin(a + 2.7) * 7.4, -0.4, dict(n=22, tilt=(tilt(0.3), tilt(0.3)))),
+                     (1.9 * k, 1.4, 1.7 * k, math.cos(a - 0.4) * 7.2, math.sin(a - 0.4) * 7.2, -0.3, dict(n=14, tilt=(tilt(0.4), tilt(0.4))))]
+        specs += _chips(rng, 3, 5.5, 8.0, 0.9)
+        lumps = _stack(rng, specs, warm=warm, moss=0.55, strata=0.22 if shape == "ledge" else strata)
+    return S.assemble(lumps), {"shape": shape, "lumps": len(lumps)}
 
 
 def cliff(variant, rng):
@@ -133,7 +168,7 @@ def cliff(variant, rng):
              (2.6 * k, 3.2, 2.2 * k, -0.2, 0.2, 4.8, dict(n=18, sharp=3.2, tilt=(tilt(0.16), tilt(0.16)), color=S.ROCK_TOP)),
              (2.8 * k, 2.2, 2.4 * k, math.cos(a + 2.4) * 5.6, math.sin(a + 2.4) * 5.6, -0.4, dict(n=16, tilt=(tilt(0.3), tilt(0.3))))]
     lumps = _stack(rng, specs, warm=0.1 * variant, moss=0.35, strata=0.15)
-    return merge(*lumps), {"lumps": len(lumps)}
+    return S.assemble(lumps), {"lumps": len(lumps)}
 
 
 # ------------------------------------------------------------------ resource nodes
@@ -188,7 +223,7 @@ def quarry(variant, rng):
             n = S.face_normal(p, f)
             t = 0.55 + 0.35 * (c[1] / y1) + 0.18 * n[1] + rng.uniform(-0.05, 0.05)
             p.c[i] = S.mul(base, min(1.12, max(0.8, t)))
-    return merge(*parts), {"stones": variant}
+    return S.assemble(parts), {"stones": variant}
 
 
 def ore(variant, rng):
@@ -231,7 +266,7 @@ def ore(variant, rng):
                 n = S.face_normal(nug, face)
                 nug.c[fi] = S.mix(S.mul(col, 0.72), S.mix(col, (1, 1, 1), 0.28 if kind == "gold" else 0.18), min(1.0, 0.5 + 0.5 * n[1] + rng.uniform(-0.15, 0.15)))
             parts.append(nug)
-    return merge(*parts), {"kind": kind}
+    return S.assemble(parts), {"kind": kind}
 
 
 def _log(rng, x, y, z, length, r, yaw_deg, bark=S.BARK):
@@ -265,4 +300,4 @@ def wood(variant, rng):
     handle = S.flat(S.slab([(-0.14, -0.14), (0.14, -0.14), (0.14, 0.14), (-0.14, 0.14)], 0.0, 2.6, S.WOOD, tag="axe")).rot(rng.uniform(18, 28), "z").move(5.5, 1.6, 2.6)
     head = S.flat(S.slab([(-0.55, -0.11), (0.55, -0.11), (0.55, 0.11), (-0.55, 0.11)], 0.0, 0.8, S.IRON, tag="axe")).move(4.6, 1.6, 2.6)
     parts += [handle, head]
-    return merge(*parts), {}
+    return S.assemble(parts), {}

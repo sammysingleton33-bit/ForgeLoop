@@ -9476,6 +9476,111 @@
       "validation_pass": true
     },
     {
+      "budget_class": "env_kit",
+      "category": "env",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Box"
+      },
+      "dimensions_studs": {
+        "x": 38.1,
+        "y": 33.021,
+        "z": 28.0
+      },
+      "double_sided": false,
+      "files": {
+        "env": "games/game-001/art/env_kit/env.json",
+        "mesh": "exports/env_kit.fbx",
+        "mesh_committed": "games/game-001/art/env_kit/env_kit.fbx",
+        "validation": "exports/env_kit.validation.json"
+      },
+      "generator": "env_kit",
+      "generator_version": 1,
+      "geometry_hash": "f90cd04fb269e0a9",
+      "id": "env_kit_01",
+      "kingdom": null,
+      "kit": {
+        "families": {
+          "bush": {
+            "props": 8,
+            "tris_max": 268,
+            "tris_min": 140,
+            "tris_total": 1616
+          },
+          "crop": {
+            "props": 8,
+            "tris_max": 2072,
+            "tris_min": 1164,
+            "tris_total": 13458
+          },
+          "flower": {
+            "props": 6,
+            "tris_max": 254,
+            "tris_min": 254,
+            "tris_total": 1524
+          },
+          "node": {
+            "props": 11,
+            "tris_max": 218,
+            "tris_min": 148,
+            "tris_total": 2038
+          },
+          "prop": {
+            "props": 3,
+            "tris_max": 196,
+            "tris_min": 72,
+            "tris_total": 352
+          },
+          "rock": {
+            "props": 11,
+            "tris_max": 268,
+            "tris_min": 116,
+            "tris_total": 1974
+          },
+          "tree": {
+            "props": 20,
+            "tris_max": 490,
+            "tris_min": 318,
+            "tris_total": 8042
+          }
+        },
+        "fbx_sha256": "54404443560f10d81be7b48a59206cb92749453892239862347e4f73bfcdebc4",
+        "max_mesh_tris": 2072,
+        "props": 67,
+        "style": "B",
+        "total_tris": 29004
+      },
+      "license": "project-original",
+      "material": "M_envkit_vc",
+      "params": {
+        "families": [
+          "bush",
+          "crop",
+          "flower",
+          "node",
+          "prop",
+          "rock",
+          "tree"
+        ],
+        "props": 67,
+        "style": "B"
+      },
+      "preview": "previews/env_kit.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "verdict": "UNREVIEWED"
+      },
+      "seed": 7,
+      "sockets": {},
+      "texture": "none (vertex colours, 0 bytes of texture memory)",
+      "triangles": {
+        "budget_lod0": 3000,
+        "lod0": 2072,
+        "lod1": 72
+      },
+      "validation_pass": true
+    },
+    {
       "budget_class": "building_medium",
       "category": "farm",
       "collision": {

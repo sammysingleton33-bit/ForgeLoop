@@ -6,6 +6,7 @@ Blender renders are not Studio renders.
 """
 
 import argparse
+import math
 import hashlib
 import json
 import sys
@@ -35,7 +36,7 @@ def parse(argv):
     ap = argparse.ArgumentParser()
     ap.add_argument("--ids", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--dist", type=float, default=82.0)
+    ap.add_argument("--dist", type=float, default=0.0, help="0 = fit the row in the frame")
     ap.add_argument("--pitch", type=float, default=44.3)
     ap.add_argument("--size", default="1280x720")
     ap.add_argument("--samples", type=int, default=16)
@@ -114,7 +115,11 @@ def main(argv):
     cam = rig.add_camera(sc, 70)
     zmax = max(cz for _, _, cz in layout)
     th = a.target_h or 8.0
-    ckit_scene.gameplay(cam, (0.0, th, zmax / 2 - 2.0), a.dist, a.pitch, az_deg=a.az, fov=70.0)
+    dist = a.dist
+    if not dist:
+        half_h = math.tan(math.radians(35.0)) * w / h
+        dist = (widest / 2 + 4.0) / half_h * 1.08 + zmax / 2 + 6.0
+    ckit_scene.gameplay(cam, (0.0, th, zmax / 2 - 2.0), dist, a.pitch, az_deg=a.az, fov=70.0)
     rig.render(sc, a.out)
     print("rendered", a.out, flush=True)
 

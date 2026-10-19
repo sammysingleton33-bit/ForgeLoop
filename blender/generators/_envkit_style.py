@@ -31,9 +31,9 @@ BIRCH = rgb(232, 226, 210)
 BIRCH_MARK = rgb(59, 53, 48)
 BIRCH_LEAF = rgb(156, 201, 74)
 BIRCH_LEAF_LIGHT = rgb(196, 222, 106)
-ROCK_BASE = rgb(106, 110, 118)
+ROCK_BASE = rgb(98, 102, 112)
 ROCK_MID = rgb(136, 136, 138)
-ROCK_TOP = rgb(172, 170, 162)
+ROCK_TOP = rgb(184, 180, 168)
 ROCK_WARM = rgb(158, 150, 138)
 MOSS = rgb(96, 132, 62)
 STONE_LIGHT = rgb(184, 178, 168)
@@ -56,7 +56,7 @@ WHEAT = rgb(230, 194, 90)
 OAK_RAMP = [mul(LEAF_DARK, 0.78), LEAF_DARK, LEAF, LEAF_LIGHT, OAK_SUN]
 PINE_RAMP = [mul(PINE, 0.85), PINE, PINE_MID, PINE_LIGHT]
 BIRCH_RAMP = [mul(BIRCH_LEAF, 0.74), mul(BIRCH_LEAF, 0.9), BIRCH_LEAF, BIRCH_LEAF_LIGHT]
-BUSH_RAMP = [mul(LEAF_DARK, 0.9), LEAF, LEAF_LIGHT, mix(LEAF_LIGHT, OAK_SUN, 0.5)]
+BUSH_RAMP = [mul(LEAF_DARK, 0.95), LEAF, LEAF_LIGHT, mix(LEAF_LIGHT, OAK_SUN, 0.28)]
 ROCK_RAMP = [mul(ROCK_BASE, 0.84), ROCK_BASE, ROCK_MID, ROCK_TOP]
 
 
@@ -127,6 +127,49 @@ def blob(rng, n, rx, ry=None, rz=None, cx=0.0, cy=0.0, cz=0.0, jitter=0.14, squa
     return flat(m, tag)
 
 
+_PHI = (1 + math.sqrt(5)) / 2
+_ICO_V = [(-1, _PHI, 0), (1, _PHI, 0), (-1, -_PHI, 0), (1, -_PHI, 0), (0, -1, _PHI), (0, 1, _PHI), (0, -1, -_PHI), (0, 1, -_PHI), (_PHI, 0, -1), (_PHI, 0, 1), (-_PHI, 0, -1),
+          (-_PHI, 0, 1)]
+_ICO_F = [(0, 11, 5), (0, 5, 1), (0, 1, 7), (0, 7, 10), (0, 10, 11), (1, 5, 9), (5, 11, 4), (11, 10, 2), (10, 7, 6), (7, 1, 8), (3, 9, 4), (3, 4, 2), (3, 2, 6), (3, 6, 8), (3, 8, 9),
+          (4, 9, 5), (2, 4, 11), (6, 2, 10), (8, 6, 7), (9, 8, 1)]
+
+
+def ico(rng, rx, ry=None, rz=None, cx=0.0, cy=0.0, cz=0.0, jitter=0.08, subdiv=0, squash_bottom=0.0, color=LEAF, tag="", yaw=None):
+    """A regular faceted lump: a jittered icosahedron (20 triangles) or its one-level subdivision (80), flat shaded. Cleaner than `blob` for small props:
+    its facets are even-sized, so a bush or a berry reads as a deliberate low-poly gem instead of a crumpled hull."""
+    ry = rx if ry is None else ry
+    rz = rx if rz is None else rz
+    yaw = rng.uniform(0, math.tau) if yaw is None else yaw
+    verts = [tuple(c / math.sqrt(sum(q * q for q in v)) for c in v) for v in _ICO_V]
+    faces = [tuple(f) for f in _ICO_F]
+    if subdiv:
+        mid, nv, nf = {}, list(verts), []
+
+        def mp(a, b):
+            k = (min(a, b), max(a, b))
+            if k not in mid:
+                p = tuple((nv[a][i] + nv[b][i]) / 2 for i in range(3))
+                ln = math.sqrt(sum(q * q for q in p))
+                nv.append(tuple(q / ln for q in p))
+                mid[k] = len(nv) - 1
+            return mid[k]
+
+        for a, b, c in faces:
+            ab, bc, ca = mp(a, b), mp(b, c), mp(c, a)
+            nf += [(a, ab, ca), (b, bc, ab), (c, ca, bc), (ab, bc, ca)]
+        verts, faces = nv, nf
+    c_, s_ = math.cos(yaw), math.sin(yaw)
+    pts = []
+    for v in verts:
+        k = 1.0 + rng.uniform(-jitter, jitter)
+        x, y, z = v[0] * rx * k, v[1] * ry * k, v[2] * rz * k
+        if y < 0 and squash_bottom:
+            y *= 1.0 - squash_bottom
+        pts.append((cx + x * c_ - z * s_, cy + y, cz + x * s_ + z * c_))
+    m = M(pts, faces, color=color, smooth=False, tag=tag).fix_winding()
+    return flat(m, tag)
+
+
 def paint_ramp(m, stops, rng, y0, y1, up=0.40, height=0.45, noise=0.10, where=None):
     """Colour every face (or those passing `where(cx, cy, cz, normal)`) from a dark-to-light ramp: higher and up-facing faces are lighter."""
     for i, f in enumerate(m.f):
@@ -170,6 +213,39 @@ def bounds(m):
 def radius_xz(m):
     """Largest horizontal distance of any vertex from the pivot axis."""
     return max(math.hypot(p[0], p[2]) for p in m.v)
+
+
+def fit_to(m, radius, height, tol=0.07):
+    """Bring a prop's footprint radius (half the mean of its x and z extents) and height (its top above y = 0) within `tol` of the stand-in's figures.
+
+    Only the outliers move, and only to the edge of the window (so natural variation inside it is kept): xz about the pivot axis, y about the ground plane.
+    Returns (kr, kh), the scale factors applied (1.0 = untouched)."""
+    (x0, y0, z0), (x1, y1, z1) = m.bounds()
+    r = (x1 - x0 + z1 - z0) / 4.0
+    h = y1
+    kr = kh = 1.0
+    if r > 0 and radius:
+        q = r / radius
+        kr = (1 + tol) / q if q > 1 + tol else (1 - tol) / q if q < 1 - tol else 1.0
+    if h > 0 and height:
+        q = h / height
+        kh = (1 + tol) / q if q > 1 + tol else (1 - tol) / q if q < 1 - tol else 1.0
+    if kr != 1.0 or kh != 1.0:
+        m.map(lambda p: (p[0] * kr, p[1] * kh, p[2] * kr))
+    return round(kr, 3), round(kh, 3)
+
+
+def assemble(parts, name=""):
+    """Merge the parts of one prop into one mesh after the floating-part check: every part must stand on the ground or touch another part's box."""
+    flat_parts = []
+    for p in parts:
+        if p is None:
+            continue
+        flat_parts += list(p) if isinstance(p, (list, tuple)) else [p]
+    bad = weld_check(flat_parts)
+    if bad:
+        raise AssertionError(f"{name or 'prop'}: floating part(s) {bad} ({[flat_parts[i].k[0] if flat_parts[i].k else '?' for i in bad]})")
+    return merge(*flat_parts)
 
 
 def weld_check(parts, tol=0.15):

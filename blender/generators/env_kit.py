@@ -71,7 +71,7 @@ def _plan():
     for i, pid in enumerate(_ids("tree_birch", 6), 1):
         add(pid, "tree", lambda rng, i=i: TR.birch(i, rng))
     for i, pid in enumerate(_ids("bush", 8), 1):
-        add(pid, "bush", lambda rng, i=i: PL.bush(i, rng), node=(i == 3))  # bush_03 is the world's food node
+        add(pid, "bush", lambda rng, i=i: PL.bush(i, rng))
     for i, pid in enumerate(_ids("plant_flowers", 6), 1):
         add(pid, "flower", lambda rng, i=i: PL.flowers(i, rng))
     for size in ("s", "m", "l"):
@@ -101,12 +101,30 @@ def all_ids():
     return [p[0] for p in _plan()]
 
 
+# families whose footprint and height are brought inside the stand-in's window by a small non-uniform scale when a design lands outside it
+# (crops are exact by construction; stage ids and the growth stages inherit the wheat stand-in)
+FIT_FAMILIES = ("tree", "bush", "rock", "flower", "node", "prop")
+FIT_TOL = 0.07
+
+
+def _standin_for(pid, standins):
+    return standins.get(pid) or standins.get("farm_field_wheat_01" if "wheat_stage" in pid else pid)
+
+
 def registry(seed=SEED, only=None):
     """{asset id: Prop} in a stable order. `only`: a set of ids to build (the dev renders); None = all."""
+    from lib import envkit_standin
+
+    standins = envkit_standin.load()["standins"]
     out = {}
     for pid, family, node, builder in _plan():
         if only is not None and pid not in only:
             continue
         m, info = builder(S.rng_for(pid, seed))
-        out[pid] = Prop(pid, family, m, node=node, info=info)
+        st = _standin_for(pid, standins)
+        if st and family in FIT_FAMILIES:
+            kr, kh = S.fit_to(m, (st["size"][0] + st["size"][2]) / 4.0, st["size"][1], FIT_TOL)
+            if (kr, kh) != (1.0, 1.0):
+                info["fit_scale"] = [kr, kh]
+        out[pid] = Prop(pid, family, m, node=bool(node or (st and st["node"])), info=info)  # node: the world places this id as a resource node too
     return out

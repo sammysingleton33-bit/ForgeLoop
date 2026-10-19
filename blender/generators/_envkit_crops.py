@@ -127,20 +127,29 @@ def wheat(variant, rng, stage=3):
         elif variant == 2:
             for z in (-FD * 0.3, 0.0, FD * 0.3):
                 parts.append(_sheaf(rng, -FW / 2 + 0.9, z + rng.uniform(-1, 1), 2.3, 1.0, S.rgb(226, 170, 70), S.rgb(176, 128, 52)))
-            for _ in range(7):  # poppies among the rows
+            for _ in range(7):  # poppies among the rows, on short stems
                 px, pz = rng.uniform(-FW / 2 + 3, FW / 2 - 3), rng.uniform(-FD / 2 + 3, FD / 2 - 3)
-                parts.append(S.blob(rng, 6, 0.36, 0.3, 0.36, px, BED + tuft_h + 0.5, pz, jitter=0.08, color=S.FLOWER["red"], tag="poppy"))
+                parts.append(S.flat(S.slab([(-0.07, -0.06), (0.07, -0.06), (0.0, 0.08)], BED, BED + tuft_h + 0.2, S.LEAF_DARK, tag="stem")).move(px, 0.0, pz))
+                parts.append(S.blob(rng, 8, 0.42, 0.3, 0.42, px, BED + tuft_h + 0.42, pz, jitter=0.08, color=S.FLOWER["red"], tag="poppy"))
         else:
             # a scarecrow in the middle of the worn path: post, cross arm, sack head and a hat
             cx, cz = 0.0, -2.0
-            post = S.flat(S.slab([(-0.14, -0.14), (0.14, -0.14), (0.14, 0.14), (-0.14, 0.14)], BED, BED + 2.9, S.WOOD, tag="scarecrow")).move(cx, 0.0, cz)
-            arm = S.flat(S.slab([(-1.5, -0.1), (1.5, -0.1), (1.5, 0.1), (-1.5, 0.1)], 0.0, 0.2, S.WOOD, tag="scarecrow")).move(cx, BED + 2.1, cz)
-            head = S.blob(rng, 8, 0.45, 0.45, 0.45, cx, BED + 3.05, cz, jitter=0.06, color=S.rgb(220, 200, 150), tag="scarecrow")
-            hat = S.flat(S.cone(0.75, 0.55, seg=5, y0=BED + 3.3, color=S.rgb(120, 78, 46), smooth=False, tag="scarecrow")).move(cx, 0.0, cz)
+            post = S.flat(S.slab([(-0.16, -0.16), (0.16, -0.16), (0.16, 0.16), (-0.16, 0.16)], BED, BED + 3.1, S.WOOD, tag="scarecrow")).move(cx, 0.0, cz)
+            arm = S.flat(S.slab([(-1.5, -0.12), (1.5, -0.12), (1.5, 0.12), (-1.5, 0.12)], 0.0, 0.22, S.WOOD, tag="scarecrow")).move(cx, BED + 2.2, cz)
+            head = S.blob(rng, 8, 0.46, 0.46, 0.46, cx, BED + 3.3, cz, jitter=0.06, color=S.rgb(220, 200, 150), tag="scarecrow")
+            hat = S.flat(S.cone(0.78, 0.55, seg=5, y0=BED + 3.55, color=S.rgb(120, 78, 46), smooth=False, tag="scarecrow")).move(cx, 0.0, cz)
             parts += [post, arm, head, hat]
             for x in (-FW * 0.36, FW * 0.36):
                 parts.append(_sheaf(rng, x, FD / 2 - 0.9, 2.2, 0.95, S.rgb(214, 196, 110), S.rgb(176, 150, 70)))
-    return merge(*parts), {"stage": stage, "rows": rows, "along": "x" if along_x else "z"}
+    info = {"stage": stage, "rows": rows, "along": "x" if along_x else "z"}
+    if stage == 3 and variant == 3:
+        info["fit_note"] = ("the scarecrow reaches 4.2 studs (a citizen is 5.4) so it reads at 82 studs; the crop itself stands 2.9, the same row height as the farm "
+                            "building's own wheat beside it (2.2 + ears 1.3)")
+    elif stage == 3:
+        info["fit_note"] = "ears and sheaves stand 2.9-3.1 against the stand-in's flat 2.4 slab: the farm building's own wheat rows beside it are 3.5 (2.2 + ears 1.3)"
+    elif stage < 3:
+        info["fit_note"] = "a growth stage: shorter than the ripe field by design (stage 1 furrows and shoots, stage 2 green wheat)"
+    return S.assemble(parts), info
 
 
 def _cabbage(rng, x, z, d, light, y0=BED + 0.25):
@@ -177,7 +186,7 @@ def cabbage(variant, rng):
             x = (k - 3.5) * 4.2 + rng.uniform(-0.35, 0.35) + (1.0 if (r + variant) % 2 else -0.6)
             col = shades[(k + r + variant) % 3]
             parts += _cabbage(rng, x, z + rng.uniform(-0.2, 0.2), d, col)
-    return merge(*parts), {}
+    return S.assemble(parts), {}
 
 
 def haystack(variant, rng):
@@ -203,7 +212,7 @@ def haystack(variant, rng):
     for dz in (-0.35, 0.0, 0.35):
         tine = S.flat(S.slab([(-0.05, -0.05), (0.05, -0.05), (0.05, 0.05), (-0.05, 0.05)], 0.0, 1.0, S.IRON, tag="fork")).rot(-18, "z").move(4.6, 4.6, -0.8 + dz)
         parts.append(tine)
-    return merge(*parts), {}
+    return S.assemble(parts), {}
 
 
 def fence(variant, rng):
@@ -223,4 +232,4 @@ def fence(variant, rng):
         for k in range(len(r.f)):
             r.c[k] = S.mul(S.WOOD_LIGHT, rng.uniform(0.92, 1.05))
         parts.append(S.flat(r))
-    return merge(*parts), {}
+    return S.assemble(parts), {}
