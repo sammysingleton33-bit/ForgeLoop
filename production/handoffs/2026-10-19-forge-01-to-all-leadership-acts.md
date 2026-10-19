@@ -11,7 +11,7 @@ Stacked on #216 (leadership ledger).
 - `overConscription`: soldiers above `conscription.soldierShareAbove` (35 %) of soldiers + citizens for more than 60 s, once per episode.
 - Each is recorded for every ruler seated in the kingdom, or for the "no ruler" series when an AI holds it, through the same `record` (so the valour cap, the moment text and the `acted` signal apply).
 - Thresholds are PROVISIONAL config `Support.rules`.
-- Specs `sim/LeadershipService` (24, on a shortened clock: 5 s samples, 12 s waits; the logic reads only the config); mutation rows `FL-0069.py` (45, all caught).
+- Specs `sim/LeadershipService` (27, on a shortened clock: 5 s samples, 12 s waits; the logic reads only the config); mutation rows `FL-0069.py` (55, all caught; FORGE-07 ran them at bdd57959, I re-ran each re-anchored row).
 
 ## Not yet
 Producers that need other services: raids defended or abandoned, valour in combat, objectives captured in person, rebuilds, overwork quotas, houses before barracks. Citizen loyalty from memory events, key citizens, petitions.
