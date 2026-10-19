@@ -30,7 +30,7 @@
 		swordShield  a straight blade (1 hand) and a round shield held in front of the hand (a Tool is one hand: the shield rides it)
 		greatsword   a long broad blade, a wide guard (2 hands)
 		spear        a 9-stud shaft with a leaf head and a kingdom pennant (2 hands)
-		mace         a short haft and a studded ball head (a morning star) with a kingdom ribbon (1 hand)
+		mace         a 5-stud haft and a studded ball head (a morning star) held clear above the wearer's head, with a kingdom ribbon (1 hand)
 ]]
 
 local Parts = require("./Parts")
@@ -246,7 +246,7 @@ local function lightSet(color: Color3): { Accessory }
 	local cap = accessory("light", "LightCap", "HatAttachment", {
 		ballSpec("Cap", 1.7, CFrame.new(0, 0.12, 0), LEATHER, M.Fabric),
 		rodSpec("Brim", 0.14, 2.35, CFrame.new(0, -0.38, 0), LEATHER_DARK, M.Fabric),
-		feather(2.4, 0.26, 32, Vector3.new(0.55, 0.5, 0.35), 1),
+		feather(2.8, 0.34, 28, Vector3.new(0.55, 0.5, 0.35), 1),
 	}, color)
 	local jerkin = accessory("light", "LightJerkin", "BodyFrontAttachment", {
 		boxSpec("Vest", Vector3.new(1.8, 1.55, 0.2), CFrame.new(0, 0, -0.12), LEATHER, M.Fabric),
@@ -261,17 +261,17 @@ local function lightSet(color: Color3): { Accessory }
 			1
 		),
 	}, color)
-	-- a short cape on a mantle: the kingdom colour in a big flying shape (so the light set is not the plain one)
+	-- a long swept cape on a mantle and a tall feather: the kingdom colour in a big flying shape (so the light set is not the plain one)
 	local cloak = accessory("light", "LightCloak", "BodyBackAttachment", {
 		boxSpec(
 			"Cape",
-			Vector3.new(2.0, 2.1, 0.16),
-			CFrame.new(0, -0.55, 0.3) * CFrame.Angles(rad(-7), 0, 0),
+			Vector3.new(2.7, 2.7, 0.16),
+			CFrame.new(0, -0.9, 0.34) * CFrame.Angles(rad(-12), 0, 0),
 			C.cloth,
 			M.Fabric,
 			1
 		),
-		boxSpec("Mantle", Vector3.new(2.4, 0.5, 0.55), CFrame.new(0, 0.62, 0.22), C.cloth, M.Fabric, 0.78),
+		boxSpec("Mantle", Vector3.new(2.6, 0.5, 0.6), CFrame.new(0, 0.62, 0.22), C.cloth, M.Fabric, 0.78),
 	}, color)
 	return { cap, jerkin, cloak }
 end
@@ -311,8 +311,8 @@ local function mediumSet(color: Color3): { Accessory }
 	}, color)
 	local function cop(piece: string, attach: string, side: number): Accessory
 		return pauldron("medium", piece, attach, side, {
-			ballSpec("Cop", 1.4, CFrame.new(0.3, 0.2, 0), STEEL, M.Metal),
-			rodSpec("Cap", 0.16, 1.0, CFrame.new(0.3, 0.8, 0), C.cloth, M.Fabric, 1),
+			ballSpec("Cop", 1.3, CFrame.new(0.5, 0.5, 0), STEEL, M.Metal),
+			rodSpec("Cap", 0.16, 0.9, CFrame.new(0.5, 1.1, 0), C.cloth, M.Fabric, 1),
 		}, color)
 	end
 	return {
@@ -345,22 +345,22 @@ local function heavySet(color: Color3): { Accessory }
 		return pauldron("heavy", piece, attach, side, {
 			boxSpec(
 				"Spaulder",
-				Vector3.new(1.7, 0.55, 1.7),
-				CFrame.new(0.5, 0.15, 0) * CFrame.Angles(0, 0, rad(-16)),
+				Vector3.new(1.5, 0.6, 1.5),
+				CFrame.new(0.5, 0.08, 0) * CFrame.Angles(0, 0, rad(-8)),
 				PLATE,
 				M.Metal
 			),
 			boxSpec(
 				"Lames",
-				Vector3.new(1.45, 0.45, 1.45),
-				CFrame.new(0.62, -0.32, 0) * CFrame.Angles(0, 0, rad(-16)),
+				Vector3.new(1.25, 0.45, 1.3),
+				CFrame.new(0.6, -0.4, 0) * CFrame.Angles(0, 0, rad(-8)),
 				STEEL,
 				M.Metal
 			),
 			boxSpec(
 				"Ridge",
-				Vector3.new(1.3, 0.2, 0.55),
-				CFrame.new(0.5, 0.52, 0) * CFrame.Angles(0, 0, rad(-16)),
+				Vector3.new(1.3, 0.2, 0.5),
+				CFrame.new(0.5, 0.42, 0) * CFrame.Angles(0, 0, rad(-8)),
 				C.cloth,
 				M.Fabric,
 				1
@@ -465,16 +465,16 @@ local function weaponSpecs(weapon: string): ({ Spec }, number, number)
 	elseif weapon == "mace" then
 		local specs: { Spec } = {
 			rodSpec("Handle", 1.1, 0.4, CFrame.new(0, 0, 0), LEATHER, M.Fabric),
-			rodSpec("Haft", 3.0, 0.3, CFrame.new(0, 0.8, 0), LEATHER_DARK, M.Wood),
-			ballSpec("Head", 1.4, CFrame.new(0, 2.7, 0), IRON, M.Metal),
+			rodSpec("Haft", 4.4, 0.32, CFrame.new(0, 1.5, 0), LEATHER_DARK, M.Wood),
+			ballSpec("Head", 1.4, CFrame.new(0, 4.2, 0), IRON, M.Metal),
 			boxSpec(
 				"Spike",
 				Vector3.new(0.5, 0.5, 0.5),
-				CFrame.new(0, 3.5, 0) * CFrame.Angles(0, rad(45), rad(45)),
+				CFrame.new(0, 5.05, 0) * CFrame.Angles(0, rad(45), rad(45)),
 				STEEL,
 				M.Metal
 			),
-			boxSpec("Ribbon", Vector3.new(0.1, 1.5, 0.34), CFrame.new(0, 1.5, 0.3), C.cloth, M.Fabric, 1),
+			boxSpec("Ribbon", Vector3.new(0.1, 1.6, 0.34), CFrame.new(0, 2.9, 0.3), C.cloth, M.Fabric, 1),
 			ballSpec("Pommel", 0.5, CFrame.new(0, -0.8, 0), IRON, M.Metal),
 		}
 		-- four studs round the ball's equator (a morning-star mace): square rods turned 45 degrees about their own axis, so each
@@ -485,7 +485,7 @@ local function weaponSpecs(weapon: string): ({ Spec }, number, number)
 				boxSpec(
 					`Stud{i + 1}`,
 					Vector3.new(0.5, 0.5, 1.0),
-					CFrame.new(0, 2.7, 0)
+					CFrame.new(0, 4.2, 0)
 						* CFrame.Angles(0, rad(90 * i), 0)
 						* CFrame.new(0, 0, 0.95)
 						* CFrame.Angles(0, 0, rad(45)),
@@ -494,7 +494,7 @@ local function weaponSpecs(weapon: string): ({ Spec }, number, number)
 				)
 			)
 		end
-		return specs, 3.78, 1
+		return specs, 5.5, 1
 	end
 	error(`Kit.weapon: unknown weapon {weapon} (swordShield | greatsword | spear | mace)`)
 end

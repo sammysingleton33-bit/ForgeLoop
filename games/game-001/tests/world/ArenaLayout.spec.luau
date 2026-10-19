@@ -33,12 +33,15 @@ local function halfExtents(p: BasePart): Vector3
 	)
 end
 
--- the arena's real extents on the ground plane, from the built model (not the Root plate)
-local function realHalf(): Vector2
+-- the ground blend (a sloped skirt and a sand path at each gate, never above the apron) reaches 4 studs past the structure
+local GROUND = { Skirt = true, PathRamp = true, PathSlab = true }
+
+-- the arena's real extents on the ground plane, from the built model (not the Root plate); the structure alone, or with the blend
+local function realHalf(withGround: boolean): Vector2
 	local m = Kit.arena()
 	local hx, hz = 0, 0
 	for _, d in m:GetDescendants() do
-		if d:IsA("BasePart") and d ~= m.PrimaryPart then
+		if d:IsA("BasePart") and d ~= m.PrimaryPart and (withGround or not GROUND[d.Name]) then
 			local e, c = halfExtents(d), d.CFrame.Position
 			hx = math.max(hx, math.abs(c.X) + e.X)
 			hz = math.max(hz, math.abs(c.Z) + e.Z)
@@ -47,8 +50,10 @@ local function realHalf(): Vector2
 	return Vector2.new(hx, hz)
 end
 
-local REAL = realHalf()
+local REAL = realHalf(false)
+local REAL_GROUND = realHalf(true)
 local ARENA_RECT = { cf = ARENA.cframe, half = REAL, kind = "arena" }
+local GROUND_RECT = { cf = ARENA.cframe, half = REAL_GROUND, kind = "arena" }
 
 local function rectDist(x: number, z: number): number
 	return WorldPlan.rectDistance(ARENA_RECT, x, z)
@@ -218,6 +223,57 @@ describe("Layout.arena site (clear of the watchtower zone, plaza, roads, nodes, 
 	end)
 
 	it(
+		"keeps the ground blend (skirt and gate paths) 14 studs off the plaza, roads, nodes and objectives, and on flat ground",
+		function()
+			expect(REAL_GROUND.X).toBeLessThanOrEqual(ARENA.footprint.X / 2 + Kit.ARENA.GROUND_REACH + 1e-3) -- 4 studs past the plate
+			expect(REAL_GROUND.Y).toBeLessThanOrEqual(ARENA.footprint.Y / 2 + Kit.ARENA.GROUND_REACH + 1e-3)
+			expect(REAL_GROUND.X).toBeGreaterThan(REAL.X + 3) -- and the paths do reach out
+			local function ground(x: number, z: number): number
+				return WorldPlan.rectDistance(GROUND_RECT, x, z)
+			end
+			for _, o in Layout.objectives do
+				local p = o.cframe.Position
+				expect(ground(p.X, p.Z) - o.radius).toBeGreaterThanOrEqual(14)
+			end
+			local roads = FEATURES.roads
+			local last = roads[1].points[#roads[1].points]
+			expect(ground(last.X, last.Y) - HUB_PLAZA).toBeGreaterThanOrEqual(14)
+			for i, road in roads do
+				local best = math.huge
+				for j = 1, #road.points - 1 do
+					local a, b = road.points[j], road.points[j + 1]
+					local n = math.max(1, math.ceil((b - a).Magnitude))
+					for k = 0, n do
+						local p = a:Lerp(b, k / n)
+						best = math.min(best, ground(p.X, p.Y))
+					end
+				end
+				if best - road.width / 2 < 14 then
+					error(`road {i} comes within {best - road.width / 2} studs of the arena's ground blend`)
+				end
+			end
+			for _, node in Layout.resourceNodes do
+				local p = node.cframe.Position
+				expect(ground(p.X, p.Z) - NODE_KEEP_OUT).toBeGreaterThanOrEqual(10)
+			end
+			for _, e in Layout.nav.edges do
+				local a, b = Layout.nav.nodes[e[1]], Layout.nav.nodes[e[2]]
+				for k = 0, math.max(1, math.ceil((b - a).Magnitude)) do
+					local p = a:Lerp(b, k / math.max(1, math.ceil((b - a).Magnitude)))
+					expect(ground(p.X, p.Z)).toBeGreaterThan(10) -- no unit path crosses the sand
+				end
+			end
+			-- the ground under the whole blend is level (the skirt and path lie on the grass at y = 0)
+			for ix = -1, 1, 0.25 do
+				for iz = -1, 1, 0.25 do
+					local w = ARENA.cframe * Vector3.new(ix * REAL_GROUND.X, 0, iz * REAL_GROUND.Y)
+					expect(WorldPlan.groundHeight(Layout, w.X, w.Z)).toBe(FEATURES.groundY)
+				end
+			end
+		end
+	)
+
+	it(
 		"stands on flat ground at y = 0 with level ground 8 studs all round (no hill under or beside the stands)",
 		function()
 			local gy = FEATURES.groundY
@@ -257,6 +313,10 @@ describe("WorldPlan keeps decor out of the arena and its surroundings are never 
 						error(
 							`{p.assetId} ({p.feature}) at ({q.X}, {q.Z}) is {WorldPlan.rectDistance(rect, q.X, q.Z)} from the arena, needs {need}`
 						)
+					end
+					-- and never stands on the ground blend (the skirt and sand paths reach 4 studs past the plate)
+					if WorldPlan.rectDistance(GROUND_RECT, q.X, q.Z) < WorldPlan.footprintRadius(p.assetId) - 1e-6 then
+						error(`{p.assetId} at ({q.X}, {q.Z}) stands on the arena's ground blend`)
 					end
 				end
 			end

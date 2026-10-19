@@ -70,11 +70,14 @@ local function halfExtents(p: BasePart): Vector3
 	)
 end
 
--- bounds of every visible part but the Root plate
+-- the ground blend (skirt wedges, gate sand ramps and paths) reaches past the plan; everything else stays inside it
+local GROUND = { Skirt = true, PathRamp = true, PathSlab = true }
+
+-- bounds of every visible part but the Root plate and the ground blend
 local function bounds(model: Model): (Vector3, Vector3)
 	local lo, hi = Vector3.new(math.huge, math.huge, math.huge), Vector3.new(-math.huge, -math.huge, -math.huge)
 	for _, p in parts(model) do
-		if p ~= model.PrimaryPart then
+		if p ~= model.PrimaryPart and not GROUND[p.Name] then
 			local e, c = halfExtents(p), p.CFrame.Position
 			lo = lo:Min(c - e)
 			hi = hi:Max(c + e)
@@ -309,6 +312,42 @@ describe("Kit.arena structure (the Kit model convention)", function()
 	end)
 
 	it(
+		"blends into the ground: a 10-part skirt and sand path, none above the slab, within 4 studs of the plate",
+		function()
+			local m = Kit.arena()
+			local plate = m.PrimaryPart :: BasePart
+			local n = { Skirt = 0, PathRamp = 0, PathSlab = 0 }
+			local reachX, reachZ = 0, 0
+			for _, p in parts(m) do
+				if GROUND[p.Name] then
+					n[p.Name] += 1
+					local e, c = halfExtents(p), p.CFrame.Position
+					expect(c.Y + e.Y).toBeLessThanOrEqual(ARENA.SLAB_TOP + 1e-3) -- never above the apron's top
+					expect(c.Y - e.Y).toBeGreaterThanOrEqual(-1e-3) -- never under the ground
+					reachX = math.max(reachX, math.abs(c.X) + e.X)
+					reachZ = math.max(reachZ, math.abs(c.Z) + e.Z)
+				end
+			end
+			expect(n.Skirt).toBe(6) -- two stand sides, two either side of each gate path
+			expect(n.PathRamp).toBe(2)
+			expect(n.PathSlab).toBe(2)
+			expect(reachX).toBeLessThanOrEqual(plate.Size.X / 2 + ARENA.GROUND_REACH + 1e-3)
+			expect(reachZ).toBeLessThanOrEqual(plate.Size.Z / 2 + ARENA.GROUND_REACH + 1e-3)
+			expect(reachX).toBeGreaterThan(plate.Size.X / 2 + 3) -- and it does reach out: the paths
+			-- every skirt slope starts against the apron: its tall wall (local +Z) faces the arena's centre
+			for _, p in parts(m) do
+				if p.Name == "Skirt" or p.Name == "PathRamp" then
+					local toApron = -p.CFrame.LookVector -- the wall's direction (local +Z) in the world
+					local c = p.CFrame.Position
+					local inward = Vector3.new(-c.X, 0, -c.Z).Unit
+					-- a side skirt's wall faces the centre along its own axis
+					expect(toApron:Dot(inward)).toBeGreaterThan(0.5)
+				end
+			end
+		end
+	)
+
+	it(
 		"covers the duel radius with floor: sand to the ring plus a margin, the painted line at the duel radius",
 		function()
 			local m = Kit.arena()
@@ -528,6 +567,47 @@ describe("Kit.arena kingdom dress (D-033 silhouette, D-039 emblem: never colour 
 		end
 		expect(n).toBe(2)
 	end)
+
+	it(
+		"gives emerald a flat hoarding roof, not a pyramid: the four caps differ in outline at 170 studs (FL-0072 review)",
+		function()
+			local function capTops(color: Color3): ({ number }, number)
+				local m = Kit.arena(color, color)
+				local widths = {}
+				local topY = 0
+				for _, side in { "A", "B" } do
+					for _, p in parts(dressOf(m, side)) do
+						if p.Name == "HoardingRoof" then
+							table.insert(widths, p.Size.X)
+							expect(p.Size.Y).toBeLessThan(1) -- a slab
+							expect(p.Size.X).toBeGreaterThan(7) -- wider than the hoarding under it
+							expect(p.Size.X).toBe(p.Size.Z)
+						end
+					end
+				end
+				for _, p in parts(m) do
+					if
+						p.Name ~= "Flag"
+						and p.Name ~= "FlagPole"
+						and p.Name ~= "FlagFinial"
+						and p.Name ~= "StandardPole"
+					then
+						topY = math.max(topY, p.CFrame.Position.Y + p.Size.Y / 2)
+					end
+				end
+				return widths, topY
+			end
+			local emerald = capTops(CANON.emerald)
+			expect(#emerald).toBe(6) -- the royal roof and two gate caps, on each side
+			expect(#(capTops(CANON.azure))).toBe(0)
+			expect(#(capTops(CANON.gold))).toBe(0)
+			expect(#(capTops(CANON.crimson))).toBe(0)
+			-- a hoarding is a low box: the gate towers' caps stand lower than azure's pyramid
+			local _, emeraldTop = capTops(CANON.emerald)
+			local _, azureTop = capTops(CANON.azure)
+			expect(emeraldTop).toBeLessThan(azureTop)
+		end
+	)
 
 	for _, kingdom in KINGDOMS do
 		it(`dresses {kingdom} with its tower-cap silhouette and its emblem on every banner, plaque and rug`, function()

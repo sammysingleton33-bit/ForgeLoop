@@ -68,6 +68,9 @@ Arena.RING_RADIUS = 23 -- the sand disc
 Arena.DUEL_RADIUS = 21 -- the painted line; Layout.arena.duelRadius
 Arena.SPAWN_X = 13 -- |x| of the champions' marks
 Arena.SLAB_TOP = 0.8 -- the apron slab's top above the ground
+Arena.SKIRT_RUN = 3.0 -- the ground blend: a sloped skirt this wide round the apron, and a short sand path at each gate
+Arena.PATH_LEN = 1.5
+Arena.GROUND_REACH = 4.0 -- the blend reaches at most this far past the Root plate (WorldPlan keeps decor 4 studs off the plate)
 Arena.FLOOR_TOP = 1.12 -- the ring floor's top: where champions stand
 Arena.SPAWN_HEIGHT = 3 -- spawn marks, above the floor (like the plots' spawns above the ground)
 Arena.STAND_HALF = 29 -- rows span x in [-29, 29]
@@ -225,6 +228,47 @@ local function buildFloor(ctx: Ctx)
 	column(ctx, "Dais", 5, 0.38, o, S.light, M.Slate)
 	column(ctx, "DaisRing", 3.8, 0.44, o, IVORY, M.SmoothPlastic)
 	column(ctx, "DaisEye", 1.8, 0.5, o, S.dark, M.Slate)
+end
+
+-- The ground blend (FL-0072 review: the plinth sat raw on the grass): a skirt of wedges sloping from the apron's top to the ground
+-- on all four sides, and at each gate a sand ramp and a short flat path in the passage's width. 10 parts, none above SLAB_TOP.
+-- A wedge's tall wall is its local +Z, so each is turned to put that wall against the apron.
+local function buildGround(ctx: Ctx)
+	local fp = Arena.FOOTPRINT
+	local ax, az = (fp.X - 1) / 2, (fp.Y - 1) / 2 -- the apron's half extents
+	local run = Arena.SKIRT_RUN
+	local pathHalf = GATE_PASS - 0.2
+	local function skirt(length: number, cf: CFrame)
+		wedge(ctx, "Skirt", Vector3.new(length, SLAB_TOP, run), cf, S.base, M.Cobblestone)
+	end
+	-- the stand sides (+Z and -Z of the plan), each the full apron length
+	skirt(2 * ax, CFrame.new(0, SLAB_TOP / 2, -(az + run / 2 - 0.05)))
+	skirt(2 * ax, CFrame.new(0, SLAB_TOP / 2, az + run / 2 - 0.05) * CFrame.Angles(0, PI, 0))
+	-- the gate sides (+X and -X): two skirts either side of the path, the sand ramp between them
+	local len = az - pathHalf
+	for _, sx in { -1, 1 } do
+		local turn = CFrame.Angles(0, -sx * PI / 2, 0)
+		local x = sx * (ax + run / 2 - 0.05)
+		for _, sz in { -1, 1 } do
+			skirt(len, CFrame.new(x, SLAB_TOP / 2, sz * (pathHalf + len / 2)) * turn)
+		end
+		wedge(
+			ctx,
+			"PathRamp",
+			Vector3.new(2 * pathHalf, SLAB_TOP, run),
+			CFrame.new(x, SLAB_TOP / 2, 0) * turn,
+			SAND_EDGE,
+			M.Sand
+		)
+		block(
+			ctx,
+			"PathSlab",
+			Vector3.new(Arena.PATH_LEN, 0.12, 2 * pathHalf),
+			CFrame.new(sx * (ax + run + Arena.PATH_LEN / 2), 0.06, 0),
+			SAND_EDGE,
+			M.Sand
+		)
+	end
 end
 
 local function buildStand(ctx: Ctx, F: CFrame)
@@ -399,6 +443,42 @@ end
 
 -- ------------------------------------------------------------------ kingdom dress
 
+-- A kingdom's cap on a tower or the royal roof. Emerald's is an overhanging timber hoarding under a FLAT kingdom roof (not the
+-- Kit's low pyramid, which read like azure's pyramid at 170 studs: the review), so the four caps are a spire, a pyramid, a flat
+-- slab and a dome. The others are the Kit's.
+local function kingdomCap(
+	ctx: Ctx,
+	style: string,
+	w: number,
+	y: number,
+	color: Color3,
+	x: number,
+	z: number,
+	flagH: number?
+)
+	if style ~= "emerald" then
+		return Pieces.towerCap(ctx, style, w, y, color, x, z, flagH)
+	end
+	block(ctx, "HoardingBeam", Vector3.new(w + 2.8, 0.6, w + 2.8), CFrame.new(x, y + 0.3, z), C.timber, M.Wood)
+	block(ctx, "Hoarding", Vector3.new(w + 2.4, 3.1, w + 2.4), CFrame.new(x, y + 1.85, z), C.wood, M.WoodPlanks)
+	block(
+		ctx,
+		"HoardingRoof",
+		Vector3.new(w + 3.6, 0.7, w + 3.6),
+		CFrame.new(x, y + 3.75, z),
+		shade(color, 1.2),
+		M.SmoothPlastic,
+		1.2
+	)
+	local top = y + 4.1
+	if flagH and flagH > 0 then
+		Pieces.flagpole(ctx, x, top - 0.3, z, flagH, color, style)
+		return top + flagH
+	end
+	ball(ctx, "HoardingFinial", 0.7, Vector3.new(x, top + 0.2, z), C.gold, M.Metal)
+	return top + 0.6
+end
+
 -- One side's kingdom parts, in their own sub-model so they can be rebuilt on their own. A neutral colour gives the neutral dress.
 local function buildDress(model: Model, root: BasePart, side: string, color: Color3)
 	local dress = Instance.new("Model")
@@ -415,7 +495,7 @@ local function buildDress(model: Model, root: BasePart, side: string, color: Col
 	-- the tribune
 	box(ctx, F, "RoyalRoof", 0, ROOF_Y + 0.35, zc, 2 * hw + 1.4, 0.7, depth + 0.6, shade(color, 0.9), M.Fabric, 0.9)
 	local capAt = F:PointToWorldSpace(Vector3.new(0, 0, zc))
-	Pieces.towerCap(ctx, style, 4.6, ROOF_Y + 0.7, color, capAt.X, capAt.Z, 3.5)
+	kingdomCap(ctx, style, 4.6, ROOF_Y + 0.7, color, capAt.X, capAt.Z, 3.5)
 	local roofFront = ROYAL_FACE - 0.1
 	box(ctx, F, "RoyalValance", 0, ROOF_Y - 0.6, roofFront, 2 * hw + 1.4, 1.2, 0.2, shade(color, 0.85), M.Fabric, 0.85)
 	Pieces.emblemPlaque(ctx, F * CFrame.new(0, 6.9, ROYAL_FACE - 0.25), 4.4, color)
@@ -472,7 +552,7 @@ local function buildDress(model: Model, root: BasePart, side: string, color: Col
 	-- the champion's gate: a kingdom cap on each tower, a banner on each tower face and the crest over the passage
 	for _, tx in { -1, 1 } do
 		local at = G:PointToWorldSpace(Vector3.new(tx * TOWER_X, 0, TOWER_Z))
-		Pieces.towerCap(ctx, style, 4.2, TOWER_TOP + 0.03, color, at.X, at.Z) -- 0.03 clear of the merlons' bottoms (never coplanar)
+		kingdomCap(ctx, style, 4.2, TOWER_TOP + 0.03, color, at.X, at.Z) -- 0.03 clear of the merlons' bottoms (never coplanar)
 		local face = G:PointToWorldSpace(Vector3.new(tx * TOWER_X, 0, Arena.GATE_Z + 0.1))
 		Pieces.banner(
 			ctx,
@@ -567,6 +647,7 @@ function Arena.build(colorA: Color3?, colorB: Color3?): Model
 	model:SetAttribute("ArenaDuelRadius", Arena.DUEL_RADIUS)
 	model:SetAttribute("ArenaSeatsPerStand", Arena.SEATS_PER_STAND)
 	buildFloor(ctx)
+	buildGround(ctx)
 	for _, side in { "A", "B" } do
 		buildStand(ctx, FRAME_STAND[side])
 		buildTribune(ctx, FRAME_STAND[side])

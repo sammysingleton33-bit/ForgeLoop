@@ -1,7 +1,7 @@
 --[[
 	Kit.crowdFigure (FL-0072, FORGE-02; CONTRACTS G12.6, design/crown-arena.md §7; D-026, D-033): the Crown Arena's
-	crowd. At most 4 primitive parts, client-only (no Root, Humanoid, motors, welds or scripts), deterministic, pivoted on the feet and
-	facing -Z, kingdom-coloured with the kingdom's crest shape (never colour alone), eight variants so a stand is not a row of
+	crowd. At most 4 primitive parts (8 for the six key citizens, CONTRACTS v0.4-g11a), client-only (no Root, Humanoid, motors, welds or scripts), deterministic, pivoted on the feet and
+	facing -Z, kingdom-coloured with the kingdom's crest shape (never colour alone), twelve variants so a stand is not a row of
 	clones, six role props that read apart by silhouette alone, and a fit on every seat and rail place of Kit.arena.
 ]]
 
@@ -30,13 +30,14 @@ local COLORS: { Color3 } = {
 local ROLES = Kit.CROWD_ROLES
 -- the part names of each role (after Body and Head), in build order
 local ROLE_PARTS: { [string]: { string } } = {
-	blacksmith = { "Handle", "Hammer" },
-	healer = { "Crest", "Satchel" },
-	captain = { "Plume", "Arms" },
-	provisioner = { "Crest", "Basket" },
-	elder = { "Crest", "Staff" },
-	merchant = { "Post", "Beam" },
+	blacksmith = { "Crest", "Arms", "Apron", "Handle", "Hammer", "Peen" },
+	healer = { "Crest", "Arms", "Satchel", "CrossV", "CrossH", "Strap" },
+	captain = { "Plume", "Arms", "Cape", "Sash", "Sword" },
+	provisioner = { "Crest", "Basket", "HandleL", "HandleR", "HandleBar", "Bread" },
+	elder = { "Crest", "Staff", "Crossbar", "Banner", "Finial", "Beard" },
+	merchant = { "Crest", "Arm", "Post", "Beam", "PanL", "PanR" },
 }
+local VARIANTS = Kit.CROWD_VARIANTS
 
 local function noYield<R>(fn: () -> R): R
 	local co = coroutine.create(fn)
@@ -167,19 +168,25 @@ describe("Kit.crowdFigure part budget and rules (G12.6: at most 4 parts, client-
 		local seen = 0
 		for _, color in COLORS do
 			for _, role in { false, table.unpack(ROLES) } do
-				for variant = 1, Kit.CROWD_VARIANTS do
+				for variant = 1, VARIANTS do
 					local m = noYield(function()
 						return Kit.crowdFigure(color, if role then role else nil, variant)
 					end)
 					local n = Kit.partCount(m)
-					expect(n).toBeLessThanOrEqual(Kit.CROWD_MAX_PARTS)
-					expect(n).toBeGreaterThanOrEqual(3)
+					if role then
+						expect(n).toBeLessThanOrEqual(Kit.CROWD_ROLE_MAX_PARTS) -- a key citizen: 8 (v0.4-g11a)
+						expect(n).toBeGreaterThanOrEqual(7) -- and it spends them on its prop
+					else
+						expect(n).toBeLessThanOrEqual(Kit.CROWD_MAX_PARTS) -- every other figure: 4
+						expect(n).toBe(4)
+					end
 					seen += 1
 				end
 			end
 		end
 		expect(Kit.CROWD_MAX_PARTS).toBe(4)
-		expect(seen).toBe(#COLORS * 7 * 8)
+		expect(Kit.CROWD_ROLE_MAX_PARTS).toBe(8)
+		expect(seen).toBe(#COLORS * 7 * VARIANTS)
 	end)
 
 	it("uses primitive parts only, anchored, non-colliding, non-queryable, casting no shadow", function()
@@ -214,18 +221,24 @@ describe("Kit.crowdFigure part budget and rules (G12.6: at most 4 parts, client-
 		end
 	end)
 
-	it("is deterministic and never errors on a variant: wraps over 1..8, survives NaN and infinity", function()
+	it("is deterministic and never errors on a variant: wraps over 1..12, survives NaN and infinity", function()
 		for _, role in { false, table.unpack(ROLES) } do
-			for v = 1, 8 do
+			for v = 1, VARIANTS do
 				local r = if role then role else nil
 				expect(signature(Kit.crowdFigure(CANON.azure, r, v))).toBe(
 					signature(Kit.crowdFigure(CANON.azure, r, v))
 				)
 			end
 			local r = if role then role else nil
-			expect(signature(Kit.crowdFigure(CANON.azure, r, 9))).toBe(signature(Kit.crowdFigure(CANON.azure, r, 1)))
-			expect(signature(Kit.crowdFigure(CANON.azure, r, 0))).toBe(signature(Kit.crowdFigure(CANON.azure, r, 8)))
-			expect(signature(Kit.crowdFigure(CANON.azure, r, -3))).toBe(signature(Kit.crowdFigure(CANON.azure, r, 5)))
+			expect(signature(Kit.crowdFigure(CANON.azure, r, VARIANTS + 1))).toBe(
+				signature(Kit.crowdFigure(CANON.azure, r, 1))
+			)
+			expect(signature(Kit.crowdFigure(CANON.azure, r, 0))).toBe(
+				signature(Kit.crowdFigure(CANON.azure, r, VARIANTS))
+			)
+			expect(signature(Kit.crowdFigure(CANON.azure, r, -3))).toBe(
+				signature(Kit.crowdFigure(CANON.azure, r, VARIANTS - 3))
+			)
 			expect(signature(Kit.crowdFigure(CANON.azure, r, 2.7))).toBe(signature(Kit.crowdFigure(CANON.azure, r, 2)))
 			for _, bad in { 0 / 0, math.huge, -math.huge } do
 				expect(signature(Kit.crowdFigure(CANON.azure, r, bad))).toBe(
@@ -245,7 +258,7 @@ describe("Kit.crowdFigure part budget and rules (G12.6: at most 4 parts, client-
 
 	it("pivots on the feet, front -Z, body first: a figure placed on a surface stands on it", function()
 		for _, role in { false, table.unpack(ROLES) } do
-			for v = 1, 8 do
+			for v = 1, VARIANTS do
 				local m = Kit.crowdFigure(CANON.gold, if role then role else nil, v)
 				local body = m.PrimaryPart :: BasePart
 				expect(body.Name).toBe("Body")
@@ -336,21 +349,21 @@ describe("Kit.crowdFigure kingdom identity (D-033: never colour alone)", functio
 		local keys = {}
 		for _, k in KINGDOMS do
 			for _, role in { false, table.unpack(ROLES) } do
-				for v = 1, 8 do
+				for v = 1, VARIANTS do
 					local key = Kit.crowdPoolKey(CANON[k], if role then role else nil, v)
 					expect(keys[key]).toBeNil()
 					keys[key] = true
 				end
 			end
 		end
-		expect(Kit.crowdPoolKey(CANON.crimson, nil, 9)).toBe(Kit.crowdPoolKey(CANON.crimson, nil, 1))
+		expect(Kit.crowdPoolKey(CANON.crimson, nil, VARIANTS + 1)).toBe(Kit.crowdPoolKey(CANON.crimson, nil, 1))
 	end)
 end)
 
 describe("Kit.crowdFigure variants (a stand is not a row of clones)", function()
-	it("gives eight different figures: outlines, widths, heights and skin tones vary", function()
+	it("gives twelve different figures: outlines, widths, heights and skin tones vary", function()
 		local sils, widths, heights, skins = {}, {}, {}, {}
-		for v = 1, 8 do
+		for v = 1, VARIANTS do
 			local m = Kit.crowdFigure(CANON.emerald, nil, v)
 			local body = partNamed(m, "Body")
 			widths[string.format("%.2f", body.Size.X)] = true
@@ -372,9 +385,9 @@ describe("Kit.crowdFigure variants (a stand is not a row of clones)", function()
 			end
 			return n
 		end
-		expect(size(sils)).toBeGreaterThanOrEqual(7)
-		expect(size(widths)).toBeGreaterThanOrEqual(6)
-		expect(size(heights)).toBeGreaterThanOrEqual(7)
+		expect(size(sils)).toBeGreaterThanOrEqual(11)
+		expect(size(widths)).toBeGreaterThanOrEqual(9)
+		expect(size(heights)).toBeGreaterThanOrEqual(10)
 		expect(size(skins)).toBeGreaterThanOrEqual(5)
 	end)
 
@@ -383,7 +396,7 @@ describe("Kit.crowdFigure variants (a stand is not a row of clones)", function()
 		function()
 			local round, block, shades = 0, 0, {}
 			local lowest, tallest = math.huge, 0
-			for v = 1, 8 do
+			for v = 1, VARIANTS do
 				local m = Kit.crowdFigure(CANON.emerald, nil, v)
 				local body = partNamed(m, "Body")
 				if (body :: Part).Shape == Enum.PartType.Cylinder then
@@ -399,16 +412,32 @@ describe("Kit.crowdFigure variants (a stand is not a row of clones)", function()
 				tallest = math.max(tallest, head.CFrame.Position.Y)
 				expect(hi.Y).toBeGreaterThan(4.2)
 			end
-			expect(round).toBeGreaterThanOrEqual(2)
-			expect(block).toBeGreaterThanOrEqual(4)
+			expect(round).toBeGreaterThanOrEqual(3)
+			expect(block).toBeGreaterThanOrEqual(6)
+			-- three head shapes (ball, block, drum) and a spread of crest sizes
+			local heads = {}
+			for v = 1, VARIANTS do
+				local head = partNamed(Kit.crowdFigure(CANON.emerald, nil, v), "Head") :: Part
+				heads[`{head.Shape.Name}`] = (heads[`{head.Shape.Name}`] or 0) + 1
+			end
+			expect(heads.Ball).toBeGreaterThanOrEqual(5)
+			expect(heads.Block).toBeGreaterThanOrEqual(3)
+			expect(heads.Cylinder).toBeGreaterThanOrEqual(3)
+			local crestLo, crestHi = math.huge, 0
+			for v = 1, VARIANTS do
+				local c = partNamed(Kit.crowdFigure(CANON.crimson, nil, v), "Crest")
+				crestLo = math.min(crestLo, c.Size.Y)
+				crestHi = math.max(crestHi, c.Size.Y)
+			end
+			expect(crestHi / crestLo).toBeGreaterThan(1.2)
 			local n = 0
 			for _ in shades do
 				n += 1
 			end
-			expect(n).toBeGreaterThanOrEqual(6) -- six or more different tabard shades in eight figures
+			expect(n).toBeGreaterThanOrEqual(6) -- six or more different tabard shades in twelve figures
 			expect(tallest / lowest).toBeGreaterThan(1.25) -- the tallest head stands a quarter over the lowest
 			-- the arms are kingdom cloth or skin-tone sleeves, never a pale shard beside the body
-			for v = 1, 8 do
+			for v = 1, VARIANTS do
 				local arms = partNamed(Kit.crowdFigure(CANON.azure, nil, v), "Arms")
 				local c = arms.Color
 				expect(c.R + c.G + c.B < 2.1).toBe(true)
@@ -416,22 +445,31 @@ describe("Kit.crowdFigure variants (a stand is not a row of clones)", function()
 		end
 	)
 
-	it("throws an arm up in some variants, waves in others and holds them level in the rest", function()
-		local thrown, waving, level = 0, 0, 0
-		for v = 1, 8 do
+	it("poses the arms five ways: level, waving, an arm thrown up, one arm straight up, folded at the waist", function()
+		local cheer, waving, level, straightUp, folded = 0, 0, 0, 0, 0
+		for v = 1, VARIANTS do
 			local arms = partNamed(Kit.crowdFigure(CANON.azure, nil, v), "Arms")
 			local tilt = math.abs(math.deg(math.atan2(arms.CFrame.RightVector.Y, arms.CFrame.RightVector.X)))
-			if tilt > 30 then
-				thrown += 1
+			if arms.Size.Y > 2 then
+				straightUp += 1 -- one raised arm, beside the head
+				expect(arms.CFrame.Position.Y + arms.Size.Y / 2).toBeGreaterThan(
+					partNamed(Kit.crowdFigure(CANON.azure, nil, v), "Body").Size.Y
+				)
+			elseif arms.Size.Z > 1.1 then
+				folded += 1 -- the arms folded in front at the waist
+			elseif tilt > 30 then
+				cheer += 1
 			elseif tilt > 10 then
 				waving += 1
 			elseif tilt < 1 then
 				level += 1
 			end
 		end
-		expect(thrown).toBeGreaterThanOrEqual(2)
+		expect(cheer).toBeGreaterThanOrEqual(2)
 		expect(waving).toBeGreaterThanOrEqual(3)
-		expect(level).toBeGreaterThanOrEqual(2)
+		expect(level).toBeGreaterThanOrEqual(1)
+		expect(straightUp).toBeGreaterThanOrEqual(2)
+		expect(folded).toBeGreaterThanOrEqual(2)
 	end)
 end)
 
@@ -478,7 +516,8 @@ describe("Kit.crowdFigure role props (the six key citizens read by silhouette)",
 			local hammer, head = partNamed(m, "Hammer"), partNamed(m, "Head")
 			expect(hammer.CFrame.Position.Y).toBeGreaterThan(head.CFrame.Position.Y) -- raised over the shoulder
 			expect(math.abs(hammer.CFrame.Position.X)).toBeGreaterThan(1.2) -- beside the head, not on it
-			expect(hammer.Size.X).toBeGreaterThan(partNamed(m, "Handle").Size.Y / 4) -- a chunky head on a thin haft
+			expect(hammer.Size.X).toBeGreaterThan(partNamed(m, "Handle").Size.Y * 3) -- a chunky head on a thin haft
+			expect(partNamed(m, "Apron").Color).never.toBe(partNamed(m, "Body").Color) -- a dark apron on the chest
 			local tops = {}
 			for _, role in ROLES do
 				local _, hi = bounds(Kit.crowdFigure(CANON.crimson, role, 1))
@@ -498,13 +537,71 @@ describe("Kit.crowdFigure role props (the six key citizens read by silhouette)",
 			local satchel = partNamed(Kit.crowdFigure(CANON.crimson, "healer", 1), "Satchel")
 			expect(math.abs(satchel.CFrame.Position.X)).toBeGreaterThan(1)
 			expect(satchel.CFrame.Position.Y).toBeLessThan(2.4)
-			-- the scales: a brass beam much wider than the head, over a post, above the shoulders
+			-- the scales: a brass beam much wider than the head, over a post, above the shoulders, a pan under each end
 			local merchant = Kit.crowdFigure(CANON.crimson, "merchant", 1)
-			expect(partNamed(merchant, "Beam").Size.X).toBeGreaterThan(4)
-			expect(partNamed(merchant, "Beam").CFrame.Position.Y).toBeGreaterThan(5.2)
-			expect(partNamed(merchant, "Beam").Color).toBe(partNamed(merchant, "Post").Color)
+			local beam = partNamed(merchant, "Beam")
+			expect(beam.Size.X).toBeGreaterThan(3.2)
+			expect(beam.CFrame.Position.Y).toBeGreaterThan(5.2)
+			expect(beam.Color).toBe(partNamed(merchant, "Post").Color)
+			local panL, panR = partNamed(merchant, "PanL"), partNamed(merchant, "PanR")
+			expect(panL.CFrame.Position.X).toBeLessThan(beam.CFrame.Position.X - 1)
+			expect(panR.CFrame.Position.X).toBeGreaterThan(beam.CFrame.Position.X + 1)
+			expect(panL.CFrame.Position.Y).toBeLessThan(beam.CFrame.Position.Y)
+			expect(panR.CFrame.Position.Y).toBeLessThan(beam.CFrame.Position.Y + 1)
+			expect(panL.Color).toBe(beam.Color)
+			-- the healer's satchel carries a red cross on its face (a cross: two bars of one centre, one colour, in front)
+			local healer = Kit.crowdFigure(CANON.azure, "healer", 1)
+			local sat, cv, ch = partNamed(healer, "Satchel"), partNamed(healer, "CrossV"), partNamed(healer, "CrossH")
+			expect(math.abs(cv.CFrame.Position.X - ch.CFrame.Position.X)).toBeLessThan(1e-3) -- one centre, two bars
+			expect(math.abs(cv.CFrame.Position.Y - ch.CFrame.Position.Y)).toBeLessThan(1e-3)
+			expect(ch.CFrame.Position.Z).toBeLessThan(cv.CFrame.Position.Z) -- CrossH 0.02 proud of CrossV (no coplanar faces)
+			expect(cv.Color).toBe(ch.Color)
+			expect(cv.Color.R).toBeGreaterThan(cv.Color.G * 2) -- red on a cream bag, whatever the kingdom
+			expect(cv.CFrame.Position.Z).toBeLessThan(sat.CFrame.Position.Z - 0.4)
+			expect(cv.Size.Y).toBeGreaterThan(sat.Size.Y / 2)
+			-- the elder's staff carries the kingdom's banner, taller than the head and clear of it
+			local elder = Kit.crowdFigure(CANON.azure, "elder", 1)
+			local banner, staff = partNamed(elder, "Banner"), partNamed(elder, "Staff")
+			expect(banner:GetAttribute("KitTint")).never.toBeNil()
+			expect(banner.Size.Y).toBeGreaterThan(2)
+			expect(banner.CFrame.Position.Y - banner.Size.Y / 2).toBeGreaterThan(Kit.CROWD_HEIGHT * 0.6) -- hangs above the shoulders
+			expect(math.abs(banner.CFrame.Position.X - staff.CFrame.Position.X)).toBeLessThan(0.1)
+			-- the provisioner's basket has a bridge handle over it; the smith's hammer a peen on its far end
+			local prov = Kit.crowdFigure(CANON.azure, "provisioner", 1)
+			expect(partNamed(prov, "HandleBar").CFrame.Position.Y).toBeGreaterThan(
+				partNamed(prov, "Basket").CFrame.Position.Y + 1.5
+			)
 		end
 	)
+
+	it("leaves no part floating: every part of every figure touches another (props are held, not hovering)", function()
+		for _, role in { false, table.unpack(ROLES) } do
+			for v = 1, VARIANTS do
+				local m = Kit.crowdFigure(CANON.gold, if role then role else nil, v)
+				local list = parts(m)
+				for _, p in list do
+					local e, c = halfExtents(p), p.CFrame.Position
+					local touches = false
+					for _, q in list do
+						if q ~= p then
+							local f, d = halfExtents(q), q.CFrame.Position
+							if
+								math.abs(c.X - d.X) <= e.X + f.X + 0.08
+								and math.abs(c.Y - d.Y) <= e.Y + f.Y + 0.08
+								and math.abs(c.Z - d.Z) <= e.Z + f.Z + 0.08
+							then
+								touches = true
+								break
+							end
+						end
+					end
+					if not touches then
+						error(`{m.Name} variant {v}: {p.Name} floats clear of the rest of the figure`)
+					end
+				end
+			end
+		end
+	end)
 
 	it("keeps the elder white-haired and the captain helmeted, so the heads differ too", function()
 		local elder = partNamed(Kit.crowdFigure(CANON.gold, "elder", 1), "Head")
@@ -587,7 +684,7 @@ describe("Kit.crowdFigure on the arena's stands", function()
 	)
 
 	it("keeps neighbouring figures' arms inside the seat spacing, so two figures never share a surface", function()
-		for v = 1, 8 do
+		for v = 1, VARIANTS do
 			local lo, hi = bounds(Kit.crowdFigure(CANON.azure, nil, v))
 			-- the figure's width stays within the 2.4-stud seat spacing plus the crowd's allowed 0.5 overlap
 			expect(hi.X - lo.X).toBeLessThanOrEqual(Kit.ARENA.SEAT_SPACING + 0.7)

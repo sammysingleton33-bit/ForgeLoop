@@ -43,7 +43,7 @@ local PIECES: { [string]: { [string]: string } } = {
 		KitHeavyPauldronRight = "RightCollarAttachment",
 	},
 }
-local WEAPON_REACH = { mace = 3.78, swordShield = 4.9, greatsword = 7.8, spear = 9.5 }
+local WEAPON_REACH = { mace = 5.5, swordShield = 4.9, greatsword = 7.8, spear = 9.5 }
 
 local function noYield<R>(fn: () -> R): R
 	local co = coroutine.create(fn)
@@ -318,6 +318,12 @@ describe("Kit.armour (light | medium | heavy)", function()
 							expect(math.abs(centre.X)).toBeLessThan(2.6)
 							expect(hi.Y).toBeLessThan(shoulderTop + 1.3)
 							expect(lo.Y).toBeGreaterThan(shoulderTop - 1.4)
+							-- shoulders hug the arm: no plate flares more than 0.45 past the arm's outer edge (the review: "wings")
+							local outer = if side > 0 then hi.X else -lo.X
+							expect(outer).toBeLessThan(2.0 + 0.45)
+							if armour == "medium" then -- a round cop sits on the shoulder, not sunk into the arm block
+								expect(lo.Y).toBeGreaterThan(shoulderTop - 0.3)
+							end
 						end
 					end
 				end
@@ -462,7 +468,7 @@ describe("Kit.weapon (swordShield | greatsword | spear | mace)", function()
 	end)
 
 	it(
-		"rises from the grip: the tip is at the documented reach, and the weapons order mace < sword < greatsword < spear",
+		"rises from the grip: the tip is at the documented reach, and the weapons order sword < mace < greatsword < spear",
 		function()
 			local reach = {}
 			for _, weapon in WEAPONS do
@@ -472,8 +478,8 @@ describe("Kit.weapon (swordShield | greatsword | spear | mace)", function()
 				expect(tool:GetAttribute("KitReach")).toBeNear(hi.Y, 0.4)
 				expect(hi.Y).toBeNear(WEAPON_REACH[weapon], 0.5)
 			end
-			expect(reach.mace).toBeLessThan(reach.swordShield)
-			expect(reach.swordShield).toBeLessThan(reach.greatsword)
+			expect(reach.swordShield).toBeLessThan(reach.mace)
+			expect(reach.mace).toBeLessThan(reach.greatsword)
 			expect(reach.greatsword).toBeLessThan(reach.spear)
 			expect(Kit.weapon("greatsword"):GetAttribute("KitHands")).toBe(2)
 			expect(Kit.weapon("spear"):GetAttribute("KitHands")).toBe(2)
@@ -592,6 +598,18 @@ describe("Kit.weapon (swordShield | greatsword | spear | mace)", function()
 				expect(hi.Y - av.hand.Y).toBeNear(WEAPON_REACH[weapon], 0.5) -- the tip is `reach` above the fist
 				expect(lo.Y).toBeGreaterThan(av.hand.Y - 2.6) -- the butt stays at or above the hip's height
 				expect(math.abs((lo.X + hi.X) / 2 - av.hand.X)).toBeLessThan(2.2)
+				if weapon == "mace" then -- the mace's head is held clear above the wearer's head, not at face height
+					local ball: BasePart
+					for _, p in parts(tool) do
+						if p.Name == "Head" then
+							ball = p
+						end
+					end
+					local head = av.parts.head
+					expect(ball.CFrame.Position.Y - ball.Size.Y / 2).toBeGreaterThan(
+						head.CFrame.Position.Y + head.Size.Y / 2 + 0.8
+					)
+				end
 			end
 		end)
 	end

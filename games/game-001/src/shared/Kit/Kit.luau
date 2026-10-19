@@ -52,7 +52,7 @@
 		Kit.crowdFigure(kingdomColor, role?, variant?) -> Model  -- <= 4 parts, client-only, feet pivot, front -Z; role: KeyRole
 		Kit.armour(armour, kingdomColor) -> { Accessory }        -- "light" | "medium" | "heavy" on Hat / BodyFront / BodyBack / Collar
 		Kit.weapon(weapon, kingdomColor?) -> Tool                -- "swordShield" | "greatsword" | "spear" | "mace"
-		Kit.ARENA (dimensions, PART_BUDGET), Kit.CROWD_ROLES, CROWD_MAX_PARTS, CROWD_VARIANTS, CROWD_HEIGHT, crowdPoolKey,
+		Kit.ARENA (dimensions, PART_BUDGET), Kit.CROWD_ROLES, CROWD_MAX_PARTS, CROWD_ROLE_MAX_PARTS, CROWD_VARIANTS, CROWD_HEIGHT, crowdPoolKey,
 		Kit.ARMOURS, Kit.WEAPONS
 	Additive (emblems): Kit.EMBLEM_KINDS ({ [hue style]: kind }), Kit.emblemKind(color) -> kind?
 	Recolour: Kit.setKingdomColor recolours every KitTint part and re-forms every emblem to the new
@@ -87,7 +87,7 @@ export type BuildingType = string -- Kingdom/Types BuildingType (kept local so K
 export type Stage = number | string
 
 Kit.NEUTRAL_COLOR = Color3.fromRGB(208, 200, 184)
-Kit.VERSION = "0.5.0" -- 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques; 0.5: Crown Arena, crowd figures, duel gear
+Kit.VERSION = "0.5.1" -- 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques; 0.5: Crown Arena, crowd figures, duel gear
 -- G2 BuildingType + the G13.5 VS-2 types (part-built stand-ins until FL-0086)
 Kit.BUILDING_TYPES = {
 	"keep",
@@ -133,10 +133,11 @@ Kit.SOLDIER_CRESTS = Character.CRESTS
 Kit.arena = Arena.build -- (kingdomA?, kingdomB?) -> Model: neutral stone, timber and sand + each side's kingdom dress
 Kit.arenaDress = Arena.dress -- (model, kingdomA?, kingdomB?): rebuild both dresses in place
 Kit.ARENA = Arena
--- Crowd figures (G12.6): <= 4 primitive parts, client-only; role props for the six key citizens
+-- Crowd figures (G12.6): <= 4 primitive parts (<= 8 for a key citizen, v0.4-g11a), client-only; role props for the six key citizens
 Kit.crowdFigure = Crowd.build -- (kingdomColor, role: KeyRole?, variant: number?) -> Model, feet-pivoted, front -Z
 Kit.CROWD_ROLES = Crowd.ROLES
 Kit.CROWD_MAX_PARTS = Crowd.MAX_PARTS
+Kit.CROWD_ROLE_MAX_PARTS = Crowd.ROLE_MAX_PARTS
 Kit.CROWD_VARIANTS = Crowd.VARIANTS
 Kit.CROWD_HEIGHT = Crowd.HEIGHT
 Kit.crowdPoolKey = Crowd.poolKey

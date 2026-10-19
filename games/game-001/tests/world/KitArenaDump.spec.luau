@@ -96,7 +96,7 @@ local function crowded(a: Color3, b: Color3): Model
 			for s = 1, 18 do
 				if (s + 2 * r) % 6 ~= 0 then
 					local att = seats[`Stand{side}_Row{r}_Seat{s}`]
-					local fig = Kit.crowdFigure(color, nil, (r * 5 + s * 3) % 8 + 1)
+					local fig = Kit.crowdFigure(color, nil, (r * 5 + s * 3) % Kit.CROWD_VARIANTS + 1)
 					place(fig, root.CFrame * att.CFrame)
 					fig.Parent = folder
 				end
@@ -112,25 +112,25 @@ local function crowded(a: Color3, b: Color3): Model
 	return arena
 end
 
--- every role in one kingdom's colour in front of eight plain variants, on a stone strip
+-- every role in one kingdom's colour in front of every plain variant, on a stone strip
 local function lineup(color: Color3): Model
 	local m = Instance.new("Model")
 	m.Name = "lineup"
 	local base = Instance.new("Part")
 	base.Name = "Strip"
-	base.Size = Vector3.new(44, 0.4, 14)
+	base.Size = Vector3.new(48, 0.4, 14)
 	base.CFrame = CFrame.new(0, -0.2, 3)
 	base.Color = Color3.fromRGB(193, 180, 152)
 	base.Anchored = true
 	base.Parent = m
 	for i, role in ROLES do
 		local fig = Kit.crowdFigure(color, role, 1)
-		place(fig, CFrame.new((i - 3.5) * 4.6, 0, 0))
+		place(fig, CFrame.new((i - 3.5) * 6.0, 0, 0))
 		fig.Parent = m
 	end
-	for v = 1, 8 do
+	for v = 1, Kit.CROWD_VARIANTS do
 		local fig = Kit.crowdFigure(color, nil, v)
-		place(fig, CFrame.new((v - 4.5) * 3.2, 0, 6))
+		place(fig, CFrame.new((v - 6.5) * 3.0, 0, 6))
 		fig.Parent = m
 	end
 	return m
