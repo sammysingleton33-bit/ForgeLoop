@@ -2020,6 +2020,17 @@ def _rep_without_fear(d: dict) -> int:
     return sum(d["rep"][c] or 0 for c in CATEGORIES if c != "fear")
 
 
+def _row_ref(table: Table | None, rownum: int | None) -> str:
+    """' (row <key>)' naming the row's key cell, so a reader filtering warnings by id finds the row (D-056 (4))."""
+    if table is None or rownum is None or not table.spec.columns:
+        return ""
+    key = table.spec.columns[0].name
+    for r in table.rows:
+        if r.num == rownum and r.get(key):
+            return f" (row {key} '{r.get(key)}')"
+    return ""
+
+
 def lint(model: Model, tables: dict[str, Table], report: Report) -> None:
     rows = model.rows
 
@@ -2060,7 +2071,10 @@ def lint(model: Model, tables: dict[str, Table], report: Report) -> None:
             best = [0] * len(decided)
             for traits, chem in sample:
                 scores = [speaker_loyalty(model, d, traits, chem) for _, d in decided]
-                best[scores.index(max(scores))] += 1
+                top = max(scores)
+                tied = [k for k, sc in enumerate(scores) if sc == top]
+                for k in tied:  # a tie is shared: no answer "wins" a citizen it only draws with (D-056 (4))
+                    best[k] += 1 / len(tied)
             top_rep = max(_rep_without_fear(d) for _, d in decided)
             for k, (r, d) in enumerate(decided):
                 share = best[k] / len(sample)
@@ -2156,11 +2170,13 @@ def lint(model: Model, tables: dict[str, Table], report: Report) -> None:
     read = {tag for _, _, _, tag in model.memory_uses}
     for t, rownum, col, tag in model.memory_uses:
         if tag not in known_memories:
-            report.warn(t, rownum, col, f"memory '{tag}' is never set by a decision memory_tag or a memory consequence")
+            report.warn(t, rownum, col, f"memory '{tag}' is never set by a decision memory_tag or a memory consequence"
+                                        f"{_row_ref(t, rownum)}")
     for tag, (t, rownum, col) in setters.items():
         if tag not in read:
             report.warn(t, rownum, col, f"memory '{tag}' is set but no trigger reads it (fine as flavour for the "
-                                        "citizen card; a promise needs a follow-up scenario that reads it)")
+                                        "citizen card; a promise needs a follow-up scenario that reads it)"
+                                        f"{_row_ref(t, rownum)}")
     for role, items in model.key_role_rows.items():
         if len(items) > 1:
             for t, row in items[1:]:

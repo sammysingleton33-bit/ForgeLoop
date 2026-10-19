@@ -1,0 +1,36 @@
+{
+  "assets": {
+    "siege_ballista_blue_01": {
+      "geometry_hash": "7e030b17dce04a57",
+      "verdict": "PASS"
+    },
+    "siege_ballista_green_01": {
+      "geometry_hash": "655b2162fa77b13c",
+      "verdict": "PASS"
+    },
+    "siege_ballista_red_01": {
+      "geometry_hash": "b47258eae23d2ba3",
+      "verdict": "PASS"
+    },
+    "siege_ballista_yellow_01": {
+      "geometry_hash": "adef094331d3f41e",
+      "verdict": "PASS"
+    }
+  },
+  "generator": "siege_ballista",
+  "generator_version": 1,
+  "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
+  "reviewer": "fresh-context subagent",
+  "round": 4,
+  "scores": {
+    "cohesion": 4,
+    "detail_density": 4,
+    "palette": 4,
+    "proportions": 4,
+    "readability": 5,
+    "silhouette": 4,
+    "triangle_cost": 5,
+    "variation": 4
+  },
+  "verdict": "PASS"
+}

@@ -3,14 +3,15 @@ id: FL-0013
 title: "Blender pipeline core: render rig, export, LOD, collision, validation, manifest"
 track: asset
 owner: forge-02
-status: READY
+status: REVIEW
 priority: P0
 game: factory
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: []
 estimate_h: 8
-evidence: []
+evidence:
+  - "bash blender/scripts/check.sh -> blender check: PASS (images <= 250 KB, manifest schema + cross-checks ok, pytest 19 passed, VERIFY PASS: every committed generator rebuilt from its seed with matching geometry hashes); headless bpy wheel only"
 ---
 
 # Blender pipeline core: render rig, export, LOD, collision, validation, manifest
@@ -40,3 +41,6 @@ check.sh rebuilds a small set and validates; render images opened and reviewed
 
 ## Log
 - 2026-10-12 forge-00: created (READY).
+- 2026-10-13 forge-02: READY → BUILDING. Pipeline built on forge/02-blender since 2026-10-12; landing on main via this PR (D-038 audit).
+- 2026-10-13 forge-02: BUILDING → REVIEW. Pipeline core + 38 generators, fragments, reviews and merged manifest land on main (PR-A). Desktop-Blender path (assets.md A0) unverified until the user runs it.
+- 2026-10-18 forge-02: FORGE-07 re-review of #90 (81f129e): B1 (agents/forge-02/STATUS.md conflict) fixed by merging main e4b2a70 and taking main's file. Tracked follow-ups accepted by FORGE-05, not merge blockers: **M1** `.github/workflows/ci.yml` has no Blender job and `blender/scripts/check.sh` prints "SKIP (not PASS)" without bpy (a skipped Blender gate counts as not run), owner FORGE-05: add a CI job using `tools/setup/cloud-setup.sh --blender-only`, or at least the stdlib-only manifest and image-size checks; **M2** 36 of the 38 `preview` paths in `manifest.json` named files that are not committed (209 of the manifest's assets today); `check.sh` now prints a WARN for them (`manifest.warnings()`, ad1cfe0), previews are committed with the PR that renders them. L2: `build.py --merge-only` documented in `blender/README.md`.

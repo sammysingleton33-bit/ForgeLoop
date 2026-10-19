@@ -3,15 +3,16 @@ id: FL-0055
 title: "World layout v0 and WorldService: valley, river, forests, quarries, roads, 4 kingdom plots, nodes, objective"
 track: asset
 owner: forge-02
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [FL-0046]
 context: [games/game-001/BRIEF.md, games/game-001/CONTRACTS.md]
 estimate_h: 8
-evidence: []
+evidence:
+  - WorldService/Layout specs pass on main (check.sh OVERALL PASS); world previews top + 3 obliques rendered and looked at
 ---
 
 # World layout v0 and WorldService: valley, river, forests, quarries, roads, 4 kingdom plots, nodes, objective
@@ -50,3 +51,5 @@ A colourful medieval valley exists at server start with tagged resource nodes, b
 ## Log
 - 2026-10-12 forge-00: created for AI Kingdoms VS-1 (READY).
 - 2026-10-12 forge-00: plan review fixes (CONTRACTS v0.4-g2, D-024 to D-028): Layout stub + G10.1 schema, Fill* terrain via adapter, ready signal, Lighting.luau, world preview renders
+- 2026-10-13 forge-02: READY → BUILDING. World v0 merged (#28, #38 build slots, #43 hardening).
+- 2026-10-13 forge-02: BUILDING → REVIEW. Code merged; world previews blender/previews/world_*.jpg (render_world.py) land with FL-0013; only G6 (Studio W1-W6 in roblox/studio-tests and the world handoff) pending.

@@ -1,0 +1,433 @@
+{
+  "assets": [
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 13.863,
+        "y": 7.746,
+        "z": 10.745
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_ore_01.fbx",
+        "validation": "exports/resource_ore_01.validation.json"
+      },
+      "generator": "resource_ore",
+      "generator_version": 3,
+      "geometry_hash": "f9d91807187c1d3e",
+      "id": "resource_ore_01",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "ore": "iron",
+        "prop": "stuck_pick",
+        "scale": 1.0,
+        "shape": "mound"
+      },
+      "preview": "previews/resource_ore.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
+        "review_file": "reviews/resource_ore.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 3,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7700,
+      "sockets": {
+        "harvest": [
+          1.625,
+          0.0,
+          -6.792
+        ],
+        "hit": [
+          1.045,
+          2.958,
+          -3.591
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1118,
+        "lod1": 390
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 16.893,
+        "y": 7.793,
+        "z": 13.294
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_ore_02.fbx",
+        "validation": "exports/resource_ore_02.validation.json"
+      },
+      "generator": "resource_ore",
+      "generator_version": 3,
+      "geometry_hash": "7619c727872f5043",
+      "id": "resource_ore_02",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "ore": "iron",
+        "prop": "cart",
+        "scale": 1.1,
+        "shape": "ridge"
+      },
+      "preview": "previews/resource_ore.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
+        "review_file": "reviews/resource_ore.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 3,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7701,
+      "sockets": {
+        "harvest": [
+          2.99,
+          0.0,
+          -5.462
+        ],
+        "hit": [
+          1.278,
+          3.802,
+          -2.0
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1088,
+        "lod1": 380
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 14.083,
+        "y": 5.968,
+        "z": 9.275
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_ore_03.fbx",
+        "validation": "exports/resource_ore_03.validation.json"
+      },
+      "generator": "resource_ore",
+      "generator_version": 3,
+      "geometry_hash": "f9ce9c2dab1d0d00",
+      "id": "resource_ore_03",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "ore": "gold",
+        "prop": "none",
+        "scale": 0.95,
+        "shape": "ridge"
+      },
+      "preview": "previews/resource_ore.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
+        "review_file": "reviews/resource_ore.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 3,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7702,
+      "sockets": {
+        "harvest": [
+          -0.714,
+          0.0,
+          -5.404
+        ],
+        "hit": [
+          -1.927,
+          4.869,
+          -1.739
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 804,
+        "lod1": 280
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 12.347,
+        "y": 5.905,
+        "z": 11.5
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_ore_04.fbx",
+        "validation": "exports/resource_ore_04.validation.json"
+      },
+      "generator": "resource_ore",
+      "generator_version": 3,
+      "geometry_hash": "bdeabb63ac995a69",
+      "id": "resource_ore_04",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "ore": "gold",
+        "prop": "crate",
+        "scale": 1.05,
+        "shape": "mound"
+      },
+      "preview": "previews/resource_ore.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
+        "review_file": "reviews/resource_ore.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 3,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7703,
+      "sockets": {
+        "harvest": [
+          1.681,
+          0.0,
+          -5.565
+        ],
+        "hit": [
+          1.493,
+          4.808,
+          -1.568
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 716,
+        "lod1": 250
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 12.451,
+        "y": 6.55,
+        "z": 11.285
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_ore_05.fbx",
+        "validation": "exports/resource_ore_05.validation.json"
+      },
+      "generator": "resource_ore",
+      "generator_version": 3,
+      "geometry_hash": "abf52327d5603ec5",
+      "id": "resource_ore_05",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "ore": "crystal",
+        "prop": "none",
+        "scale": 1.0,
+        "shape": "mound"
+      },
+      "preview": "previews/resource_ore.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
+        "review_file": "reviews/resource_ore.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 3,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7704,
+      "sockets": {
+        "harvest": [
+          0.22,
+          0.0,
+          -5.935
+        ],
+        "hit": [
+          -1.412,
+          2.901,
+          -2.976
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1156,
+        "lod1": 404
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "resource",
+      "category": "resource",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 16.696,
+        "y": 7.883,
+        "z": 12.765
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/resource_ore_06.fbx",
+        "validation": "exports/resource_ore_06.validation.json"
+      },
+      "generator": "resource_ore",
+      "generator_version": 3,
+      "geometry_hash": "88d430dd351708f5",
+      "id": "resource_ore_06",
+      "kingdom": null,
+      "material": "M_forge_palette",
+      "params": {
+        "ore": "crystal",
+        "prop": "none",
+        "scale": 1.1,
+        "shape": "ridge"
+      },
+      "preview": "previews/resource_ore.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Crystal 05/06 read well, but iron's saturated crimson lumps read as meat/ruby/candy (01's top lump with a stuck-in handle looks like a toffee apple, 02's flat red patch is a decal-like sticker) and collapse to dark olive or plain dark rock under deuteranopia/greyscale. All six reuse one composition (big dome boulder + small front-right rock + lumps + side prop), gold 03/04 are near-duplicates and iron/gold silhouettes are plain boulder domes; tris 716-1390 within budget (06 near cap).",
+        "review_file": "reviews/resource_ore.md",
+        "reviewer": "fresh-context subagent",
+        "round": 3,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 3,
+          "palette": 3,
+          "proportions": 3,
+          "readability": 3,
+          "silhouette": 3,
+          "triangle_cost": 4,
+          "variation": 3
+        },
+        "verdict": "NEEDS-WORK"
+      },
+      "seed": 7705,
+      "sockets": {
+        "harvest": [
+          0.361,
+          0.0,
+          -6.065
+        ],
+        "hit": [
+          -0.343,
+          3.538,
+          -2.699
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 1500,
+        "lod0": 1390,
+        "lod1": 486
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 6
+  },
+  "generator": "resource_ore",
+  "variation": {
+    "closest_pair": [
+      "resource_ore_03",
+      "resource_ore_04"
+    ],
+    "mean_pair_diff": 0.3519,
+    "min_pair_diff": 0.2744,
+    "pass": true,
+    "threshold": 0.08
+  }
+}

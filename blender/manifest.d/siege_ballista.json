@@ -1,0 +1,307 @@
+{
+  "assets": [
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.646,
+        "y": 10.825,
+        "z": 14.261
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ballista_blue_01.fbx",
+        "validation": "exports/siege_ballista_blue_01.validation.json"
+      },
+      "generator": "siege_ballista",
+      "generator_version": 1,
+      "geometry_hash": "7e030b17dce04a57",
+      "id": "siege_ballista_blue_01",
+      "kingdom": "blue",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "blue",
+        "mount": "dais"
+      },
+      "preview": "previews/siege_ballista.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
+        "review_file": "reviews/siege_ballista.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7001,
+      "sockets": {
+        "crew_1": [
+          2.6,
+          0.0,
+          6.647
+        ],
+        "crew_2": [
+          -2.6,
+          0.0,
+          6.647
+        ],
+        "projectile": [
+          -0.0,
+          5.045,
+          1.532
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 1798,
+        "lod1": 628
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 12.822,
+        "y": 10.924,
+        "z": 15.562
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ballista_green_01.fbx",
+        "validation": "exports/siege_ballista_green_01.validation.json"
+      },
+      "generator": "siege_ballista",
+      "generator_version": 1,
+      "geometry_hash": "655b2162fa77b13c",
+      "id": "siege_ballista_green_01",
+      "kingdom": "green",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "green",
+        "mount": "skid"
+      },
+      "preview": "previews/siege_ballista.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
+        "review_file": "reviews/siege_ballista.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7002,
+      "sockets": {
+        "crew_1": [
+          2.6,
+          0.086,
+          7.298
+        ],
+        "crew_2": [
+          -2.6,
+          0.086,
+          7.298
+        ],
+        "projectile": [
+          -0.0,
+          4.93,
+          1.669
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2034,
+        "lod1": 710
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 11.646,
+        "y": 10.532,
+        "z": 15.065
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ballista_red_01.fbx",
+        "validation": "exports/siege_ballista_red_01.validation.json"
+      },
+      "generator": "siege_ballista",
+      "generator_version": 1,
+      "geometry_hash": "b47258eae23d2ba3",
+      "id": "siege_ballista_red_01",
+      "kingdom": "red",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "red",
+        "mount": "carriage"
+      },
+      "preview": "previews/siege_ballista.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
+        "review_file": "reviews/siege_ballista.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7000,
+      "sockets": {
+        "crew_1": [
+          2.6,
+          0.045,
+          6.245
+        ],
+        "crew_2": [
+          -2.6,
+          0.045,
+          6.245
+        ],
+        "projectile": [
+          -0.0,
+          4.753,
+          1.13
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 2082,
+        "lod1": 728
+      },
+      "validation_pass": true
+    },
+    {
+      "budget_class": "siege",
+      "category": "siege",
+      "collision": {
+        "boxes": [],
+        "fidelity": "Hull"
+      },
+      "dimensions_studs": {
+        "x": 12.822,
+        "y": 11.315,
+        "z": 15.562
+      },
+      "double_sided": false,
+      "files": {
+        "mesh": "exports/siege_ballista_yellow_01.fbx",
+        "validation": "exports/siege_ballista_yellow_01.validation.json"
+      },
+      "generator": "siege_ballista",
+      "generator_version": 1,
+      "geometry_hash": "adef094331d3f41e",
+      "id": "siege_ballista_yellow_01",
+      "kingdom": "yellow",
+      "material": "M_forge_palette",
+      "params": {
+        "kingdom": "yellow",
+        "mount": "stand"
+      },
+      "preview": "previews/siege_ballista.jpg",
+      "render_fidelity": "Automatic",
+      "review": {
+        "notes": "Best emblem read in the kit: big front shields (gold crown on red, white star on blue, oak leaf on green, dark-gold rayed sunburst on cream with gold rim) are crisp at 40 studs and in grayscale. The sun clearly reads as a sun, never a C, never gold-on-gold. Bases differ per kingdom (wheeled carriage, stone turntable, palisade sled, tripod). The upper bow assembly is identical across all four, so variation comes from the bases. The forked tiller ends look a little like antlers. 1.8-2.1k of 4k.",
+        "review_file": "reviews/siege_ballista.md",
+        "reviewer": "fresh-context subagent",
+        "round": 4,
+        "scores": {
+          "cohesion": 4,
+          "detail_density": 4,
+          "palette": 4,
+          "proportions": 4,
+          "readability": 5,
+          "silhouette": 4,
+          "triangle_cost": 5,
+          "variation": 4
+        },
+        "verdict": "PASS"
+      },
+      "seed": 7003,
+      "sockets": {
+        "crew_1": [
+          2.6,
+          0.125,
+          7.298
+        ],
+        "crew_2": [
+          -2.6,
+          0.125,
+          7.298
+        ],
+        "projectile": [
+          -0.0,
+          5.321,
+          1.669
+        ]
+      },
+      "texture": "exports/textures/forge_palette_v1.png",
+      "triangles": {
+        "budget_lod0": 4000,
+        "lod0": 1926,
+        "lod1": 674
+      },
+      "validation_pass": true
+    }
+  ],
+  "build": {
+    "seed": 7,
+    "variants": 4
+  },
+  "generator": "siege_ballista",
+  "variation": {
+    "closest_pair": [
+      "siege_ballista_blue_01",
+      "siege_ballista_green_01"
+    ],
+    "mean_pair_diff": 0.3636,
+    "min_pair_diff": 0.3133,
+    "pass": true,
+    "threshold": 0.08
+  }
+}
