@@ -2,7 +2,7 @@
 --[[
 	Kit/EnvMeshData — the imported nature meshes as data (FL-0136, D-057 (18)-(20)). GENERATED, do not edit by hand:
 		python3 games/game-001/art/env_kit/env_to_luau.py
-	source games/game-001/art/env_kit/env.json  sha256 72788a2e2e9b5839271879fc8286c8f2621c1d0fdafcf6f52ee0a3e0732cd36b
+	source games/game-001/art/env_kit/env.json  sha256 5faf1cd17110151547352b219ac3ce7ec52d8a4773fff81dae6d2b11dd936282
 	56 props (10 also resource nodes).
 	Kit/EnvMesh.luau reads it; Kit.prop uses a Forge.Assets Model for these ids only when it matches, else the stand-in.
 ]]
