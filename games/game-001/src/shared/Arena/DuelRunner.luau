@@ -114,7 +114,7 @@ function DuelRunner.new(setup: any, config: any?): any
 	self._acc = 0
 	self._nextSnapshot = 0
 	self._started = false
-	self._pending_forfeit = nil :: { winner: string, at: number }?
+	self._pendingForfeit = nil :: { winner: string, at: number }?
 	self._poseLostFor = { a = 0, b = 0 }
 	self._poseLostTotal = { a = 0, b = 0 }
 	self._result = nil :: { side: string, reason: string }?
@@ -304,7 +304,7 @@ end
 
 -- A human champion the pose provider cannot find (a reset, a respawn gap) pauses the duel instead of becoming a target
 -- nobody can hit; after `poseGraceSeconds` without a pose (or twice that over the whole duel) that champion forfeits. True while the duel is paused.
-function DuelRunner:_poseLost(elapsed: number, now: number, out: { any }): boolean
+function DuelRunner:_poseLost(elapsed: number, now: number): boolean
 	if self._pose == nil then
 		return false
 	end
@@ -347,7 +347,7 @@ function DuelRunner:step(now: number): { any }
 		self._last = now
 		return out
 	end
-	local pending = self._pending_forfeit
+	local pending = self._pendingForfeit
 	if pending then
 		-- the duel stands still while a forfeit settles; `finished()` and the one `ended` event wait out the window so
 		-- a leave by the other champion in the same moment can still make it a draw
@@ -362,7 +362,7 @@ function DuelRunner:step(now: number): { any }
 	end
 	local elapsed = math.min(math.max(0, now - (self._last :: number)), self._cfg.maxCatchup)
 	self._last = now
-	if self:_poseLost(elapsed, now, out) then
+	if self:_poseLost(elapsed, now) then
 		return out
 	end
 	self._acc += elapsed
@@ -380,7 +380,7 @@ function DuelRunner:forfeit(userId: number, now: number): { any }
 	if side == nil or self._result ~= nil then
 		return out
 	end
-	local pending = self._pending_forfeit
+	local pending = self._pendingForfeit
 	if pending then
 		-- the winner leaving within the same moment as the loser: nobody outlasted the other
 		if pending.winner == side and now - pending.at <= self._cfg.simultaneousSeconds then
@@ -390,7 +390,7 @@ function DuelRunner:forfeit(userId: number, now: number): { any }
 		return out
 	end
 	self._sides[side].gone = true
-	self._pending_forfeit = { winner = if side == "a" then "b" else "a", at = now }
+	self._pendingForfeit = { winner = if side == "a" then "b" else "a", at = now }
 	return out
 end
 

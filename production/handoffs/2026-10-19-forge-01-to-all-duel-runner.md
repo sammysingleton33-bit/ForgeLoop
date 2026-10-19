@@ -13,7 +13,7 @@ One duel as the server will run it, and the exact `Arena.Events` payload the cli
 | `parry`, `stagger`, `staminaOut`, `hype` | as DuelModel | none |
 | `triggerFired` | who it helps | `{ trigger = TriggerId, citizenName? }` (`citizenName` from the duellist's offer; none for the Crowd Rally) |
 | `ended` | `"a"`, `"b"` or `"draw"` | `{ reason = "ko" \| "timeCap" \| "hardCap" \| "draw" \| "forfeit" }` |
-| `snapshot` | `"a"` | the public picture (`DuelModel.snapshot`): both sides' hp / hpShare / stamina / staminaShare / state / hype / weapon / armour, `suddenDeath`, every 0.2 duel seconds while the duel runs |
+| `snapshot` | `"a"` (unused) | every `snapshotEvery` (0.2 s) of duel time, shares only: `{ t, suddenDeath, a, b }`, each side `{ hpShare, staminaShare (0..1), state, hype, weapon, armour }` (no hp, stamina, ended, winner) |
 `miss` and `dodged` stay inside. No raw HP or stamina (the `snapshot` event carries shares, state, hype, weapon and armour), no `impactAt`, no trigger `source`, nothing about a duellist's reserve.
 
 ## Done
@@ -24,7 +24,7 @@ One duel as the server will run it, and the exact `Arena.Events` payload the cli
   - A block the client never ends is released after `blockMaxSeconds` (2.5 s).
   - Fixed 1/30 s ticks whatever the frame rate; a stall catches up at most `maxCatchup` (0.25 s).
   - AI champions play through `DuelAI`.
-  - Forfeit: the other side wins (`ended` reason "forfeit"); both gone = draw.
+  - Forfeit: the other side wins (`ended` reason "forfeit", sent by the first `step` after `simultaneousSeconds`); both gone within the window = `draw` with reason "forfeit".
 - Specs `sim/DuelRunner` (28); mutation rows `FL-0071R.py` (35).
 
 ## Not yet
