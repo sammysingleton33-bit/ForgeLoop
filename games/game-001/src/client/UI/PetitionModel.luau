@@ -91,12 +91,15 @@ function PetitionModel.perk(view: any): any
 		return nil
 	end
 	local name = firstName(view)
-	local loyalty = if type(view.loyalty) == "number" and view.loyalty == view.loyalty
-		then math.clamp(math.floor(view.loyalty + 0.5), 0, 100)
+	-- The power follows the raw loyalty, as SupportModel.offers compares it (79.6 is not pledged; FORGE-07 L1 on #227);
+	-- the shown number is rounded down so it never reads 80 below the threshold.
+	local raw = if type(view.loyalty) == "number" and view.loyalty == view.loyalty
+		then math.clamp(view.loyalty, 0, 100)
 		else 0
+	local loyalty = math.floor(raw)
 	local pledgedAt, empoweredAt = Support.offer.pledgedLoyalty, Support.offer.empoweredLoyalty
-	local power = if loyalty >= empoweredAt then "empowered" elseif loyalty >= pledgedAt then "pledged" else "none"
-	local shown = offerAt(role, name, math.max(loyalty, pledgedAt))
+	local power = if raw >= empoweredAt then "empowered" elseif raw >= pledgedAt then "pledged" else "none"
+	local shown = offerAt(role, name, math.max(raw, pledgedAt))
 	local empowered = offerAt(role, name, empoweredAt)
 	if shown == nil then
 		return nil
@@ -113,7 +116,7 @@ function PetitionModel.perk(view: any): any
 		icon = trigger.icon,
 		loyalty = loyalty,
 		power = power,
-		toGo = if power == "none" then pledgedAt - loyalty else nil,
+		toGo = if power == "none" then math.max(1, math.ceil(pledgedAt - raw)) else nil,
 		headline = headline,
 		effect = shown.effect,
 		when = `When {shown.condition}`,

@@ -582,12 +582,13 @@ function CitizenCard:render(model: any, metrics: any, ui: { [string]: any })
 	local talk = ui.talk or { visible = false }
 	local footer = if talk.visible then 52 else 0
 	local pv = ui.petition
-	local petition = if pv and pv.visible and pv.model then petitionBox(pv.model, pv, if phone then 2 else 1) else nil
+	local petition = if pv and pv.visible and pv.model then petitionBox(pv.model, pv, if phone then 0 else 1) else nil
 	local perk = if ui.perk then perkBox(ui.perk, if phone then 3 else 2) else nil
 	if phone then
 		local body = column("Body", content, UDim2.new(1, 0, 1, -footer), UDim2.new())
-		put(opinion(model, true, 1), body)
+		-- an open petition comes first on phones: its Fulfil is the card's one action (FORGE-07 L2 on #227)
 		put(petition, body)
+		put(opinion(model, true, 1), body)
 		put(perk, body)
 		put(intent(model, 4), body)
 		put(traits(model, 5), body)

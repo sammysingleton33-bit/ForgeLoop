@@ -385,7 +385,8 @@ Run on a desktop window and the phone emulator (667 × 375).
 4. With enough: Fulfil shows a busy state, then "Petition fulfilled"; the treasury drops by the cost, the Petition box
    goes and loyalty rises. A second quick tap sends nothing more.
 5. Let a petition lapse, then press Fulfil: the reason ("That petition has lapsed.") appears under the button.
-6. Phone emulator: the card is one scrolling column; Petition comes before the perk box, Fulfil is 44 px tall.
+6. Phone emulator: the card is one scrolling column; an open Petition comes first (Fulfil in view without scrolling),
+   then the opinion and the perk box; Fulfil is 44 px tall.
 
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.

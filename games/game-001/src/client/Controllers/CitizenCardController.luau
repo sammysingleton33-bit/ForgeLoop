@@ -62,6 +62,9 @@ local Def = { name = "CitizenCardController", dependencies = { "KingdomHudContro
 CitizenCardController.MENU = "citizen"
 CitizenCardController.REFRESH_SEC = 4
 CitizenCardController.FULFIL = "Kingdom.FulfilPetition"
+-- A Fulfil with no answer by then is given up: the button comes back with "Couldn't reach the server" and a late
+-- answer is ignored (the periodic refresh shows the petition's real state; FORGE-07 L4 on #227).
+CitizenCardController.FULFIL_TIMEOUT_SEC = 10
 CitizenCardController.WAITING_SEC = 0.5
 CitizenCardController.WAITING_RAIL = table.freeze({
 	id = "waiting",
@@ -372,6 +375,14 @@ function CitizenCardController:fulfil()
 	local token = self._fulfilToken
 	self.petition = { state = "loading", error = nil }
 	hud:render()
+	self._env.spawn(function()
+		self._env.wait(CitizenCardController.FULFIL_TIMEOUT_SEC)
+		if token == self._fulfilToken and self.petition.state == "loading" and not self._destroyed then
+			self._fulfilToken += 1 -- the late answer no longer counts
+			self.petition = { state = "idle", error = CitizenText.unreachable() }
+			hud:render()
+		end
+	end)
 	self._env.spawn(function()
 		local called, ok, reason = pcall(function()
 			return hud.remotes:invoke(CitizenCardController.FULFIL, p.id)
