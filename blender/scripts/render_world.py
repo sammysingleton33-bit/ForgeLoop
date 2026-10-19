@@ -8,10 +8,14 @@ views, so the layout, terrain, props and starting buildings can be reviewed befo
 Writes blender/previews/world_<view>.jpg (<= 250 KB). Terrain colours match world/Lighting.luau
 terrainColors; Roblox Terrain smoothing/textures and Lighting (Future, Atmosphere) are approximated.
 
-Default-camera views (the visual upgrade, D-019): `default_<kingdom>` (crimson, azure, emerald, gold) stand where the ruler's
-camera stands when a player joins: RulerCameraController.DEFAULTS, overview zoom 120 studs from the focus (the plot spawn), pitch
-50 degrees (pitchFor(120)), yaw 0 (looking toward -Z), vertical field of view 70, 16:9; `default_phone_<kingdom>` is the same camera
-at 750 x 311. These views light the scene from the world/Lighting.luau preset in the dump (`lighting`): sun height from ClockTime
+Default-camera views (the visual upgrade, D-019). They stand where the ruler's camera stands (RulerCameraController overview, focus =
+the plot spawn, yaw 0 = looking toward -Z, 16:9, vertical field of view as listed; the pitch follows the zoom linearly from 38 degrees at
+zoom 40 to 65 at zoom 220):
+  default_<kingdom>        the START view approved by FORGE-00 on 2026-10-19: zoom 70, FOV 55, pitch 42.5   (kingdom: crimson azure emerald gold)
+  default_phone_<kingdom>  the same camera at 750 x 311
+  far_<kingdom>            players zoom out: zoom 220, FOV 55, pitch 65 (the composition has to hold here too)
+  legacy_<kingdom>         the camera of the B22 build the owner played: zoom 120, FOV 70, pitch 50
+These views light the scene from the world/Lighting.luau preset in the dump (`lighting`): sun height from ClockTime
 and GeographicLatitude (a sun path at the equinox), sun colour from ColorShift_Top, strength from Brightness, the sky fill from
 OutdoorAmbient, the haze from Atmosphere, and the ColorCorrection grade applied after the render. It is a PREVIEW approximation
 (the sun's compass direction, Atmosphere's falloff, Future shadows, bloom and Terrain shading are not Roblox's own): it tells you
@@ -152,29 +156,38 @@ def views(data):
     }
 
 
-# RulerCameraController.DEFAULTS (overview): startZoom 120, pitch 38 deg at minZoom 40 up to 65 at maxZoom 220, FOV 70
-RULER_ZOOM, RULER_FOV = 120.0, 70.0
-RULER_PITCH = 38.0 + (65.0 - 38.0) * (RULER_ZOOM - 40.0) / (220.0 - 40.0)
+# RulerCameraController overview: pitch 38 deg at minZoom 40 up to 65 at maxZoom 220 (Def.pitchFor); the field of view is one value
+CAMERAS = {  # name: (zoom studs, vertical FOV degrees)
+    "default": (70.0, 55.0),   # the new start view (FORGE-00, 2026-10-19): pitch 42.5
+    "far": (220.0, 55.0),      # fully zoomed out
+    "legacy": (120.0, 70.0),   # the B22 build's start view: pitch 50
+}
 KINGDOMS = ("crimson", "azure", "emerald", "gold")
 
 
-def ruler_view(data, kingdom, yaw_deg=0.0):
-    """The ruler's default overview camera: focus = the plot spawn, zoom 120, pitch ~50, yaw 0 (toward -Z) -> (location, focus)."""
+def ruler_pitch(zoom):
+    return 38.0 + (65.0 - 38.0) * (zoom - 40.0) / (220.0 - 40.0)
+
+
+def ruler_view(data, kingdom, zoom, yaw_deg=0.0):
+    """The ruler's overview camera: focus = the plot spawn, `zoom` studs away, yaw 0 (toward -Z) -> (location, focus)."""
     sp = data["plots"][kingdom]["spawn"]
     fx, fy, fz = sp[0], sp[1], sp[2]
-    yaw, pitch = math.radians(yaw_deg), math.radians(RULER_PITCH)
+    yaw, pitch = math.radians(yaw_deg), math.radians(ruler_pitch(zoom))
     fwd = (-math.sin(yaw), -math.cos(yaw))
-    loc = (fx - fwd[0] * RULER_ZOOM * math.cos(pitch), fy + RULER_ZOOM * math.sin(pitch),
-           fz - fwd[1] * RULER_ZOOM * math.cos(pitch))
+    loc = (fx - fwd[0] * zoom * math.cos(pitch), fy + zoom * math.sin(pitch), fz - fwd[1] * zoom * math.cos(pitch))
     return loc, (fx, fy, fz)
 
 
 def default_views(data):
     out = {}
     for k in KINGDOMS:
-        loc, tgt = ruler_view(data, k)
-        out[f"default_{k}"] = (loc, tgt, RULER_FOV, None, (1600, 900))
-        out[f"default_phone_{k}"] = (loc, tgt, RULER_FOV, None, (750, 311))
+        for name, (zoom, fov) in CAMERAS.items():
+            loc, tgt = ruler_view(data, k, zoom)
+            out[f"{name}_{k}"] = (loc, tgt, fov, None, (1600, 900))
+        zoom, fov = CAMERAS["default"]
+        loc, tgt = ruler_view(data, k, zoom)
+        out[f"default_phone_{k}"] = (loc, tgt, fov, None, (750, 311))
     return out
 
 
@@ -240,7 +253,7 @@ def main(argv):
     args = ap.parse_args(argv)
     data = json.loads(Path(args.json).read_text())
     names = [v for v in args.views.split(",") if v]
-    preset = lighting_params(data["lighting"]) if any(n.startswith("default") for n in names) and "lighting" in data else None
+    preset = lighting_params(data["lighting"]) if any(n.split("_")[0] in CAMERAS for n in names) and "lighting" in data else None
 
     rig.reset_scene()
     kitparts.reset_cache()
