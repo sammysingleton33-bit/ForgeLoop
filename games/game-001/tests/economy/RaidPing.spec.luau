@@ -95,6 +95,37 @@ describe("Raid on the rail (FL-0129, FORGE-04's raid ping)", function()
 	end)
 
 	it(
+		"a siege on our keep relabels the same button 'Siege'; back to 'Raid' when only raiders remain (#235)",
+		function()
+			world = newWorld()
+			local function label()
+				local b = button(world)
+				local out = {}
+				for _, d in if b then b:GetDescendants() else {} do
+					if d:IsA("TextLabel") and d.Text ~= "" then
+						table.insert(out, d.Text)
+					end
+				end
+				return table.concat(out, " ")
+			end
+			world.state.alert = { kind = "siege", position = Vector3.new(0, 0, 0), kingdom = "azure", at = 1 }
+			world:advance(1.2)
+			expect(button(world)).toBeTruthy()
+			expect(label()).toContain("Siege")
+			expect(button(world):GetAttribute("OnboardingTarget")).toBe("HUD.RaidButton") -- #236's siege tip
+			tap(button(world))
+			expect(world.state.went).toBe(1)
+			world.state.alert = { kind = "raid", position = Vector3.new(0, 0, 0), kingdom = "azure", at = 2 }
+			world:advance(1.2)
+			expect(label()).toContain("Raid")
+			expect(label()).never.toContain("Siege")
+			world.state.alert = nil
+			world:advance(1.2)
+			expect(button(world)).toBeNil()
+		end
+	)
+
+	it(
 		"phone 667 × 375: the button is there (no keys on a phone); no FORGE-04 controller or a failing one: none",
 		function()
 			world = newWorld({ width = 667, height = 375 })
