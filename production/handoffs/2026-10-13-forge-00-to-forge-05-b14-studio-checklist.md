@@ -234,3 +234,23 @@ Run the B21.2 rows (Q1–Q3) on B21.3, importing **this build's** `citizen_kit.f
 | R4 | Desktop at 1280×720 and 1920×1080 | the Kingdom drawer's Rivals tab no longer touches Close; nothing is clipped |
 | R5 | After the import: idle citizens and hat jobs at 40 and 170 studs | idle citizens wear a headband and pack; hat jobs show a hair tuft (screenshot) |
 | R6 | Output through a full match | copy every red line |
+
+## B22 additions (main `e8ea78c`, BuildInfo `e8ea78c4e099…`): the Crown Arena is playable, nature meshes
+Run R1–R6 on B22 first, then these. FORGE-05's B22 asks in `production/quality-gates/studio-runs.md` hold the detailed steps (E16 step 8, E20 steps 4–5). To reach the arena fast: in the server console, `match.mode match`, then `match.phase Endgame`, then wait about 10 min (or play a full match).
+
+| ID | Check | Pass |
+|---|---|---|
+| S1 | Reach the arena: the two kingdoms with the most Crown Points qualify | the vote, then the loadout (weapon, armour, up to 2 support triggers), the intro, the duel, the crowning; no step hangs |
+| S2 | Duel against the AI champion (play solo) | light, heavy, block, parry and dodge all respond; the AI fights back and can win or lose; the result matches the HP bars |
+| S3 | Start the intro while sitting on your throne (the default overview camera) | you stand up on your mark at the intro, not on the throne and not at the ring edge |
+| S4 | During the duel, walk or run away from the other champion | you stop at the ring edge (radius about 21 studs) and face the centre; running away cannot run out the clock |
+| S5 | Two clients in a duel, one holds sprint (E16 step 8) | both champions move at the same speed; sprint works again after the crowning |
+| S6 | Press Reset mid-duel | you come back on your mark (or at the ring edge, facing in), the duel goes on, and WalkSpeed is normal after the crowning |
+| S7 | Join a second client mid-duel (E20 step 5) | the new client sees the stands, the crowd and the arena HUD for the current stage at once |
+| S8 | The crowd and stands (E20 step 4) | both stands fill with figures in their kingdom colours; neutral stands stay grey; no frame hitch when the crowd appears (MicroProfiler) |
+| S9 | The support meter and the arena recap | the meter shows your tier and top reasons; offered triggers match your key citizens; nothing feels unfair or unexplained |
+| S10 | Kingdom menu → How to play → the Crown Arena card | it describes the arena as it now plays |
+| S11 | Phone emulator (667×375): duel buttons and the arena HUD | buttons sit around the jump button without covering it; the HUD and subtitles fit |
+| S12 | Optional: import `env_kit.fbx` (art/IMPORT_ENVIRONMENT.md) after the citizen kit, then Play (F5) | server Output has **no** `Kit.prop: the imported … is not used` line; `envMeshStatus()` shows `rejected` empty and `accepted` > 0 (not 56; the doc is corrected in B22.1); trees and rocks look like one world with the buildings (aerial and 82-stud screenshots); Render Stats on a phone |
+| S13 | Mesh citizens in Play (after the citizen kit import) | no `Kit.character` fallback in the server Output; `characterMeshStatus()` shows mesh builds and no lastFallback (the B21.x builds would have fallen back in Play; B22 fixes that) |
+| S14 | Output through a full match ending in the arena | copy every red line |
