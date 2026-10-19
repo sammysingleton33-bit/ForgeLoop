@@ -23,18 +23,20 @@
 		              every old building as destroyed in one batch when a match ends, keeps of two or more
 		              kingdoms at once, which no conquest does
 		AnnouncerController.moment
-		    raid on  -> the raid's position becomes the alert: a red beacon there (war.raid.ping) until
+		    raid on  -> the raid's position becomes an alert: a red beacon there (war.raid.ping) until
 		              the raid ends; G (keyboard) or DPadUp (gamepad), or goToAlert() from a HUD button,
 		              takes the overview camera to it
-		    raid off / kingdomFell -> the alert and its beacon end
+		    siege on -> the same for our besieged keep (the moment's position is the keep's): go defend
+		    raid off / siege off -> that alert and its beacon end; kingdomFell -> both end
+		    A siege outranks a raid: while both are on, the alert (and G) is the keep.
 	Battle music: every hit shown near the view (a flash or a building hit) calls
 	MusicController:combatNear(), so the attacker hears the battle too, not only the raided kingdom.
 	Battle places (hotspots): every building hit and every flashed rig is remembered for HOTSPOT_SEC,
 	merged within HOTSPOT_STUDS, for the spectate camera (RulerSpectateController) and the HUD.
 
 	API
-		controller:goToAlert() -> boolean          the camera to the current raid (false: none)
-		controller:alert() -> { position, kingdom?, at }?
+		controller:goToAlert() -> boolean          the camera to the current alert (false: none)
+		controller:alert() -> { kind = "siege" | "raid", position, kingdom?, at }?
 		controller:hotspots(now?) -> { { position, at, count } }   newest first
 		controller:step(dt)                        one frame of fades, flashes and shakes (specs)
 	Engine access is guarded: without a Workspace, input or remotes it boots and does nothing.
@@ -51,7 +53,7 @@ Def.FX = table.freeze({
 	hit = "war.hit",
 	buildingHit = "war.building.hit",
 	collapse = "war.building.collapse",
-	ping = "war.raid.ping",
+	ping = "war.raid.ping", -- the beacon of a raid and of a siege on our keep
 })
 Def.SOUND = table.freeze({ hit = "war.hit", collapse = "war.collapse" })
 Def.MAX_STUDS = 220 -- from the view's focus: the overview's widest zoom
@@ -64,6 +66,7 @@ Def.HIT_GAP_SEC = 0.75
 Def.SHAKE = table.freeze({ studs = 0.35, sec = 0.3, max = 3 })
 Def.COLLAPSE_MAX = 6
 Def.COLLAPSE_SHAKE = table.freeze({ magnitude = 0.25, duration = 0.4, studs = 120 })
+Def.ALERT_ORDER = table.freeze({ "siege", "raid" }) -- the first one on is the alert
 Def.HOTSPOT_SEC = 20
 Def.HOTSPOT_STUDS = 40
 Def.HOTSPOT_MAX = 12
@@ -160,7 +163,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_lastHit = {} :: { [number]: number },
 		_shakes = {} :: { [any]: { parts: { any }, offset: Vector3, age: number, seed: number } },
 		_hotspots = {} :: { { position: Vector3, at: number, count: number } },
-		_alert = nil :: { position: Vector3, kingdom: string?, at: number, effect: any }?,
+		_alerts = {} :: { [string]: { position: Vector3, kingdom: string?, at: number, effect: any } },
 		stats = { flashes = 0, fades = 0, hits = 0, shakes = 0, collapses = 0, resets = 0, skipped = 0 },
 	}, FeedbackWarController)
 end
@@ -592,42 +595,59 @@ function FeedbackWarController:onMoment(moment: any)
 	if type(moment) ~= "table" then
 		return
 	end
-	if moment.kind == "raid" then
+	local kind = moment.kind
+	if kind == "raid" or kind == "siege" then
 		if moment.on == true and typeof(moment.position) == "Vector3" then
-			self:_clearAlert()
-			self._alert = {
+			self:_clearAlert(kind)
+			self._alerts[kind] = {
 				position = moment.position,
 				kingdom = if type(moment.kingdom) == "string" then moment.kingdom else nil,
 				at = self._env.clock(),
 				effect = self:_play(Def.FX.ping, moment.position),
 			}
 		elseif moment.on == false then
-			self:_clearAlert()
+			self:_clearAlert(kind)
 		end
-	elseif moment.kind == "kingdomFell" then
+	elseif kind == "kingdomFell" then
 		self:_clearAlert()
 	end
 end
 
-function FeedbackWarController:_clearAlert()
-	local alert = self._alert
-	self._alert = nil
-	if alert ~= nil and alert.effect ~= nil and self._vfx ~= nil and self._vfx.stop ~= nil then
-		pcall(self._vfx.stop, self._vfx, alert.effect)
+-- Ends one alert ("raid" or "siege"), or every alert when kind is nil.
+function FeedbackWarController:_clearAlert(kind: string?)
+	for _, name in Def.ALERT_ORDER do
+		local alert = self._alerts[name]
+		if alert ~= nil and (kind == nil or kind == name) then
+			self._alerts[name] = nil
+			if alert.effect ~= nil and self._vfx ~= nil and self._vfx.stop ~= nil then
+				pcall(self._vfx.stop, self._vfx, alert.effect)
+			end
+		end
 	end
 end
 
-function FeedbackWarController:alert(): { position: Vector3, kingdom: string?, at: number }?
-	local alert = self._alert
-	if alert == nil then
+-- The alert that counts: a siege on our keep before a raid in our lands.
+function FeedbackWarController:_current(): (string?, any)
+	for _, name in Def.ALERT_ORDER do
+		local alert = self._alerts[name]
+		if alert ~= nil then
+			return name, alert
+		end
+	end
+	return nil, nil
+end
+
+function FeedbackWarController:alert(): { kind: string, position: Vector3, kingdom: string?, at: number }?
+	local kind, alert = self:_current()
+	if kind == nil then
 		return nil
 	end
-	return { position = alert.position, kingdom = alert.kingdom, at = alert.at }
+	return { kind = kind :: string, position = alert.position, kingdom = alert.kingdom, at = alert.at }
 end
 
--- The overview camera to the raid (the HUD's ping button calls this too).
+-- The overview camera to the current alert (the HUD's ping button calls this too).
 function FeedbackWarController:goToAlert(): boolean
-	local alert = self._alert
+	local _, alert = self:_current()
 	local camera = self._camera
 	if alert == nil or camera == nil or camera.focusOn == nil then
 		return false

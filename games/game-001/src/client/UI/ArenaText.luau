@@ -39,7 +39,7 @@ ArenaText.WEAPONS = table.freeze({
 	),
 	row("greatsword", "Greatsword", "Greatsword", "weapon_greatsword", "The heaviest blows, slower swings"),
 	row("spear", "Spear", "Spear", "weapon_spear", "The fastest light attack"),
-	row("mace", "Mace", "Mace", "weapon_mace", "Breaks guards: blocked hits cost more stamina"),
+	row("mace", "Mace", "Mace", "weapon_mace", "Breaks guards: costly to block"),
 })
 
 ArenaText.ARMOUR = table.freeze({

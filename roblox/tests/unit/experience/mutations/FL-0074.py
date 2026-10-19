@@ -6,6 +6,11 @@ S, C, X, G, C2 and F come from mutations.py. Add rows for FL-0074 here only (D-0
 D = F + "CrowdDirector.luau"
 K = G + "config/Crowd.luau"
 K2 = C2 + "FeedbackCrowdController.luau"
+ST = C2 + "CrowdStageController.luau"
+RC = C2 + "RulerCameraController.luau"
+MC = C2 + "MusicController.luau"
+MD = X + "MusicDirector.luau"
+AU = C + "AudioController.luau"
 M = [
  # figures and seats
  ("FL-0074", D, 'return math.min(math.ceil(n / config.citizensPerFigure), config.maxPerStand)', 'return math.ceil(n / config.citizensPerFigure)', "CrowdDirector", "one figure per two citizens", "game"),
@@ -80,4 +85,38 @@ M = [
  ("FL-0074", K2, '\theight = 44,', '\theight = 28,', "CrowdClient", "every subtitle fits a two-line box", "game"),
  ("FL-0074", K2, '\tmaxChars = 80,', '\tmaxChars = 40,', "CrowdClient", "every subtitle fits a two-line box", "game"),
  ("FL-0074", K, 'fineWares = "Fine Wares",', 'fineWares = "Fine Steel",', "CrowdDirector", "a triggerFired names its perk", "game"),
+# part 2b: the arena stage (intro pass, music scene, stingers)
+ ("FL-0074", ST, 'local order = if side == nil then { "a", "b" } else { away, home }', 'local order = { "a", "b" }', 'CrowdStage', 'the intro: one horn', 'game'),
+ ("FL-0074", ST, 'local yaw = Def.yawToward(geometry[home], geometry.centre)', 'local yaw = Def.yawToward(geometry.a, geometry.centre)', 'CrowdStage', 'a ruler of neither kingdom', 'game'),
+ ("FL-0074", ST, '\t\treturn -- a repeated push of the same stage plays nothing twice\n', '\t\tlocal _ = 0\n', 'CrowdStage', 'the intro: one horn', 'game'),
+ ("FL-0074", ST, 'if type(state.winner) == "number" or crowned then', 'if true then', 'CrowdStage', 'crowning: a fanfare for a winner', 'game'),
+ ("FL-0074", ST, 'self:_scene(Def.SCENE_STAGES[stage] == true)', 'self:_scene(true)', 'CrowdStage', 'crowning: a fanfare for a winner', 'game'),
+ ("FL-0074", ST, 'if previous ~= "intro" then', 'if true then', 'CrowdStage', 'a late joiner gets the ring', 'game'),
+ ("FL-0074", ST, 'if left ~= nil and left <= 0 then', 'if false then', 'CrowdStage', 'the pass shrinks to the intro time left', 'game'),
+ ("FL-0074", ST, 'local scale = math.min(1, budget / full)', 'local scale = 1', 'CrowdStage', 'the pass shrinks to the intro time left', 'game'),
+ ("FL-0074", ST, 'if self._mine ~= nil and duellist.kingdom == self._mine then', 'if false then', 'CrowdStage', 'the intro: one horn', 'game'),
+ ("FL-0074", ST, 'then most :: number else full', 'then full else full', 'CrowdStage', 'pure helpers', 'game'),
+ ("FL-0074", ST, '\t\treturn false -- a real arena stage is never interrupted\n', '\t\tlocal _ = 0\n', 'CrowdStage', 'Studio preview plays the intro', 'game'),
+ ("FL-0074", ST, '\tif not self:_isStudio() then\n\t\treturn false\n\tend\n\tlocal side =', '\tlocal side =', 'CrowdStage', 'Studio preview plays the intro', 'game'),
+ ("FL-0074", RC, '\t\tself._shots = nil -- and a scripted pass: the player takes over\n', '', 'RulerCamera', 'playShots glides through each shot', 'game'),
+ ("FL-0074", RC, '\tif self._shots ~= nil then\n\t\tself._shots = nil\n\t\tself._glide = nil\n\tend', '\tif self._shots ~= nil then\n\t\tself._shots = nil\n\tend', 'RulerCamera', 'playShots glides through each shot', 'game'),
+ ("FL-0074", RC, '\tself:_stepShots(dt)\n', '', 'RulerCamera', 'playShots glides through each shot', 'game'),
+ ("FL-0074", RC, 'seconds = math.min(shot.seconds, Def.SHOT_MAX_SEC),', 'seconds = shot.seconds,', 'RulerCamera', 'playShots glides through each shot', 'game'),
+ ("FL-0074", RC, '\t\tself._shots = nil -- leaving the overview ends a scripted pass\n', '', 'RulerCamera', 'reduced motion cuts to each shot', 'game'),
+ ("FL-0074", MC, 'scene = if self:_scenePlays() then self.scene else nil,', 'scene = nil,', 'KingdomFeedback', 'the arena scene plays over battle music', 'game'),
+ ("FL-0074", MC, '\t\tself:clearAlerts()\n\t\tself.scene = nil\n', '\t\tself:clearAlerts()\n', 'KingdomFeedback', 'the arena scene plays over battle music', 'game'),
+ ("FL-0074", MD, 'if type(inputs.scene) == "string" and inputs.scene ~= "" then', 'if false then', 'experience/Feedback', 'a scene plays at once', 'fw'),
+ ("FL-0074", MD, 'local leavingUrgent = fromScene or self.state == "battle"', 'local leavingUrgent = self.state == "battle"', 'experience/Feedback', 'a scene plays at once', 'fw'),
+ ("FL-0074", MD, 'return MusicDirector.STATE_SOUNDS[state] or ("music." .. state)', 'return MusicDirector.STATE_SOUNDS[state]', 'experience/Feedback', 'a scene plays at once', 'fw'),
+ ("FL-0074", AU, 'local id = if state then MusicDirector.soundFor(state) else nil', 'local id = if state then MusicDirector.STATE_SOUNDS[state] else nil', 'experience/Audio', 'crossfades music on its own channel', 'fw'),
+ # --- FORGE-07 #231 review: M1 a scene with no asset keeps the music; L1 coronation fanfare; L2 asserts
+ ("FL-0074", MC, 'scene = if self:_scenePlays() then self.scene else nil,', 'scene = self.scene,', 'KingdomFeedback', 'while music.arena has no asset', 'game'),
+ ("FL-0074", MC, 'return ok and plays == true', 'return ok', 'KingdomFeedback', 'while music.arena has no asset', 'game'),
+ ("FL-0074", AU, 'return entry ~= nil and entry.asset ~= nil', 'return entry ~= nil', 'experience/Audio', 'hasMusic: a state', 'fw'),
+ ("FL-0074", ST, 'if type(state.winner) == "number" or crowned then', 'if type(state.winner) == "number" then', 'CrowdStage', 'crowning: a fanfare for a winner', 'game'),
+ ("FL-0074", ST, 'local crowned = type(state.coronation) == "string" and state.coronation ~= ""', 'local crowned = state.coronation ~= nil', 'CrowdStage', 'crowning: a fanfare for a winner', 'game'),
+ ("FL-0074", ST, 'Def.SCENE_STAGES = table.freeze({ intro = true, duel = true, crowning = true })', 'Def.SCENE_STAGES = table.freeze({ vote = true, intro = true, duel = true, crowning = true })', 'CrowdStage', 'crowning: a fanfare for a winner', 'game'),
+ ("FL-0074", ST, '\tif self._previewing then\n\t\tself:_stopPreview() -- the real arena takes over', '\tif false then\n\t\tself:_stopPreview() -- the real arena takes over', 'CrowdStage', 'Studio preview plays the intro', 'game'),
+ ("FL-0074", RC, 'self._shots = nil -- a conversation ends a scripted pass', 'local _ = 0', 'RulerCamera', 'playShots glides through each shot', 'game'),
+ ("FL-0074", RC, 'focus = Def.clampFocus(focus, self._bounds, overview.boundsMargin)', 'focus = focus', 'RulerCamera', 'playShots glides through each shot', 'game'),
 ]

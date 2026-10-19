@@ -294,6 +294,24 @@ function KingdomPanel:_overview(content: Instance, model: any, phone: boolean): 
 		crest.Parent = row
 	end
 	standings.Parent = scroll
+	-- How to play (FL-0138): the rules in six cards, any time (KingdomHudController passes onHelp when it is loaded)
+	if self._ui.onHelp then
+		local help = Button.new({
+			text = "How to play",
+			icon = "info",
+			variant = "secondary",
+			size = "regular",
+			onActivated = function()
+				if self._ui.onHelp then
+					self._ui.onHelp()
+				end
+			end,
+		})
+		help.instance.Name = "HowToPlay"
+		help.instance.LayoutOrder = 4
+		help.instance.Size = UDim2.new(1, 0, 0, 44)
+		help.instance.Parent = scroll
+	end
 	return scroll
 end
 
@@ -643,8 +661,11 @@ function KingdomPanel:_frame(model: any, metrics: any)
 	close.instance.Position = UDim2.fromScale(1, 0.5)
 	close.instance.Name = "Close"
 	close.instance.Parent = header
+	-- Tablet (1024x768, 1280x720: the 560 px drawer): "Kingdom" + four labelled tabs + Close leave the Rivals tab
+	-- touching Close (FL-0138 desktop audit), so the title goes, as on phones; the open rail button names the drawer.
+	local titled = not phone and not (metrics.breakpoint == "tablet" and #tabs > #KingdomPanel.TABS)
 	self.panel = Panel.new({
-		title = if phone then nil else "Kingdom",
+		title = if titled then "Kingdom" else nil,
 		header = header,
 		size = UDim2.fromOffset(d.width, d.height),
 		position = UDim2.fromOffset(d.x, d.y),
@@ -695,6 +716,7 @@ function KingdomPanel:render(model: any, metrics: any, ui: { [string]: any })
 			banner = model.banner,
 			members = model.members,
 			standings = model.standings,
+			help = ui.onHelp ~= nil,
 			phone = phone,
 		})
 		if key ~= self._bodyKey then

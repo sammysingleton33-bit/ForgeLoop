@@ -45,12 +45,18 @@ local function signed(n: number): string
 	return if r > 0 then `+{r}` elseif r < 0 then `−{-r}` else "0"
 end
 
+-- The trend window from config (Support.trendSeconds), not a literal (FORGE-07 L2 on #225).
+local function window(): string
+	local minutes = math.max(1, math.floor(Support.trendSeconds / 60 + 0.5))
+	return `{minutes} min`
+end
+
 local function trendOf(t: any): any
 	local v = if type(t) == "number" and t == t then t else 0
 	if v > SupportMeterModel.TREND_STEP then
-		return { arrow = "▲", text = `Rising {signed(v)} in 5 min`, color = Theme.color("vert") }
+		return { arrow = "▲", text = `Rising {signed(v)} in {window()}`, color = Theme.color("vert") }
 	elseif v < -SupportMeterModel.TREND_STEP then
-		return { arrow = "▼", text = `Falling {signed(v)} in 5 min`, color = Theme.color("gules") }
+		return { arrow = "▼", text = `Falling {signed(v)} in {window()}`, color = Theme.color("gules") }
 	end
 	return { arrow = "▬", text = "Steady", color = Theme.color("textMuted") }
 end

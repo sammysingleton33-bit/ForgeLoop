@@ -159,6 +159,8 @@ function SupportMeterController:_onKingdoms()
 		self._env.spawn(function()
 			self:refresh()
 		end)
+	else
+		self:apply(nil, false) -- no kingdom: no chip and no room kept for it in Layout (FORGE-00, #225 verifier)
 	end
 end
 

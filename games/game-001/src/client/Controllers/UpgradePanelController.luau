@@ -263,10 +263,16 @@ function UpgradePanelController:_moveAction(building: any): any
 	if build == nil or build.startMove == nil then
 		return nil
 	end
-	local cooldown = (BuildingsConfig :: any).moveCooldown
-	cooldown = if type(cooldown) == "number" then cooldown else UpgradePanelController.MOVE_COOLDOWN
-	local movedAt = build.movedAt and build.movedAt[building.id]
-	local left = if movedAt then cooldown - (self._env.clock() - movedAt) else 0
+	-- one rule for the Move button and the drag (FL-0123): BuildMenuController:moveCooldownLeft
+	local left
+	if type(build.moveCooldownLeft) == "function" then
+		left = build:moveCooldownLeft(building.id)
+	else
+		local cooldown = (BuildingsConfig :: any).moveCooldown
+		cooldown = if type(cooldown) == "number" then cooldown else UpgradePanelController.MOVE_COOLDOWN
+		local movedAt = build.movedAt and build.movedAt[building.id]
+		left = if movedAt then cooldown - (self._env.clock() - movedAt) else 0
+	end
 	if left > 0 then
 		self:_renderAfter(left)
 		return { text = "Moved", icon = "move", state = "disabled" }

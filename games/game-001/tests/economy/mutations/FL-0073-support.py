@@ -4,7 +4,8 @@ Each row breaks one rule and expects a named SupportUI spec to fail.
 Run from the repository root (needs lune on PATH):
     python3 games/game-001/tests/economy/mutations/FL-0073-support.py
 One line per row: CAUGHT / NOT CAUGHT / NOT APPLIED. Exits 1 unless every row is CAUGHT. A run in which no spec file
-ran counts as NOT CAUGHT. Rows: (name, file, old, new, expected failing test (substring of its name)).
+ran counts as NOT CAUGHT. Left out as equivalent: dropping the NaN guard on the trend (NaN fails both comparisons
+and reads "Steady" anyway; the NaN breakdown guard is pinned). Rows: (name, file, old, new, expected failing test (substring of its name)).
 """
 import pathlib, subprocess, sys
 
@@ -15,6 +16,8 @@ RUN = ["lune", "run", "roblox/tests/harness/run.luau", "--project", "games/game-
        "--specs", "games/game-001/tests", "economy/SupportUI"]
 M, V, P, K = U + "SupportMeterModel.luau", U + "SupportMeter.luau", U + "SupportPanel.luau", C + "SupportMeterController.luau"
 ROWS = [
+    ("room kept after losing the kingdom", K, "\t\tself:apply(nil, false) -- no kingdom", "\t\tlocal _ = nil -- no kingdom",
+     "losing my kingdom hides the chip"),
     ("model shows before a view", M, "if type(sv) ~= \"table\" or type(sv.score) ~= \"number\" then\n\t\treturn nil",
      "if type(sv) ~= \"table\" then\n\t\treturn nil", "is nil until the server"),
     ("score not rounded", M, "math.clamp(math.floor(sv.score + 0.5), 0, 100)", "math.clamp(math.floor(sv.score), 0, 100)",
@@ -60,6 +63,26 @@ ROWS = [
     ("bottom ignores the chip", U + "Layout.luau", "\t\tbottom = support.y + h\n", "", "sits where Layout puts it"),
     ("pushes after destroy", K, "function SupportMeterController:apply(view: any, pushed: boolean?)\n\tif self._destroyed then",
      "function SupportMeterController:apply(view: any, pushed: boolean?)\n\tif false then", "after destroy"),
+    # FORGE-07 L1 on #225: the mutants the first spec round let through
+    ("refresh on every kingdoms change", K, "\tif mine == self._mine then\n\t\treturn", "\tif false then\n\t\treturn",
+     "only when my kingdom changes"),
+    ("chip without a banner", K, "local active = HudModel.banner(hud.store) ~= nil and model ~= nil", "local active = model ~= nil",
+     "no chip without a kingdom banner"),
+    ("chip over a conversation", K, "local talking = narrow and hud.state.menu == \"conversation\"", "local talking = false",
+     "narrow phone hides the chip"),
+    ("gap for a nil view", K, "\tlocal visible = model ~= nil\n", "\tlocal visible = true\n", "nil view from GetSupport"),
+    ("push kept after destroy", K, "\t\tself._push = nil\n", "", "destroy removes the push listener"),
+    ("chip glued to the stack", U + "Layout.luau", "support = { x = x, y = bottom + 6,", "support = { x = x, y = bottom,",
+     "chip sits a gap below"),
+    ("phone chip too narrow", U + "Layout.luau", "Layout.SUPPORT_WIDTH_PHONE = 150", "Layout.SUPPORT_WIDTH_PHONE = 90",
+     "chip sits a gap below"),
+    ("score not clamped", M, "math.clamp(math.floor(sv.score + 0.5), 0, 100)", "math.floor(sv.score + 0.5)", "clamps the score"),
+    ("NaN breakdown", M, "if type(raw) == \"number\" and raw == raw then", "if type(raw) == \"number\" then", "clamps the score"),
+    ("trend boundary inclusive", M, "if v > SupportMeterModel.TREND_STEP then", "if v >= SupportMeterModel.TREND_STEP then",
+     "clamps the score"),
+    ("negative rounding", M, "\tif n < 0 then\n", "\tif false then\n", "clamps the score"),
+    ("trend window literal", M, "math.floor(Support.trendSeconds / 60 + 0.5)", "math.floor(600 / 60 + 0.5)", "clamps the score"),
+    ("open stroke thin", V, "if ui.open then 2 else 1,", "if ui.open then 1 else 1,", "gold 2 px outline"),
 ]
 bad = 0
 for name, path, old, new, expect in ROWS:

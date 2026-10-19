@@ -75,6 +75,14 @@ return {
 		source = STORE .. "'medieval sad' / 'lament'",
 		description = "Match lost: dignified lament, not punishing.",
 	}),
+	sound({
+		id = "music.arena",
+		category = "music",
+		volume = 0.55,
+		loop = true,
+		source = STORE .. "'epic tournament' / 'medieval arena drums brass'",
+		description = 'The Crown Arena, from the intro to the crowning (MusicDirector scene "arena", FL-0074).',
+	}),
 	-- Ambience beds (loop; at most 2 at once)
 	sound({
 		id = "ambience.birds",
@@ -439,5 +447,25 @@ return {
 		description = "Crown Arena: the loser with high support; the stand still salutes them.",
 		maxInstances = 2,
 		cooldown = 1,
+	}),
+	sound({
+		id = "arena.horn",
+		category = "sfx",
+		volume = 0.7,
+		priority = 3,
+		source = STORE .. "'medieval herald horn' / 'tournament horn call' (2-3 s)",
+		description = "Crown Arena: the intro begins and the gates open (FL-0074).",
+		maxInstances = 1,
+		cooldown = 5,
+	}),
+	sound({
+		id = "arena.fanfare",
+		category = "sfx",
+		volume = 0.7,
+		priority = 3,
+		source = STORE .. "'royal fanfare trumpets' / 'coronation fanfare' (3-5 s)",
+		description = "Crown Arena: a champion is crowned (not played when the duel is called off) (FL-0074).",
+		maxInstances = 1,
+		cooldown = 5,
 	}),
 }

@@ -385,6 +385,73 @@ Then, with SupportService on, run a desktop window and the phone emulator (667 �
    move and the moment appears at the top of the open drawer without it jumping back to the top of its scroll.
 4. Treasury income ticking does not flicker the chip or reset the drawer's scroll.
 5. Phone emulator: the chip stays clear of the pills and the objective tracker; the drawer scrolls to the last moment.
+6. On a real phone (not only the emulator): tap the chip with a thumb. It is 26 px tall, like the strip and pills
+   beside it (FORGE-07 L3 on #225); note if it takes more than one try.
+
+## U26 — Citizen card: arena perk preview and petitions (FL-0073; needs FORGE-01's `role` / `petition` on Sim.Inspect and `Kingdom.FulfilPetition`)
+Run on a desktop window and the phone emulator (667 × 375).
+1. Open the card of a key citizen (the blacksmith, healer, captain, provisioner, elder or merchant). A box
+   "<Role> · arena perk" says "At 80 loyalty, <Name> will lend you <Perk>" (below 80, with "N more loyalty"), or
+   "<Name> stands with you: <Perk> (Pledged)" with an "At 95: …" line, or "(Empowered)". The effect and the "When …"
+   line match the loadout picker's card for that perk (U24). An ordinary citizen has no such box.
+2. A key citizen with an open petition shows a "Petition" box: their request, its cost, the time left and Fulfil.
+   Before FORGE-01 serves `Kingdom.FulfilPetition` there is no Petition box at all (check this on today's build).
+3. With the treasury short: the missing amount in red ("Need 500 Gold") and Fulfil greyed; nothing happens on a tap.
+4. With enough: Fulfil shows a busy state, then "Petition fulfilled"; the treasury drops by the cost, the Petition box
+   goes and loyalty rises. A second quick tap sends nothing more.
+5. Let a petition lapse, then press Fulfil: the reason ("That petition has lapsed.") appears under the button.
+6. Phone emulator: the card is one scrolling column; an open Petition comes first (Fulfil in view without scrolling),
+   then the opinion and the perk box; Fulfil is 44 px tall.
+
+## U27 — Results recap: Arena & support (FL-0073; needs FORGE-01's SupportService and the Arena remotes)
+Play a match to Results with the arena debug presets (your kingdom's champion Adoring, one with Restless), desktop and
+the phone emulator (667 × 375).
+1. Results → Your reign: next to "Back to results" an "Arena & support" button. Without the arena (no SupportService)
+   there is no such button and Back is full width.
+2. Arena & support: "Biggest moments" lists five moments of the whole match (not only the last few), the biggest
+   change first, each with its component and a signed, coloured number.
+3. "Perks": your champion's chosen perks; the ones that fired in the duel are gold with ✓; "2 of 3 perks fired".
+4. "Crowd": won with Adoring/Loyal "Crowned by your people"; won lower "A quiet crowning"; lost with Adoring/Loyal
+   "Saluted in defeat"; lost lower "The stand emptied"; a cancelled duel "No victor"; no champion "Not in the arena".
+   Compare with what the crowd did in the arena (FORGE-04's crowd states).
+5. "Your reign" switches back; closing and reopening the recap starts on the reign page.
+6. Phone emulator: moments left (scroll to the fifth), perks and crowd right, both buttons 44 px in the bottom row.
+
+## U28 — How to play (FL-0138; runs on today's build)
+Desktop window and the phone emulator (667 × 375); screenshot each card on both.
+1. During the Lobby countdown a "Rules" rail button (an "i" on phones) opens the cards; it is gone once Founding
+   starts.
+2. Kingdom menu → Overview → "How to play" (end of the tab) opens the cards; Close returns to the Kingdom menu.
+3. Six cards: The match (the phase lengths match the phase bar), Crown Points, Build and lead, War, peace and sieges,
+   The Crown Arena, Falling and watching. Each is short plain text with a picture; nothing mentions buying anything.
+4. Back is greyed on the first card; Next walks through; the last card's button reads "Done" and closes.
+5. Keyboard: Right arrow or Enter go on, Left goes back, and the camera does not pan meanwhile; Backspace / gamepad B
+   steps back a card, then closes. Gamepad D-pad left/right also work.
+6. Phone emulator: the panel sits below the Roblox top bar; Back and Next are thumb-sized.
+
+## U29 — desktop window sizes (FL-0138; headless renders + desktop-audit.py are an approximation, this decides)
+Studio's Device emulator (custom sizes) or a resizable Play window, one client, match in Conflict with the diplomacy
+remote (Rivals tab) and the Arena debug preset for step 3.
+1. 1280 × 720 (the tablet breakpoint): HUD stack top left, rail on the right edge, construction chip at the bottom
+   centre; nothing overlaps. Open Build, Kingdom (each tab), Reputation, a citizen card and a conversation: each fits
+   between the HUD stack and the bottom edge, left of the rail.
+2. 1280 × 720 and 1024 × 768, Kingdom → Rivals: no "Kingdom" title in the drawer header; the four labelled tabs keep a
+   clear gap before the close button. Before the Rivals tab exists (no diplomacy remote) the title shows.
+3. 1920 × 1080 and 2560 × 1440: same checks as step 1; at 2560 × 1440 the UI is 1.5× (not tiny), the drawers keep the
+   "Kingdom" title with four tabs, and Results / Your reign, Spectate, the loadout picker, intro card and duel strip
+   sit centred (top-centre for the duel strip), not stuck in a corner.
+
+## U30 — Drag a building (FL-0123; Build.Move served; FORGE-04's edit mode and edge-pan)
+Mouse on a desktop window, then touch in the phone emulator (or a real phone).
+1. Press and hold one of your houses (not the keep): after about half a second the ghost lifts where it stands, the
+   house dims, the Move bar shows. A quick click/tap on it still opens its panel instead.
+2. Keep holding and move: the ghost follows the pointer, tinted green/red as before; dragging does not pan the camera.
+   Move the pointer to a screen edge: the view pans that way (FORGE-04 tunes the speed; say how it feels).
+3. Let go on a green spot: the house moves (toast "House moved"), the bar closes. Let go on a red spot: nothing is
+   sent, the bar stays open with the reason; aim again or Cancel.
+4. Pressing and moving straight away (before the hold) pans the camera as usual and never lifts the house.
+5. Right after a move the same house cannot be dragged until the move cooldown passes (its panel says "Moved").
+6. Touch: one finger holds and drags; a second finger still pinches/rotates the camera.
 
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.
