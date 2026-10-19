@@ -540,7 +540,7 @@ describe("LeadershipService acts from the simulation", function()
 		local w = boot(nil, FAST)
 		local match = w.registry:get("MatchService").host.match
 		assert(match:debugSetPhase("Endgame"))
-		w.k.fedRatio = 1
+		w.k.fedRatio = Support.rules.fedKept.atLeast -- exactly at the bar still counts
 		tick(w)
 		tick(w)
 		expect(#actsOf(w, "fedRatioKept", 1)).toBe(0) -- the phase has not ended
@@ -561,6 +561,7 @@ describe("LeadershipService acts from the simulation", function()
 		w.k.fedRatio = Support.rules.fedKept.atLeast - 0.01
 		tick(w)
 		w.k.fedRatio = 1
+		w.service:sample() -- a normal round has just been taken: a closing one still adds its own
 		local before = #w.service:samples("crimson", 1)
 		w.service:closeOut()
 		expect(#w.service:samples("crimson", 1)).toBe(before + 1)
