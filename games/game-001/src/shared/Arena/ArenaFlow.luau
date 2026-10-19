@@ -31,7 +31,8 @@
 		Flow:result() -> { kind, reason }? how it ended: "duel" | "coronation" | "forfeit" | "draw" | "cancelled"
 
 	Champion rule (design §2): the most votes; a tie or no votes goes to the higher leadership, then the lower userId.
-	An AI champion has a negative userId (-1 for side a, -2 for side b) and isAI = true. Default loadout for a human who
+	An AI champion has isAI = true and a userId no player can have (ArenaFlow.AI_USER_ID: -1000000001 for side a,
+	-1000000002 for side b). Default loadout for a human who
 	never chooses: config Arena default weapon and armour, and the offered perks in order up to their slots.
 ]]
 
@@ -54,6 +55,10 @@ export type Support = {
 
 local ArenaFlow = {}
 ArenaFlow.__index = ArenaFlow
+
+-- An AI champion's userId: a value no player can have (Studio test players take small negative ids), so a client's
+-- "winner == me" test and the world's position lookup can never mistake an AI for a person.
+ArenaFlow.AI_USER_ID = table.freeze({ a = -1000000001, b = -1000000002 })
 
 local function sortedCopy(list: { number }): { number }
 	local out = table.clone(list)
@@ -82,7 +87,7 @@ local function newChampion(side: string, kingdom: string, userId: number?, suppo
 	return {
 		side = side,
 		kingdom = kingdom,
-		userId = if userId then userId else (if side == "a" then -1 else -2),
+		userId = if userId then userId else ArenaFlow.AI_USER_ID[side],
 		isAI = isAI,
 		support = support,
 		weapon = if isAI then config.ai.weapon else config.defaultWeapon,
@@ -112,6 +117,7 @@ function ArenaFlow.new(setup: any, now: number, config: any?): any
 	self._winnerSide = nil :: string?
 	self._winnerKingdom = nil :: string?
 	self._winnerUser = nil :: number?
+	self._crownedAt = nil :: number?
 	self._coronation = nil :: string?
 	self._result = nil :: { kind: string, reason: string? }?
 	self._duelEndsAt = nil :: number?
@@ -213,6 +219,7 @@ function ArenaFlow:_crown(
 	self._winnerSide = side
 	self._winnerKingdom = kingdom
 	self._winnerUser = userId
+	self._crownedAt = now
 	self._coronation = if result.kind == "coronation" then kingdom else nil
 	self._result = result
 	self._rev += 1
@@ -328,8 +335,15 @@ function ArenaFlow:choose(userId: number, weapon: string, armour: string, trigge
 	if type(triggers) ~= "table" then
 		return false, "bad_arguments"
 	end
+	local count = 0
+	for _ in triggers do
+		count += 1
+	end
+	if count ~= #triggers then -- a dictionary or sparse table is not a list
+		return false, "bad_arguments"
+	end
 	local limit = math.min(champion.support.slots, Caps.NUMBERS.maxTriggers)
-	if #triggers > limit then
+	if count > limit then
 		return false, "too_many"
 	end
 	local seen: { [string]: boolean } = {}
@@ -420,6 +434,18 @@ function ArenaFlow:endDuel(result: string, now: number): boolean
 end
 
 function ArenaFlow:forfeit(userId: number, now: number): boolean
+	if self._stage == "crowning" and self._result and self._result.kind == "forfeit" and userId == self._winnerUser then
+		-- the second champion left within the same moment: nobody outlasted the other
+		if now - (self._crownedAt :: number) <= self._cfg.simultaneousSeconds then
+			local champion = self:_championOf(userId)
+			if champion then
+				champion.gone = true
+			end
+			self:_crown(nil, nil, nil, { kind = "draw", reason = "both_left" }, self._crownedAt :: number)
+			return true
+		end
+		return false
+	end
 	if self._stage == "crowning" or self._stage == "done" then
 		return false
 	end

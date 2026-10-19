@@ -11,6 +11,7 @@
 	duelMaxSeconds         the safety clock of the duel stage: the duel's own caps (Duel rules timeCap and hardCap) end
 	                       it first; if the clock still runs out the duel is a draw
 	crowningSeconds        the winner's coronation; the match ends when it does
+	simultaneousSeconds    a second champion leaving this soon after a forfeit makes it a draw (both_left)
 	ai                     an AI kingdom's champion: weapon and armour (the AI duellist's skill is DuelAI's)
 	defaultWeapon          what a human champion fights with if they never choose
 	defaultArmour
@@ -23,6 +24,7 @@ return {
 	introSeconds = 12,
 	duelMaxSeconds = 195,
 	crowningSeconds = 15,
+	simultaneousSeconds = 0.5,
 	defaultWeapon = "swordShield",
 	defaultArmour = "medium",
 	ai = { weapon = "swordShield", armour = "medium" },
