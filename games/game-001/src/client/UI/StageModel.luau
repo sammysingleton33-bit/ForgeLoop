@@ -142,7 +142,14 @@ function build(m: any, above: boolean): Rects
 	local columnW = x + width - columnX
 	local columns = if columnW >= 2 * G.answerColumnMin + G.answerGap then 2 else 1
 	local bottom = m.height - m.margin
-	local top = m.hud.bottom + G.hudGap
+	-- a narrow phone (pills in two rows, the strip under them; L7 audit): the conversation covers the strip, as the
+	-- citizen sheet does, and starts under the pills, or two answers would not fit at 667 × 375
+	local pills = m.hud.pills
+	local top = if pills
+			and pills.rows
+			and pills.rows > 1
+		then pills.y + pills.height + G.hudGap
+		else m.hud.bottom + G.hudGap
 	local close = G.close[bp]
 	return {
 		breakpoint = bp,

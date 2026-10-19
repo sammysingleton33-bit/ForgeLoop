@@ -50,6 +50,7 @@ function ReputationStrip:_build(metrics: any)
 	local r = metrics.hud.reputation
 	local compact = metrics.breakpoint == "phone"
 	self._compact = compact
+	self._rows = math.ceil(#ReputationText.IDS / r.columns)
 	self._stroke = Style.stroke(Theme.color("gold600"), 1, 0.4)
 	local strip = Create("Frame", {
 		Name = "ReputationStrip",
@@ -159,8 +160,8 @@ function ReputationStrip:render(model: { [string]: any }, metrics: any)
 	end
 end
 
--- Floats each change on its item: below the strip on phones (one row), over the item's name on
--- tablet/desktop (two rows: a chip under the first row would cover the second).
+-- Floats each change on its item: below the strip on phones (one row), over the item's value on a narrow phone's
+-- two-row strip, over the item's name on tablet/desktop (two rows: a chip under the first row would cover the second).
 function ReputationStrip:pulse(deltas: { [string]: number })
 	for id, delta in deltas do
 		local entry = self.items[id]
@@ -172,14 +173,20 @@ function ReputationStrip:pulse(deltas: { [string]: number })
 			previous:Destroy()
 		end
 		local positive = delta > 0
+		-- below the strip only when it is one row (a chip under the first of two rows covers the second)
+		local below = self._compact and (self._rows or 1) == 1
 		local chip = Create("Frame", {
 			Name = "Delta",
 			BackgroundColor3 = Theme.color("ink950"),
 			AutomaticSize = Enum.AutomaticSize.X,
 			Size = UDim2.fromOffset(0, 18),
-			AnchorPoint = if self._compact then Vector2.new(0.5, 0) else Vector2.new(1, 0),
-			Position = if self._compact
+			AnchorPoint = if below
+				then Vector2.new(0.5, 0)
+				elseif self._compact then Vector2.new(0, 0)
+				else Vector2.new(1, 0),
+			Position = if below
 				then UDim2.new(0.5, 0, 1, 10)
+				elseif self._compact then UDim2.fromOffset(15, -2) -- a two-row phone strip: over the item's value
 				else UDim2.new(1, -ReputationStrip.VALUE_WIDTH - 2, 0, -2),
 			ZIndex = 6,
 			Parent = entry.frame,

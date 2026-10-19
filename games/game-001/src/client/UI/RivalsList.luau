@@ -71,7 +71,7 @@ local function actionButton(
 		text = action.label,
 		variant = action.variant,
 		state = if action.enabled then "default" else "disabled",
-		size = "small",
+		size = if phone then "regular" else "small", -- phones: 44 px touch targets (L7 audit)
 		-- a co-ruler's "Ask <senior> to declare war" (D-054) needs more room than "Declare war"
 		width = if phone then nil elseif action.ask then 240 else 132,
 		layoutOrder = order,

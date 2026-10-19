@@ -220,7 +220,7 @@ describe("ReputationText", function()
 end)
 
 describe("Layout: the reputation strip zone", function()
-	local SIZES = { { 750, 311 }, { 1024, 690 }, { 1920, 1022 }, { 1280, 662 }, { 640, 360 } }
+	local SIZES = { { 750, 311 }, { 1024, 690 }, { 1920, 1022 }, { 1280, 662 }, { 640, 360 }, { 667, 375 } }
 
 	it("puts the strip in the top-left stack, clear of the pills, rulers and crest badge", function()
 		for _, size in SIZES do
@@ -235,11 +235,27 @@ describe("Layout: the reputation strip zone", function()
 				expect(r.columns).toBe(3)
 			else
 				expect(r.y).toBeGreaterThan(m.hud.y + m.hud.crest + 8) -- the Crown Points badge hangs to here
-				expect(r.columns).toBe(6)
+				expect(r.y).toBeGreaterThan(m.hud.pills.y + m.hud.pills.height - 1) -- under wrapped pills too
+				-- one row of six; a narrow phone whose pills wrap to two rows: three columns (L7 audit)
+				expect(r.columns).toBe(if m.hud.pills.columns == 2 then 3 else 6)
 			end
 			expect(m.hud.bottom).toBe(r.y + r.height)
 			expect(r.x + r.width).toBeLessThan(m.width / 2)
 		end
+	end)
+
+	it("a 667 × 375 phone wraps the pills and strip so the drawer is wide enough for its rows (L7)", function()
+		local m = Layout.compute(667, 375)
+		expect(m.breakpoint).toBe("phone")
+		expect(m.hud.pills.columns).toBe(2)
+		expect(m.hud.reputation.columns).toBe(3)
+		expect(m.drawer.width >= 350).toBe(true) -- 260 before the audit
+		expect(m.hud.objectives.width).toBe(Layout.OBJECTIVES_WIDTH_PHONE) -- the tracker keeps its width beside it
+		local pillsEnd = m.hud.pills.x + 2 * Layout.PHONE_PILL + Layout.PHONE_PILL_GAP
+		expect(m.drawer.x).toBeGreaterThan(pillsEnd)
+		expect(m.hud.reputation.x + m.hud.reputation.width).toBeLessThan(m.drawer.x)
+		-- the usual phone (750 × 311 safe area) keeps one row
+		expect(Layout.compute(750, 311).hud.pills.columns).toBe(4)
 	end)
 
 	it("never lets a drawer overlap the strip", function()

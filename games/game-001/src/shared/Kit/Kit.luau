@@ -28,6 +28,10 @@
 		Kit.build(type, level, stage, kingdomColor, variant?) -> Model -- Door, WorkSpot1..n, DropOff, Rally; keep: Seat "Throne"
 		Kit.footprint(type, level) -> Vector2
 		Kit.character(kind, job, kingdomColor, look?, kingdom?) -> Model
+		                                                        -- FL-0135 (D-057): the Blender MeshPart rig (Kit/CharacterMesh,
+		                                                        -- same joints and pooling keys) when the kit data has pieces and
+		                                                        -- Forge.Assets.CitizenKit holds every piece this assembly needs;
+		                                                        -- otherwise the part-built rig below, whole, never a mix
 		                                                        -- ≤ 11 parts: 9 (Hair welded to the Head, D-032) + at most 2 detail parts (D-048, KitDetail), Motor6Ds
 		                                                        -- named after the moving part (Sim/Pose.JOINTS);
 		                                                        -- look: CitizenLook (G13.2), omitted = DEFAULT_LOOK;
@@ -70,7 +74,7 @@
 		recoloured to gold has 262 parts against 260); Kit.build always fits.
 		setKingdomColor also works on a container holding several Kit models (slots pair per model).
 	Additive (FORGE-02 area): Kit.setAssetSource(folder) (WorldService passes ReplicatedStorage.Forge.Assets),
-		Kit.BUILDING_TYPES, Kit.partCount(model).
+		Kit.BUILDING_TYPES, Kit.partCount(model), Kit.characterMeshAvailable(), Kit.characterMeshStatus().
 	Characters (FORGE-02): Kit.characterLod(kind, kingdomColor), Kit.CHARACTER_ROOT_HEIGHT, Kit.CHARACTER_MAX_PARTS,
 		Kit.JOB_HEADWEAR, Kit.JOB_TOOLS, Kit.LOOK_RANGES,
 		Kit.LOOK_PALETTES, Kit.DEFAULT_LOOK, Kit.normalizeLook(look), Kit.lookKey(look, kingdom?) (soldiers: pass
@@ -80,6 +84,7 @@
 local Arena = require("./Arena")
 local Buildings = require("./Buildings")
 local Character = require("./Character")
+local CharacterMesh = require("./CharacterMesh")
 local Gear = require("./Gear")
 local Crowd = require("./Crowd")
 local Parts = require("./Parts")
@@ -155,7 +160,7 @@ Kit.WEAPONS = Gear.WEAPONS
 
 Kit.footprint = Buildings.footprint
 Kit.build = Buildings.build
-Kit.character = Character.character
+Kit.character = CharacterMesh.character -- the imported-mesh rig when the kit is imported and complete, else Character.character's
 Kit.regalia = Character.regalia
 -- G13.8 portrait (Kit/Portrait.luau has the focus contract): built by Character.character, then anchored
 Kit.portrait = Portrait.portrait
@@ -164,7 +169,15 @@ Kit.posePortrait = Portrait.pose
 Kit.PORTRAIT_FOV = Portrait.FOV
 Kit.characterLod = Character.lod -- one-part stand-in beyond 150 studs (G4), same Root height as the rig
 Kit.prop = Props.prop
-Kit.setAssetSource = Props.setAssetSource
+-- Both the props and the citizen meshes (ReplicatedStorage.Forge.Assets.CitizenKit) are looked up in this folder. The
+-- server's WorldService passes it when it builds the world; a client that builds rigs (EntityController, portraits) must
+-- pass it too, or its citizens stay part-built (see the FL-0135 handoff to FORGE-04).
+function Kit.setAssetSource(folder: Instance?)
+	Props.setAssetSource(folder)
+	CharacterMesh.setAssetSource(folder)
+end
+Kit.characterMeshAvailable = CharacterMesh.available -- () -> boolean: kit data + a CitizenKit folder are present
+Kit.characterMeshStatus = CharacterMesh.status -- () -> diagnostics (pieces, missing, mesh vs fallback builds, last fallback reason)
 Kit.regionMarkers = Props.regionMarkers
 Kit.slotMarker = Props.slotMarker -- G13.5 build slot ground marker (WorldService)
 Kit._hueStyle = Parts.hueStyle

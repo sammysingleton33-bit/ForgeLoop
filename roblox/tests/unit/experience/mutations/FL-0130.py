@@ -84,4 +84,5 @@ M = [
  ("FL-0130", C2+"RulerSpectateController.luau", '\t\tself._pending = true\n', '', "WarFeedback", "never starts during Results or Lobby", "game"),
  ("FL-0130", C2+"RulerSpectateController.luau", '\t\tself._pending = false\n', '', "WarFeedback", "never starts during Results or Lobby", "game"),
  ("FL-0130", C2+"RulerCameraController.luau", 'keepaliveSec = 1, moveStuds = 10 })', 'keepaliveSec = 1, moveStuds = 0 })', "RulerCamera", "reports the overview's focus for interest", "game"),
+ ("FL-0130", G+A, '\t"WarChanged",\n\t"SiegeChanged",', '\t"WarChangedX",\n\t"SiegeChanged",', "KingdomFeedback", "the war events are declared on the real bus", "game"),
 ]
