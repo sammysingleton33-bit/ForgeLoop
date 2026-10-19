@@ -756,3 +756,77 @@ describe("Kingdom/RulerAI: an AI-only match world over ten minutes", function()
 		expect(overviewA).toEqual(overviewB)
 	end)
 end)
+
+-- FL-0126 (siege viability): a governor attacks as one body, with a ram, and pulls back when it is spent.
+describe("Kingdom/RulerAI: assaults", function()
+	-- azure at war with crimson; crimson's army: `soldiers` soldiers and `rams` rams at home on Defend
+	local function warpair(soldiers: number, rams: number)
+		local sim, k1, k2 = pair()
+		sim.time = 5 * sim.catalog.tuning.dayLength
+		Diplomacy.install(sim, { graceSeconds = 0 })
+		Diplomacy.setRelation(sim, "crimson", "azure", "War")
+		for i = 1, soldiers do
+			Military.spawnUnit(sim, k1, "soldier", k1.x + i, k1.z + 10).order = { kind = "Defend" }
+		end
+		for i = 1, rams do
+			Military.spawnUnit(sim, k1, "ram", k1.x + i, k1.z + 20).order = { kind = "Defend" }
+		end
+		for i = 1, 4 do
+			Military.spawnUnit(sim, k2, "soldier", k2.x + i, k2.z).order = { kind = "Defend" }
+		end
+		sim.rulerAI.aggression.crimson = 1
+		return sim, k1, k2
+	end
+
+	local function orders(sim, k): { [string]: number }
+		local out = {}
+		for _, uid in k.unitIds do
+			local kind = sim.units[uid].order.kind
+			out[kind] = (out[kind] or 0) + 1
+		end
+		return out
+	end
+
+	it("launches the whole army at its enemy once it has 8 fighters and a ram", function()
+		local sim, k1 = warpair(8, 1)
+		RulerAI.think(sim, k1)
+		expect(orders(sim, k1)).toEqual({ Attack = 9 }) -- the ram marches with the soldiers
+	end)
+
+	it("does not launch without a ram, or with too few fighters", function()
+		local sim, k1 = warpair(12, 0)
+		RulerAI.think(sim, k1)
+		expect(orders(sim, k1).Attack).toBeNil()
+		local sim2, k2 = warpair(7, 1)
+		RulerAI.think(sim2, k2)
+		expect(orders(sim2, k2).Attack).toBeNil()
+	end)
+
+	it("pulls back below 4 fighters, and sends fresh recruits after the army that is marching", function()
+		local sim, k1 = warpair(8, 1)
+		RulerAI.think(sim, k1)
+		expect(orders(sim, k1)).toEqual({ Attack = 9 })
+		local recruit = Military.spawnUnit(sim, k1, "soldier", k1.x, k1.z + 30)
+		recruit.order = { kind = "Defend" }
+		RulerAI.think(sim, k1)
+		expect(orders(sim, k1)).toEqual({ Attack = 10 })
+		for i = #k1.unitIds, 1, -1 do -- the battle: all but 3 soldiers and the ram die
+			local u = sim.units[k1.unitIds[i]]
+			if u.kind == "soldier" and #k1.unitIds > 4 then
+				Military.killUnit(sim, u, "azure")
+			end
+		end
+		RulerAI.think(sim, k1)
+		expect(orders(sim, k1).Attack).toBeNil()
+		expect(orders(sim, k1).Defend).toBe(#k1.unitIds)
+	end)
+
+	it("calls off a march on a capture point once at war", function()
+		local sim, k1 = warpair(5, 0)
+		for _, uid in k1.unitIds do
+			sim.units[uid].order = { kind = "Move", x = 100, z = 100 }
+		end
+		RulerAI.think(sim, k1)
+		expect(orders(sim, k1)).toEqual({ Defend = 5 })
+	end)
+end)

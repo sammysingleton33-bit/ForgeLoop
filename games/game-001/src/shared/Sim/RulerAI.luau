@@ -220,6 +220,77 @@ local function enemiesAtWar(sim: any, kingdom: any): { any }
 	return out
 end
 
+-- ---------------------------------------------------------------- assaults (FL-0126, siege viability)
+-- A governor attacks as one body, with a ram: soldiers barely scratch a keep (config Military `siege`), so a trickle of
+-- eight dies to the defenders and the keep never falls. It launches when its fighters number at least ASSAULT_MIN (or
+-- 1.3 times the target's units, never more than the army cap allows) and a ram stands with them, keeps every new
+-- unit marching while it holds, and pulls back when fewer than ASSAULT_BREAK fighters are left.
+local ASSAULT_MIN = 8
+local ASSAULT_OUTNUMBER = 1.3
+local ASSAULT_BREAK = 4
+local ASSAULT_IMPATIENCE = 1500 -- seconds of possible war that remove the whole 0.4 of margin
+local RAMS_WANTED = 2 -- rams a governor keeps (bunks are reserved for them from day 5)
+
+local function ramsOf(sim: any, kingdom: any): number
+	local n = 0
+	for _, uid in kingdom.unitIds do
+		if sim.units[uid].kind == "ram" then
+			n += 1
+		end
+	end
+	return n
+end
+
+local function assault(sim: any, kingdom: any, target: any): string?
+	local army = #kingdom.unitIds
+	if army == 0 then
+		return nil
+	end
+	local rams = ramsOf(sim, kingdom)
+	local fighters = army - rams
+	local marching = 0
+	for _, uid in kingdom.unitIds do
+		if sim.units[uid].order.kind == "Attack" then
+			marching += 1
+		end
+	end
+	-- how many fighters it wants before going: ASSAULT_MIN at least, and a margin over the target's army that shrinks
+	-- with the governor's aggression and with the time the war has been possible, so a stalemate between equal
+	-- armies ends in an attack instead of two armies watching each other for ever
+	local margin = ASSAULT_OUTNUMBER
+		- 0.5 * aggressionOf(sim, sim.rulerAI, kingdom)
+		- math.min(0.4, math.max(0, sim.time - sim.diplomacy.graceSeconds) / ASSAULT_IMPATIENCE)
+	local needed =
+		math.min(math.max(ASSAULT_MIN, math.ceil(#target.unitIds * margin)), Military.armyCap(sim) - RAMS_WANTED)
+	if marching == 0 then
+		if
+			fighters >= needed
+			and rams >= 1
+			and Commands.executeFor(sim, kingdom, nil, "ArmyOrder", "Attack", target.id)
+		then
+			return "ArmyOrder:Attack"
+		end
+		-- still gathering: a march on a capture point (begun at peace) is called off, the army waits at home
+		for _, uid in kingdom.unitIds do
+			if sim.units[uid].order.kind == "Move" then
+				if Commands.executeFor(sim, kingdom, nil, "ArmyOrder", "Defend") then
+					return "ArmyOrder:Defend"
+				end
+				break
+			end
+		end
+	elseif fighters < ASSAULT_BREAK then
+		if Commands.executeFor(sim, kingdom, nil, "ArmyOrder", "Defend") then
+			return "ArmyOrder:Defend" -- too few left: pull back and rebuild
+		end
+	elseif marching < army and fighters >= ASSAULT_BREAK then
+		if Commands.executeFor(sim, kingdom, nil, "ArmyOrder", "Attack", target.id) then
+			return "ArmyOrder:Attack" -- fresh recruits join the assault
+		end
+	end
+	return nil
+end
+
 function RulerAI.think(sim: any, kingdom: any): string?
 	if not kingdom.alive then
 		return nil
@@ -266,13 +337,10 @@ function RulerAI.think(sim: any, kingdom: any): string?
 				return "DeclareWar"
 			end
 		end
-		if #enemies > 0 and army >= 8 then
-			local unit = sim.units[kingdom.unitIds[1]]
-			if unit.order.kind ~= "Attack" then
-				local target = enemies[1]
-				if Commands.executeFor(sim, kingdom, nil, "ArmyOrder", "Attack", target.id) then
-					return "ArmyOrder:Attack"
-				end
+		if #enemies > 0 then
+			local issued = assault(sim, kingdom, enemies[1])
+			if issued then
+				return issued
 			end
 		end
 	end
@@ -365,6 +433,8 @@ function RulerAI.think(sim: any, kingdom: any): string?
 			local target = math.min(math.max(2, math.floor(pop * (0.15 + 0.2 * aggression))), Military.armyCap(sim))
 			-- alternate soldiers and archers (archers only where Costs lists them)
 			local kind = if army % 2 == 0 or sim.costs.unit("archer") == nil then "soldier" else "archer"
+			-- from day 5 the last bunks are kept for the rams (FL-0126): the soldiers alone cannot take a keep
+			local ramRoom = if day >= 5 then math.max(0, RAMS_WANTED - ramsOf(sim, kingdom)) else 0
 			local price = sim.costs.unit(kind) :: any
 			local cost = {}
 			for res, amount in price.cost do
@@ -372,12 +442,33 @@ function RulerAI.think(sim: any, kingdom: any): string?
 			end
 			if
 				count(sim, kingdom, "barracks", false) > 0
-				and army + training + 2 <= math.min(Military.recruitCap(sim, kingdom), Military.armyCap(sim))
+				and army + training + 2 <= math.min(Military.recruitCap(sim, kingdom), Military.armyCap(sim)) - ramRoom
 				and army + training < target
 				and sim:canAfford(kingdom.id, cost)
 				and Commands.executeFor(sim, kingdom, nil, "Recruit", kind, 2)
 			then
 				return "Recruit:" .. kind
+			end
+			-- a barracks that can train rams (level 2), then one ram that waits at home for the war (FL-0126)
+			if army >= 4 and day >= 5 then
+				if ramsOf(sim, kingdom) < RAMS_WANTED and training == 0 then
+					local ram = sim.costs.unit("ram")
+					if
+						ram ~= nil
+						and count(sim, kingdom, "barracks", false) > 0
+						and army + 1 <= math.min(Military.recruitCap(sim, kingdom), Military.armyCap(sim))
+						and sim:canAfford(kingdom.id, ram.cost)
+						and Commands.executeFor(sim, kingdom, nil, "Recruit", "ram", 1)
+					then
+						return "Recruit:ram"
+					end
+				end
+				if not hasSite(sim, kingdom, "barracks") then
+					local issued = tryUpgrade(sim, kingdom, "barracks", 2)
+					if issued then
+						return issued
+					end
+				end
 			end
 			-- the bunks cap the army, and war needs one (army >= 6): when they are all that holds it back, build
 			-- more room (a barracks upgrade adds four bunks per level)
