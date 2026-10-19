@@ -233,7 +233,7 @@ def build_tools(S, R):
     sock = _shaft(S, 3.05, 3.6, 0.2, STEEL_DARK, tag="metal")
     neck = box(0.22, 0.2, 0.7, color=STEEL_DARK, smooth=False, tag="metal").move(0, 3.4, -0.4)
     blade = _side_prism([(0.2, 3.5), (0.85, 3.42), (1.25, 2.65), (1.3, 2.28), (0.7, 2.5), (0.2, 3.0)], 0.42, rgb(140, 150, 166))
-    tool(R, "tool_hoe", held(merge(shaft, sock, neck, blade), lean=12), tags=("farmer",))
+    tool(R, "tool_hoe", held(merge(shaft, sock, neck, blade), lean=3), tags=("farmer",))
 
     # ---- axe: haft + a heavy bearded head
     haft = _shaft(S, -1.1, 3.1, 0.17, WOOD, 0.15)
@@ -247,21 +247,21 @@ def build_tools(S, R):
     # ---- pickaxe: dark haft, a curved double-sided iron head (a clear T seen from the front and side)
     haft2 = _shaft(S, -1.2, 3.3, 0.17, WOOD_DARK, 0.15)
     pts, rad = [], []
-    for i in range(5):
-        t = -1.0 + i / 2.0
-        pts.append((t * 1.8, 3.42 + 0.34 * (1 - t * t) - 0.42 * t * t * 0 - 0.2 * abs(t) ** 1.6, 0.0))
-        rad.append(0.03 + 0.17 * (1 - abs(t) ** 1.4))
+    for u in (-0.5, -0.2, 0.0, 0.95, 1.9):  # along the head axis: a short blunt end (-) and a long curved pick end (+)
+        t = u / 1.8
+        pts.append((u, 3.42 + 0.34 * (1 - t * t) - 0.2 * abs(t) ** 1.6, 0.0))
+        rad.append(0.03 + 0.17 * (1 - min(1.0, abs(t)) ** 1.4) + (0.1 if u < 0 else 0.0))
     head = tube(pts, rad, seg=S.seg(5, 4), n=2.0, color=STEEL_DARK, smooth=sm, tag="metal")
     boss = box(0.42, 0.46, 0.42, color=IRON, smooth=False, tag="metal").move(0, 3.44, 0)
-    pick = merge(head, boss).rot(40, "y", pivot=(0, 0, 0))
-    tool(R, "tool_pick", held(merge(haft2, pick), lean=6), tags=("miner",))
+    pick = merge(head, boss).rot(55, "y", pivot=(0, 0, 0))
+    tool(R, "tool_pick", held(merge(haft2, pick), lean=3), tags=("miner",))
 
     # ---- mallet: builder's wooden maul with iron bands
     h3 = _shaft(S, -0.9, 2.2, 0.16, WOOD_PALE)
-    mh = box(1.75, 1.0, 1.0, color=WOOD, smooth=False, tag="wood").move(0, 2.45, 0)
-    bands = [box(0.16, 1.06, 1.06, color=IRON, smooth=False, tag="metal").move(sx * 0.62, 2.45, 0) for sx in (-1, 1)]
-    mall = merge(h3, mh, *bands).rot(35, "y")
-    tool(R, "tool_mallet", held(mall, lean=10), tags=("builder",))
+    mh = box(1.7, 0.84, 0.84, color=WOOD, smooth=False, tag="wood").move(0, 2.4, 0)
+    bands = [box(0.16, 0.9, 0.9, color=IRON, smooth=False, tag="metal").move(sx * 0.6, 2.4, 0) for sx in (-1, 1)]
+    mall = merge(h3, mh, *bands).rot(90, "y")
+    tool(R, "tool_mallet", held(mall, lean=4), tags=("builder",))
 
     # ---- smith hammer: short thick handle, a big steel head with a peen
     h4 = _shaft(S, -0.9, 2.0, 0.19, WOOD_DARK, 0.17)
@@ -374,7 +374,11 @@ def build_armour(S, R):
     top = 5.94
     th = 0.2
 
-    def crest(name, poly, rise=0.0):
+    def crest(name, poly, rise=0.0, height=1.24):
+        # the emblem is scaled to a fixed height: the Kit specs keep every body part (hats and crests included) under 7.2 studs
+        ys = [p[1] for p in poly]
+        k = height / (max(ys) - min(ys))
+        poly = [(x * k, y * k) for x, y in poly]
         m = prism(poly, -th, th, color=TINT, smooth=False, tag="cloth").move(0, top - 0.05 + rise, 0)
         m = merge(m, cyl(0.26, 0.3, 0.14, seg=S.seg(6, 4), y0=top - 0.1, color=mix(TINT, (0.7, 0.7, 0.7), 1.0), smooth=False, tag="cloth"))
         hat(R, name, m, slot="crest", tint="kingdom", tags=("soldier",))
@@ -433,14 +437,13 @@ def build_regalia(S, R):
         if (i * 7 + 3) % 6 == 0:
             col.c[i] = ERMINE_SPOT
     col.h = [1.0] * len(col.v)
-    R.add("collar_ermine", col, "Torso", "extra", "fixed", weld="torso", tags=("governor",))
     # gold trim: a front stripe down the robe and a hem band
     rx2 = lambda y: torso_r(y)[0]
     stripe = panel(rx2, rz_of, 1.72, 3.8, -0.2, 0.2, 0.06, front=True, nx=1, ny=3, off=0.025, color=GOLD, smooth=False, tag="metal")
     hem = loft([(1.66, 1.21, 0.85), (1.84, 1.17, 0.81)], seg=seg, n=n, caps=(True, True), phase=p0, color=GOLD, smooth=sm, tag="metal")
-    trim = merge(stripe, hem)
+    trim = merge(stripe, hem, col)  # one piece: the ermine collar, the gold front stripe and the hem band (fixed colours)
     trim.h = [1.0] * len(trim.v)
-    R.add("trim_regal", trim, "Torso", "extra", "fixed", weld="torso", tags=("governor",))
+    R.add("trim_regal", trim, "Torso", "extra", "fixed", weld="torso", tags=("governor", "ermine"))
 
 
 def _extra(R, name, m, joint="Torso", tint="fixed", weld="torso", slot="extra", tags=()):

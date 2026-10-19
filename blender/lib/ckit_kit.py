@@ -20,7 +20,7 @@ MAX_PIECES = 16  # contract: pieces per assembled rig
 ROBLOX_MAX_TRIS = 20000
 BIG_RIGS = ("soldier", "soldier_swordsman", "soldier_archer", "governor")
 # the runtime contract (art/char_kit/rig_to_luau.py) knows these slots; the kit's finer slots keep their name in `kit_slot`
-SLOT_MAP = {"hatband": "hat", "crest": "hat", "toolband": "tool", "extra": "acc", "shield": "acc"}
+SLOT_MAP = {"hatband": "hat", "crest": "hat", "toolband": "tool", "extra": "acc", "shield": "acc", "skirt": "acc"}
 TOOL_JOINTS = ("Tool", "TorsoTool")  # what counts as "the hand tool or sack" against the <= 150 budget (as rig_to_luau.py)
 
 

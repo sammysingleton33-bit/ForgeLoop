@@ -7293,8 +7293,8 @@
         "fidelity": "Box"
       },
       "dimensions_studs": {
-        "x": 4.609,
-        "y": 6.013,
+        "x": 4.074,
+        "y": 6.056,
         "z": 3.24
       },
       "double_sided": false,
@@ -7306,7 +7306,7 @@
       },
       "generator": "char_kit",
       "generator_version": 1,
-      "geometry_hash": "a1a280b819f12ec0",
+      "geometry_hash": "d9e186c4c174db71",
       "id": "char_kit_01",
       "kingdom": null,
       "kit": {
@@ -7316,59 +7316,59 @@
             "tris_max": 764
           },
           "builder": {
-            "pieces_max": 13,
-            "tris_max": 806
+            "pieces_max": 14,
+            "tris_max": 830
           },
           "farmer": {
-            "pieces_max": 15,
-            "tris_max": 910
+            "pieces_max": 16,
+            "tris_max": 934
           },
           "governor": {
             "pieces_max": 16,
-            "tris_max": 926
-          },
-          "hauler": {
-            "pieces_max": 14,
-            "tris_max": 952
-          },
-          "healer": {
-            "pieces_max": 14,
             "tris_max": 954
           },
-          "idle": {
-            "pieces_max": 13,
-            "tris_max": 814
-          },
-          "merchant": {
+          "hauler": {
             "pieces_max": 15,
-            "tris_max": 942
+            "tris_max": 976
           },
-          "miner": {
-            "pieces_max": 13,
-            "tris_max": 846
+          "healer": {
+            "pieces_max": 15,
+            "tris_max": 982
           },
-          "soldier": {
-            "pieces_max": 14,
-            "tris_max": 856
-          },
-          "soldier_archer": {
-            "pieces_max": 14,
-            "tris_max": 934
-          },
-          "soldier_swordsman": {
-            "pieces_max": 14,
-            "tris_max": 920
-          },
-          "woodcutter": {
+          "idle": {
             "pieces_max": 14,
             "tris_max": 838
+          },
+          "merchant": {
+            "pieces_max": 16,
+            "tris_max": 970
+          },
+          "miner": {
+            "pieces_max": 14,
+            "tris_max": 870
+          },
+          "soldier": {
+            "pieces_max": 15,
+            "tris_max": 900
+          },
+          "soldier_archer": {
+            "pieces_max": 15,
+            "tris_max": 978
+          },
+          "soldier_swordsman": {
+            "pieces_max": 15,
+            "tris_max": 964
+          },
+          "woodcutter": {
+            "pieces_max": 15,
+            "tris_max": 862
           }
         },
-        "max_citizen_tris": 954,
-        "max_ruler_tris": 934,
-        "pieces": 103,
+        "max_citizen_tris": 982,
+        "max_ruler_tris": 978,
+        "pieces": 107,
         "style": "B",
-        "total_piece_tris": 6804
+        "total_piece_tris": 6960
       },
       "license": "project-original",
       "material": "M_charkit_vc",
@@ -7388,7 +7388,7 @@
           "soldier_swordsman",
           "woodcutter"
         ],
-        "pieces": 103,
+        "pieces": 107,
         "style": "B"
       },
       "preview": "previews/char_kit.jpg",
@@ -7442,7 +7442,7 @@
       "texture": "none (vertex colours, 0 bytes of texture memory)",
       "triangles": {
         "budget_lod0": 1000,
-        "lod0": 954,
+        "lod0": 982,
         "lod1": 12
       },
       "validation_pass": true

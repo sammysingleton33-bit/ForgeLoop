@@ -31,43 +31,46 @@ def _sided(base):
 
 # slot key -> template(s). Sided slots list the left and the right piece. The slot keys "hair" and "acc" are special for the runtime
 # (the part is named Hair / Accessory); "extras" and the rest are free labels.
-_CITIZEN = dict(torso="torso_%look.outfit%", head="head_%look.face%", boot=_sided("boot_%look.boots%"))
+_CITIZEN = dict(head="head_%look.face%", boot=_sided("boot_%look.boots%"))
+# the six interchangeable torso cuts; number 06 is a long robe whose hem is the separate skirt_06 (01..05 have no skirt: empty variants)
+_CUTS = dict(_CITIZEN, torso="torso_%look.outfit%", skirt="skirt_%look.outfit%")
 ASSEMBLIES = {
-    "farmer": dict(_CITIZEN, hat="hat_straw", hatband="hat_ribbon", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"),
+    "farmer": dict(_CUTS, hat="hat_straw", hatband="hat_ribbon", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"),
                    leg=_sided("leg_trousers"), tool="tool_hoe", extras=["apron_farm", "mantle_kingdom"]),
-    "woodcutter": dict(_CITIZEN, hat="hat_beanie", hatband="hat_pompom", arm=_sided("arm_bare"), sleeve=_sided("sleeve_long"),
+    "woodcutter": dict(_CUTS, hat="hat_beanie", hatband="hat_pompom", arm=_sided("arm_bare"), sleeve=_sided("sleeve_long"),
                        leg=_sided("leg_trousers"), tool="tool_axe", extras=["mantle_kingdom"]),
-    "miner": dict(_CITIZEN, hat="hat_miner", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"), leg=_sided("leg_trousers"),
+    "miner": dict(_CUTS, hat="hat_miner", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"), leg=_sided("leg_trousers"),
                   tool="tool_pick", extras=["mantle_kingdom"]),
-    "builder": dict(_CITIZEN, hat="hat_builder", arm=_sided("arm_hand"), sleeve=_sided("sleeve_long"), leg=_sided("leg_breeches"),
+    "builder": dict(_CUTS, hat="hat_builder", arm=_sided("arm_hand"), sleeve=_sided("sleeve_long"), leg=_sided("leg_breeches"),
                     tool="tool_mallet", extras=["mantle_kingdom"]),
-    "hauler": dict(_CITIZEN, hair="hair_%look.hair%", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"), leg=_sided("leg_trousers"),
+    "hauler": dict(_CUTS, hair="hair_%look.hair%", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"), leg=_sided("leg_trousers"),
                    tool="tool_sack", extras=["strap_kingdom", "mantle_kingdom"]),
     "blacksmith": dict(_CITIZEN, torso="torso_smith", hair="hair_beard", hat="hat_smith", arm=_sided("arm_bare"),
                        leg=_sided("leg_trousers"), tool="tool_hammer", extras=["apron_smith", "mantle_kingdom"]),
-    "merchant": dict(_CITIZEN, torso="torso_merchant", hat="hat_merchant", hatband="hat_feather", arm=_sided("arm_hand"),
+    "merchant": dict(_CITIZEN, torso="torso_merchant", skirt="skirt_merchant", hat="hat_merchant", hatband="hat_feather", arm=_sided("arm_hand"),
                      sleeve=_sided("sleeve_long"), leg=_sided("leg_breeches"), tool="tool_scale",
                      extras=["satchel_merchant", "mantle_kingdom"]),
-    "healer": dict(_CITIZEN, torso="torso_smock", hat="hat_coif", arm=_sided("arm_hand"), sleeve=_sided("sleeve_long"),
+    "healer": dict(_CITIZEN, torso="torso_smock", skirt="skirt_smock", hat="hat_coif", arm=_sided("arm_hand"), sleeve=_sided("sleeve_long"),
                    leg=_sided("leg_trousers"), tool="tool_staff_healer", extras=["satchel_herb", "mantle_kingdom"]),
-    "idle": dict(_CITIZEN, hair="hair_%look.hair%", acc="acc_%look.acc%", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"),
+    "idle": dict(_CUTS, hair="hair_%look.hair%", acc="acc_%look.acc%", arm=_sided("arm_bare"), sleeve=_sided("sleeve_short"),
                  leg=_sided("leg_trousers"), extras=["mantle_kingdom"]),
-    "soldier": dict(torso="torso_tabard", head="head_%look.face%", hat="hat_helm", crest="crest_%kingdom%", arm=_sided("arm_gauntlet"),
+    "soldier": dict(torso="torso_tabard", skirt="skirt_tabard", head="head_%look.face%", hat="hat_helm", crest="crest_%kingdom%", arm=_sided("arm_gauntlet"),
                     sleeve=_sided("sleeve_soldier"), leg=_sided("leg_mail"), boot=_sided("boot_plate"), tool="tool_spear",
                     toolband="tool_pennant"),
-    "soldier_swordsman": dict(torso="torso_tabard", head="head_%look.face%", hat="hat_helm", crest="crest_%kingdom%",
+    "soldier_swordsman": dict(torso="torso_tabard", skirt="skirt_tabard", head="head_%look.face%", hat="hat_helm", crest="crest_%kingdom%",
                               arm=_sided("arm_gauntlet"), sleeve=_sided("sleeve_soldier"), leg=_sided("leg_mail"),
                               boot=_sided("boot_plate"), tool="tool_sword", extras=["shield_%kingdom%"]),
-    "soldier_archer": dict(torso="torso_tabard", head="head_%look.face%", hat="hat_helm", crest="crest_%kingdom%",
+    "soldier_archer": dict(torso="torso_tabard", skirt="skirt_tabard", head="head_%look.face%", hat="hat_helm", crest="crest_%kingdom%",
                            arm=_sided("arm_gauntlet"), sleeve=_sided("sleeve_soldier"), leg=_sided("leg_mail"),
                            boot=_sided("boot_plate"), tool="tool_bow", extras=["quiver"]),
-    "governor": dict(torso="torso_regal", head="head_%look.face%", hat="hat_crown", hatband="crown_cap", arm=_sided("arm_hand"),
+    "governor": dict(torso="torso_regal", skirt="skirt_regal", head="head_%look.face%", hat="hat_crown", hatband="crown_cap", arm=_sided("arm_hand"),
                      sleeve=_sided("sleeve_robe"), leg=_sided("leg_trousers"), boot=_sided("boot_03"), tool="tool_staff_ruler",
-                     extras=["cape", "collar_ermine", "trim_regal"]),
+                     extras=["cape", "trim_regal"]),
 }
 
 # Pieces with no mesh (variants that mean "none"): they exist only in rig.json (`empty: true`), never in the FBX.
-EMPTY_PIECES = {"acc_01": dict(joint="Head", slot="acc", tint="fixed", tags=["idle", "none"])}
+EMPTY_PIECES = {"acc_01": dict(joint="Head", slot="acc", tint="fixed", tags=["idle", "none"]),
+                **{f"skirt_0{i}": dict(joint="Torso", slot="acc", tint="fixed", tags=["skirt", "none"]) for i in range(1, 6)}}
 
 # Colours of `cloth` pieces: Kit/Character.clothColor (the job's panel, trousers for slot "leg", x the hair colour's dye). Jobs
 # without a palette of their own (blacksmith, merchant, healer, idle, soldiers, governor) wear the folk set. Mirrors Character.luau.
@@ -93,7 +96,7 @@ DYE = [1, 0.94, 1.06, 0.9, 1.1, 0.97, 1.03, 0.92]  # per hairColor: individual d
 TINT_SHIFT = [0, -0.1, 0.08, -0.16, 0.12, -0.05, 0.05, -0.12]  # per (hairColor + skin - 2) % 8: kingdom tint factor shift
 
 # `tint_factor` of kingdom-tinted pieces (shade(kingdomColor, f)); keys are piece names without the _l/_r side suffix
-KIT_TINT = {"sleeve_soldier": 0.85, "sleeve_robe": 0.72, "torso_tabard": 1.0, "torso_regal": 1.0, "hair_10": 0.72, "hat_ribbon": 0.85,
+KIT_TINT = {"sleeve_soldier": 0.85, "sleeve_robe": 0.72, "torso_tabard": 1.0, "torso_regal": 1.0, "skirt_tabard": 1.0, "skirt_regal": 1.0, "hair_10": 0.72, "hat_ribbon": 0.85,
             "hat_pompom": 0.85, "crown_cap": 0.9, "strap_kingdom": 0.85, "cape": 0.58, "tool_pennant": 0.9, "crest_crimson": 1.0,
             "crest_azure": 1.0, "crest_emerald": 1.0, "crest_gold": 1.0, "crest_neutral": 1.0, "shield_neutral": 0.9, "shield_crimson": 0.9, "shield_azure": 0.9, "shield_emerald": 0.9,
             "shield_gold": 0.9, "mantle_kingdom": 0.95}
