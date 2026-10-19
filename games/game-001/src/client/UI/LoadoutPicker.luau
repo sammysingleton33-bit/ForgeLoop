@@ -89,19 +89,12 @@ local function tile(r: any, size: Vector2, phone: boolean, order: number, prefix
 				Size = UDim2.new(1, if phone then -38 else -50, 0, if phone then 16 else 18),
 			}
 		),
-		Blurb = text(
-			(if phone then r.shortBlurb else nil) or r.blurb or "",
-			if phone then 10 else 11,
-			Theme.color("textSecondary"),
-			Enum.FontWeight.SemiBold,
-			{
-				Name = "Blurb",
-				Position = UDim2.fromOffset(if phone then 34 else 44, if phone then 20 else 28),
-				Size = UDim2.new(1, if phone then -38 else -50, 0, if phone then 24 else 30),
-				TextYAlignment = Enum.TextYAlignment.Top,
-			},
-			true
-		),
+		Blurb = text(r.blurb or "", if phone then 10 else 11, Theme.color("textSecondary"), Enum.FontWeight.SemiBold, {
+			Name = "Blurb",
+			Position = UDim2.fromOffset(if phone then 34 else 44, if phone then 20 else 28),
+			Size = UDim2.new(1, if phone then -38 else -50, 0, if phone then 24 else 30),
+			TextYAlignment = Enum.TextYAlignment.Top,
+		}, true),
 	}) :: GuiObject
 	button:SetAttribute("selected", r.selected)
 	local icon = Icon.new(r.icon, if phone then 22 else 28)

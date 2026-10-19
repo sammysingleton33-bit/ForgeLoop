@@ -12,7 +12,7 @@
 		                         and the local player is a champion
 		Choice = { weapon: Weapon, armour: Armour, triggers: { TriggerId } }
 		View = { side, clock, secondsLeft, urgent, tier { id, name, color }, slots, slotsText, chosen,
-		         weapons / armour: { { id, name, short, icon, blurb, shortBlurb?, selected } },
+		         weapons / armour: { { id, name, icon, blurb, selected } },
 		         offers: { { trigger, name, icon, citizen?, loyalty?, power?, effect, condition, selected, locked,
 		                     crowd } },
 		         noOffers: string?, confirm { label, enabled }, sent, status? }
@@ -117,15 +117,10 @@ end
 local function rows(list: { any }, selected: string): { any }
 	local out = {}
 	for _, r in list do
-		table.insert(out, {
-			id = r.id,
-			name = r.name,
-			short = r.short,
-			icon = r.icon,
-			blurb = r.blurb,
-			shortBlurb = r.shortBlurb,
-			selected = r.id == selected,
-		})
+		table.insert(
+			out,
+			{ id = r.id, name = r.name, short = r.short, icon = r.icon, blurb = r.blurb, selected = r.id == selected }
+		)
 	end
 	return out
 end

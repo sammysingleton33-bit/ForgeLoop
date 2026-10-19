@@ -36,6 +36,10 @@
 	Hand-placed kingdom dressing that sits inside a building, slot or field moves too (CLEAR.nudge,
 	CLEAR.wallGap off walls); the gate banners are exempt and stay exactly where the plan puts them.
 
+	Crown Arena (FL-0072, G12.6): layout.arena = { cframe, duelRadius, spawnA, spawnB, footprint } is reserved ground like a
+	plot: the generator keeps decor off its footprint (WorldPlan.arenaRect), the clearance moves or removes natural dressing within
+	CLEAR.margin of it (canopies included), and the trim never thins within TRIM.arenaReach studs of it (like an objective).
+
 	Determinism: a Park–Miller PRNG (exact in doubles), never Random, so Lune specs, the preview and
 	Roblox produce identical worlds.
 ]]
@@ -337,6 +341,19 @@ local function assetId(prefix: string, n: number): string
 	return string.format("%s_%02d", prefix, n)
 end
 
+-- The arena's footprint as a reserved rectangle (cf = the arena's frame on the ground, half = half the Kit.arena plate on X and Z),
+-- or nil when the layout has none. Cached per layout (Layout is data; specs build their own).
+local arenaCache: { [any]: any } = setmetatable({}, { __mode = "k" }) :: any
+function WorldPlan.arenaRect(layout: any): { cf: CFrame, half: Vector2, kind: string }?
+	local cached = arenaCache[layout]
+	if cached == nil then
+		local a = layout.arena
+		cached = if a then { cf = a.cframe, half = a.footprint / 2, kind = "arena" } else false
+		arenaCache[layout] = cached
+	end
+	return if cached then cached else nil
+end
+
 -- Where the generator may stand a prop of scatter radius r: inside the bounds, off the river, the roads and the
 -- keep-out discs (plot cores, build zones, build slots, objective, resource nodes, bridges). plan() and the
 -- clearance's relocation of blocked decor share it.
@@ -367,6 +384,7 @@ local function staticClearance(layout: any): (number, number, number) -> boolean
 	for _, br in f.river.bridges do
 		table.insert(keepOut, { x = br.at.X, z = br.at.Y, r = 26 })
 	end
+	local arena = WorldPlan.arenaRect(layout)
 	return function(x: number, z: number, r: number): boolean
 		if x < f.bounds.min.X + 8 or x > f.bounds.max.X - 8 or z < f.bounds.min.Y + 8 or z > f.bounds.max.Y - 8 then
 			return false
@@ -383,6 +401,9 @@ local function staticClearance(layout: any): (number, number, number) -> boolean
 			if (x - k.x) ^ 2 + (z - k.z) ^ 2 < (k.r + r) ^ 2 then
 				return false
 			end
+		end
+		if arena and WorldPlan.rectDistance(arena, x, z) < r + WorldPlan.CLEAR.margin then
+			return false
 		end
 		return true
 	end
@@ -621,6 +642,10 @@ local function blocked(layout: any, rects: { any }, natural: boolean, r: number,
 			end
 		end
 	end
+	local arena = WorldPlan.arenaRect(layout)
+	if arena and WorldPlan.rectDistance(arena, x, z) < r + (if natural then margin else WorldPlan.CLEAR.wallGap) then
+		return true
+	end
 	local m = if natural then margin else 0
 	for _, road in layout.features.roads do
 		if distToPolyline(x, z, road.points) < road.width / 2 + r + m then
@@ -799,6 +824,7 @@ WorldPlan.TRIM = table.freeze({
 	outpostRadius = 70, -- the neutral outposts (FL-0127): studs around each; never thinned (a full heartland radius
 	-- around three more objectives kept ~630 more parts and would eat the D-047 headroom)
 	spurBand = 20, -- road spurs to the outposts (marked `spur` in the layout): studs either side; never thinned
+	arenaReach = 60, -- the Crown Arena (FL-0072): studs around its footprint that are never thinned
 	jitter = 90, -- studs of deterministic noise on the score, so thinning fades in instead of cutting a line
 	standSpread = 1.6, -- a forest stand loses at most this times the forest cut (0.75 -> 40 %), so none goes bald
 	showcase = 60, -- plot showcase: studs around a plot's fields, buildings and slots that are never thinned ...
@@ -855,6 +881,10 @@ function WorldPlan.unseen(layout: any, x: number, z: number): number
 	end
 	local t = WorldPlan.TRIM
 	local attention = math.huge
+	local arena = WorldPlan.arenaRect(layout)
+	if arena then
+		attention = WorldPlan.rectDistance(arena, x, z) - t.arenaReach
+	end
 	for _, kingdom in KINGDOM_ORDER do
 		local keep = layout.plots[kingdom].anchors.keep
 		local a, b = (keep * CFrame.new(0, 0, -40)).Position, (keep * CFrame.new(0, 0, -40 - t.frameReach)).Position

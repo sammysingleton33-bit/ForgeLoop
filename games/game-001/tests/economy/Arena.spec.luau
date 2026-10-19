@@ -239,22 +239,6 @@ describe("Crown Arena: loadout and perk picker (FL-0073)", function()
 		expect(find(picker, "Ready").Size.Y.Offset >= 44).toBe(true)
 	end)
 
-	it(
-		"phone tiles use the short blurb where the full one needs three lines (Mace, FL-0138); desktop the full",
-		function()
-			world = newWorld({ width = 667, height = 317 })
-			loadout(world, "adoring")
-			expect(find(find(modals(world), "Weapon_mace"), "Blurb").Text).toBe("Breaks guards by draining stamina")
-			expect(find(find(modals(world), "Weapon_spear"), "Blurb").Text).toBe("The fastest light attack")
-			world:destroy()
-			world = newWorld({ width = 1920, height = 1022 })
-			loadout(world, "adoring")
-			expect(find(find(modals(world), "Weapon_mace"), "Blurb").Text).toBe(
-				"Breaks guards: blocked hits cost more stamina"
-			)
-		end
-	)
-
 	it("a gamepad starts on the first weapon and keeps its place across a re-render", function()
 		local gui = { SelectedObject = nil }
 		world = newWorld({ envServices = { UserInputService = { GamepadEnabled = true }, GuiService = gui } })

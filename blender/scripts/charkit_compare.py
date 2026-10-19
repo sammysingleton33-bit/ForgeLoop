@@ -45,7 +45,7 @@ def parse(argv):
 
 C_NAMES = {
     "farmer": ["kk_rogue_head", "hat_straw", "hat_ribbon", "kk_rogue_body", "kk_rogue_arm_l", "kk_rogue_arm_r", "kk_rogue_leg_l",
-               "kk_rogue_leg_r", "tool_hoe", "apron_farm"],
+               "kk_rogue_leg_r", "tool_hoe", "gear_farmer"],
     "soldier": ["kk_knight_head", "kk_knight_helmet", "crest_crimson_C", "kk_knight_body", "kk_knight_arm_l", "kk_knight_arm_r",
                 "kk_knight_leg_l", "kk_knight_leg_r", "tool_spear", "tool_pennant"],
     "governor": ["kk_knight_head", "hat_crown", "crown_cap", "kk_knight_body", "kk_knight_cape", "kk_knight_arm_l", "kk_knight_arm_r",

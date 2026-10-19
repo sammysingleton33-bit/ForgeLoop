@@ -29,7 +29,7 @@ BODY_SLOTS = ("torso", "arm", "sleeve", "leg", "boot", "head")
 # a shell never has to avoid its own carrier: hats/hair ride the head, so test them against shoulders and arms only
 # shells that hang loose in FRONT of the swinging thighs and are allowed to be crossed by a leg in the fast walk/flee swing (the leg is
 # drawn in front of a thin apron/hem/strap; nothing pokes out of the body). Everything else (hair, hats, capes, packs, crests) is strict.
-SOFT = {"apron_farm": 0.36, "apron_smith": 0.36, "strap_kingdom": 0.36, "trim_regal": 0.40, "tool_pennant": 0.0}
+SOFT = {"gear_farmer": 0.36, "gear_smith": 0.36, "strap_kingdom": 0.36, "trim_regal": 0.40, "tool_pennant": 0.0}
 AVOID = {
     "hair": ("torso", "arm", "sleeve"), "hat": ("torso", "arm", "sleeve"), "hatband": ("torso", "arm", "sleeve"),
     "crest": ("torso", "arm", "sleeve"), "cape": ("arm", "sleeve", "leg", "boot", "head"),
