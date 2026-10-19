@@ -93,6 +93,51 @@ afterEach(function()
 end)
 
 -- The match in "match" mode with fast phases, players seated, and the arena services. `humans` = userIds to add.
+-- A Kit that records what the arena asks of it and builds the smallest rigs the figure code needs
+local function fakeKit(env: any, log: { any }): any
+	local function part(name: string, size: Vector3, parent: any): any
+		local p = env.newInstance("Part")
+		p.Name = name
+		p.Size = size
+		p.Parent = parent
+		return p
+	end
+	local kit = {}
+	function kit.character(kind: string, job: string, color: Color3, look: any, kingdom: string?): any
+		table.insert(log, { what = "character", kind = kind, job = job, color = color, kingdom = kingdom })
+		local model = env.newInstance("Model")
+		model.Name = "Rig"
+		local root = part("Root", Vector3.new(1, 1, 1), model)
+		model.PrimaryPart = root
+		part("Head", Vector3.new(2, 1, 1), model)
+		part("Torso", Vector3.new(2, 2, 1), model)
+		part("RightArm", Vector3.new(1, 2, 1), model)
+		part("Tool", Vector3.new(1, 4, 1), model)
+		return model
+	end
+	function kit.armour(name: string, color: Color3): { any }
+		table.insert(log, { what = "armour", armour = name, color = color })
+		local accessory = env.newInstance("Accessory")
+		accessory.Name = "Helm"
+		local handle = part("Handle", Vector3.new(1, 1, 1), accessory)
+		local attachment = env.newInstance("Attachment")
+		attachment.Name = "HatAttachment"
+		attachment.Parent = handle
+		return { accessory }
+	end
+	function kit.weapon(name: string, color: Color3): any
+		table.insert(log, { what = "weapon", weapon = name, color = color })
+		local tool = env.newInstance("Tool")
+		tool.Name = "Blade"
+		part("Handle", Vector3.new(1, 1, 1), tool)
+		return tool
+	end
+	function kit.arenaDress(model: any, colorA: Color3?, colorB: Color3?)
+		table.insert(log, { what = "dress", model = model, colorA = colorA, colorB = colorB })
+	end
+	return kit
+end
+
 local function boot(humans: { number }, parties: { [number]: string }?): any
 	MatchConfig.mode = "match"
 	local env = MockEnv.new({
@@ -123,6 +168,11 @@ local function boot(humans: { number }, parties: { [number]: string }?): any
 	world.match = registry:get("MatchService")
 	world.kingdoms = registry:get("KingdomService")
 	world.arena = registry:get("ArenaService")
+	world.kitLog = {}
+	world.arena.kit = fakeKit(env, world.kitLog)
+	world.venue = env.newInstance("Model") -- WorldService names and tags the real one CrownArena
+	world.venue.Name = "CrownArena"
+	world.venue.Parent = env.Workspace
 	world.support = registry:get("SupportService")
 	world.leadership = registry:get("LeadershipService")
 	world.arena.config = shortConfig()
@@ -716,6 +766,195 @@ describe("ArenaService: the duel", function()
 		expect(world.arena:state().stage).toBe("done")
 		local last = received(world.env, "Arena.State")
 		expect(last[#last][1].stage).toBe("done")
+	end)
+end)
+
+-- player 1 rules a kingdom; the second qualifier has no human ruler, so it fields an AI champion
+local function reachSolo(world: any)
+	local mine = world.sim:kingdomOfUser(1)
+	assert(mine, "player 1 rules a kingdom")
+	local rival = "azure"
+	if mine.id == rival then
+		rival = "crimson"
+	end
+	world.a, world.b = mine.id, rival
+	world.sim:addCrownPoints(mine.id, 100, "spec")
+	world.sim:addCrownPoints(rival, 50, "spec")
+	world.env.mock:advance(FAST_PHASES.Founding * 3 + 1)
+	world.env.mock:advance(FAST_PHASES.Endgame)
+end
+
+local function logged(world: any, what: string): { any }
+	local out = {}
+	for _, entry in world.kitLog do
+		if entry.what == what then
+			table.insert(out, entry)
+		end
+	end
+	return out
+end
+
+describe("ArenaService: the champions' bodies, gear and venue (FL-0140)", function()
+	it("stands an AI champion on its mark as a figure in the kingdom's colour, and the duel measures it", function()
+		local world = boot({ 1 })
+		reachSolo(world)
+		advanceTo(world, "intro")
+		local state = world.arena:state()
+		local aiSide = if state.a.isAI then "a" else "b"
+		local aiId = state[aiSide].userId
+		local rigs = logged(world, "character")
+		expect(#rigs).toBe(1)
+		expect(rigs[1].kind).toBe("governor")
+		expect(rigs[1].kingdom).toBe(state[aiSide].kingdom)
+		local folder = world.env.Workspace:FindFirstChild("ArenaFigures")
+		assert(folder, "the figures folder")
+		expect(folder:FindFirstChild(`ArenaChampion{aiId}`)).never.toBeNil()
+		local figure = folder:FindFirstChild(`ArenaChampion{aiId}`)
+		expect(figure:GetAttribute("ArenaSide")).toBe(aiSide) -- the DuelRunner side, for the client that poses it
+		expect(world.env.CollectionService:HasTag(figure, "ArenaChampion")).toBe(true)
+		local pose = world.arena:poseOf(aiId)
+		assert(pose, "the AI champion has a pose")
+		-- it faces the other champion across the ring (the marks lie on the gate axis)
+		expect(math.abs(pose.fx) > 0.99).toBe(true)
+	end)
+
+	it("walks the AI figure up to its opponent in the duel, to just inside reach", function()
+		local world = boot({ 1 })
+		world.arena.config.site = { x = 0, z = 0, separation = 20 } -- the specs' own ring is too small to need a walk
+		reachSolo(world)
+		advanceTo(world, "duel")
+		local state = world.arena:state()
+		local aiId = if state.a.isAI then state.a.userId else state.b.userId
+		local humanId = if state.a.isAI then state.b.userId else state.a.userId
+		local config = world.arena.config
+		local function gap(): number
+			local a, b = world.arena:poseOf(aiId), world.arena:poseOf(humanId)
+			assert(a and b, "both stand somewhere")
+			return math.sqrt((a.x - b.x) ^ 2 + (a.z - b.z) ^ 2)
+		end
+		local before = gap()
+		expect(before > config.reach).toBe(true)
+		for _ = 1, 100 do
+			world.env.mock:advance(0.1)
+			if world.arena:state().stage ~= "duel" then
+				break
+			end
+		end
+		expect(gap() < config.reach).toBe(true)
+	end)
+
+	it("puts the loadout's weapon and armour on a human champion, in the kingdom's colour", function()
+		local world = boot({ 1 })
+		reachSolo(world)
+		advanceTo(world, "intro")
+		local state = world.arena:state()
+		local humanSide = if state.a.isAI then "b" else "a"
+		local armour, weapon = logged(world, "armour"), logged(world, "weapon")
+		expect(#armour).toBe(2) -- one set for the human, one for the AI figure
+		expect(#weapon).toBe(2)
+		local champion = world.arena._flow:champion(humanSide)
+		local mine = nil
+		for _, entry in weapon do
+			if entry.weapon == champion.weapon then
+				mine = entry
+			end
+		end
+		assert(mine, "the human's weapon was asked for")
+		local character = world.players[1].Character
+		local carried = false
+		for _, child in character:GetChildren() do
+			if child:IsA("Tool") then
+				carried = true
+			end
+		end
+		expect(carried).toBe(true)
+	end)
+
+	it("dresses the venue in the two qualifiers' colours at the intro, and back to neutral afterwards", function()
+		local world = boot({ 1 })
+		reachSolo(world)
+		advanceTo(world, "intro")
+		local dressed = logged(world, "dress")
+		expect(#dressed).toBe(1)
+		expect(dressed[1].model).toBe(world.venue)
+		expect(typeof(dressed[1].colorA)).toBe("Color3")
+		expect(typeof(dressed[1].colorB)).toBe("Color3")
+		expect(dressed[1].colorA ~= dressed[1].colorB).toBe(true)
+		advanceTo(world, "done", world.arena.config.duelMaxSeconds + world.arena.config.crowningSeconds + 5)
+		dressed = logged(world, "dress")
+		expect(#dressed).toBe(2)
+		expect(dressed[2].colorA).toBeNil()
+		expect(dressed[2].colorB).toBeNil()
+	end)
+
+	it("takes the figure and the gear away after the crowning", function()
+		local world = boot({ 1 })
+		reachSolo(world)
+		advanceTo(world, "duel")
+		local folder = world.env.Workspace:FindFirstChild("ArenaFigures")
+		assert(folder, "the figures folder")
+		expect(#folder:GetChildren()).toBe(1)
+		advanceTo(world, "done", world.arena.config.duelMaxSeconds + world.arena.config.crowningSeconds + 5)
+		expect(#folder:GetChildren()).toBe(0)
+		for _, child in world.players[1].Character:GetChildren() do
+			expect(child:IsA("Tool")).toBe(false)
+		end
+	end)
+
+	it("takes the figure away when the match calls the arena off", function()
+		local world = boot({ 1 })
+		reachSolo(world)
+		advanceTo(world, "intro")
+		world.match.host.match:_cancelArena("spec")
+		world.env.mock:advance(0.2)
+		local folder = world.env.Workspace:FindFirstChild("ArenaFigures")
+		assert(folder, "the figures folder")
+		expect(#folder:GetChildren()).toBe(0)
+		expect(#logged(world, "dress")).toBe(2) -- dressed, then back to neutral
+	end)
+
+	it("tells the sim a champion was moved by the server, after each placement", function()
+		local world = boot({ 1, 2 })
+		local snapped: { number } = {}
+		local host = world.match.host
+		local original = host.snapRuler
+		host.snapRuler = function(self: any, userId: number)
+			table.insert(snapped, userId)
+			return original(self, userId)
+		end
+		reachArena(world)
+		advanceTo(world, "intro")
+		table.sort(snapped)
+		expect(snapped).toEqual({ 1, 2 })
+	end)
+
+	it("dresses a champion who resets again, and snaps the sim to where they were put back", function()
+		local world = boot({ 1, 2 })
+		reachArena(world)
+		advanceTo(world, "duel")
+		local weaponsBefore = #logged(world, "weapon")
+		local snapped = 0
+		local host = world.match.host
+		local original = host.snapRuler
+		host.snapRuler = function(self: any, userId: number)
+			snapped += 1
+			return original(self, userId)
+		end
+		local env = world.env
+		local character = env.newInstance("Model")
+		character.Name = "reset"
+		local root = env.newInstance("Part")
+		root.Name = "HumanoidRootPart"
+		root.CFrame = CFrame.new(300, 5, 300)
+		root.Parent = character
+		local humanoid = env.newInstance("Humanoid")
+		humanoid.Name = "Humanoid"
+		humanoid.Parent = character
+		character.Parent = env.Workspace
+		world.players[1].Character = character
+		env.mock:advance(0.2)
+		expect(snapped >= 1).toBe(true)
+		expect(#logged(world, "weapon")).toBe(weaponsBefore + 1)
 	end)
 end)
 
