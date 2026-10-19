@@ -78,7 +78,7 @@ ROWS = [
     ("HUD rebuilt every render", HC, "if key == self._key and self.view.instance ~= nil then", "if false then",
      "follows hits, snapshots and perks"),
     ("in-place bars not moved", "games/game-001/src/client/UI/ArenaHud.luau",
-     "fill.Size = UDim2.fromScale(math.clamp(bar[2], 0, 1), 1)", "local _ = fill", "follows hits, snapshots and perks"),
+     "fill.Size = UDim2.fromScale(math.clamp(row[2], 0, 1), 1)", "local _ = fill", "follows hits, snapshots and perks"),
     ("passive shown armed", HM, "local state = if ArenaHudModel.PASSIVE[trig]", "local state = if false",
      "a passive perk"),
     ("hints off on touch laptops", HC, "if touch and self.hud:metrics().breakpoint == \"phone\" then",
