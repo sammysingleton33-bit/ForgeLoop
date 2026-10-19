@@ -673,3 +673,24 @@ Pass: steps 1–7 hold (8 when two players can join). Write which tips you saw, 
 
 History:
 - 2026-10-19 FORGE-04: written (FL-0137; D-053, Operation Crownfall).
+
+## E20 — The people in the arena stands (FL-0074 part 2c, game-001)
+
+The two stands fill with each duellist's kingdom (Stand A for side a), as many as its citizens allow and as its support tier keeps in their seats. The figures cheer, sink or turn their backs with the crowd's reactions (E17).
+
+Needs:
+- FORGE-02's CrownArena model in the world (FL-0072, `Workspace.World.Arena.CrownArena`, on `main`).
+- Steps 1–4: nothing else. They use E17's crowd preview (`ForgeCrowdPreview`), which runs the real path.
+- Step 5: FORGE-01's arena (FL-0071: `Arena.State`). Until FORGE-01 sends each duellist's `citizens` count in Arena.State, every stand counts as full (60 figures before its tier's fill). Write which you saw.
+
+Steps
+1. Play Solo. Fly the camera to the arena, east of the watchtower. Run `game.Players:GetPlayers()[1]:SetAttribute("ForgeCrowdPreview", "adoring,hostile")`. Within a second, Stand A (at the arena's -Z side) fills with 60 red figures, and Stand B with 30 blue ones (hostile: half the seats stay empty). The front rows fill first, from the middle out, so the camera side of each stand is the fullest. Every figure stands on a seat plank, faces the ring and is not inside a wall or another figure. Screenshot **E20-1** from the aerial camera, **E20-2** from the ground at a gate.
+2. During the preview: on "(The crowd roars)" the whole red stand bobs for about 1.5 s; on "(The stand turns its back)" the blue stand turns round for about 3 s, then faces the ring again. On a boo or a gasp the stand sinks a little (0.35 studs: note if the figures visibly sink into the planks; FORGE-07 #237 L3). After each reaction every figure is back on its seat (look for one floating or turned the wrong way).
+3. Run `""`: the preview stops and both stands empty (`Workspace.ForgeCrowdFigures` is gone). Run `"hostile,adoring"`: the stands refill the other way round.
+4. Performance: with both stands full (`"adoring,adoring"`), watch the frame rate for 30 s in the Microprofiler or the Stats overlay. Note any drop compared to an empty arena. The stands add at most 120 figures × 4 parts. Then Settings → Effects quality "Reduced" and run the preview again: each stand seats half as many. With Reduced motion on, the stands no longer bob on a roar or a cheer, but they still sink on a boo and turn their backs on turnBack. Repeat with the in-game toggle off and the platform's Reduce Motion on (Windows: Settings → Accessibility → Visual effects → Animation effects off; it reaches `GuiService.ReducedMotionEnabled`): the stands must not bob either (FORGE-07 #237 M2).
+5. (Needs FL-0071.) In a real duel the stands fill when the intro starts and empty at Results. If the arena is far from where you stand (streaming), the stands fill as soon as the arena streams in, not later (FORGE-07 #237 M1).
+
+Pass: steps 1–4 hold (5 when FL-0071 is on the build). Copy every red line from Output.
+
+History:
+- 2026-10-19 FORGE-04: written (FL-0074 part 2c; G12.6, FORGE-02's FL-0072 handoff).

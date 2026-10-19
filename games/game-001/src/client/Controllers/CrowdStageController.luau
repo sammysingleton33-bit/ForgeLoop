@@ -6,7 +6,8 @@
 		  passes over both stands, then settles on the ring (RulerCameraController:playShots): the other
 		  kingdom's stand first, then your own, then the ring seen from your own stand, so each side sees its
 		  own crowd's mood. A ruler of neither kingdom sees stand A, stand B, then the ring from A's side.
-		  The pass fits the intro's time left (endsAt, at most Pacing.arena.intro; config Crowd `intro`),
+		  The pass fits the intro's time left (ArenaState.endsAt, the server's clock: FORGE-00's one-source
+		  ruling, so the intro's length is config Arena's, FORGE-01; config Crowd `intro` sets the shots),
 		  cuts instead of gliding with reduced motion, and any pan, zoom, turn or "go to" takes over.
 		  FORGE-03's versus card (ArenaIntroController) sits on top of it.
 		- Duel: a ruler who missed the intro (a late joiner) gets the ring shot alone. The champions' camera
@@ -33,14 +34,13 @@
 		controller:onArenaState(state) / :onKingdomState(state) / :onPhase(phase)
 		controller:geometry() -> { centre: Vector3, a: Vector3, b: Vector3 }?
 		controller:preview(spec) -> boolean        -- Studio only
-		Def.pass(geometry, side?, seconds?, config, most?) -> { shot }   -- pure: the intro pass for a viewer
+		Def.pass(geometry, side?, seconds?, config) -> { shot }   -- pure: the intro pass for a viewer
 		Def.yawToward(from, to) -> number?         -- pure: the overview yaw that looks from `from` to `to`
 	Engine access is guarded: without a camera, music, audio, the arena or the remotes it does what it can.
 ]]
 
 local Crowd = require("@game/ReplicatedStorage/Forge/Config/Crowd")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
-local Pacing = require("@game/ReplicatedStorage/Forge/Config/Pacing")
 local RemoteLink = require("@game/ReplicatedStorage/Forge/Experience/RemoteLink")
 
 local Controller = {}
@@ -71,17 +71,16 @@ function Def.yawToward(from: Vector3, to: Vector3): number?
 end
 
 -- The intro pass for a viewer of side "a", "b" or nil (neither): the other stand, your own, then the ring
--- from your own side. It lasts at most `seconds` (the intro time left) and at most `most` (the intro's
--- length), shrinking every shot alike, never below minShotSec.
-function Def.pass(geometry: any, side: string?, seconds: number?, config: any, most: number?): { any }
+-- from your own side. It lasts at most `seconds` (the intro time left) and never longer than its own
+-- full length, shrinking every shot alike, never below minShotSec.
+function Def.pass(geometry: any, side: string?, seconds: number?, config: any): { any }
 	local intro = config.intro
 	local home = if side == "b" then "b" else "a"
 	local away = if home == "a" then "b" else "a"
 	local order = if side == nil then { "a", "b" } else { away, home }
 	local full = 2 * intro.standSec + intro.ringSec
-	local cap = if finite(most) and (most :: number) > 0 then most :: number else full
-	local budget = if finite(seconds) and (seconds :: number) > 0 then math.min(seconds :: number, cap) else cap
-	local scale = math.min(1, budget / full)
+	local budget = if finite(seconds) and (seconds :: number) > 0 then seconds :: number else full
+	local scale = math.min(1, budget / full) -- never longer than the full pass
 	local stand = math.max(intro.minShotSec, intro.standSec * scale)
 	local ring = math.max(intro.minShotSec, intro.ringSec * scale)
 	local shots = {}
@@ -321,7 +320,7 @@ function Controller:_intro(state: any, side: string?): boolean
 		return false
 	end
 	local left = self:_timeLeft(state)
-	local shots = Def.pass(geometry, side, left, Crowd, Pacing.arena.intro)
+	local shots = Def.pass(geometry, side, left, Crowd)
 	if left ~= nil and left <= 0 then
 		shots = { shots[#shots] } -- the intro is already over: the ring alone
 	end
