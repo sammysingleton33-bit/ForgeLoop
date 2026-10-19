@@ -10,8 +10,8 @@ created: 2026-10-18
 updated: 2026-10-19
 depends_on: [FL-0127]
 evidence:
-  - tests/world 29 spec files green (KitWarKit, KitUnitKinds, KitDamage, KitCeiling new); all-built worst case 26,326 of 27,000 (this line said 26,313: a stale measurement; 26,322 after the defect-only round; the ceiling is 27,000, not a 26,900 pin)
-  - damage frames (forge/02-blender-damage-frames), headless: KitDamage 38, KitWarKit 64, Kit.spec 20, KitCeiling 26,326, KitBuildings 17, KitStyles 20, KitEmblems 14, KitUnitKinds 15, KitCharacter 144 (5 files), ArenaLayout 23, WorldService 27, all green; Studio unverified
+  - tests/world 29 spec files green (KitWarKit, KitUnitKinds, KitDamage, KitCeiling new); all-built worst case 26,326 of 27,000 at the time (this line said 26,313: a stale measurement; 26,322 after the defect-only round; the ceiling is 27,000, not a 26,900 pin; 26,402 on main since FL-0136 phase 3, see the last Log line)
+  - damage frames (forge/02-blender-damage-frames), headless: KitDamage 38, KitWarKit 64, Kit.spec 20, KitCeiling 26,326 (26,402 on main since #274), KitBuildings 17, KitStyles 20, KitEmblems 14, KitUnitKinds 15, KitCharacter 144 (5 files), ArenaLayout 23, WorldService 27, all green; Studio unverified
 ---
 
 # War kit: wall, gate and tower levels, siege ram, kingdom soldier variants and weapons, damaged and burning building states
