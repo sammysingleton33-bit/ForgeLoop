@@ -91,6 +91,8 @@ HAULER_CAP = (0.1, 0.26, 0.86)  # hauler's cobalt flat cap: the one royal blue o
 TABARD_GREEN = (0.1, 0.42, 0.22)  # healer's forest-green tabard (white cross)
 COIF = (0.97, 0.96, 0.93)  # healer's white headscarf
 SMITH_CAP = (0.2, 0.18, 0.18)  # blacksmith's soot-black skull cap
+ROSE = rgb(222, 132, 148)  # the wanderer's cloth (idle's bindle and satchel): a hue no job wears
+ROSE_DARK = rgb(176, 92, 108)
 
 
 def hat(R, name, m, slot="hat", tint="fixed", tags=()):
@@ -114,9 +116,6 @@ def build_hats(S, R):
                  color=STRAW, smooth=sm, tag="straw")
     crown.paint(WOOD_DARK, where=lambda x, y, z: 5.1 < y < 5.4)
     hat(R, "hat_straw", merge(brim, crown), tags=("farmer",))
-    # the kingdom ribbon round the crown (tinted): visible from above between the brim and the dome
-    rib = loft([(5.12, 0.99, 0.97), (5.44, 0.95, 0.93)], seg=seg, n=n, caps=(True, True), phase=p0, color=TINT, smooth=sm, tag="cloth")
-    hat(R, "hat_ribbon", rib, slot="hatband", tint="kingdom", tags=("farmer",))
 
     # ---- tall knit cap with a folded cuff (woodcutter): orange, a long point; the pompom is a separate kingdom piece
     dome = loft([(4.9, 0.9, 0.86), (5.06, 0.95, 0.91), (5.4, 0.9, 0.86), (5.9, 0.68, 0.64), (6.3, 0.36, 0.34), (6.62, 0.0, 0.0)], seg=seg,
@@ -154,18 +153,19 @@ def build_hats(S, R):
     feather = loft([(0.0, 0.0, 0.0), (0.3, 0.07, 0.04), (1.0, 0.16, 0.04), (1.6, 0.05, 0.02), (1.7, 0.0, 0.0)], seg=4, n=1.6,
                    caps=(False, False), color=rgb(246, 208, 66), smooth=False, tag="feather")
     feather = feather.scale(1.4, 1.0, 1.4).rot(-52, "z").rot(-14, "x").move(1.0, 5.4, -0.22)
-    hat(R, "hat_merchant", merge(beret, brimb), tint="fixed", tags=("merchant",))
-    hat(R, "hat_feather", feather, slot="hatband", tint="fixed", tags=("merchant",))
+    hat(R, "hat_merchant", merge(beret, brimb, feather), tint="fixed", tags=("merchant",))  # one piece with its feather (room for the tuft)
 
     # ---- healer coif: a linen coif with a wide stiff white brim (a big white ring from above) and a flat top carrying a big green cross
     coif = _hood(S, 0.07, 4.55, -0.5, back=False, color=COIF)
     wing = loft([(4.97, 1.5, 1.42), (5.07, 1.5, 1.42)], seg=S.seg(10, 8), n=2.0, caps=(True, True), phase=ph(S, S.seg(10, 8)), color=COIF,
                 smooth=sm, tag="cloth")
     green = rgb(34, 150, 74)
-    drum = loft([(5.3, 0.74, 0.74), (5.5, 0.74, 0.74)], seg=S.seg(8, 6), n=2.0, caps=(True, True), phase=0.0, color=COIF, smooth=False,
-                tag="cloth")
+    drum = loft([(5.3, 0.74, 0.74), (5.5, 0.74, 0.74)], seg=5, n=2.0, caps=(True, True), phase=0.0, color=COIF, smooth=False, tag="cloth")
+    # a green cross on the flat top (seen from the aerial camera) and one on the front of the hood (seen in the card portrait)
     top_cross = merge(box(1.5, 0.08, 0.4, color=green, smooth=False, tag="cross"), box(0.4, 0.08, 1.5, color=green, smooth=False, tag="cross")).move(0, 5.52, 0.0)
-    hat(R, "hat_coif", merge(coif, wing, drum, top_cross), tint="fixed", tags=("healer",))
+    front_cross = merge(box(0.6, 0.17, 0.07, color=green, smooth=False, tag="cross"), box(0.17, 0.6, 0.07, color=green, smooth=False, tag="cross")).rot(
+        -24, "x").move(0, 5.2, -0.78)
+    hat(R, "hat_coif", merge(coif, wing, drum, top_cross, front_cross), tint="fixed", tags=("healer",))
 
     # ---- blacksmith: a wide soot-black forge hat (broad brim, flat crown, an ember-orange band); the beard is his hair piece
     sbrim = loft([(4.96, 1.26, 1.22), (5.06, 1.26, 1.22)], seg=S.seg(10, 8), n=2.0, caps=(True, True), phase=ph(S, S.seg(10, 8)),
@@ -179,11 +179,10 @@ def build_hats(S, R):
                   caps=(True, False), phase=p0, color=HAULER_CAP, smooth=sm, tag="cloth")
     hpeak = box(1.1, 0.1, 0.55, color=mix(HAULER_CAP, (0.0, 0.0, 0.25), 0.5), smooth=False, tag="cloth").move(0, 5.04, -1.12)
     hat(R, "hat_hauler", merge(hcrown, hpeak), tint="fixed", tags=("hauler",))
-    # headband (idle accessory): a band with a knot and two tails
+    # headband (idle accessory): a band with a knot
     hb = loft([(4.88, 0.92, 0.88), (5.02, 0.93, 0.89)], seg=seg, n=n, caps=(True, True), phase=p0, color=TINT, smooth=sm, tag="cloth")
-    hbk = sphere(0.17, 0.14, 0.12, seg=S.seg(6, 4), rings=2, color=TINT, smooth=sm, tag="cloth").move(0.0, 4.96, 0.92)
-    hbt = [box(0.1, 0.5, 0.05, color=TINT, smooth=False, tag="cloth").rot(sx * 14, "z").move(sx * 0.1, 4.62, 1.0) for sx in (-1, 1)]
-    hat(R, "acc_02", merge(hb, hbk, *hbt), slot="acc", tint="cloth", tags=("idle", "headband"))
+    hbk = sphere(0.26, 0.3, 0.2, seg=S.seg(6, 5), rings=2, color=TINT, smooth=sm, tag="cloth").rot(-16, "z").move(0.0, 4.95, 0.94)
+    hat(R, "acc_02", merge(hb, hbk), slot="acc", tint="cloth", tags=("idle", "headband"))
 
 
 def _hood(S, thick, rim_y, tilt_z, tip=0.0, flare=0.0, back=True, color=TINT):
@@ -283,17 +282,19 @@ def build_tools(S, R):
                         (1.9, 2.85, -0.15), (1.9, 3.55, 0.15), (1.9, 2.85, 0.15)], color=STEEL_DARK, smooth=False, tag="metal"))
     tool(R, "tool_hammer", held(merge(h4, head4.rot(30, "y")), lean=10), tags=("blacksmith",))
 
-    # ---- merchant's hand scale: a tall stave, a long beam and two big pans
-    st = _shaft(S, -1.0, 3.3, 0.12, WOOD_DARK)
-    beam = box(4.2, 0.18, 0.18, color=GOLD, smooth=False, tag="metal").move(0, 3.4, 0)
-    fin = cone(0.2, 0.4, seg=4, y0=3.3, color=GOLD, smooth=False, tag="metal")
+    # ---- merchant's hand scale: a short stave with a forward arm; the beam (4 studs) hangs out in front of the chest below the chin, so the card
+    # portrait's head stays clear while the long beam and the two big pans still read from above
+    st = _shaft(S, -0.9, 1.0, 0.12, WOOD_DARK)
+    fwd = tube([(0, 1.0, 0.0), (0, 1.0, -1.25)], [0.1, 0.1], seg=4, color=WOOD_DARK, smooth=False, tag="wood")
+    beam = box(4.0, 0.18, 0.18, color=GOLD, smooth=False, tag="metal").move(0, 1.0, -1.25)
+    fin = cone(0.17, 0.2, seg=4, y0=1.09, color=GOLD, smooth=False, tag="metal").move(0, 0, -1.25)
     pans = []
     for sx in (-1, 1):
-        cx = sx * 2.0
-        pans.append(cyl(0.85, 0.46, 0.18, seg=S.seg(8, 6), y0=1.6, color=GOLD_DARK, smooth=sm, tag="metal").move(cx, 0, 0))
-        pans.append(box(0.06, 1.8, 0.06, color=IRON, smooth=False, tag="metal").move(cx, 2.5, 0))
-    scale = merge(st, beam, fin, *pans)
-    tool(R, "tool_scale", held(scale, lean=6), tags=("merchant",))
+        cx = sx * 1.9
+        pans.append(cyl(0.85, 0.46, 0.16, seg=S.seg(8, 6), y0=-0.16, color=GOLD_DARK, smooth=sm, tag="metal").move(cx, 0, -1.25))
+        pans.append(box(0.06, 1.0, 0.06, color=IRON, smooth=False, tag="metal").move(cx, 0.5, -1.25))
+    scale = merge(st, fwd, beam, fin, *pans)
+    tool(R, "tool_scale", held(scale, lean=4), tags=("merchant",))
 
     # ---- healer's staff: a tall wooden stave, a big crook at the top with a herb bundle
     st2 = _shaft(S, -1.8, 4.6, 0.16, WOOD_LIGHT, 0.14)
@@ -584,6 +585,102 @@ def build_mantle(S, R):
     R.add("mantle_kingdom", m, "Torso", "extra", "kingdom", weld="torso", tags=("citizen",))
 
 
+# ================================================================== hair under a hat (tufts) and idle's accessories
+
+def _head_arc(y, a0, a1, grow, n, droop=0.0):
+    """Points on the cranium's ellipse at height y from angle a0 to a1 degrees (0 = straight back, + towards +x), `grow` outside it."""
+    pts = []
+    for i in range(n):
+        a = math.radians(a0 + (a1 - a0) * i / (n - 1))
+        yy = y - droop * abs(math.sin(a))
+        rx, rz, cz = head_radius_at(yy)
+        pts.append((math.sin(a) * (rx + grow), yy, math.cos(a) * (rz + grow) + cz))
+    return pts
+
+
+def _short_locks(color, sm):
+    """Two short locks beside the cheeks (8 triangles each), so that every tuft style shows in the front view."""
+    rx, rz, cz = head_radius_at(4.55)
+    return [tube([(sx * (rx + 0.02), 4.72, -0.2), (sx * (rx + 0.1), 4.4, -0.12)], [0.11, 0.07], seg=3, color=color, smooth=sm, tag="hair") for sx in (-1, 1)]
+
+
+def tuft_mesh(S, style, color, max_tris=60):
+    """Six small hair pieces that show under a hat brim (below y 4.88) so that hat jobs vary by look: 1 sideburns and a nape fringe,
+    2 a nape roll, 3 a short ponytail, 4 side locks, 5 curls, 6 a back curtain. Authored for the Head joint in rig axes; all of them stay
+    inside the brim of every hat (brims start at y 4.9) and behind the face (z > -0.45)."""
+    sm = S.smooth
+    sg = S.seg(5, 4)
+    parts = []
+    if style == 1:  # sideburns in front of the ears + a fringe across the nape
+        for sx in (-1, 1):
+            rx, rz, cz = head_radius_at(4.5)
+            parts.append(box(0.15, 0.56, 0.2, color=color, smooth=False, tag="hair").rot(sx * 6, "z").move(sx * (rx + 0.04), 4.5, -0.3))
+    elif style == 2:  # a roll of hair round the nape, ear to ear
+        parts.append(tube(_head_arc(4.6, -98, 98, 0.15, 5, 0.1), 0.22, seg=3, color=color, smooth=sm, tag="hair"))
+    elif style == 3:  # a short ponytail out of the nape
+        parts.append(sphere(0.2, 0.2, 0.2, seg=sg, rings=2, color=color, smooth=sm, tag="hair").move(0, 4.72, 0.86))
+        parts.append(tube([(0, 4.7, 0.84), (0, 4.45, 1.08), (0, 4.1, 1.16), (0, 3.85, 1.02)], [0.17, 0.22, 0.19, 0.08], seg=3, color=color,
+                          smooth=sm, tag="hair"))
+        parts.extend(_short_locks(color, sm))
+    elif style == 4:  # locks down both sides of the head to the shoulders
+        for sx in (-1, 1):
+            parts.append(tube([(sx * 0.84, 4.8, 0.0), (sx * 1.0, 4.45, 0.06), (sx * 1.02, 4.05, 0.08)], [0.17, 0.2, 0.08], seg=3, color=color,
+                              smooth=sm, tag="hair"))
+    elif style == 5:  # a ring of curls under the brim at the back and sides
+        for ang in (-62, 0, 62):
+            a = math.radians(ang)
+            rx, rz, cz = head_radius_at(4.68)
+            parts.append(sphere(0.36, 0.34, 0.36, seg=sg, rings=2, color=color, smooth=sm, tag="hair").move(
+                math.sin(a) * (rx + 0.1), 4.64, math.cos(a) * (rz + 0.1) + cz))
+    else:  # a curtain of hair down the back of the head
+        parts.append(loft([(4.14, 0.55, 0.14, 0.0, 0.82), (4.5, 0.84, 0.22, 0.0, 0.74), (4.88, 0.8, 0.18, 0.0, 0.66)],
+                          seg=5, n=2.0, caps=(True, True), color=color, smooth=sm, tag="hair"))
+        parts.extend(_short_locks(color, sm))
+    m = merge(*parts)
+    if m.tris > max_tris:
+        raise ValueError(f"tuft {style} has {m.tris} triangles, limit {max_tris}")
+    return m
+
+
+def build_tufts(S, R):
+    """tuft_01..06, picked by the look's hair style: the hair that shows under the hat of farmer, miner, builder, hauler, blacksmith and
+    merchant (the healer's coif and the woodcutter's pompom, which has no room for another piece, keep their looks)."""
+    for i in range(1, 7):
+        m = tuft_mesh(S, i, TINT, max_tris=44)
+        m.h = [1.0] * len(m.v)
+        R.add(f"tuft_{i:02d}", m, "Head", "hair", "hair", weld="head", tags=("hair", "tuft"))
+
+
+def build_idle_acc(S, R):
+    """The idle citizen's wanderer kit (some looks): acc_03 a bandana (head-cloth, on the Head; acc_01 none and acc_02 headband are built with
+    the hats), and the packs on the back (slot extra, Torso; pack_01 and pack_02 are empty): pack_03 a bindle (bundle on a stick) and pack_04 a
+    small rucksack, in a rose cloth no job wears."""
+    sm = S.smooth
+    seg = S.seg(10, 8)
+    # --- acc_03: a bandana hugging the head with a knot at the back (cloth tint: the light folk linen)
+    cap = _cap(S, 0.14, 4.78, -0.4, thick=0.12)
+    cap.paint(TINT)
+    knot = sphere(0.3, 0.34, 0.22, seg=S.seg(6, 5), rings=2, color=TINT, smooth=sm, tag="cloth").rot(18, "z").move(0.05, 4.62, 0.98)
+    bandana = merge(cap, knot)
+    bandana.h = [1.0] * len(bandana.v)
+    R.add("acc_03", bandana, "Head", "acc", "cloth", weld="head", tags=("idle", "bandana"))
+    # --- pack_03: a bindle: a rose bundle tied to the back and a stick poking up over the right shoulder
+    bundle = sphere(0.78, 0.82, 0.68, seg=S.seg(8, 6), rings=S.seg(4, 3), color=ROSE, smooth=sm, tag="bundle").move(0.1, 3.5, 1.05)
+    bundle.paint(ROSE_DARK, where=lambda x, y, z: y < 3.1)
+    tie = box(0.5, 0.14, 0.14, color=CANVAS, smooth=False, tag="bundle").move(0.1, 4.04, 1.05)
+    stick = tube([(-0.35, 2.75, 1.22), (0.35, 3.9, 1.1), (0.95, 4.85, 0.9)], [0.07, 0.07, 0.06], seg=3, color=WOOD_LIGHT, smooth=False, tag="wood")
+    bindle = merge(bundle, tie, stick)
+    bindle.h = [1.0] * len(bindle.v)
+    R.add("pack_03", bindle, "Torso", "extra", "fixed", weld="torso", tags=("idle", "bindle"))
+    # --- pack_04: a small rucksack on the back: a leather bag with a rose flap and two straps up to the shoulders
+    bag = box(1.2, 1.0, 0.55, color=LEATHER, smooth=False, tag="bag").move(0.0, 3.2, 0.96)
+    flap = box(1.25, 0.34, 0.6, color=ROSE, smooth=False, tag="bag").move(0.0, 3.55, 0.97)
+    straps = [box(0.16, 1.0, 0.08, color=LEATHER_DARK, smooth=False, tag="bag").move(sx * 0.4, 3.45, 0.74) for sx in (-1, 1)]
+    ruck = merge(bag, flap, *straps)
+    ruck.h = [1.0] * len(ruck.v)
+    R.add("pack_04", ruck, "Torso", "extra", "fixed", weld="torso", tags=("idle", "rucksack"))
+
+
 def build_gear(S, R):
     build_hats(S, R)
     build_tools(S, R)
@@ -591,3 +688,5 @@ def build_gear(S, R):
     build_regalia(S, R)
     build_extras(S, R)
     build_mantle(S, R)
+    build_tufts(S, R)
+    build_idle_acc(S, R)

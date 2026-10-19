@@ -1391,30 +1391,6 @@
     "hat"
    ]
   },
-  "hat_ribbon": {
-   "joint": "Head",
-   "weld_to": "Head",
-   "bbox_center": [
-    -0.0,
-    5.28,
-    0.0
-   ],
-   "size": [
-    1.8585,
-    0.32,
-    1.8209
-   ],
-   "tris": 28,
-   "verts": 16,
-   "tint": "kingdom",
-   "slot": "hat",
-   "tags": [
-    "farmer",
-    "hat"
-   ],
-   "kit_slot": "hatband",
-   "tint_factor": 0.85
-  },
   "hat_beanie": {
    "joint": "Head",
    "weld_to": "Head",
@@ -1532,46 +1508,23 @@
    "joint": "Head",
    "weld_to": "Head",
    "bbox_center": [
-    0.12,
-    5.3,
+    0.6578,
+    5.6102,
     0.0
    ],
    "size": [
-    2.2881,
-    0.9903,
+    3.3637,
+    1.6107,
     2.0803
    ],
-   "tris": 60,
-   "verts": 34,
+   "tris": 84,
+   "verts": 48,
    "tint": "fixed",
    "slot": "hat",
    "tags": [
     "hat",
     "merchant"
    ]
-  },
-  "hat_feather": {
-   "joint": "Head",
-   "weld_to": "Head",
-   "bbox_center": [
-    1.6698,
-    5.9078,
-    -0.3479
-   ],
-   "size": [
-    1.3396,
-    1.0155,
-    0.2751
-   ],
-   "tris": 24,
-   "verts": 14,
-   "tint": "fixed",
-   "slot": "hat",
-   "tags": [
-    "hat",
-    "merchant"
-   ],
-   "kit_slot": "hatband"
   },
   "hat_coif": {
    "joint": "Head",
@@ -1586,8 +1539,8 @@
     1.3936,
     2.6238
    ],
-   "tris": 134,
-   "verts": 77,
+   "tris": 154,
+   "verts": 91,
    "tint": "fixed",
    "slot": "hat",
    "tags": [
@@ -1644,16 +1597,16 @@
    "weld_to": "Head",
    "bbox_center": [
     -0.0,
-    4.7327,
-    0.1023
+    4.95,
+    0.1474
    ],
    "size": [
     1.7458,
-    0.7347,
-    1.8754
+    0.5768,
+    1.9656
    ],
-   "tris": 60,
-   "verts": 38,
+   "tris": 38,
+   "verts": 23,
    "tint": "cloth",
    "slot": "acc",
    "tags": [
@@ -1776,17 +1729,17 @@
    "joint": "Tool",
    "weld_to": null,
    "bbox_center": [
-    1.7562,
-    3.7917,
-    -0.48
+    1.5778,
+    2.6403,
+    -1.4211
    ],
    "size": [
-    5.6688,
-    4.6975,
-    1.4722
+    5.4866,
+    2.193,
+    2.09
    ],
-   "tris": 102,
-   "verts": 65,
+   "tris": 114,
+   "verts": 73,
    "tint": "fixed",
    "slot": "tool",
    "tags": [
@@ -2527,8 +2480,228 @@
    "kit_slot": "extra",
    "tint_factor": 0.95
   },
+  "tuft_01": {
+   "joint": "Head",
+   "weld_to": "Head",
+   "bbox_center": [
+    0.0,
+    4.5,
+    -0.3
+   ],
+   "size": [
+    1.8414,
+    0.5726,
+    0.2
+   ],
+   "tris": 24,
+   "verts": 16,
+   "tint": "hair",
+   "slot": "hair",
+   "tags": [
+    "hair",
+    "tuft"
+   ]
+  },
+  "tuft_02": {
+   "joint": "Head",
+   "weld_to": "Head",
+   "bbox_center": [
+    0.0,
+    4.6044,
+    0.4597
+   ],
+   "size": [
+    2.2006,
+    0.4303,
+    1.2835
+   ],
+   "tris": 26,
+   "verts": 15,
+   "tint": "hair",
+   "slot": "hair",
+   "tags": [
+    "hair",
+    "tuft"
+   ]
+  },
+  "tuft_03": {
+   "joint": "Head",
+   "weld_to": "Head",
+   "bbox_center": [
+    -0.0152,
+    4.3681,
+    0.5156
+   ],
+   "size": [
+    1.8695,
+    1.1039,
+    1.6163
+   ],
+   "tris": 44,
+   "verts": 30,
+   "tint": "hair",
+   "slot": "hair",
+   "tags": [
+    "hair",
+    "tuft"
+   ]
+  },
+  "tuft_04": {
+   "joint": "Head",
+   "weld_to": "Head",
+   "bbox_center": [
+    -0.0444,
+    4.4576,
+    0.0446
+   ],
+   "size": [
+    2.2998,
+    0.8261,
+    0.3802
+   ],
+   "tris": 28,
+   "verts": 18,
+   "tint": "hair",
+   "slot": "hair",
+   "tags": [
+    "hair",
+    "tuft"
+   ]
+  },
+  "tuft_05": {
+   "joint": "Head",
+   "weld_to": "Head",
+   "bbox_center": [
+    0.0,
+    4.64,
+    0.6351
+   ],
+   "size": [
+    2.3019,
+    0.68,
+    1.1793
+   ],
+   "tris": 24,
+   "verts": 18,
+   "tint": "hair",
+   "slot": "hair",
+   "tags": [
+    "hair",
+    "tuft"
+   ]
+  },
+  "tuft_06": {
+   "joint": "Head",
+   "weld_to": "Head",
+   "bbox_center": [
+    -0.0152,
+    4.51,
+    0.3303
+   ],
+   "size": [
+    1.8695,
+    0.74,
+    1.2457
+   ],
+   "tris": 42,
+   "verts": 27,
+   "tint": "hair",
+   "slot": "hair",
+   "tags": [
+    "hair",
+    "tuft"
+   ]
+  },
+  "acc_03": {
+   "joint": "Head",
+   "weld_to": "Head",
+   "bbox_center": [
+    0.0,
+    4.9283,
+    0.2231
+   ],
+   "size": [
+    1.7438,
+    1.2634,
+    1.9322
+   ],
+   "tris": 40,
+   "verts": 24,
+   "tint": "cloth",
+   "slot": "acc",
+   "tags": [
+    "bandana",
+    "idle"
+   ]
+  },
+  "pack_03": {
+   "joint": "Torso",
+   "weld_to": "Torso",
+   "bbox_center": [
+    0.2126,
+    3.7769,
+    1.05
+   ],
+   "size": [
+    1.5762,
+    2.1938,
+    1.02
+   ],
+   "tris": 50,
+   "verts": 31,
+   "tint": "fixed",
+   "slot": "acc",
+   "tags": [
+    "bindle",
+    "idle"
+   ],
+   "kit_slot": "extra"
+  },
+  "pack_04": {
+   "joint": "Torso",
+   "weld_to": "Torso",
+   "bbox_center": [
+    0.0,
+    3.325,
+    0.97
+   ],
+   "size": [
+    1.25,
+    1.25,
+    0.6
+   ],
+   "tris": 48,
+   "verts": 32,
+   "tint": "fixed",
+   "slot": "acc",
+   "tags": [
+    "idle",
+    "rucksack"
+   ],
+   "kit_slot": "extra"
+  },
   "acc_01": {
    "joint": "Head",
+   "empty": true,
+   "tint": "fixed",
+   "slot": "acc",
+   "tags": [
+    "idle",
+    "none"
+   ]
+  },
+  "pack_01": {
+   "joint": "Torso",
+   "empty": true,
+   "tint": "fixed",
+   "slot": "acc",
+   "tags": [
+    "idle",
+    "none"
+   ]
+  },
+  "pack_02": {
+   "joint": "Torso",
    "empty": true,
    "tint": "fixed",
    "slot": "acc",
@@ -2598,7 +2771,7 @@
    "torso": "torso_%look.outfit%",
    "skirt": "skirt_%look.outfit%",
    "hat": "hat_straw",
-   "hatband": "hat_ribbon",
+   "hair": "tuft_%look.hair%",
    "arm": [
     "arm_bare_l",
     "arm_bare_r"
@@ -2654,6 +2827,7 @@
    "torso": "torso_%look.outfit%",
    "skirt": "skirt_%look.outfit%",
    "hat": "hat_miner",
+   "hair": "tuft_%look.hair%",
    "arm": [
     "arm_bare_l",
     "arm_bare_r"
@@ -2681,6 +2855,7 @@
    "torso": "torso_%look.outfit%",
    "skirt": "skirt_%look.outfit%",
    "hat": "hat_builder",
+   "hair": "tuft_%look.hair%",
    "arm": [
     "arm_hand_l",
     "arm_hand_r"
@@ -2708,6 +2883,7 @@
    "torso": "torso_%look.outfit%",
    "skirt": "skirt_%look.outfit%",
    "hat": "hat_hauler",
+   "hair": "tuft_%look.hair%",
    "arm": [
     "arm_bare_l",
     "arm_bare_r"
@@ -2734,6 +2910,7 @@
    ],
    "torso": "torso_smith",
    "hair": "hair_beard",
+   "tuft": "tuft_%look.hair%",
    "hat": "hat_smith",
    "arm": [
     "arm_bare_l",
@@ -2758,7 +2935,7 @@
    "torso": "torso_merchant",
    "skirt": "skirt_merchant",
    "hat": "hat_merchant",
-   "hatband": "hat_feather",
+   "hair": "tuft_%look.hair%",
    "arm": [
     "arm_hand_l",
     "arm_hand_r"
@@ -2814,6 +2991,7 @@
    "skirt": "skirt_%look.outfit%",
    "hair": "hair_%look.hair%",
    "acc": "acc_%look.acc%",
+   "pack": "pack_%look.weapon%",
    "arm": [
     "arm_bare_l",
     "arm_bare_r"
@@ -3288,11 +3466,11 @@
  "measured": {
   "farmer": {
    "pieces_default": 15,
-   "tris_default": 858,
+   "tris_default": 854,
    "pieces_max": 16,
-   "tris_max": 928,
+   "tris_max": 930,
    "tool_tris": 72,
-   "body_tris": 856,
+   "body_tris": 858,
    "budget": 1000,
    "draw_calls_est": 16,
    "texture_bytes": 0,
@@ -3311,60 +3489,60 @@
    "pass": true
   },
   "miner": {
-   "pieces_default": 14,
-   "tris_default": 820,
-   "pieces_max": 15,
-   "tris_max": 890,
+   "pieces_default": 15,
+   "tris_default": 844,
+   "pieces_max": 16,
+   "tris_max": 920,
    "tool_tris": 68,
-   "body_tris": 822,
+   "body_tris": 852,
    "budget": 1000,
-   "draw_calls_est": 15,
+   "draw_calls_est": 16,
    "texture_bytes": 0,
    "pass": true
   },
   "builder": {
-   "pieces_default": 14,
-   "tris_default": 792,
-   "pieces_max": 15,
-   "tris_max": 862,
+   "pieces_default": 15,
+   "tris_default": 816,
+   "pieces_max": 16,
+   "tris_max": 892,
    "tool_tris": 56,
-   "body_tris": 806,
+   "body_tris": 836,
    "budget": 1000,
-   "draw_calls_est": 15,
+   "draw_calls_est": 16,
    "texture_bytes": 0,
    "pass": true
   },
   "hauler": {
-   "pieces_default": 14,
-   "tris_default": 842,
-   "pieces_max": 15,
-   "tris_max": 912,
+   "pieces_default": 15,
+   "tris_default": 866,
+   "pieces_max": 16,
+   "tris_max": 942,
    "tool_tris": 94,
-   "body_tris": 818,
+   "body_tris": 848,
    "budget": 1000,
-   "draw_calls_est": 15,
+   "draw_calls_est": 16,
    "texture_bytes": 0,
    "pass": true
   },
   "blacksmith": {
-   "pieces_default": 13,
-   "tris_default": 796,
-   "pieces_max": 13,
-   "tris_max": 822,
+   "pieces_default": 14,
+   "tris_default": 820,
+   "pieces_max": 14,
+   "tris_max": 852,
    "tool_tris": 44,
-   "body_tris": 778,
+   "body_tris": 808,
    "budget": 1000,
-   "draw_calls_est": 13,
+   "draw_calls_est": 14,
    "texture_bytes": 0,
    "pass": true
   },
   "merchant": {
    "pieces_default": 16,
-   "tris_default": 912,
+   "tris_default": 948,
    "pieces_max": 16,
-   "tris_max": 938,
-   "tool_tris": 102,
-   "body_tris": 836,
+   "tris_max": 980,
+   "tool_tris": 114,
+   "body_tris": 866,
    "budget": 1000,
    "draw_calls_est": 16,
    "texture_bytes": 0,
@@ -3372,25 +3550,25 @@
   },
   "healer": {
    "pieces_default": 15,
-   "tris_default": 940,
+   "tris_default": 960,
    "pieces_max": 15,
-   "tris_max": 966,
+   "tris_max": 986,
    "tool_tris": 88,
-   "body_tris": 878,
+   "body_tris": 898,
    "budget": 1000,
    "draw_calls_est": 15,
    "texture_bytes": 0,
    "pass": true
   },
   "idle": {
-   "pieces_default": 12,
-   "tris_default": 660,
-   "pieces_max": 14,
-   "tris_max": 810,
+   "pieces_default": 13,
+   "tris_default": 698,
+   "pieces_max": 15,
+   "tris_max": 876,
    "tool_tris": 0,
-   "body_tris": 810,
+   "body_tris": 876,
    "budget": 1000,
-   "draw_calls_est": 14,
+   "draw_calls_est": 15,
    "texture_bytes": 0,
    "pass": true
   },
@@ -3443,6 +3621,6 @@
    "pass": true
   }
  },
- "geometry_hash": "6b77577afecf3b9d",
- "fbx_bytes": 512972
+ "geometry_hash": "749aaae0c1965260",
+ "fbx_bytes": 542012
 }
