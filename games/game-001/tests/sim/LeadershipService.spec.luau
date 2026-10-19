@@ -496,6 +496,77 @@ describe("LeadershipService acts from the simulation", function()
 		expect(#actsOf(w, "overConscription", 1)).toBe(0)
 	end)
 
+	it("credits an act only to rulers who were seated when its streak began", function()
+		-- starvation: ruler 2 joins after the low streak started
+		local w = boot(nil, FAST)
+		w.k.fedRatio = 0.1
+		tick(w)
+		tick(w)
+		w.sim:addRuler("crimson", 2)
+		tick(w)
+		tick(w)
+		tick(w)
+		expect(#actsOf(w, "starvation", 1)).toBe(1)
+		expect(#actsOf(w, "starvation", 2)).toBe(0)
+		-- fedRatioKept: ruler 2 is seated one sample before the phase ends
+		local kept = boot(nil, FAST)
+		local match = kept.registry:get("MatchService").host.match
+		assert(match:debugSetPhase("Expansion"))
+		kept.k.fedRatio = 1
+		tick(kept)
+		tick(kept)
+		kept.sim:addRuler("crimson", 2)
+		tick(kept)
+		assert(match:debugSetPhase("Conflict"))
+		kept.service:sample()
+		expect(#actsOf(kept, "fedRatioKept", 1)).toBe(1)
+		expect(#actsOf(kept, "fedRatioKept", 2)).toBe(0)
+		-- and a ruler who leaves and returns starts again
+		local back = boot(nil, FAST)
+		back.sim:addRuler("crimson", 2)
+		back.k.fedRatio = 0.1
+		tick(back)
+		table.remove(back.k.rulers, 2)
+		tick(back)
+		table.insert(back.k.rulers, 2)
+		tick(back)
+		tick(back)
+		tick(back)
+		expect(#actsOf(back, "starvation", 1)).toBe(1)
+		expect(#actsOf(back, "starvation", 2)).toBe(0)
+	end)
+
+	it("closeOut credits the phase the arena begins in (Endgame never changes), once", function()
+		local w = boot(nil, FAST)
+		local match = w.registry:get("MatchService").host.match
+		assert(match:debugSetPhase("Endgame"))
+		w.k.fedRatio = 1
+		tick(w)
+		tick(w)
+		expect(#actsOf(w, "fedRatioKept", 1)).toBe(0) -- the phase has not ended
+		w.service:closeOut()
+		expect(#actsOf(w, "fedRatioKept", 1)).toBe(1)
+		w.service:closeOut()
+		assert(match:debugSetPhase("Conflict")) -- any phase edge afterwards
+		w.service:sample()
+		expect(#actsOf(w, "fedRatioKept", 1)).toBe(1) -- not twice
+	end)
+
+	it("closeOut credits nothing for a dip, and takes a last sample", function()
+		local w = boot(nil, FAST)
+		local match = w.registry:get("MatchService").host.match
+		assert(match:debugSetPhase("Endgame"))
+		w.k.fedRatio = 1
+		tick(w)
+		w.k.fedRatio = Support.rules.fedKept.atLeast - 0.01
+		tick(w)
+		w.k.fedRatio = 1
+		local before = #w.service:samples("crimson", 1)
+		w.service:closeOut()
+		expect(#w.service:samples("crimson", 1)).toBe(before + 1)
+		expect(#actsOf(w, "fedRatioKept", 1)).toBe(0)
+	end)
+
 	it("records for every seated ruler, and for the no-ruler series when an AI holds the kingdom", function()
 		local w = boot(nil, FAST)
 		w.sim:addRuler("crimson", 2)
