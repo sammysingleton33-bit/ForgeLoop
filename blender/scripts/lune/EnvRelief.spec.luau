@@ -37,7 +37,6 @@ local FAMILIES = {
 	{ "farm_field", "crops" },
 	{ "farm_haystack", "haystack" },
 	{ "farm_fence", "fences" },
-	{ "rock_cliff", "cliffs" },
 }
 
 local function family(id: string): string

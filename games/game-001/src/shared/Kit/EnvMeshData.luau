@@ -2,8 +2,8 @@
 --[[
 	Kit/EnvMeshData — the imported nature meshes as data (FL-0136, D-057 (18)-(20)). GENERATED, do not edit by hand:
 		python3 games/game-001/art/env_kit/env_to_luau.py
-	source games/game-001/art/env_kit/env.json  sha256 4b9f8e293ce196906c146593144e29d01c9238dc8270c14a034620f5de789db5
-	58 props (10 also resource nodes).
+	source games/game-001/art/env_kit/env.json  sha256 72788a2e2e9b5839271879fc8286c8f2621c1d0fdafcf6f52ee0a3e0732cd36b
+	56 props (10 also resource nodes).
 	Kit/EnvMesh.luau reads it; Kit.prop uses a Forge.Assets Model for these ids only when it matches, else the stand-in.
 ]]
 
@@ -48,8 +48,6 @@ return table.freeze({
 		rock_boulder_s_01 = { family = "rock", bbox_center = { -0.0202, 1.5172, -0.1214 }, size = { 6.634, 3.8344, 5.1934 }, tris = 144, tint = "fixed", standin_size = { 6.2, 3.78, 4.95 }, node = false },
 		rock_boulder_s_02 = { family = "rock", bbox_center = { 0.2692, 1.4374, 0.4615 }, size = { 6.548, 3.8932, 6.8266 }, tris = 116, tint = "fixed", standin_size = { 6.38, 3.76, 5.27 }, node = false },
 		rock_boulder_s_03 = { family = "rock", bbox_center = { -0.0026, 1.4285, 0.1796 }, size = { 6.0126, 3.875, 7.2332 }, tris = 170, tint = "fixed", standin_size = { 6.76, 3.74, 5.68 }, node = false },
-		rock_cliff_01 = { family = "rock", bbox_center = { -1.0871, 4.7082, -0.6415 }, size = { 14.322, 10.3164, 10.4531 }, tris = 138, tint = "fixed", standin_size = { 13.57, 10.57, 15.4 }, node = false },
-		rock_cliff_02 = { family = "rock", bbox_center = { 0.0883, 4.8151, 0.8141 }, size = { 11.5394, 10.5302, 13.895 }, tris = 132, tint = "fixed", standin_size = { 13.17, 10.36, 14.92 }, node = false },
 		tree_birch_01 = { family = "tree", bbox_center = { -0.642, 10.9578, 0.1295 }, size = { 10.009, 22.0755, 10.0249 }, tris = 366, tint = "fixed", standin_size = { 10.1, 22.2, 8.14 }, node = false },
 		tree_birch_02 = { family = "tree", bbox_center = { 0.0056, 9.8685, 0.134 }, size = { 7.8213, 19.897, 11.0531 }, tris = 318, tint = "fixed", standin_size = { 8.23, 20.81, 10.33 }, node = false },
 		tree_birch_03 = { family = "tree", bbox_center = { 0.6258, 11.0149, 0.8655 }, size = { 9.7051, 22.1897, 10.1226 }, tris = 366, tint = "fixed", standin_size = { 8.8, 22.61, 10 }, node = false },
@@ -60,7 +58,7 @@ return table.freeze({
 		tree_oak_02 = { family = "tree", bbox_center = { 0.9552, 12.9284, -0.1647 }, size = { 15.7439, 26.0167, 16.6199 }, tris = 588, tint = "fixed", standin_size = { 16.3, 24.56, 16.92 }, node = false },
 		tree_oak_03 = { family = "tree", bbox_center = { 1.2597, 12.6534, 0.0854 }, size = { 21.5885, 25.4668, 22.74 }, tris = 604, tint = "fixed", standin_size = { 20.79, 25.47, 22.74 }, node = true },
 		tree_oak_04 = { family = "tree", bbox_center = { 1.4562, 12.8024, 3.6492 }, size = { 19.8164, 25.7647, 18.5615 }, tris = 604, tint = "fixed", standin_size = { 18.52, 24.53, 17.35 }, node = false },
-		tree_oak_05 = { family = "tree", bbox_center = { -0.448, 12.7808, -0.252 }, size = { 19.1719, 25.7215, 21.84 }, tris = 610, tint = "fixed", standin_size = { 20.03, 25.2, 21.84 }, node = true },
+		tree_oak_05 = { family = "tree", bbox_center = { -0.4256, 12.7808, -0.2394 }, size = { 18.2133, 25.7215, 20.748 }, tris = 610, tint = "fixed", standin_size = { 20.03, 25.2, 21.84 }, node = true },
 		tree_oak_06 = { family = "tree", bbox_center = { -1.1759, 12.88, -0.299 }, size = { 19.7765, 25.92, 21.5289 }, tris = 554, tint = "fixed", standin_size = { 21.3, 24.88, 18.57 }, node = false },
 		tree_oak_07 = { family = "tree", bbox_center = { -0.4848, 12.9999, -0.7408 }, size = { 15.9216, 26.1598, 15.341 }, tris = 572, tint = "fixed", standin_size = { 14.29, 25.9, 14.88 }, node = false },
 		tree_oak_08 = { family = "tree", bbox_center = { -1.4969, 12.0352, -0.408 }, size = { 23.7333, 24.2304, 23.9894 }, tris = 652, tint = "fixed", standin_size = { 22.42, 24.7, 20.38 }, node = false },

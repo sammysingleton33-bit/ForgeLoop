@@ -252,13 +252,14 @@ def test_the_world_ids_and_variant_ranges_are_complete():
             + [f"bush_{i:02d}" for i in range(1, 9)] + [f"plant_flowers_{i:02d}" for i in range(1, 7)]
             + [f"rock_boulder_{s}_{i:02d}" for s in "sml" for i in range(1, 4)] + [f"resource_stone_{i:02d}" for i in range(1, 4)]
             + ["resource_ore_03", "resource_ore_04"] + ["farm_field_wheat_01", "farm_field_wheat_02", "farm_field_cabbage_03", "farm_haystack_01"]
-            + list(envkit_standin.MESH_DRESSING))  # fences 01-02, cabbage 01-02, cliffs 01-02: placed as imported meshes only (WorldPlan.meshDressing)
+            + list(envkit_standin.MESH_DRESSING))  # fences 01-02 and cabbage 01-02: placed as imported meshes only (WorldPlan.meshDressing)
     assert sorted(doc) == sorted(want)
     if ENV_SPARES.exists():  # the rest is finished too, in the second kit
         spares = json.loads(ENV_SPARES.read_text())["props"]
         assert set(spares) & set(doc) == set()
         # on the bench: wood nodes, iron and crystal ore (not game resources), wheat 03 and the growth stages (the world places no growth)
-        assert {"resource_wood_01", "resource_ore_01", "resource_ore_05", "farm_field_wheat_03", "farm_field_wheat_04", "farm_field_wheat_05"} <= set(spares)
+        # (FORGE-00 dropped the rim cliffs: rock_cliff_01/02 are on the bench too)
+        assert {"resource_wood_01", "resource_ore_01", "resource_ore_05", "farm_field_wheat_03", "farm_field_wheat_04", "farm_field_wheat_05", "rock_cliff_01", "rock_cliff_02"} <= set(spares)
 
 
 # ---- needs Blender

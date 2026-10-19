@@ -42,10 +42,10 @@
  },
  "measured": {
   "rock": {
-   "props": 6,
-   "tris_min": 148,
+   "props": 8,
+   "tris_min": 132,
    "tris_max": 220,
-   "tris_total": 1170,
+   "tris_total": 1440,
    "budget": [
     40,
     400
@@ -62,12 +62,96 @@
    ]
   }
  },
- "geometry_hash": "b1b069c2842d6373",
+ "geometry_hash": "13e93a3b0a8fc6da",
  "standins": {
   "kit_version": "0.5.0",
   "source": "blender/lib/envkit_standins.json (from blender/scripts/lune/EnvInventory.spec.luau)"
  },
  "props": {
+  "rock_cliff_01": {
+   "family": "rock",
+   "bbox_center": [
+    -1.0871,
+    4.7082,
+    -0.6415
+   ],
+   "size": [
+    14.322,
+    10.3164,
+    10.4531
+   ],
+   "tris": 138,
+   "tint": "fixed",
+   "standin_size": [
+    13.57,
+    10.57,
+    15.4
+   ],
+   "node": false,
+   "verts": 77,
+   "placed": false,
+   "base_y": -0.45,
+   "radius_xz": 8.938,
+   "reach_bbox": 10.123,
+   "standin_reach": 10.26,
+   "standin_parts": 4,
+   "fit": {
+    "footprint": 14.32,
+    "standin_footprint": 15.4,
+    "footprint_ratio": 0.93,
+    "height": 10.32,
+    "standin_height": 10.57,
+    "height_ratio": 0.976
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   },
+   "fit_scale": [
+    1.019,
+    1.0
+   ]
+  },
+  "rock_cliff_02": {
+   "family": "rock",
+   "bbox_center": [
+    0.0883,
+    4.8151,
+    0.8141
+   ],
+   "size": [
+    11.5394,
+    10.5302,
+    13.895
+   ],
+   "tris": 132,
+   "tint": "fixed",
+   "standin_size": [
+    13.17,
+    10.36,
+    14.92
+   ],
+   "node": false,
+   "verts": 74,
+   "placed": false,
+   "base_y": -0.45,
+   "radius_xz": 7.762,
+   "reach_bbox": 9.724,
+   "standin_reach": 9.8,
+   "standin_parts": 4,
+   "fit": {
+    "footprint": 13.89,
+    "standin_footprint": 14.92,
+    "footprint_ratio": 0.931,
+    "height": 10.53,
+    "standin_height": 10.36,
+    "height_ratio": 1.016
+   },
+   "count_world": {
+    "density_1": 0,
+    "shipped": 0
+   }
+  },
   "resource_ore_01": {
    "family": "rock",
    "bbox_center": [
@@ -479,10 +563,10 @@
    "fit_note": "a growth stage: shorter than the ripe field by design (stage 1 furrows and shoots, stage 2 green wheat)"
   }
  },
- "fbx_bytes": 189340,
- "fbx_sha256": "13f3ec31bb9b3573fbe5c810f992d53072f25554696002c8e6c33ca2d6a57d87",
+ "fbx_bytes": 205532,
+ "fbx_sha256": "d97d66336e551b4ea3ade43e9c2b6dda4df242d6a8e533719bb13beecada6181",
  "roundtrip": {
-  "objects": 9,
+  "objects": 11,
   "mismatches": 0,
   "pass": true
  }

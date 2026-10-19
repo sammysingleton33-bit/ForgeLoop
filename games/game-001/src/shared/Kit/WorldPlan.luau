@@ -810,13 +810,12 @@ end
 
 -- Dressing the part-built world never had. It is placed ONLY for asset ids the Kit would build as imported meshes (`ready(id)`,
 -- Kit.envMeshReady), so a world without the imported kit is exactly today's world (same placements, same parts, same pins).
--- Three kinds, all pure and deterministic (no PRNG), appended to / folded into the trimmed props:
+-- Two kinds, both pure and deterministic (no PRNG), folded into / appended to the trimmed props:
 --   * cabbage variants: a cabbage field takes farm_field_cabbage_01..03 by its kingdom (it was always _03);
 --   * fences (farm_fence_NN) along the outside of each plot's crop fields: the back and flank sides, never the side that faces the
 --     keep or a neighbouring field, and a segment is dropped (never nudged) when it would touch a slot, a building, a build zone,
---     a road, the river or the arena;
---   * rock cliffs (rock_cliff_NN) on the flat ground just inside the foot of the mountain ring (the map rim), where the world's
---     own clearance (bounds, river, roads, keep-out discs, arena) and the placed props allow them.
+--     a road, the river or the arena.
+-- (Rock cliffs on the mountain rim were placed in the first round of phase 3 and dropped by FORGE-00; rock_cliff_01/02 are on the bench.)
 WorldPlan.MESH_DRESSING = table.freeze({
 	cabbageIds = table.freeze({ "farm_field_cabbage_01", "farm_field_cabbage_02", "farm_field_cabbage_03" }),
 	fenceIds = table.freeze({ "farm_fence_01", "farm_fence_02" }),
@@ -824,10 +823,6 @@ WorldPlan.MESH_DRESSING = table.freeze({
 	fenceOffset = 2.4, -- studs from a field's edge to the fence line
 	fenceFacing = 0.35, -- a side whose outward normal points this much toward the keep stays open
 	fenceHalfWidth = 0.4, -- the fence's half thickness plus a little
-	cliffIds = table.freeze({ "rock_cliff_01", "rock_cliff_02" }),
-	cliffRadius = 9.5, -- footprint radius kept clear (the mesh is 14.3 x 10.5)
-	cliffGap = 24, -- studs inside the mountain's foot
-	cliffEvery = 3, -- every n-th ring mountain gets one
 })
 
 local function fenceSegmentLegal(layout: any, rects: { any }, x: number, z: number): boolean
@@ -955,53 +950,6 @@ function WorldPlan.meshDressing(layout: any, placements: { Placement }, ready: (
 								cframe = CFrame.new(at.X + shift.X, y, at.Z + shift.Z)
 									* CFrame.Angles(0, math.atan2(-tangent.Z, tangent.X), 0),
 								feature = "fence",
-							})
-						end
-					end
-				end
-			end
-		end
-	end
-	-- cliffs at the foot of the mountain ring
-	local cliffReady = {}
-	for _, id in D.cliffIds do
-		if isReady(id) then
-			table.insert(cliffReady, id)
-		end
-	end
-	if #cliffReady > 0 then
-		local gy = f.groundY or 0
-		local staticClear = staticClearance(layout)
-		local sites = 0
-		local ring = 0
-		for _, b in hillBalls(layout) do
-			local top = b.y + b.r - gy
-			if b.material == "Grass" and b.r >= 95 and top >= 60 then
-				ring += 1
-				if ring % D.cliffEvery == 1 then
-					local dx, dz = 20 - b.x, 0 - b.z
-					local len = math.sqrt(dx * dx + dz * dz)
-					local ux, uz = dx / len, dz / len
-					local reach = capRadius(b, gy) + D.cliffGap
-					local slide = (((ring * 37) % 11) - 5) * 3 -- along the foot, so the line is not regular
-					local x, z = b.x + ux * reach - uz * slide, b.z + uz * reach + ux * slide
-					local flat = math.abs(WorldPlan.groundHeight(layout, x, z) - gy) < 0.3
-					if flat and staticClear(x, z, D.cliffRadius) then
-						local near = false
-						for _, p in out do
-							local q = p.cframe.Position
-							local r = D.cliffRadius + WorldPlan.footprintRadius(p.assetId) * 0.6
-							if (q.X - x) ^ 2 + (q.Z - z) ^ 2 < r * r then
-								near = true
-								break
-							end
-						end
-						if not near then
-							sites += 1
-							table.insert(out, {
-								assetId = cliffReady[1 + (sites % #cliffReady)],
-								cframe = CFrame.new(x, gy, z) * CFrame.Angles(0, math.atan2(-ux, -uz), 0),
-								feature = "cliff",
 							})
 						end
 					end

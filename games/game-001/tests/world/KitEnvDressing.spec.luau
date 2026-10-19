@@ -1,18 +1,18 @@
 --!nonstrict
 --[[
-	Mesh-only dressing (FL-0136 phase 3 (B), FORGE-00 decision 2: fences, cabbage variants and cliffs as dressing within the D-047 part
-	ceiling). WorldPlan.meshDressing adds, ONLY for asset ids the Kit would build as imported meshes (Kit.envMeshReady):
+	Mesh-only dressing (FL-0136 phase 3 (B), FORGE-00 decision 2: fences and cabbage variants as dressing within the D-047 part ceiling).
+	WorldPlan.meshDressing adds, ONLY for asset ids the Kit would build as imported meshes (Kit.envMeshReady):
 	  * cabbage variants: a cabbage field takes farm_field_cabbage_01..03 by its kingdom (it was always _03);
-	  * fences (farm_fence_01/02) along the outside of each plot's crop fields, never the side that faces the keep or a neighbouring field;
-	  * rock cliffs (rock_cliff_01/02) on the flat ground just inside the foot of the mountain ring.
+	  * fences (farm_fence_01/02) along the outside of each plot's crop fields, never the side that faces the keep or a neighbouring field.
+	FORGE-00 dropped the rim cliffs of the first round: no cliff is ever placed (rock_cliff_01/02 are on the bench), and this spec says so.
 	HEADLESS (Lune): fake import Models of the real kit's data; nothing here says it looks right or imports right in Studio.
 
-	Why mesh-only: a part-built cabbage field is 65 parts, a fence 7 to 8 and a cliff 4, so as stand-ins they would add about 1,000 parts to a
-	world that sits at the D-047 ceiling, while as meshes they cost 2 to 3 parts each (Root, Body and, for fences and cliffs, the Collider); and the
-	world without the imported kit (today's, every Lune spec, a Studio place before the import) must stay exactly what it is, pins included.
+	Why mesh-only: a part-built cabbage field is 65 parts and a fence 7 to 8, so as stand-ins they would add about 900 parts to a world that
+	sits at the D-047 ceiling, while as meshes they cost 2 to 3 parts each (Root, Body and, for fences, the Collider); and the world without
+	the imported kit (today's, every Lune spec, a Studio place before the import) must stay exactly what it is, pins included.
 
 	The checks below are written independently of the implementation (Footprint shapes from the layout, the way NodeKeepOut.spec builds them),
-	and the mutants show they catch a fence on a slot, a fence on the river, a cliff on a road and so on.
+	and the mutants show they catch a fence on a slot, a fence on the river, a fence off its field and so on.
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")
@@ -42,8 +42,6 @@ local DRESSING_IDS = {
 	"farm_fence_02",
 	"farm_field_cabbage_01",
 	"farm_field_cabbage_02",
-	"rock_cliff_01",
-	"rock_cliff_02",
 }
 
 local function allReady(_: string): boolean
@@ -171,60 +169,6 @@ local function fieldGap(x: number, z: number): number
 	return best
 end
 
--- why a cliff placement is not legal: inside the bounds with the world's margin, off the river, the roads, the plots' cores, the nodes, the arena
-local function cliffViolations(p: any, others: { any }?): string
-	local pos = p.cframe.Position
-	local f, r = Layout.features, D.cliffRadius
-	if
-		pos.X < f.bounds.min.X + 8
-		or pos.X > f.bounds.max.X - 8
-		or pos.Z < f.bounds.min.Y + 8
-		or pos.Z > f.bounds.max.Y - 8
-	then
-		return "a cliff is on the valley's edge"
-	end
-	if WorldPlan.distToPolyline(pos.X, pos.Z, f.river.points) < f.river.width / 2 + r then
-		return "a cliff is in the river"
-	end
-	for _, road in f.roads do
-		if WorldPlan.distToPolyline(pos.X, pos.Z, road.points) < road.width / 2 + r then
-			return "a cliff is on a road"
-		end
-	end
-	for _, kid in KINGDOMS do
-		for _, anchor in Layout.plots[kid].anchors do
-			if
-				(Vector3.new(pos.X, 0, pos.Z) - Vector3.new(anchor.Position.X, 0, anchor.Position.Z)).Magnitude
-				< 30 + r
-			then
-				return `a cliff is on the {kid} plot`
-			end
-		end
-	end
-	for _, n in Layout.resourceNodes do
-		local q = n.cframe.Position
-		if (Vector3.new(pos.X, 0, pos.Z) - Vector3.new(q.X, 0, q.Z)).Magnitude < 9 + r then
-			return `a cliff is on {n.id}`
-		end
-	end
-	for _, area in shapes() do
-		if area.kind == "arena" and Footprint.overlapsCircle(area.shape, pos.X, pos.Z, r, 0) then
-			return "a cliff is on the arena"
-		end
-	end
-	if math.abs(WorldPlan.groundHeight(Layout, pos.X, pos.Z) - (f.groundY or 0)) > 0.3 then
-		return "a cliff stands on a slope"
-	end
-	for _, q in others or {} do
-		local c = q.cframe.Position
-		local min = r + WorldPlan.footprintRadius(q.assetId) * 0.6
-		if q ~= p and (Vector3.new(pos.X, 0, pos.Z) - Vector3.new(c.X, 0, c.Z)).Magnitude < min then
-			return `a cliff is on a {q.assetId}`
-		end
-	end
-	return ""
-end
-
 describe("a world without the imported kit is exactly today's world", function()
 	it("returns the base placements untouched when no id is ready (nil, none, or no asset source)", function()
 		local base = WorldPlan.props(Layout, DRESSED, nil)
@@ -264,11 +208,11 @@ describe("a world without the imported kit is exactly today's world", function()
 				EnvKit.assets(Data, {
 					folder = true,
 					per = { farm_fence_01 = { scale = Vector3.new(2, 1, 1) } },
-					omit = { rock_cliff_02 = true },
+					omit = { farm_field_cabbage_02 = true },
 				})
 			)
 			expect(Kit.envMeshReady("farm_fence_01")).toBe(false)
-			expect(Kit.envMeshReady("rock_cliff_02")).toBe(false)
+			expect(Kit.envMeshReady("farm_field_cabbage_02")).toBe(false)
 			expect(Kit.envMeshReady("farm_fence_02")).toBe(true)
 			expect(Kit.envMeshReady("tree_nonexistent_01")).toBe(false)
 			-- a world that can build only some of them places only those
@@ -276,12 +220,12 @@ describe("a world without the imported kit is exactly today's world", function()
 			local out = WorldPlan.meshDressing(Layout, base, Kit.envMeshReady)
 			for _, p in out do
 				expect(p.assetId).never.toBe("farm_fence_01")
-				expect(p.assetId).never.toBe("rock_cliff_02")
+				expect(p.assetId).never.toBe("farm_field_cabbage_02")
 			end
 		end
 	)
 
-	it("a world built without the kit has no fence, no cliff and only the _03 cabbage", function()
+	it("a world built without the kit has no fence and only the _03 cabbage", function()
 		local env = MockEnv.new({ seed = 1 })
 		local svc = WorldDef.new(env, nil)
 		svc.terrain = Terrain.recorder()
@@ -290,7 +234,6 @@ describe("a world without the imported kit is exactly today's world", function()
 		expect(svc.stats.error).toBeNil()
 		for _, model in svc:getRoot():FindFirstChild("Props"):GetChildren() do
 			expect(model:GetAttribute("Feature")).never.toBe("fence")
-			expect(model:GetAttribute("Feature")).never.toBe("cliff")
 			expect(model.Name).never.toBe("farm_field_cabbage_01")
 			expect(model.Name).never.toBe("farm_field_cabbage_02")
 		end
@@ -322,29 +265,31 @@ describe("the dressing with the kit", function()
 		expect(seen.farm_field_wheat_01 and seen.farm_field_wheat_02 and not seen.farm_field_wheat_03).toBe(true) -- today's wheat, the growth stages stay on the bench
 	end)
 
-	it(
-		"adds the fences and cliffs the proposal measured: 48 fences, 12 cliffs at the shipped density; 48 and 11 at 1.0",
-		function()
-			local base, out = dressed(nil)
-			local f = byFeature(out)
-			expect(f.fence).toBe(48)
-			expect(f.cliff).toBe(12)
-			expect(#out - #base).toBe(60)
-			local base1, out1 = dressed(WorldPlan.FULL_DENSITY)
-			local f1 = byFeature(out1)
-			expect(f1.fence).toBe(48)
-			expect(f1.cliff).toBe(11) -- one rim site is taken by a tree at the untrimmed density
-			expect(#out1 - #base1).toBe(59)
-			-- only the planned ids, both fences and both cliffs in use, nothing of the base is moved or dropped
-			local want = { farm_fence_01 = true, farm_fence_02 = true, rock_cliff_01 = true, rock_cliff_02 = true }
-			for i = #base + 1, #out do
-				expect(want[out[i].assetId]).toBe(true)
-			end
-			for i, p in base do
-				expect(out[i].cframe == p.cframe or out[i].feature == "crops").toBe(true)
+	it("adds the 48 fences the proposal measured at the shipped density and at 1.0, and never a cliff", function()
+		local base, out = dressed(nil)
+		local f = byFeature(out)
+		expect(f.fence).toBe(48)
+		expect(f.cliff).toBeNil() -- FORGE-00 dropped the rim cliffs: rock_cliff_01/02 are on the bench
+		expect(#out - #base).toBe(48)
+		local base1, out1 = dressed(WorldPlan.FULL_DENSITY)
+		local f1 = byFeature(out1)
+		expect(f1.fence).toBe(48)
+		expect(f1.cliff).toBeNil()
+		expect(#out1 - #base1).toBe(48)
+		-- only fences are added (both ids in use), nothing of the base is moved or dropped, and no id of the bench is placed
+		local want = { farm_fence_01 = true, farm_fence_02 = true }
+		for i = #base + 1, #out do
+			expect(want[out[i].assetId]).toBe(true)
+		end
+		for _, list in { out, out1 } do
+			for _, p in list do
+				expect(string.sub(p.assetId, 1, 10)).never.toBe("rock_cliff")
 			end
 		end
-	)
+		for i, p in base do
+			expect(out[i].cframe == p.cframe or out[i].feature == "crops").toBe(true)
+		end
+	end)
 
 	it("fences the same 12 segments on every plot (the plots stay rotated copies of each other)", function()
 		local _, out = dressed(nil)
@@ -383,18 +328,6 @@ describe("the dressing with the kit", function()
 				end
 			end
 			expect(n).toBe(48)
-		end)
-
-		it(`keeps every cliff legal, flat-footed and clear of the other props ({density} density)`, function()
-			local _, out = dressed(if density == "full" then WorldPlan.FULL_DENSITY else nil)
-			local n = 0
-			for _, p in out do
-				if p.feature == "cliff" then
-					n += 1
-					expect(cliffViolations(p, out)).toBe("")
-				end
-			end
-			expect(n).toBeGreaterThanOrEqual(11)
 		end)
 	end
 
@@ -476,12 +409,13 @@ describe("a world built with the kit", function()
 
 	it("places the dressing as imported meshes, 2 to 3 parts each, inside the D-047 headroom", function()
 		local svc = boot(nil)
-		local parts, n = 0, { fence = 0, cliff = 0 }
+		local parts, fences = 0, 0
 		local cabbages = {}
 		for _, model in svc:getRoot():FindFirstChild("Props"):GetChildren() do
 			local feature = model:GetAttribute("Feature")
-			if feature == "fence" or feature == "cliff" then
-				n[feature] += 1
+			expect(feature).never.toBe("cliff")
+			if feature == "fence" then
+				fences += 1
 				parts += Kit.partCount(model)
 				expect(model:GetAttribute("KitEnvMesh")).toBe(true)
 				expect(Kit.partCount(model)).toBe(3) -- Root, Body, Collider
@@ -490,10 +424,9 @@ describe("a world built with the kit", function()
 				expect(Kit.partCount(model)).toBe(2) -- Root, Body
 			end
 		end
-		expect(n.fence).toBe(48)
-		expect(n.cliff).toBe(12)
-		expect(parts).toBe(180) -- 144 + 36
-		expect(parts).toBeLessThan(200)
+		expect(fences).toBe(48)
+		expect(parts).toBe(144) -- 48 x 3
+		expect(parts).toBeLessThan(150)
 		expect(cabbages.farm_field_cabbage_01).toBe(2)
 		expect(cabbages.farm_field_cabbage_02).toBe(1)
 		expect(cabbages.farm_field_cabbage_03).toBe(1)
@@ -551,42 +484,6 @@ describe("the checks catch each way of breaking the rule (mutants)", function()
 		expect(fenceViolations(moved(p, keep.X, keep.Z))).never.toBe("")
 		local zone = Layout.plots.azure.buildZones[1]
 		expect(fenceViolations(moved(p, zone.center.X, zone.center.Z))).never.toBe("")
-	end)
-
-	it("flags a cliff on a road, in the river, on a plot, on a node and on the valley's edge", function()
-		local _, out = dressed(nil)
-		local cliff
-		for _, p in out do
-			if p.feature == "cliff" then
-				cliff = p
-				break
-			end
-		end
-		expect(cliffViolations(cliff, out)).toBe("")
-		local road = Layout.features.roads[1].points[2]
-		expect(cliffViolations(moved(cliff, road.X, road.Y), out)).never.toBe("")
-		local river = Layout.features.river.points[2]
-		expect(cliffViolations(moved(cliff, river.X, river.Y), out)).never.toBe("")
-		local keep = Layout.plots.gold.anchors.keep.Position
-		expect(cliffViolations(moved(cliff, keep.X, keep.Z), out)).never.toBe("")
-		local node = Layout.resourceNodes[1].cframe.Position
-		expect(cliffViolations(moved(cliff, node.X, node.Z), out)).never.toBe("")
-		expect(cliffViolations(moved(cliff, Layout.features.bounds.max.X, 0), out)).never.toBe("")
-	end)
-
-	it("flags a cliff set on a tree or against another cliff", function()
-		local _, out = dressed(nil)
-		local cliffs, tree = {}, nil
-		for _, p in out do
-			if p.feature == "cliff" then
-				table.insert(cliffs, p)
-			elseif p.feature == "forest" and tree == nil then
-				tree = p
-			end
-		end
-		expect(cliffViolations(moved(cliffs[1], tree.cframe.Position.X, tree.cframe.Position.Z), out)).never.toBe("")
-		local near = cliffs[2].cframe.Position
-		expect(cliffViolations(moved(cliffs[1], near.X + 3, near.Z), out)).never.toBe("")
 	end)
 
 	it("a fence moved off its field is no longer hugging one", function()

@@ -114,6 +114,12 @@ def _standin_for(pid, standins):
     return standins.get(pid) or standins.get("farm_field_wheat_01" if pid in ("farm_field_wheat_04", "farm_field_wheat_05") else pid)
 
 
+# Horizontal trims applied after the fit window (a factor on x and z about the pivot axis; height untouched). tree_oak_05 is the wood node whose real mesh outline
+# (farthest vertex 12.58 studs from the trunk) reached 0.35 stud into the 8-stud buffer NodeKeepOut keeps between a node and the starting quarry (allowed 12.23
+# at crimson_wood4); 0.95 brings it to 11.95 (footprint 95 % of the stand-in's, inside the node window 85 to 102 %). FORGE-00 2026-10-19: Layout is not moved.
+RADIAL_TRIM = {"tree_oak_05": 0.95}
+
+
 def registry(seed=SEED, only=None):
     """{asset id: Prop} in a stable order. `only`: a set of ids to build (the dev renders); None = all."""
     from lib import envkit_standin
@@ -130,6 +136,10 @@ def registry(seed=SEED, only=None):
             kr, kh = S.fit_to(m, max(st["size"][0], st["size"][2]), st["size"][1], FIT_WINDOW_NODE if is_node else FIT_WINDOW, (0.9, 1.1))
             if (kr, kh) != (1.0, 1.0):
                 info["fit_scale"] = [kr, kh]
+        if pid in RADIAL_TRIM:  # after the fit: xz about the pivot axis only, so one prop moves and every other mesh stays byte-identical
+            k = RADIAL_TRIM[pid]
+            m.map(lambda p, k=k: (p[0] * k, p[1], p[2] * k))
+            info["radial_trim"] = k
         if family in SEATED_FAMILIES:  # a trunk, bush or stack stands ON the ground: its lowest vertex sits 0.08 under it (rocks embed more, see below)
             m.move(0.0, -0.08 - m.bounds()[0][1], 0.0)
         out[pid] = Prop(pid, family, m, node=bool(node or (st and st["node"])), info=info)  # node: the world places this id as a resource node too

@@ -21,7 +21,7 @@
       },
       "generator": "env_kit",
       "generator_version": 1,
-      "geometry_hash": "4a676b85217c85f3",
+      "geometry_hash": "4aca7890499a3cb5",
       "id": "env_kit_01",
       "kingdom": null,
       "kit": {
@@ -57,10 +57,10 @@
             "tris_total": 196
           },
           "rock": {
-            "props": 16,
+            "props": 14,
             "tris_max": 268,
             "tris_min": 116,
-            "tris_total": 3010
+            "tris_total": 2740
           },
           "tree": {
             "props": 20,
@@ -69,11 +69,11 @@
             "tris_total": 9058
           }
         },
-        "fbx_sha256": "06efc1aa638ffb157a4ab649755212b8f46b213f551d4e26a30375d555cbf7f5",
+        "fbx_sha256": "38c1bb9e4760d16d9309e0ef293ecd21860c51686a4c1cc8510c380a686aefc3",
         "max_mesh_tris": 1430,
-        "props": 58,
+        "props": 56,
         "style": "B",
-        "total_tris": 22834
+        "total_tris": 22564
       },
       "license": "project-original",
       "material": "M_envkit_vc",
@@ -88,27 +88,15 @@
           "tree"
         ],
         "kit": "the ids the world places",
-        "props": 58,
+        "props": 56,
         "style": "B"
       },
       "preview": "previews/env_kit.jpg",
       "render_fidelity": "Automatic",
       "review": {
-        "notes": "env_kit_01 (the 58 ids the world places: 52 as the part-built world does, 6 only as imported meshes): SET B (these meshes) PASS in all four groups; minimum over the groups shown (proportions 3 from the dressing reviewer, cost 3 from the crops reviewer). The 52 phase-2 ids are geometrically unchanged since their review (subset hash 61bac208a4421907); the 6 dressing ids were reviewed in phase 3. Renders are Blender, not Studio. The resource node markers are Kit-level parts, not in this FBX (img/d057-env-nodes-r1). env_kit_02 (9 spare ids nothing places) is not reviewed.",
+        "notes": "geometry changed since the last review",
         "review_file": "reviews/env_kit.md",
-        "reviewer": "fresh-context subagents, one per family group (images + rubric only): phase 2 trees/bushes/flowers, rocks/boulders/nodes and crops for the first 52 ids (games/game-001/art/reviews/img/d057-env-nature-r1/review.json), phase 3 farm dressing for the 6 fence, cabbage-variant and cliff ids (img/d057-env-dressing-r1/review.json)",
-        "round": 1,
-        "scores": {
-          "cohesion": 4,
-          "detail_density": 4,
-          "palette": 4,
-          "proportions": 3,
-          "readability": 4,
-          "silhouette": 4,
-          "triangle_cost": 3,
-          "variation": 4
-        },
-        "verdict": "PASS"
+        "verdict": "UNREVIEWED"
       },
       "seed": 7,
       "sockets": {},
@@ -129,7 +117,7 @@
       },
       "dimensions_studs": {
         "x": 38.0,
-        "y": 8.114,
+        "y": 10.53,
         "z": 28.0
       },
       "double_sided": false,
@@ -141,7 +129,7 @@
       },
       "generator": "env_kit",
       "generator_version": 1,
-      "geometry_hash": "b1b069c2842d6373",
+      "geometry_hash": "13e93a3b0a8fc6da",
       "id": "env_kit_02",
       "kingdom": null,
       "kit": {
@@ -153,17 +141,17 @@
             "tris_total": 3340
           },
           "rock": {
-            "props": 6,
+            "props": 8,
             "tris_max": 220,
-            "tris_min": 148,
-            "tris_total": 1170
+            "tris_min": 132,
+            "tris_total": 1440
           }
         },
-        "fbx_sha256": "13f3ec31bb9b3573fbe5c810f992d53072f25554696002c8e6c33ca2d6a57d87",
+        "fbx_sha256": "d97d66336e551b4ea3ade43e9c2b6dda4df242d6a8e533719bb13beecada6181",
         "max_mesh_tris": 1300,
-        "props": 9,
+        "props": 11,
         "style": "B",
-        "total_tris": 4510
+        "total_tris": 4780
       },
       "license": "project-original",
       "material": "M_envkit_vc",
@@ -173,7 +161,7 @@
           "rock"
         ],
         "kit": "spares: ids nothing places yet",
-        "props": 9,
+        "props": 11,
         "style": "B"
       },
       "preview": "previews/env_kit.jpg",
@@ -188,7 +176,7 @@
       "triangles": {
         "budget_lod0": 1500,
         "lod0": 1300,
-        "lod1": 148
+        "lod1": 132
       },
       "validation_pass": true
     }
