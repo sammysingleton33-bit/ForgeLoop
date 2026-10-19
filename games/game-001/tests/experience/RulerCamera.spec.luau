@@ -183,7 +183,8 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 			expect(controller:getFocus()).toBe(CameraDef.startFocus(root.CFrame, O.startAhead))
 			local ahead = (controller:getFocus() :: Vector3) - THRONE
 			local facing = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z).Unit
-			expect(ahead.Magnitude >= 30 and math.abs(ahead.Y) < 1e-6).toBe(true) -- the yard, level, not the throne
+			-- the yard, level: past the keep's door, not the throne, and not beyond the village (FORGE-07 #284 L2)
+			expect(ahead.Magnitude >= 30 and ahead.Magnitude <= 60 and math.abs(ahead.Y) < 1e-6).toBe(true)
 			expect(ahead.Unit:Dot(facing) > 0.999).toBe(true) -- out of the keep door, the way the ruler faces
 			expect(gui.TouchControlsEnabled).toBe(false)
 			local pan = actions.bound[CameraDef.PAN_ACTION]
