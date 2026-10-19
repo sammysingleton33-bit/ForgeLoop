@@ -14,6 +14,9 @@
 		camera:shake(magnitude, duration)   -- VFXController.shakeRequested is wired to this
 		camera:setEditDrag(active)          -- base editing (G13.9, FL-0121): while a building is dragged,
 		                                    -- the drag never pans; the screen edge does (edge-pan)
+		camera:playShots(shots) -> boolean  -- a short scripted pass of the overview (the Crown Arena intro,
+		                                    -- FL-0074): shots = { { focus, yaw (radians), zoom, seconds } }
+		camera:stopShots() -> boolean / camera:shotsPlaying() -> boolean
 
 	overview (default, D-030): the aerial management view. The ruler sits on the throne (FORGE-01
 	seats them) while the player looks after the kingdom from above.
@@ -54,6 +57,11 @@
 	most panSpeed). On touch the pointer is the finger holding the building: the oldest touch still
 	down when setEditDrag(true) comes, so a second finger (a pinch near an edge) never edge-pans
 	(FORGE-07 on #234). setEditDrag(false), leaving edit mode, or that finger lifting ends it.
+	Shots (FL-0074 part 2b): playShots glides the overview to each shot in turn over its seconds (each
+	clamped to the map, the zoom to overview.minZoom..maxZoom, at most SHOT_MAX_SEC), and the view stays on
+	the last one. Reduced motion cuts to each shot and holds it for its seconds instead. The player's own
+	pan, zoom, turn or "go to", a conversation, or leaving the overview ends the pass where it is: they
+	take over at once. Overview only (false in walk mode, before the first view, or with no valid shot).
 	Shake: magnitude 0..1 maps to at most shake.maxDegrees, eased out within maxDuration, at most
 	maxActive at once, never with cameraShake off or reduced motion on (SettingsController); a NaN or
 	infinite magnitude or duration is refused. Each frame's shake is undone before Roblox's camera
@@ -103,6 +111,7 @@ Def.FOLLOW_DEGREES = 10 -- a smaller turn keeps the current view
 Def.FOLLOW_STUDS = 2 -- a citizen further than this from where the conversation opened has been released
 Def.FOLLOW_WINDOW_SEC = 1.5 -- the server's turn arrives within this (the hold starts at Converse)
 Def.MAX_GLIDE_SEC = 3 -- longest conversation glide (a NaN or infinite duration takes the default)
+Def.SHOT_MAX_SEC = 8 -- longest single shot of a scripted pass (playShots)
 Def.UNSHAKE_NAME = "ForgeRulerCameraUnshake"
 Def.FOCUS_REMOTE = "Sim.Focus" -- FORGE-01's additive Sim remote (D-055 (5)); inert until it exists
 Def.FOCUS = table.freeze({ everySec = 0.25, keepaliveSec = 1, moveStuds = 10 })
@@ -402,6 +411,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_blendFrom = nil,
 		_blendT = 1,
 		_glide = nil :: any, -- { from, to, t, duration }: an eased move of the shown view (conversations)
+		_shots = nil :: any, -- { list, index, wait }: a scripted pass (playShots)
 		_saved = nil :: any, -- the view to return to after a conversation
 		_autoFrom = nil,
 		_rendering = false,
@@ -535,6 +545,7 @@ function Controller:focusOn(position: Vector3, opts: { duration: number?, facing
 	if opts == nil then
 		self._glide = nil -- a pan or a "go to" ends a conversation glide
 		self._talking = nil -- and stops following the citizen's turn
+		self._shots = nil -- and a scripted pass: the player takes over
 		self._target.focus = Def.clampFocus(position, self._bounds, self._config.overview.boundsMargin)
 		return true
 	end
@@ -543,6 +554,7 @@ function Controller:focusOn(position: Vector3, opts: { duration: number?, facing
 	end
 	local conversation = self._config.conversation or Def.DEFAULTS.conversation
 	local target = self._target
+	self._shots = nil -- a conversation ends a scripted pass
 	if self._saved == nil then
 		self._saved = { focus = target.focus, yaw = target.yaw, zoom = target.zoom }
 	end
@@ -740,10 +752,12 @@ end
 
 function Controller:rotateBy(degrees: number)
 	self._talking = nil -- the player turns the view: stop following the citizen
+	self:_takeOver()
 	self._target.yaw += math.rad(degrees)
 end
 
 function Controller:zoomBy(steps: number)
+	self:_takeOver()
 	local overview = self._config.overview
 	local minZoom = overview.minZoom
 	if self._saved ~= nil then
@@ -756,6 +770,79 @@ end
 
 local function finite(value: any): boolean
 	return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
+end
+
+-- The player's own turn or zoom during a scripted pass ends it at once (the glide too).
+function Controller:_takeOver()
+	if self._shots ~= nil then
+		self._shots = nil
+		self._glide = nil
+	end
+end
+
+function Controller:playShots(shots: any): boolean
+	if self.mode ~= "overview" or self._target.focus == nil or type(shots) ~= "table" then
+		return false
+	end
+	local overview = self._config.overview
+	local list = {}
+	for _, shot in shots do
+		if
+			type(shot) == "table"
+			and typeof(shot.focus) == "Vector3"
+			and finite(shot.yaw)
+			and finite(shot.zoom)
+			and finite(shot.seconds)
+			and shot.seconds > 0
+		then
+			local focus = shot.focus
+			if self._bounds ~= nil then
+				focus = Def.clampFocus(focus, self._bounds, overview.boundsMargin)
+			end
+			table.insert(list, {
+				focus = focus,
+				yaw = shot.yaw,
+				zoom = Def.clamp(shot.zoom, overview.minZoom, overview.maxZoom),
+				seconds = math.min(shot.seconds, Def.SHOT_MAX_SEC),
+			})
+		end
+	end
+	if #list == 0 then
+		return false
+	end
+	self._talking = nil
+	self._shots = { list = list, index = 0, wait = 0 }
+	return true
+end
+
+function Controller:stopShots(): boolean
+	local playing = self._shots ~= nil
+	self._shots = nil
+	return playing
+end
+
+function Controller:shotsPlaying(): boolean
+	return self._shots ~= nil
+end
+
+-- The next shot once the current one has had its seconds (glided or, with reduced motion, held).
+function Controller:_stepShots(dt: number)
+	local shots = self._shots
+	if shots == nil then
+		return
+	end
+	shots.wait -= dt
+	if shots.wait > 0 then
+		return
+	end
+	shots.index += 1
+	local shot = shots.list[shots.index]
+	if shot == nil then
+		self._shots = nil -- done: the view stays on the last shot
+		return
+	end
+	self:_glideTo(shot, shot.seconds)
+	shots.wait = shot.seconds
 end
 
 function Controller:shake(magnitude: any, duration: any): boolean
@@ -849,6 +936,7 @@ function Controller:_stepOverview(dt: number, camera: any)
 		self:rotateBy(Def.clamp(turn, -1, 1) * overview.rotateSpeed * dt)
 	end
 
+	self:_stepShots(dt)
 	local shown = self._shown
 	local glide = self._glide
 	if shown == nil then
@@ -996,6 +1084,7 @@ function Controller:_apply()
 	if overview then
 		self._glide = nil -- a glide left from a conversation that ended in walk mode never replays
 		self._talking = nil
+		self._shots = nil
 		local root = self._ruler and self._ruler:getRoot()
 		if self._target.focus == nil and root ~= nil then
 			self:focusOn(root.CFrame.Position)
@@ -1009,6 +1098,7 @@ function Controller:_apply()
 		end
 	else
 		self._blendFrom = nil
+		self._shots = nil -- leaving the overview ends a scripted pass
 		if self._ruler ~= nil and self._ruler.standUp then
 			self._ruler:standUp()
 		end

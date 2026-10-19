@@ -94,7 +94,7 @@ Def.SAMPLES = table.freeze({
 		other = "azure",
 		otherName = "Frostmere",
 	},
-	siege = { kind = "siege", kingdom = "crimson", on = true, byName = "Frostmere" },
+	siege = { kind = "siege", kingdom = "crimson", on = true, byName = "Frostmere", position = Vector3.new(0, 0, 40) }, -- the keep beacon 40 studs from the raid's (E15)
 	siegeLifted = { kind = "siege", kingdom = "crimson", on = false },
 	raid = { kind = "raid", kingdom = "crimson", on = true, count = 6, byName = "Frostmere", position = Vector3.zero }, -- the beacon at the map centre (E15)
 	raidOver = { kind = "raid", kingdom = "crimson", on = false },
@@ -200,6 +200,22 @@ end
 function AnnouncerService:_ctx(): any
 	local env = self._env
 	local kingdoms = self._kingdoms
+	-- a building's world model (WorldView: BuildingId and Kind attributes), nil when none
+	local function buildingModel(buildingId: any): any
+		local ok, found = pcall(function()
+			local root = env.Workspace:FindFirstChild("ForgeKingdoms")
+			for _, folder in (if root then root:GetChildren() else {}) do
+				local buildings = folder:FindFirstChild("Buildings")
+				for _, model in (if buildings then buildings:GetChildren() else {}) do
+					if model:GetAttribute("BuildingId") == buildingId then
+						return model
+					end
+				end
+			end
+			return nil
+		end)
+		return if ok then found else nil
+	end
 	local function kingdom(id: any): any
 		if kingdoms == nil or type(id) ~= "string" then
 			return nil
@@ -275,21 +291,39 @@ function AnnouncerService:_ctx(): any
 			end
 			return math.floor(seconds / 60 + 0.5)
 		end,
-		-- a building's type from its world model (WorldView: BuildingId and Kind attributes)
+		-- a building's type from its world model
 		buildingKind = function(buildingId: any): string?
+			local model = buildingModel(buildingId)
 			local ok, kind = pcall(function()
-				local root = env.Workspace:FindFirstChild("ForgeKingdoms")
-				for _, folder in (if root then root:GetChildren() else {}) do
-					local buildings = folder:FindFirstChild("Buildings")
-					for _, model in (if buildings then buildings:GetChildren() else {}) do
-						if model:GetAttribute("BuildingId") == buildingId then
-							return model:GetAttribute("Kind")
+				return model and model:GetAttribute("Kind")
+			end)
+			return if ok and type(kind) == "string" then kind else nil
+		end,
+		-- where a building stands: its model's pivot, else its first part (a siege's keep, FL-0130)
+		buildingPosition = function(buildingId: any): Vector3?
+			local model = buildingModel(buildingId)
+			if model == nil then
+				return nil
+			end
+			local ok, pivot = pcall(function()
+				return model:GetPivot().Position
+			end)
+			if ok and typeof(pivot) == "Vector3" then
+				return pivot
+			end
+			local found, position = pcall(function()
+				local part = model.PrimaryPart
+				if part == nil then
+					for _, descendant in model:GetDescendants() do
+						if descendant:IsA("BasePart") then
+							part = descendant
+							break
 						end
 					end
 				end
-				return nil
+				return part and part.CFrame.Position
 			end)
-			return if ok and type(kind) == "string" then kind else nil
+			return if found and typeof(position) == "Vector3" then position else nil
 		end,
 	}
 end
