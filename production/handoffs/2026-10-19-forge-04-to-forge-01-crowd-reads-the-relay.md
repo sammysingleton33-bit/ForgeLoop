@@ -34,7 +34,7 @@ The crowd director now reads the `Arena.Events` relay we agreed on 2026-10-19 (F
 - **Unverified:** nothing has run against a real DuelService.
 
 ## Interfaces touched
-None. G12.4 still lists `side: "a" | "b"`; FORGE-00 ruled that it will also allow `"draw"`.
+None. CONTRACTS v0.4-g11d (G12.4) already fixes side `"a" | "b" | "draw"` and triggerFired `{ trigger, citizenName? }`, and the crowd reads both. The `hit` and `hype` data are not fixed in G12.4 yet; the crowd follows the relay agreed above until they are.
 
 ## Open issues and risks
 - Perk names now live in two places: `config/Crowd.luau` `triggerNames` (shared, mine) and FORGE-03's `UI/ArenaText` on #214 (client UI). Both copy design §4. If FORGE-00 wants a single table, a shared one in `Arena/` or config Support would serve both.
