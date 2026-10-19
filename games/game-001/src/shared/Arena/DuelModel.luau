@@ -224,7 +224,13 @@ local function applyInput(state: any, side: any, input: DuelInput?, events: { Du
 		if action == "heavy" then
 			local defender = state[other(side.id)]
 			local warned = warningFor(state, defender, events)
-			emit(state, events, "heavyWindup", side.id, { impactAt = state.t + side.timer, warned = warned })
+			emit(
+				state,
+				events,
+				"heavyWindup",
+				side.id,
+				{ impactAt = state.t + side.timer - (state.stepDt or 0), warned = warned }
+			)
 		end
 	elseif action == "block" then
 		if side.state == "idle" then
@@ -371,6 +377,7 @@ function DuelModel.step(state: any, inputs: { a: DuelInput?, b: DuelInput? }, dt
 	end
 	dt = math.min(dt, MAX_STEP)
 	state.t += dt
+	state.stepDt = dt -- the windup that starts in this step also spends this step's dt
 	local a, b = state.a, state.b
 	applyInput(state, a, inputs.a, events)
 	applyInput(state, b, inputs.b, events)

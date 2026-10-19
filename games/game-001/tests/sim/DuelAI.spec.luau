@@ -43,6 +43,31 @@ local function play(skillA: number, skillB: number, seed: number, setupA: any?, 
 	return state, log
 end
 
+describe("DuelAI: seed and costs", function()
+	it("a seed that is not a finite number gives the same hands as seed 1", function()
+		for _, seed in { 0 / 0, math.huge, -math.huge, "x", nil } do
+			local ai = DuelAI.new("a", 0.5, seed :: any)
+			expect(ai._rng == ai._rng and ai._rng > 0 and ai._rng < math.huge).toBe(true)
+			expect(ai._rng).toBe(DuelAI.new("a", 0.5, 1)._rng)
+		end
+	end)
+
+	it("a dodge needs the armour's own dodge cost in stamina, not a fixed 25", function()
+		local dodges = { light = 0, heavy = 0 }
+		for seed = 1, 200 do
+			for _, armour in { "light", "heavy" } do
+				local ai = DuelAI.new("a", 0.5, seed * 1000003) -- big seeds: Park-Miller starts tiny for small ones
+				-- 20 stamina: light armour (cost 14) can afford a dodge, heavy (cost 24) cannot
+				if ai:_defence({ stamina = 20, armour = armour }) == "dodge" then
+					dodges[armour] += 1
+				end
+			end
+		end
+		expect(dodges.light > 0).toBe(true)
+		expect(dodges.heavy).toBe(0)
+	end)
+end)
+
 describe("DuelAI: behaviour", function()
 	it("is deterministic: the same seed and skill give the same duel", function()
 		local _, first = play(0.5, 0.5, 11)
