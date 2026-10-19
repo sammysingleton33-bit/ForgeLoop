@@ -263,15 +263,16 @@ describe("Kit.prop and Kit.regionMarkers", function()
 	it("clones a registered asset when present", function()
 		local folder = Instance.new("Folder")
 		local mesh = Instance.new("Model")
-		mesh.Name = "tree_oak_01"
+		-- an id the nature mesh kit does not list (Kit/EnvMeshData), so no size sanity applies: a listed id is tested in KitEnvMesh.spec
+		mesh.Name = "prop_goods_01"
 		local p = Instance.new("Part")
 		p.Parent = mesh
 		mesh.Parent = folder
 		Kit.setAssetSource(folder)
-		local m = Kit.prop("tree_oak_01")
+		local m = Kit.prop("prop_goods_01")
 		Kit.setAssetSource(nil)
 		expect(m:GetAttribute("KitStandIn")).toBeNil()
-		expect(m.Name).toBe("tree_oak_01")
+		expect(m.Name).toBe("prop_goods_01")
 	end)
 
 	it("plants flags along a region polygon in the kingdom colour", function()
