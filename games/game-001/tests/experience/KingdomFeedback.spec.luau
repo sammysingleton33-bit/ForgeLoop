@@ -1381,6 +1381,34 @@ describe("client feedback controllers (FL-0062)", function()
 		end
 	)
 
+	it(
+		"MusicController: the arena scene plays over battle music; Results ends it; the result still wins (FL-0074)",
+		function()
+			local defs = doubles({ notifications = false })
+			table.insert(defs, MusicDef)
+			local controller = Loader.load(env, defs):get("MusicController")
+			controller:setPhase("Endgame")
+			controller:setAlert("raid", true)
+			expect(music[#music]).toBe("battle")
+			controller:setScene("arena")
+			expect(music[#music]).toBe("arena")
+			local played = #music
+			controller:setScene("arena") -- the same scene again changes nothing
+			expect(#music).toBe(played)
+			controller:setScene(nil)
+			expect(music[#music]).toBe("battle") -- the raid is still on
+			controller:setAlert("raid", false)
+			controller:setScene("arena")
+			expect(music[#music]).toBe("arena")
+			controller:setPhase("Results")
+			expect(controller.scene).toBeNil()
+			expect(music[#music] == "arena").toBe(false)
+			controller:setScene("arena")
+			controller:setResult("won")
+			expect(music[#music]).toBe("victory")
+		end
+	)
+
 	it("MusicController: a raid or a siege plays battle music until the last one ends (FL-0130)", function()
 		local defs = doubles({ notifications = false })
 		table.insert(defs, AnnouncerControllerDef)

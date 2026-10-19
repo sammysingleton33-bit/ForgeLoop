@@ -300,6 +300,19 @@ describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stin
 		for _, shot in StageDef.pass(geometry, nil, 0.5, Crowd) do
 			expect(shot.seconds).toBe(Crowd.intro.minShotSec)
 		end
+		-- a pass longer than the intro is capped at `most`; with no `most`, at its own length
+		local long = table.clone(Crowd)
+		long.intro = { standZoom = 55, ringZoom = 80, standSec = 10, ringSec = 10, minShotSec = 1 }
+		local capped = 0
+		for _, shot in StageDef.pass(geometry, "a", nil, long, 15) do
+			capped += shot.seconds
+		end
+		expect(math.abs(capped - 15) < 1e-6).toBe(true)
+		local uncapped = 0
+		for _, shot in StageDef.pass(geometry, "a", 99, long) do
+			uncapped += shot.seconds
+		end
+		expect(math.abs(uncapped - 30) < 1e-6).toBe(true)
 		-- a degenerate arena (A on the centre): no yaw to A, and none for the ring seen from A, only B's shot
 		expect(#StageDef.pass({ centre = CENTRE, a = CENTRE, b = STAND_B }, nil, nil, Crowd)).toBe(1)
 	end)

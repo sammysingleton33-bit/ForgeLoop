@@ -31,7 +31,7 @@
 		controller:onArenaState(state) / :onKingdomState(state) / :onPhase(phase)
 		controller:geometry() -> { centre: Vector3, a: Vector3, b: Vector3 }?
 		controller:preview(spec) -> boolean        -- Studio only
-		Def.pass(geometry, side?, seconds?, config) -> { shot }   -- pure: the intro pass for a viewer
+		Def.pass(geometry, side?, seconds?, config, most?) -> { shot }   -- pure: the intro pass for a viewer
 		Def.yawToward(from, to) -> number?         -- pure: the overview yaw that looks from `from` to `to`
 	Engine access is guarded: without a camera, music, audio, the arena or the remotes it does what it can.
 ]]
@@ -69,14 +69,17 @@ function Def.yawToward(from: Vector3, to: Vector3): number?
 end
 
 -- The intro pass for a viewer of side "a", "b" or nil (neither): the other stand, your own, then the ring
--- from your own side. `seconds` (the intro time left) shrinks every shot alike, never below minShotSec.
-function Def.pass(geometry: any, side: string?, seconds: number?, config: any): { any }
+-- from your own side. It lasts at most `seconds` (the intro time left) and at most `most` (the intro's
+-- length), shrinking every shot alike, never below minShotSec.
+function Def.pass(geometry: any, side: string?, seconds: number?, config: any, most: number?): { any }
 	local intro = config.intro
 	local home = if side == "b" then "b" else "a"
 	local away = if home == "a" then "b" else "a"
 	local order = if side == nil then { "a", "b" } else { away, home }
 	local full = 2 * intro.standSec + intro.ringSec
-	local scale = if finite(seconds) and (seconds :: number) > 0 then math.min(1, (seconds :: number) / full) else 1
+	local cap = if finite(most) and (most :: number) > 0 then most :: number else full
+	local budget = if finite(seconds) and (seconds :: number) > 0 then math.min(seconds :: number, cap) else cap
+	local scale = math.min(1, budget / full)
 	local stand = math.max(intro.minShotSec, intro.standSec * scale)
 	local ring = math.max(intro.minShotSec, intro.ringSec * scale)
 	local shots = {}
@@ -284,16 +287,16 @@ function Controller:geometry(): { centre: Vector3, a: Vector3, b: Vector3 }?
 	return nil
 end
 
-function Controller:_timeLeft(state: any): number
-	local most = Pacing.arena.intro
+-- Seconds left in the intro (endsAt), nil when the state or the clock does not say.
+function Controller:_timeLeft(state: any): number?
 	if type(state.endsAt) ~= "number" then
-		return most
+		return nil
 	end
 	local ok, now = pcall(self._env.serverTimeNow)
 	if not ok or type(now) ~= "number" then
-		return most
+		return nil
 	end
-	return math.clamp(state.endsAt - now, 0, most)
+	return state.endsAt - now
 end
 
 function Controller:_shots(shots: { any }): boolean
@@ -315,8 +318,8 @@ function Controller:_intro(state: any, side: string?): boolean
 		return false
 	end
 	local left = self:_timeLeft(state)
-	local shots = Def.pass(geometry, side, left, Crowd)
-	if left <= 0 then
+	local shots = Def.pass(geometry, side, left, Crowd, Pacing.arena.intro)
+	if left ~= nil and left <= 0 then
 		shots = { shots[#shots] } -- the intro is already over: the ring alone
 	end
 	return self:_shots(shots)
