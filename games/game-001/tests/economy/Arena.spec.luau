@@ -38,13 +38,35 @@ local function tap(instance)
 	expect(Create.fire(face, "Activated")).toBeGreaterThan(0)
 end
 
+-- FORGE-04's InputModeArenaController, as far as the HUD reads it: controls() (Def.CONTROLS)
+local inputDef = {
+	name = "InputModeArenaController",
+	new = function()
+		return {
+			controls = function()
+				return {
+					{ action = "light", keyboard = "Left click", gamepad = "R1", touch = "Light" },
+					{ action = "heavy", keyboard = "R", gamepad = "R2", touch = "Heavy" },
+					{ action = "block", keyboard = "Hold F", gamepad = "Hold L1", touch = "Hold Block" },
+					{ action = "parry", keyboard = "E", gamepad = "L2", touch = "Parry" },
+					{ action = "dodge", keyboard = "Q", gamepad = "B", touch = "Dodge" },
+				}
+			end,
+		}
+	end,
+}
+
 local function newWorld(opts)
 	local o = opts or {}
+	local defs = { KingdomHudDef, ArenaHudDef, LoadoutDef, ArenaIntroDef }
+	if o.input then
+		table.insert(defs, inputDef)
+	end
 	local world = KingdomWorld.new({
 		userId = o.userId,
 		remotes = ArenaDoubles.REMOTES,
 		services = { ArenaDoubles.service },
-		clientDefinitions = { KingdomHudDef, ArenaHudDef, LoadoutDef, ArenaIntroDef },
+		clientDefinitions = defs,
 		envServices = o.envServices,
 	})
 	world.hud = world.client:get("KingdomHudController")
@@ -275,6 +297,39 @@ describe("Crown Arena: intro card and duel HUD (FL-0073)", function()
 		world:advance(0.3)
 		expect(find(modals(world), "ArenaHud")).toBeNil()
 		expect(world.hud.guis.hud.Enabled).toBe(true)
+	end)
+
+	it("control hints for the champion: the quiet start, again after the input changes, never on touch", function()
+		local input = { type = "Enum.UserInputType.Keyboard" }
+		local uis = {
+			GetLastInputType = function()
+				return input.type
+			end,
+		}
+		world = newWorld({ input = true, envServices = { UserInputService = uis } })
+		local a, b = duellists()
+		world.arenaServer:setState({ stage = "duel", endsAt = world.env.serverTimeNow() + 120, a = a, b = b })
+		world:advance(0.5)
+		local hints = find(modals(world), "Hints")
+		expect(texts(hints)).toBe("Left click Light · R Heavy · Hold F Block · E Parry · Q Dodge")
+		world:advance(10)
+		expect(find(modals(world), "Hints")).toBeNil() -- the quiet start is over
+		input.type = "Enum.UserInputType.Gamepad1"
+		world:advance(0.5)
+		expect(texts(find(modals(world), "Hints"))).toContain("R1 Light")
+		world:advance(5)
+		expect(find(modals(world), "Hints")).toBeNil()
+		input.type = "Enum.UserInputType.Touch"
+		world:advance(0.5)
+		expect(find(modals(world), "Hints")).toBeNil() -- the touch buttons carry their own labels
+		world:destroy()
+		-- a watching ruler never gets hints
+		world = newWorld({ userId = 9, input = true, envServices = { UserInputService = uis } })
+		input.type = "Enum.UserInputType.Keyboard"
+		world.arenaServer:setState({ stage = "duel", endsAt = world.env.serverTimeNow() + 120, a = a, b = b })
+		world:advance(0.5)
+		expect(find(modals(world), "ArenaHud")).toBeTruthy()
+		expect(find(modals(world), "Hints")).toBeNil()
 	end)
 
 	it("without the Arena remotes nothing shows and nothing breaks", function()

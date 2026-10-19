@@ -9,9 +9,27 @@ local ArenaIntroDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Con
 local LoadoutDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/LoadoutController")
 local scene = require("./_world")
 
+-- FORGE-04's InputModeArenaController, as far as the HUD reads it (its Def.CONTROLS)
+local inputDef = {
+	name = "InputModeArenaController",
+	new = function()
+		return {
+			controls = function()
+				return {
+					{ action = "light", keyboard = "Left click", gamepad = "R1", touch = "Light" },
+					{ action = "heavy", keyboard = "R", gamepad = "R2", touch = "Heavy" },
+					{ action = "block", keyboard = "Hold F", gamepad = "Hold L1", touch = "Hold Block" },
+					{ action = "parry", keyboard = "E", gamepad = "L2", touch = "Parry" },
+					{ action = "dodge", keyboard = "Q", gamepad = "B", touch = "Dodge" },
+				}
+			end,
+		}
+	end,
+}
+
 return function(ctx, stage)
 	return scene(ctx, {
-		clientDefinitions = { ArenaHudDef, LoadoutDef, ArenaIntroDef },
+		clientDefinitions = { ArenaHudDef, LoadoutDef, ArenaIntroDef, inputDef },
 		remotes = ArenaDoubles.REMOTES,
 		services = { ArenaDoubles.service },
 	}, function(world, _hud)

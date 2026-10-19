@@ -21,7 +21,8 @@
 		arena.changed: Signal<(ArenaState?)>   arena.supportChanged: Signal<(SupportView?)>
 		arena:setState(state)   arena:setSupport(view)   arena:onEvents(batch)   arena:fetchSupport()
 		arena:lookup() -> { kingdom(id), name(userId) }   arena:userId()   arena:focus() -> boolean
-		ArenaHudController.POLL_SEC   .FOCUS
+		arena:inputKind() -> "keyboard" | "gamepad" | "touch"
+		ArenaHudController.POLL_SEC   .FOCUS   .HINT_SEC   .HINT_AGAIN_SEC   .INPUT
 ]]
 
 local ArenaHud = require("../UI/ArenaHud")
@@ -37,6 +38,9 @@ local Def = { name = "ArenaHudController", dependencies = { "KingdomHudControlle
 ArenaHudController.POLL_SEC = 0.25 -- the clocks and a fired perk's glow
 ArenaHudController.FOCUS = table.freeze({ intro = true, duel = true }) -- the kingdom HUD steps aside for everyone
 ArenaHudController.DUEL = "DuelController"
+ArenaHudController.INPUT = "InputModeArenaController" -- FORGE-04: controls() for the hint line
+ArenaHudController.HINT_SEC = 10 -- the duel's quiet start
+ArenaHudController.HINT_AGAIN_SEC = 5 -- after the input type changes
 
 function Def.new(env: any, registry: any)
 	return setmetatable({
@@ -224,6 +228,43 @@ function ArenaHudController:focus(): boolean
 	return stage == "loadout" and LoadoutModel.side(self.state, self:userId()) ~= nil
 end
 
+-- The input in use: "gamepad", "touch" or "keyboard" (UserInputService's last input type; keyboard when unknown).
+function ArenaHudController:inputKind(): string
+	local ok, kind = pcall(function()
+		local name = tostring(self._env.UserInputService:GetLastInputType())
+		if string.find(name, "Gamepad") then
+			return "gamepad"
+		elseif string.find(name, "Touch") then
+			return "touch"
+		end
+		return "keyboard"
+	end)
+	return if ok then kind else "keyboard"
+end
+
+-- The control hints (FORGE-04, 2026-10-19): the duel's first HINT_SEC, and HINT_AGAIN_SEC after the input type
+-- changes; keyboard and gamepad only.
+function ArenaHudController:_hints(now: number): string?
+	local st = self.state
+	local duel = `{st.a and st.a.userId}|{st.b and st.b.userId}`
+	local kind = self:inputKind()
+	if duel ~= self._hintDuel then
+		self._hintDuel = duel
+		self._hintUntil = now + ArenaHudController.HINT_SEC
+	elseif self._inputKind ~= nil and kind ~= self._inputKind then
+		self._hintUntil = math.max(self._hintUntil or 0, now + ArenaHudController.HINT_AGAIN_SEC)
+	end
+	self._inputKind = kind
+	if now >= (self._hintUntil or 0) then
+		return nil
+	end
+	local input = self._registry:find(ArenaHudController.INPUT)
+	local ok, controls = pcall(function()
+		return input:controls()
+	end)
+	return ArenaHudModel.hints(if ok then controls else nil, kind)
+end
+
 function ArenaHudController:render(metrics: any?)
 	local hud = self.hud
 	if self._destroyed or hud.roots.modals == nil then
@@ -236,10 +277,14 @@ function ArenaHudController:render(metrics: any?)
 		return
 	end
 	self.view = self.view or ArenaHud.new(hud.roots.modals)
-	local model = ArenaHudModel.view(self.track, self.state, self:lookup(), self:userId(), self._env.serverTimeNow())
+	local now = self._env.serverTimeNow()
+	local model = ArenaHudModel.view(self.track, self.state, self:lookup(), self:userId(), now)
 	if model == nil then
 		self.view:destroy()
 		return
+	end
+	if model.mine then
+		model.hints = self:_hints(now)
 	end
 	self.view:render(model, metrics or hud:metrics())
 end

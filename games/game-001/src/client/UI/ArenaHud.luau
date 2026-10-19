@@ -8,6 +8,7 @@
 		                         faded and empty until a snapshot), and the perk icons ("Perk_<id>", attribute `state`:
 		                         armed dim, active gold with a glow, spent crossed out)
 		Clock                    time left (red in the last 15 s), "Sudden death" when it applies
+		Hints                    a champion on keyboard or gamepad: "Left click Light · R Heavy · …" under the strip
 	The local champion is on the left (side a for a spectator); the right side is mirrored.
 	ArenaHud.TOP (px from the top) and ArenaHud.height(metrics) give FORGE-04 the strip's bottom edge.
 
@@ -266,6 +267,30 @@ function ArenaHud:render(model: any, m: any)
 		xAlign = "Center",
 		extra = { Name = "Note", Size = UDim2.new(1, 0, 0, 12), LayoutOrder = 2, Parent = clock },
 	})
+	-- the control hints (the champion, keyboard or gamepad; ArenaHudController decides when): one line under the
+	-- strip. Never on touch, so a phone's strip bottom (y 122) stays clear of FORGE-04's captions (from y 135).
+	if model.hints then
+		Create("Frame", {
+			Name = "Hints",
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, ArenaHud.height(m) + 6),
+			AutomaticSize = Enum.AutomaticSize.X,
+			Size = UDim2.fromOffset(0, 24),
+			BackgroundColor3 = Theme.color("ink950"),
+			BackgroundTransparency = 0.2,
+			Parent = strip,
+		}, {
+			Corner = Style.corner(999),
+			Padding = Style.padding(0, 12),
+			Label = Style.text({
+				text = model.hints,
+				size = if phone then 11 else 13,
+				color = Theme.color("parchment100"),
+				weight = Enum.FontWeight.SemiBold,
+				extra = { Name = "Text", AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1) },
+			}),
+		})
+	end
 	self.instance = strip
 	strip.Parent = self._parent
 end

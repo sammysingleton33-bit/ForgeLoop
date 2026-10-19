@@ -14,6 +14,7 @@
 			             ACTIVE_SEC, then spent)
 			ended        side "a" | "b" | "draw"; data { winner, reason, hpA, hpB }
 		ArenaHudModel.reset(track)        a new duel (a different pair of duellists)
+		ArenaHudModel.hints(controls, kind) -> string?   the control hint line (keyboard / gamepad; nil on touch)
 		ArenaHudModel.view(track, arena, lookup, userId, now) -> View?   nil unless the stage is "duel"
 			View = { clock?, urgent, suddenDeath, ended?, left: Side, right: Side, mine }
 			Side = { side, name, kingdomName, color, tier { name, color }, hp (0..1), hpText ("72%"),
@@ -127,6 +128,27 @@ local function sideView(track: any, id: string, d: any, lookup: any, now: number
 		low = t.hp <= ArenaHudModel.LOW,
 		triggers = triggers,
 	}
+end
+
+ArenaHudModel.ACTIONS =
+	table.freeze({ light = "Light", heavy = "Heavy", block = "Block", parry = "Parry", dodge = "Dodge" })
+
+-- One line of control hints for the input in use (FORGE-04's InputModeArenaController:controls(), Def.CONTROLS):
+-- "Left click Light · R Heavy · Hold F Block · E Parry · Q Dodge". Keyboard and gamepad only: the touch buttons
+-- carry their own labels.
+function ArenaHudModel.hints(controls: any, kind: string?): string?
+	if (kind ~= "keyboard" and kind ~= "gamepad") or type(controls) ~= "table" then
+		return nil
+	end
+	local parts = {}
+	for _, c in controls do
+		local key = if type(c) == "table" then c[kind] else nil
+		local name = if type(c) == "table" then ArenaHudModel.ACTIONS[c.action] else nil
+		if type(key) == "string" and name then
+			table.insert(parts, `{key} {name}`)
+		end
+	end
+	return if #parts > 0 then table.concat(parts, " · ") else nil
 end
 
 function ArenaHudModel.view(track: any, arena: any, lookup: any, userId: number?, now: number): any
