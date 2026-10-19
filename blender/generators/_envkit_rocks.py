@@ -261,7 +261,7 @@ def ore(variant, rng):
             cr.rot(rng.uniform(-30, 30), "x").rot(rng.uniform(-30, 30), "z").move(px, y - 0.6, pz)
             parts.append(S.flat(cr))
         else:
-            nug = S.blob(rng, 9, 1.25, 0.95, 1.1, px, y, pz, jitter=0.14, color=col, tag="ore", yaw=rng.uniform(0, math.tau))
+            nug = S.blob(rng, 10, 1.65, 1.2, 1.45, px, y, pz, jitter=0.14, color=col, tag="ore", yaw=rng.uniform(0, math.tau))
             for fi, face in enumerate(nug.f):
                 n = S.face_normal(nug, face)
                 nug.c[fi] = S.mix(S.mul(col, 0.72), S.mix(col, (1, 1, 1), 0.28 if kind == "gold" else 0.18), min(1.0, 0.5 + 0.5 * n[1] + rng.uniform(-0.15, 0.15)))

@@ -14,16 +14,12 @@ BUSH_SHAPES = ["round", "low", "tall", "twin"]
 
 
 def _gem(rng, cx, cy, cz, r, color, tag="bloom", n=6):
-    """A faceted nub (berry / blossom): an octahedron around its centre, lighter on top so it reads as a lit berry from above."""
-    v = [(r, 0, 0), (-r, 0, 0), (0, r * 0.9, 0), (0, -r * 0.9, 0), (0, 0, r), (0, 0, -r)]
-    f = [(2, 4, 0), (2, 1, 4), (2, 5, 1), (2, 0, 5), (3, 0, 4), (3, 4, 1), (3, 1, 5), (3, 5, 0)]
-    yaw = rng.uniform(0, math.tau)
-    c_, s_ = math.cos(yaw), math.sin(yaw)
-    m = M([(cx + x * c_ - z * s_, cy + y, cz + x * s_ + z * c_) for x, y, z in v], f, color=color, smooth=False, tag=tag).fix_winding()
+    """A faceted berry / blossom: a 20-facet icosahedron, lighter on top so it reads as a lit berry from above."""
+    m = S.ico(rng, r, r * 0.92, r, cx, cy, cz, jitter=0.05, subdiv=0, color=color, tag=tag)
     for i, face in enumerate(m.f):
         nrm = S.face_normal(m, face)
-        m.c[i] = S.mix(S.mul(color, 0.8), S.mix(color, (1, 1, 1), 0.1), min(1.0, 0.5 + 0.5 * nrm[1]))
-    return S.flat(m, tag)
+        m.c[i] = S.mix(S.mul(color, 0.8), S.mix(color, (1, 1, 1), 0.12), min(1.0, 0.5 + 0.5 * nrm[1]))
+    return m
 
 
 def bush(variant, rng):
@@ -53,7 +49,7 @@ def bush(variant, rng):
     parts += lobes
     if kind != "plain":
         col = S.BERRY if kind == "berry" else S.FLOWER["white"]
-        r0 = 0.72 if kind == "berry" else 0.62
+        r0 = 0.8 if kind == "berry" else 0.7
         for i in range(7 if kind == "berry" else 6):
             a = a0 + i * 1.12 + rng.uniform(-0.2, 0.2)
             el = math.radians(26 + (i % 3) * 17 + rng.uniform(-4, 4))
@@ -86,13 +82,15 @@ def flowers(variant, rng):
     mound = S.blob(rng, 12, 1.5, 0.7, 1.4, 0.0, 0.3, 0.0, jitter=0.12, squash_bottom=0.6, color=S.LEAF, tag="leaf", yaw=rng.uniform(0, math.tau))
     S.paint_ramp(mound, [S.LEAF_DARK, S.LEAF, S.LEAF_LIGHT], rng, 0.0, 1.0, up=0.3, height=0.5, noise=0.1)
     parts.append(mound)
-    for i in range(7):
-        a = i * 0.9 + rng.uniform(-0.2, 0.2)
+    nblade = [7, 6, 8, 6, 7, 9][(variant - 1) % 6]
+    for i in range(nblade):
+        a = i * 6.3 / nblade + rng.uniform(-0.2, 0.2)
         r = rng.uniform(0.5, 1.8)
         parts.append(_blade(rng, math.cos(a) * r, math.sin(a) * r, rng.uniform(1.1, 1.8), rng.uniform(0.14, 0.2), rng.uniform(-24, 24), rng.uniform(0, math.tau),
                             S.LEAF_DARK, S.LEAF_LIGHT))
-    for i in range(6):
-        a = i * 1.05 + rng.uniform(-0.2, 0.2)
+    nbloom = [6, 7, 5, 8, 6, 7][(variant - 1) % 6]
+    for i in range(nbloom):
+        a = i * 6.3 / nbloom + rng.uniform(-0.2, 0.2)
         r = rng.uniform(0.25, 2.05)
         top = (2.15 if r < 1.2 else 1.6) + rng.uniform(0.0, 0.6)
         col = S.FLOWER[cols[(i + variant) % len(cols)]]
@@ -100,9 +98,9 @@ def flowers(variant, rng):
         # stem: a three-sided sliver; head: a flat faceted blossom with a yellow-ish centre nub
         stem = S.flat(S.slab([(-0.1, -0.08), (0.1, -0.08), (0.0, 0.12)], 0.0, top - 0.25, S.LEAF_DARK, tag="stem")).move(x, 0.0, z)
         parts.append(stem)
-        head = S.blob(rng, 10, 0.62, 0.34, 0.62, x, top, z, jitter=0.1, color=col, tag="bloom", yaw=rng.uniform(0, math.tau))
-        S.paint_ramp(head, [S.mul(col, 0.82), col, S.mix(col, (1, 1, 1), 0.2)], rng, top - 0.34, top + 0.34, up=0.5, height=0.3, noise=0.06)
+        head = S.blob(rng, 10, 0.78, 0.42, 0.78, x, top, z, jitter=0.1, color=col, tag="bloom", yaw=rng.uniform(0, math.tau))
+        S.paint_ramp(head, [S.mul(col, 0.82), col, S.mix(col, (1, 1, 1), 0.2)], rng, top - 0.42, top + 0.42, up=0.5, height=0.3, noise=0.06)
         parts.append(head)
-        centre = S.blob(rng, 6, 0.22, 0.2, 0.22, x, top + 0.26, z, jitter=0.05, color=S.FLOWER["yellow"] if col != S.FLOWER["yellow"] else S.WOOD_LIGHT, tag="centre")
+        centre = S.blob(rng, 6, 0.28, 0.24, 0.28, x, top + 0.32, z, jitter=0.05, color=S.FLOWER["yellow"] if col != S.FLOWER["yellow"] else S.WOOD_LIGHT, tag="centre")
         parts.append(centre)
     return S.assemble(parts), {"colours": cols}

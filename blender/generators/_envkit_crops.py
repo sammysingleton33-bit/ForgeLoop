@@ -32,30 +32,57 @@ def _soil_bed(rng, w=FW, d=FD, tag="soil"):
     return m
 
 
-def _tuft(rng, x, z, h, w, d, stalk, ear, lean_deg=0.0, ears=True, ear_len=0.8, base=BED, tag="stalks"):
-    """One crop tuft: a tapered clump (wide at the ground, narrow at the top) and, when ripe, a leaning four-sided ear."""
+def _blade(rng, x, z, h, rb, base_c, tip_c, lean=(0.0, 0.0), base=BED):
+    """One grain blade: a closed three-sided spike (4 triangles) whose corner colours run from the stalk at the foot to the ear at the tip (a vertex-colour gradient)."""
+    a0 = rng.uniform(0, math.tau)
+    v = [(x + math.cos(a0 + k * math.tau / 3) * rb, base, z + math.sin(a0 + k * math.tau / 3) * rb) for k in range(3)] + [(x + lean[0], base + h, z + lean[1])]
+    f = [(0, 1, 3), (1, 2, 3), (2, 0, 3), (2, 1, 0)]
+    m = M(v, f, color=base_c, smooth=False, tag="grain").fix_winding()
+    m.cc = []
+    for face in m.f:
+        m.cc.append([tip_c if q == 3 else base_c for q in face])
+    return m
+
+
+def _tuft(rng, x, z, h, w, d, stalk, ear, lean_deg=0.0, ears=True, n=4, base=BED):
+    """One crop tuft: `n` slender blades leaning a little in different directions (heights +-18 %), foot colour stalk, tip colour ear (green shoots when not ripe)."""
+    out = []
+    for k in range(n):
+        a = rng.uniform(0, math.tau) if n > 1 else 0.0
+        r = rng.uniform(0.0, 0.5) * min(w, d) * 0.6
+        bx, bz = x + math.cos(a) * r, z + math.sin(a) * r * (d / max(w, 1e-6))
+        bh = h * rng.uniform(0.82, 1.18)
+        la = rng.uniform(0, math.tau)
+        ln = rng.uniform(0.0, 0.34) * bh + math.tan(math.radians(lean_deg)) * bh * 0.5
+        sh = rng.uniform(0.9, 1.08)
+        foot = S.mul(stalk, 0.82 * sh)
+        tip = S.mul(ear if ears else S.mix(stalk, ear, 0.5), sh)
+        out.append(_blade(rng, bx, bz, bh, min(w, d) * rng.uniform(0.26, 0.34), foot, tip, (math.cos(la) * ln, math.sin(la) * ln), base))
+    return out
+
+
+def _clump(rng, x, z, h, w, d, along_x, stalk, ear, n_blades=2, blade_h=0.85, sh=1.0):
+    """A chunky grain clump: a tapered, ridge-topped wedge of stalks (8 triangles, lit on top, darker down its flanks) with `n_blades` gradient blades standing out of
+    its ridge: dense from the aerial camera (a golden mass with separate shadows between the clumps), spiky and uneven up close."""
     a, b = w / 2, d / 2
-    sk = rng.uniform(0.35, 0.65)
-    lx = math.tan(math.radians(lean_deg)) * h
-    pts = [(-a, base, -b), (a, base, -b), (-a, base, b), (a, base, b),
-           (-a * 0.55 + lx, base + h, -b * sk), (a * 0.55 + lx, base + h, -b * sk), (-a * 0.55 + lx, base + h, b * sk), (a * 0.55 + lx, base + h, b * sk)]
-    c = S.hull([(p[0] + x, p[1], p[2] + z) for p in pts], color=stalk, smooth=False, tag=tag)
-    S.flat(c, tag)
-    for i, f in enumerate(c.f):  # lighter toward the top, brighter on the sunny faces
-        cy = sum(c.v[k][1] for k in f) / len(f)
-        n = S.face_normal(c, f)
-        c.c[i] = S.mul(stalk, 0.84 + 0.2 * (cy - base) / max(1e-6, h) + 0.08 * n[1] + rng.uniform(-0.04, 0.04))
-    out = [c]
-    if ears:
-        r = rng.uniform(0.34, 0.46)
-        e = S.cone(r * 1.15, ear_len, seg=3, y0=0.0, color=ear, smooth=False, tag="ear")
-        S.flat(e, "ear")
-        for i, f in enumerate(e.f):
-            n = S.face_normal(e, f)
-            e.c[i] = S.mul(ear, 0.88 + 0.16 * (0.5 + 0.5 * n[1]) + rng.uniform(-0.05, 0.05))
-        e.rot(rng.uniform(-14, 14) + lean_deg * 0.5, "z").rot(rng.uniform(-10, 10), "x")
-        e.move(x + lx * 0.95, base + h - 0.08, z)
-        out.append(e)
+    jx = lambda: rng.uniform(-0.12, 0.12)  # noqa: E731
+    pts = [(-a, BED, -b), (a, BED, -b), (-a, BED, b), (a, BED, b)]
+    ridge = (0.2 * w, 0.0) if along_x else (0.0, 0.2 * d)
+    lean = rng.uniform(-0.25, 0.25)
+    pts += [(-ridge[0] + lean, BED + h, -ridge[1]), (ridge[0] + lean, BED + h, ridge[1])]
+    pts = [(p_[0] + x + jx() * (p_[1] > BED), p_[1], p_[2] + z + jx() * (p_[1] > BED)) for p_ in pts]
+    body = S.flat(S.hull(pts, color=stalk, smooth=False, tag="stalks"), "stalks")
+    for fi, face in enumerate(body.f):
+        n_ = S.face_normal(body, face)
+        body.c[fi] = S.mul(S.mix(stalk, ear, 0.45 * max(0.0, n_[1])), (0.78 + 0.26 * (0.5 + 0.5 * n_[1])) * sh * rng.uniform(0.95, 1.05))
+    out = [body]
+    top = BED + h
+    for _ in range(n_blades):
+        bx, bz = x + rng.uniform(-0.3, 0.3) * w * 0.5, z + rng.uniform(-0.3, 0.3) * d * 0.5
+        la = rng.uniform(0, math.tau)
+        ln = rng.uniform(0.0, 0.3) * blade_h
+        bh = blade_h * rng.uniform(0.85, 1.15)
+        out.append(_blade(rng, bx, bz, bh + 0.25, min(w, d) * rng.uniform(0.17, 0.22), S.mul(stalk, 0.95 * sh), S.mul(ear, sh), (math.cos(la) * ln, math.sin(la) * ln), top - 0.25))
     return out
 
 
@@ -77,14 +104,15 @@ def wheat(variant, rng, stage=3):
     pal = {1: (S.rgb(214, 170, 62), S.rgb(244, 208, 96)), 2: (S.rgb(206, 150, 52), S.rgb(238, 186, 72)), 3: (S.rgb(206, 182, 92), S.rgb(240, 222, 140))}
     if stage == 3:
         stalk, ear = pal[variant]
-        tuft_h, ears = {1: 1.45, 2: 1.5, 3: 1.4}[variant], True
+        tuft_h, ears = {1: 1.5, 2: 1.5, 3: 1.4}[variant], True
     elif stage == 2:
         stalk, ear = S.rgb(140, 180, 66), S.rgb(176, 200, 84)
-        tuft_h, ears = 1.15, False
+        tuft_h, ears = 1.3, False
     else:
         stalk, ear = S.rgb(112, 168, 70), S.rgb(142, 192, 84)
-        tuft_h, ears = 0.55, False
+        tuft_h, ears = 0.6, False
     along_x = variant != 2 or stage != 3
+    blade_h = {1: 0.0, 2: 0.55, 3: 0.8}[stage]
     rows = 6 if along_x else 8
     length = FW - 5.0 if along_x else FD - 4.0
     span = FD - 3.0 if along_x else FW - 3.4
@@ -113,11 +141,13 @@ def wheat(variant, rng, stage=3):
                 col = S.mix(col, S.rgb(150, 178, 64), 0.55)  # late patches still turning
             cw = (length / ntuft) * 1.06
             cd = pitch * 0.62
-            if along_x:
-                tf = _tuft(rng, u, pos + rng.uniform(-0.15, 0.15), sh, cw, cd, col, ear, rng.uniform(-8, 8), ears=ears)
+            tx_, tz_ = (u, pos + rng.uniform(-0.15, 0.15)) if along_x else (pos + rng.uniform(-0.15, 0.15), u)
+            if stage == 3:
+                parts += _clump(rng, tx_, tz_, sh, cw if along_x else cd, cd if along_x else cw, along_x, col, ear, 2, blade_h)
+            elif stage == 2:
+                parts += _clump(rng, tx_, tz_, sh * 0.55, (cw if along_x else cd) * 0.85, (cd if along_x else cw) * 0.85, along_x, col, ear, 1, 0.55)
             else:
-                tf = _tuft(rng, pos + rng.uniform(-0.15, 0.15), u, sh, cd, cw, col, ear, rng.uniform(-8, 8), ears=ears)
-            parts += tf
+                parts += _tuft(rng, tx_, tz_, sh, cw, cd, col, ear, rng.uniform(-8, 8), ears=False, n=3)
     if stage == 1:  # shoots: the furrows are mostly bare soil with the first green blades
         pass
     if stage == 3:

@@ -53,10 +53,10 @@ SOIL_RIDGE = rgb(112, 82, 52)
 SOIL_DARK = rgb(78, 56, 36)
 WHEAT = rgb(230, 194, 90)
 
-OAK_RAMP = [rgb(26, 74, 46), rgb(40, 100, 48), rgb(58, 130, 50), rgb(92, 164, 56), rgb(146, 202, 68)]  # blue-green shade up to a sunlit lime
+OAK_RAMP = [rgb(20, 62, 42), rgb(32, 88, 44), rgb(46, 114, 46), rgb(72, 144, 50), rgb(122, 182, 62)]  # blue-green shade up to a sunlit lime
 PINE_RAMP = [rgb(22, 62, 46), PINE, PINE_MID, PINE_LIGHT]
-BIRCH_RAMP = [mul(BIRCH_LEAF, 0.74), mul(BIRCH_LEAF, 0.9), BIRCH_LEAF, BIRCH_LEAF_LIGHT]
-BUSH_RAMP = [mul(LEAF_DARK, 0.95), LEAF, LEAF_LIGHT, mix(LEAF_LIGHT, OAK_SUN, 0.28)]
+BIRCH_RAMP = [mul(BIRCH_LEAF, 0.62), mul(BIRCH_LEAF, 0.8), mul(BIRCH_LEAF, 0.96), mix(BIRCH_LEAF, BIRCH_LEAF_LIGHT, 0.7)]
+BUSH_RAMP = [mul(LEAF_DARK, 0.85), mul(LEAF, 0.92), LEAF_LIGHT, mix(LEAF_LIGHT, OAK_SUN, 0.22)]
 ROCK_RAMP = [mul(ROCK_BASE, 0.84), ROCK_BASE, ROCK_MID, ROCK_TOP]
 
 
@@ -246,6 +246,8 @@ def assemble(parts, name=""):
     bad = weld_check(flat_parts)
     if bad:
         raise AssertionError(f"{name or 'prop'}: floating part(s) {bad} ({[flat_parts[i].k[0] if flat_parts[i].k else '?' for i in bad]})")
+    if any(q.cc is not None for q in flat_parts):  # per-corner colours (gradients) need triangles: triangulate the plain parts, then merge
+        flat_parts = [q if q.cc is not None else q.copy().triangulate() for q in flat_parts]
     return merge(*flat_parts)
 
 

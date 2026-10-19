@@ -9496,16 +9496,16 @@
       },
       "generator": "env_kit",
       "generator_version": 1,
-      "geometry_hash": "4e7e4ff6872b5274",
+      "geometry_hash": "6a7eb600e76ab487",
       "id": "env_kit_01",
       "kingdom": null,
       "kit": {
         "families": {
           "bush": {
             "props": 8,
-            "tris_max": 268,
+            "tris_max": 340,
             "tris_min": 140,
-            "tris_total": 1616
+            "tris_total": 2000
           },
           "crop": {
             "props": 3,
@@ -9515,9 +9515,9 @@
           },
           "flower": {
             "props": 6,
-            "tris_max": 254,
-            "tris_min": 254,
-            "tris_total": 1524
+            "tris_max": 312,
+            "tris_min": 228,
+            "tris_total": 1626
           },
           "haystack": {
             "props": 1,
@@ -9529,7 +9529,7 @@
             "props": 14,
             "tris_max": 268,
             "tris_min": 116,
-            "tris_total": 2656
+            "tris_total": 2676
           },
           "tree": {
             "props": 20,
@@ -9538,11 +9538,11 @@
             "tris_total": 9022
           }
         },
-        "fbx_sha256": "065a211f49d3b04ce55e3606547f440b8a8c37799e195f548c3060a71865ef28",
+        "fbx_sha256": "6743fed9386d5abb5354ac49badfa5f859e8e930016fca301ec72f2b7d89d5cd",
         "max_mesh_tris": 1430,
         "props": 52,
         "style": "B",
-        "total_tris": 19138
+        "total_tris": 19644
       },
       "license": "project-original",
       "material": "M_envkit_vc",
@@ -9595,7 +9595,7 @@
       },
       "generator": "env_kit",
       "generator_version": 1,
-      "geometry_hash": "ae976f0fabc35663",
+      "geometry_hash": "136833a55c70ebf4",
       "id": "env_kit_02",
       "kingdom": null,
       "kit": {
@@ -9616,14 +9616,14 @@
             "props": 8,
             "tris_max": 218,
             "tris_min": 132,
-            "tris_total": 1356
+            "tris_total": 1376
           }
         },
-        "fbx_sha256": "86311fa15b6c4f7310b63faba44803ef32da847c033a0f5cd7adc476f2885a79",
+        "fbx_sha256": "2c937e789b1db0fe7ec7e769b5bde89b001589f58b6946277ea2242eec8f4a2e",
         "max_mesh_tris": 1332,
         "props": 15,
         "style": "B",
-        "total_tris": 7516
+        "total_tris": 7536
       },
       "license": "project-original",
       "material": "M_envkit_vc",

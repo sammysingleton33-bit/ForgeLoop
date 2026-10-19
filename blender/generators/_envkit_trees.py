@@ -182,6 +182,7 @@ def pine(variant, rng, height=None):
     lean = rng.uniform(0.004, 0.014)
     la = rng.uniform(0, math.tau)
     base_r = rng.uniform(7.6, 8.4)
+    prof = [1.0, 0.72, 1.25, 0.86, 1.12, 0.7][(variant - 1) % 6]  # the outline: <1 bulges (a full cone), >1 hollows (a spire); with the tier count these tell the six apart
 
     def axis(y):
         return (math.cos(la) * lean * y, math.sin(la) * lean * y)
@@ -197,7 +198,7 @@ def pine(variant, rng, height=None):
     span = top - y
     for i in range(tiers):
         t = i / max(1, tiers - 1)
-        r0 = base_r * (1.0 - 0.80 * t ** 0.92) + 0.5
+        r0 = base_r * (1.0 - 0.80 * t ** prof) + 0.5
         h = (span / tiers) * 1.9 * (1.0 - 0.18 * t) + 1.4
         yy = y + span * (t ** 0.95)
         teeth = 7 if t < 0.5 else 6 if t < 0.8 else 5
