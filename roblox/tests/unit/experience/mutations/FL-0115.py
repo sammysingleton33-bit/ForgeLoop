@@ -60,4 +60,8 @@ M = [
  ("FL-0115", C2+"CitizenBubbleIndicatorController.luau", 'if type(connection) == "table" and connection.disconnect ~= nil then', 'if false then', 'RequestIndicators', 'destroy() disconnects everything', "game"),
  ("FL-0115", C2+"CitizenBubbleIndicatorController.luau", 'return self._bubbles ~= nil and self:_active()', 'return self._bubbles ~= nil', 'RequestIndicators', 'hides while walking', "game"),
  ("FL-0115", C2+"CitizenBubbleIndicatorController.luau", 'return self._bubbles ~= nil and self:_active()', 'return self:_active()', 'RequestIndicators', 'runs inert without CitizenBubbleController', "game"),
+ # --- FORGE-00 2026-10-19: the badges keep clear of the support chip
+ ("FL-0115", C2+"CitizenBubbleIndicatorController.luau", 'ScreenLayout.compute, size.X, size.Y, { support = support == true }', 'ScreenLayout.compute, size.X, size.Y, nil', "RequestIndicators", "keeps clear of FORGE-03's HUD", "game"),
+ ("FL-0115", C2+"CitizenBubbleIndicatorController.luau", 'return type(state) == "table" and state.support == true', 'return false', "RequestIndicators", "reads the HUD's support chip", "game"),
+ ("FL-0115", C2+"CitizenBubbleIndicatorController.luau", 'Def.insets(viewport, self:_supportShown())', 'Def.insets(viewport)', "RequestIndicators", "reads the HUD's support chip", "game"),
 ]
