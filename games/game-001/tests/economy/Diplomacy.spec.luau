@@ -366,6 +366,7 @@ describe("The Rivals tab (FL-0129)", function()
 			expect(slot).toBeTruthy()
 			expect(slot.Size.X.Scale).toBe(0.5)
 			expect(find(slot, "Action_" .. id)).toBeTruthy()
+			expect(find(slot, "Action_" .. id).Size.Y.Offset >= 44).toBe(true) -- a phone touch target (L7)
 		end
 		expect(texts(find(azure, "Head"))).toContain("pts") -- "Crown Points" would truncate beside the chip
 		expect(texts(find(azure, "Head"))).never.toContain("Crown Points")

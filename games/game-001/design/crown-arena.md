@@ -60,7 +60,7 @@ In multi-ruler kingdoms, kingdom components are shared and ruler components are 
 
 | Tier | Score | Crowd (presentation, §7) | Mechanics (within §6 caps) |
 |---|---|---|---|
-| Adoring | 85–100 | chants the ruler's name, banners, roars on every good hit | passive blessing +2 % damage reduction and +2 % stamina regeneration; 3 trigger slots; may slot the **Crowd Rally** |
+| Adoring | 85–100 | chants the ruler's name, banners, roars on every good hit | passive blessing +1 % damage reduction and +1 % stamina regeneration (the same as Loyal since trim C, FL-0076; the tier stands out through the Crowd Rally and the crowd); 3 trigger slots; may slot the **Crowd Rally** |
 | Loyal | 65–84 | strong cheering | passive blessing +1 % and +1 %; 3 trigger slots |
 | Divided | 40–64 | mixed: half cheer, half mutter | no passive blessing; 2 trigger slots |
 | Restless | 20–39 | quiet, some seats empty, scattered boos | no passive; 1 trigger slot |
@@ -78,7 +78,7 @@ Every citizen has **loyalty 0–100** (starting 50). It rises with ruler visits 
 | Role | Appears with | Petition example (raises loyalty when fulfilled) | Perk (one trigger per duel) | Trigger condition | Effect at Pledged (loyalty 80–94) / Empowered (95–100) |
 |---|---|---|---|---|---|
 | Blacksmith | Smithy | "Bring 40 stone to reinforce the forge" | **Reforge** — runs to the rail and hammers the ruler's armour | ruler's HP first drops below 50 % | damage reduction +6 % / **+10 %** for 6 s (the user's example) |
-| Healer | Infirmary | "Herbs from the forest edge" | **Field Remedy** | ruler's HP first drops below 35 % | regenerate 5 % / 8 % of max HP over 4 s |
+| Healer | Infirmary | "Herbs from the forest edge" | **Field Remedy** | ruler's HP first drops below 35 % | regenerate 3 % / 5 % of max HP over 4 s (trim C, FL-0076) |
 | Captain | Barracks (the first veteran soldier) | "Drill the recruits with me" (ruler visits the yard) | **Called Warning** — shouts the opponent's heavy attack early | opponent's first two heavy attacks | heavy-attack telegraph shown 0.15 s / 0.25 s earlier |
 | Provisioner (farmer or cook) | Granary or Kitchen | "Keep the granary above 100 food" | **Hearty Rations** | ruler's stamina first hits zero | stamina regeneration +6 % / +10 % for 8 s |
 | Elder or Priest | Chapel or Shrine | "Hold a feast" (food spend at the keep) | **Rallying Hymn** — the stand sings | crowd hype reaches full (after a parry or a combo) | cleanse one slow or stagger, and damage +3 % / +5 % for 5 s |

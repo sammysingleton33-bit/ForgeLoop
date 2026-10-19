@@ -22,6 +22,7 @@
       "geometry_hash": "c2fa1337d3b407df",
       "id": "bridge_stone_1arch_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "arches": 1,
@@ -90,6 +91,7 @@
       "geometry_hash": "62f977b67d351888",
       "id": "bridge_stone_2arch_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "arches": 2,
@@ -158,6 +160,7 @@
       "geometry_hash": "f06c6713f241f2ed",
       "id": "bridge_stone_3arch_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "arches": 3,

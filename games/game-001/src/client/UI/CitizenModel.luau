@@ -496,7 +496,9 @@ function CitizenModel.conversationRect(m: any): { x: number, y: number, width: n
 	-- Points badge. Not below `hud.bottom`: on phones that includes the reputation strip (FL-0089),
 	-- and a conversation is worth covering it — the sheet needs the height for answers with costs
 	-- and risks at 844 × 390. Starting above the strip covers it whole (no sliver, FORGE-05 L3).
-	local y = math.max(m.hud.pills.y + Layout.PILL_HEIGHT, m.hud.y + m.hud.crest + CitizenModel.CROWN_BADGE) + 2
+	-- a narrow phone's pills wrap to two rows (Layout pills.height): below both, so Stone and Gold stay readable
+	local pillsBottom = m.hud.pills.y + (m.hud.pills.height or Layout.PILL_HEIGHT)
+	local y = math.max(pillsBottom, m.hud.y + m.hud.crest + CitizenModel.CROWN_BADGE) + 2
 	return { x = m.margin, y = y, width = d.x + d.width - m.margin, height = m.height - y - m.margin }
 end
 

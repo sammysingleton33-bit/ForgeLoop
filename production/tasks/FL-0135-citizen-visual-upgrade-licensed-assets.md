@@ -3,13 +3,16 @@ id: FL-0135
 title: "Citizen and ruler visual upgrade with licensed prebuilt assets: faces, hair, clothing, job identities, rulers, variation (D-057)"
 track: asset
 owner: forge-02
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-19
 depends_on: []
-evidence: []
+evidence:
+  - "headless: KitCharacterMesh* 65/0, KitCharacter 59/0, KitPortrait 5/0, converter selftest PASS, validate 136/0, ownership PASS; no Studio"
+  - branch forge/02-blender-fl0135-meshes
+  - bash blender/scripts/check.sh PASS; pytest blender/tests 55+ passed; charkit_budget.py PASS (max citizen 954/1000, soldiers/governor 934/1500); rig_to_luau.py --validate-only valid 0 warnings; renders games/game-001/art/reviews/img/d057-kit-review-r2/
 ---
 
 # Citizen and ruler visual upgrade with licensed prebuilt assets: faces, hair, clothing, job identities, rulers, variation (D-057)
@@ -49,3 +52,7 @@ In a playable build, citizens look professional and alive. Each has a face, hair
 
 ## Log
 - 2026-10-18 FORGE-00: created from the owner's visual-quality directive (D-057). It supersedes FL-0118.
+- 2026-10-18 FORGE-02 (Kit-runtime worker K, branch `forge/02-blender-fl0135-runtime`): built the Luau side against the contract, all HEADLESS (Lune, fake MeshParts, a placeholder kit; nothing seen in Studio, no render). `Kit/CharacterMesh.luau` builds segmented MeshPart rigs from rig.json data + `ReplicatedStorage.Forge.Assets.CitizenKit` (Motor6Ds named Pose.JOINTS, axis-aligned frames, anchored invisible Root with the pivot at the feet, welded extras, KitKind/KitJob/KitLook/KitHeadwear/KitAccessory/KitTool/KitTint attributes, pieces placed from bbox_center/size, tints skin/hair/kingdom/cloth/fixed through Character's tables, setKingdomColor exact) and falls back to the part-built rig whole when the data has no pieces or the folder lacks/mis-sizes a piece. `Kit/CharacterMeshData.luau` is committed EMPTY, so every build is today's rig until the real kit lands. `art/char_kit/rig_to_luau.py` (validator + deterministic converter + selftest) turns B's rig.json into that module; `blender/studio/import_char_kit.luau` + `art/IMPORT_CHARACTERS.md` are the Studio import (Studio-UNVERIFIED). One BUDGET constant in CharacterMesh (D-057 amendment 9: citizen 1,000 = body 900 + tool 150, soldier/governor 1,500, 16 pieces, 20,000 per mesh). Specs `KitCharacterMesh`, `KitCharacterMeshPose`, `KitCharacterMeshImport` (fallback, convention, determinism/pooling, tints, budgets over all 1,728 looks, pose, bbox clearance, portrait, converter, import script); 17 mutation rows killed (listed in the FORGE-02 report). Handoffs to FORGE-04 (client `Kit.setAssetSource`), FORGE-03, FORGE-01. Still open: B's rig.json/FBX, the owner's import, D-019 renders, Studio screenshot rows.
+- 2026-10-19 forge-02: READY → BUILDING. Kit runtime for the imported-mesh citizen rig landed on forge/02-blender-fl0135-runtime (Kit/CharacterMesh, converter, Studio import script, owner page, handoffs); mesh kit itself on forge/02-blender-fl0135-meshes; style pick B recorded (games/game-001/art/reviews/char-mesh.md).
+- 2026-10-18 forge-02: READY → BUILDING. FORGE-02 worker B: Blender mesh kit started (style comparison A smooth / B faceted / C KayKit-derived first, then the kit, rig.json, FBX, renders)
+- 2026-10-19 forge-02: BUILDING → BUILDING. mesh kit built and pushed (103 pieces, FBX + rig.json valid for rig_to_luau.py, budgets measured from the FBX in manifest.check); D-019 fresh re-score NEEDS-WORK twice (silhouette / readability 3, variation 4), author rounds used; handoff to the runtime worker written; Studio import and a decision on the 170-stud read are open

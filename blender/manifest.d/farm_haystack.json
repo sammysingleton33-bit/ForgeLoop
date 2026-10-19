@@ -22,6 +22,7 @@
       "geometry_hash": "4f98d27478789b91",
       "id": "farm_haystack_01",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "rick"
@@ -83,6 +84,7 @@
       "geometry_hash": "1594cfc0d88b2da0",
       "id": "farm_haystack_02",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "rounds"
@@ -144,6 +146,7 @@
       "geometry_hash": "1ffef190b3525e87",
       "id": "farm_haystack_03",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "squares"
@@ -205,6 +208,7 @@
       "geometry_hash": "60415f13b252879a",
       "id": "farm_haystack_04",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "cart"
@@ -271,6 +275,7 @@
       "geometry_hash": "d068d21b6acc0a49",
       "id": "farm_haystack_05",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "stogs"
@@ -332,6 +337,7 @@
       "geometry_hash": "6cabbadfa98800bd",
       "id": "farm_haystack_06",
       "kingdom": null,
+      "license": "project-original",
       "material": "M_forge_palette",
       "params": {
         "kind": "pile"

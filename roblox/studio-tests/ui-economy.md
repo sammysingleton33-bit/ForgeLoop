@@ -331,5 +331,47 @@ Before #140 the building panel shows no Move: expected.
 ## U9 — icons (P4)
 1. Pills, crest emblem, rail buttons and building tiles show the uploaded icons (no emoji).
 
+## U22 — spectating after a fall (FL-0129; needs FORGE-01's FL-0125 Match.Spectate and FORGE-04's #183 camera)
+1. Full match, lose your keep (or use the debug elimination): a card at the top says "Fallen",
+   "<your kingdom> has fallen", "<rival> took your keep" and how many kingdoms still stand, with
+   **Stay and watch** and **Leave**. Any open drawer closes and the camera switches to spectating.
+2. Stay: the card goes and a **Watching** panel on the left lists battles first ("Battle · <kingdom>",
+   "N fighting" in red), then the standing keeps. Tap a row: the camera goes there and the row is
+   framed in gold. Prev / Next (and FORGE-04's keys . , / R1 L1) move along the list; the frame follows.
+   New battles appear in the list within a second or two.
+3. Leave asks "Leave the match?" with Leave / Cancel; Cancel keeps watching; Leave disconnects you
+   with "You left the match. Thanks for playing AI Kingdoms!".
+4. A full server (all kingdoms full): the card says "This match is full" / "Watch now. You can rule in
+   the next match". The phase pill at the top shows the phase and time left with "You'll join the next
+   match" under it; there is no crest, resource row, Build/Kingdom rail or Rivals tab.
+5. Results and the Lobby: the card and panel step aside for the results summary; in the next match's
+   active phase they come back if you are still spectating, and go when you are seated again (the
+   normal HUD returns).
+   As a spectator the kingdom HUD (crest, pills, rail) is gone: the card and panel sit at the top left.
+6. Phone 667 × 375: the card first, then (after Stay) the panel, never both; the panel stays above the
+   construction chips and its list scrolls. Touch and gamepad (A on a focused button) both work.
+
+## U24 — Crown Arena: loadout and perk picker, intro card, duel HUD (FL-0073; needs FORGE-01's FL-0070 / FL-0071 Arena remotes and SupportService)
+Use FORGE-05's arena debug presets (Adoring vs Hostile) on a two-client Local Server; run on a desktop window, the
+phone emulator (667 × 375) and with a gamepad.
+1. Loadout (champion only): "Choose your loadout" opens over the arena with the support tier chip (name and colour,
+   e.g. "Adoring support · Blessing +2%"), a countdown (red in the last 5 s), four weapons, three armours, the line
+   "Every weapon and armour is a sidegrade: none is stronger overall.", and one card per offered perk: name, Pledged /
+   Empowered, the citizen with their loyalty, the effect and "When: <condition>". The first offers up to your slots
+   start chosen; "Perks 3 of 3" counts them.
+2. With every slot taken, the other cards say "Slots full: drop a perk first" and do nothing; tap a chosen card to
+   drop it, then the other one takes the slot. Adoring shows the Crowd Rally ("Your whole stand"); other tiers never do.
+3. Ready: "Ready ✓" and "Ready. You can still change it until the time runs out"; a later change is sent by itself.
+   Don't press Ready on the other client: its choice is sent by itself just before the time runs out.
+4. Gamepad: the first weapon tile is selected when the picker opens; A on a tile keeps the selection on it.
+5. The other ruler (not a champion) sees no picker and keeps the kingdom HUD during the loadout.
+6. Intro: everyone sees the versus card: crest, champion, kingdom, "<Tier> support · <score>", weapon and armour,
+   "Why they cheer" with up to three reasons, and the perks (with the citizen when the server sends it). The kingdom
+   HUD and the phase bar are hidden.
+7. Duel: a strip at the top: both champions with HP (percent, red under 25 %), stamina, and their perk icons (dim =
+   armed, gold = just fired, crossed out = spent); the clock in the middle ("Sudden death" when it applies). On the
+   phone emulator the strip stays clear of the duel buttons (bottom right) and the crowd captions.
+8. After the duel the strip goes and the kingdom HUD returns.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.
