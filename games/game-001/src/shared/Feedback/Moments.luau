@@ -36,9 +36,11 @@
 		| WarChanged *      | war role "self" (the declarer's or the     | role "other" to the other      |
 		|                   | acceptor's rulers, but not the ruler who   | kingdom's rulers; role "rival" |
 		|                   | acted), per declaration and per peace      | to everyone else               |
-		| SiegeChanged *    | siege (on, byName?), per start and end     | —                              |
+		| SiegeChanged *    | siege (on, byName?, position?), per start  | —                              |
+		|                   | and end; position = the besieged keep      |                                |
 		| RaidChanged *     | raid (on, count?, byName?, position?)      | —                              |
-		* proposed G9 rows (FL-0130 handoff); AnnouncerService waits for them until the bus declares them.
+		* G9 war rows (FL-0134, declared by #204). A siege's position is its keep's (ctx.buildingPosition).
+		  AnnouncerService would wait for any row the bus did not declare.
 		  WarChanged (kingdomId, otherId, atWar, by: userId?); SiegeChanged / RaidChanged (kingdomId, on,
 		  info { byKingdomIds, buildingId? | count, position? }). {byName} needs exactly one attacker.
 		The player who placed or recruited is left out: FORGE-03's own toast already answered them
@@ -178,6 +180,18 @@ local function attackerName(info: any, ctx: any): string?
 	return ctx.kingdomName(ids[1])
 end
 
+-- Where the alert points: a raid's threats (info.position), a siege's keep (its building's position).
+local function alertPosition(kind: string, details: any, ctx: any): Vector3?
+	if kind == "raid" then
+		return if typeof(details.position) == "Vector3" then details.position else nil
+	end
+	if details.buildingId == nil or ctx.buildingPosition == nil then
+		return nil
+	end
+	local ok, position = pcall(ctx.buildingPosition, details.buildingId)
+	return if ok and typeof(position) == "Vector3" then position else nil
+end
+
 -- SiegeChanged / RaidChanged: (kingdomId, on, info) to that kingdom's rulers.
 local function alert(kind: string, args: { any }, ctx: any): { [string]: any }?
 	local kingdom, on, info = args[1], args[2], args[3]
@@ -191,7 +205,7 @@ local function alert(kind: string, args: { any }, ctx: any): { [string]: any }?
 		on = on,
 		byName = if on then attackerName(details, ctx) else nil,
 		count = if on and kind == "raid" then finiteCount(details.count) else nil,
-		position = if on and kind == "raid" and typeof(details.position) == "Vector3" then details.position else nil,
+		position = if on then alertPosition(kind, details, ctx) else nil,
 	}
 end
 

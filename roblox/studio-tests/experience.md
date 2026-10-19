@@ -534,6 +534,7 @@ Needs:
 |---|---|
 | Raid beacon | A red column of sparks rises where the raid is, visible from the aerial start zoom, until "Your lands are clear" |
 | Ping | G (keyboard, Windows and Mac) or D-pad up (gamepad) moves the aerial camera to the raid, also from walk mode |
+| Siege beacon | While your keep is under siege, the same red column rises over your keep, and G (or FORGE-03's rail button) goes there first, even during a raid. When the siege lifts its beacon goes, and G goes to the raid again if one is still on |
 | Hit flash | A soldier or citizen that is hit flashes white for a moment, with a few bright sparks. No blood, ever |
 | Death | The fallen kneel or lie down, then fade out over about a second. Nobody stays on the field. A rig reused later is fully visible |
 | Building hit | Dust and stone chips at the roof, and the building jolts briefly (no jolt with Reduced motion on). It stands exactly where it was afterwards |
@@ -545,13 +546,15 @@ Steps
 2. (Needs FL-0125.) Start a full match, jump to Conflict (`match.phase Conflict`), and watch an AI war from the air. Hits flash (when the cue exists), the dead fade out, and buildings under attack jolt and throw dust. Screenshot **E15-2**.
 3. (Needs FL-0125.) Turn Reduced motion on (Settings) and watch an attack again: the dust stays, and no building jolts.
 4. (Needs FL-0125.) Watch a building being destroyed: dust cloud and debris. When a whole kingdom falls, at most six collapse at once, with one crash. Screenshot **E15-3**.
-5. (Needs FL-0125; two players, or let an AI conquer you.) When your keep falls: "Your keep has fallen", then the camera moves to a battle or a standing keep. Cycle with `.` and `,` (R1 / L1). At Results the camera is yours again.
+5. Still in Play Solo: run `fx.announce raid`, then `fx.announce siege`. Two beacons: the map centre and 40 studs from it (the stand-in keep). G goes to the keep's. `fx.announce raidOver`: the centre beacon goes, the keep's stays, G still goes to the keep. `fx.announce siegeLifted`: no beacon left. (Needs FL-0125 for a real one: in an AI war, when an enemy first hits your keep, the beacon rises over your keep.) Screenshot **E15-4**.
+6. (Needs FL-0125; two players, or let an AI conquer you.) When your keep falls: "Your keep has fallen", then the camera moves to a battle or a standing keep. Cycle with `.` and `,` (R1 / L1). At Results the camera is yours again.
 
-Pass: step 1 holds (2–5 when FL-0125 is on the build). Copy every red line from Output.
+Pass: steps 1 and 5 hold (2–4 and 6 when FL-0125 is on the build). Copy every red line from Output.
 
 History:
 - 2026-10-18 FORGE-04: written (FL-0130 part 2).
 - 2026-10-18 FORGE-04: spectating never starts during Results or Lobby (FORGE-07's #189 M1); the two-keeps-in-one-batch limit noted (FORGE-07 on #183).
+- 2026-10-19 FORGE-04: the siege beacon on your keep, ahead of a raid (step 5; FORGE-00's FL-0130 close-out).
 
 ## E16 — Duel controls: keyboard and mouse, gamepad, touch (FL-0075, game-001)
 
