@@ -259,13 +259,14 @@ function ArenaHudController:_hints(now: number): string?
 	if now >= (self._hintUntil or 0) then
 		return nil
 	end
-	-- a touch device shows FORGE-04's labelled duel buttons whatever the last input (a phone with a pad), and its
-	-- captions sit just under the strip there (y 135 on 667 × 375): no hint line on it
+	-- a touch phone shows FORGE-04's labelled duel buttons whatever the last input (a phone with a pad), and its
+	-- captions sit just under the strip there (y 135 on 667 × 375): no hint line on it. A touchscreen laptop or
+	-- tablet keeps the line (its captions start at y 0.86; FORGE-07 L4 on #214).
 	local touch = false
 	pcall(function()
 		touch = self._env.UserInputService.TouchEnabled == true
 	end)
-	if touch then
+	if touch and self.hud:metrics().breakpoint == "phone" then
 		return nil
 	end
 	local input = self._registry:find(ArenaHudController.INPUT)

@@ -380,13 +380,20 @@ describe("Crown Arena: intro card and duel HUD (FL-0073)", function()
 		world:advance(0.5)
 		expect(find(modals(world), "Hints")).toBeNil() -- the touch buttons carry their own labels
 		world:destroy()
-		-- a touch device with a gamepad: its labelled duel buttons show, so no hint line either
+		-- a touch phone with a gamepad: its labelled duel buttons show, so no hint line either
 		uis.TouchEnabled = true
 		input.type = "Enum.UserInputType.Gamepad1"
-		world = newWorld({ input = true, envServices = { UserInputService = uis } })
+		world = newWorld({ input = true, envServices = { UserInputService = uis }, width = 667, height = 375 })
 		world.arenaServer:setState({ stage = "duel", endsAt = world.env.serverTimeNow() + 120, a = a, b = b })
 		world:advance(0.5)
 		expect(find(modals(world), "Hints")).toBeNil()
+		world:destroy()
+		-- a touchscreen laptop on keyboard and mouse keeps the line (FORGE-07 L4)
+		input.type = "Enum.UserInputType.Keyboard"
+		world = newWorld({ input = true, envServices = { UserInputService = uis } })
+		world.arenaServer:setState({ stage = "duel", endsAt = world.env.serverTimeNow() + 120, a = a, b = b })
+		world:advance(0.5)
+		expect(find(modals(world), "Hints")).toBeTruthy()
 		world:destroy()
 		uis.TouchEnabled = false
 		-- a watching ruler never gets hints

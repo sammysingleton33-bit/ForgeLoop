@@ -81,6 +81,8 @@ ROWS = [
      "fill.Size = UDim2.fromScale(math.clamp(bar[2], 0, 1), 1)", "local _ = fill", "follows hits, snapshots and perks"),
     ("passive shown armed", HM, "local state = if ArenaHudModel.PASSIVE[trig]", "local state = if false",
      "a passive perk"),
+    ("hints off on touch laptops", HC, "if touch and self.hud:metrics().breakpoint == \"phone\" then",
+     "if touch then", "control hints for the champion"),
     ("events ignored", HC, "\t\tArenaHudModel.apply(self.track, event, now)", "\t\tlocal _ = event",
      "follows hits, snapshots and perks"),
 ]
