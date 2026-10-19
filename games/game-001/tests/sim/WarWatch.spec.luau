@@ -117,7 +117,7 @@ describe("Sim/WarWatch: raids (G9 RaidChanged)", function()
 	end)
 
 	it("a short gap does not end the raid, and the other kingdom (azure) hears nothing", function()
-		local sim, k1, k2 = world()
+		local sim, _, k2 = world()
 		Diplomacy.setRelation(sim, "crimson", "azure", "War")
 		local a = Military.spawnUnit(sim, k2, "soldier", 60, 0)
 		a.order = { kind = "Hold" }
