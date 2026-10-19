@@ -11,15 +11,17 @@
 	    and its MeshParts at the data's bbox_center (relative to that pivot). Anything else in the clone is deleted: scripts,
 	    SurfaceAppearance, Decals, Welds, nested Models and Folders (the MeshParts are lifted out first), non-mesh parts,
 	    attributes and tags. Nothing in an imported Model can run, load or carry state.
-	  * physics as the stand-ins: Root and MeshParts are Anchored, CanTouch false, Massless, MeshParts CanCollide false with
-	    a Hull collision shape (raycasts), Root invisible. What the part-built props block (trunks, rocks, bushes, low
-	    parts: WorldService.decorate lets only parts above COLLIDE_HEIGHT through) is an invisible solid Collider Part from the
-	    data (`collider`, else a family default: trees a trunk, rocks and haystacks their footprint, bushes a core, fences
-	    their length; flowers and crops block nothing), at most SOLID_HEIGHT (7, = WorldService.COLLIDE_HEIGHT) tall.
+	  * physics as the stand-ins: Root and MeshParts are Anchored, CanTouch false, Massless, MeshParts CanCollide false (their
+	    Hull collision shape for raycasts is set by the Studio import: a game script cannot write it), Root invisible. What
+	    the part-built props block (trunks, rocks, bushes, low parts: WorldService.decorate lets only parts above
+	    COLLIDE_HEIGHT through) is an invisible solid Collider Part from the
+	    data (`collider`, used as given, else a family default: trees a trunk, rocks and haystacks 80 % of each footprint axis,
+	    bushes 60 % of each axis, fences their length; flowers and crops block nothing); the defaults are at most SOLID_HEIGHT
+	    (7, = WorldService.COLLIDE_HEIGHT) tall, a data collider over 7 is only warned about by the converter.
 	  * SIZE SANITY: the MeshParts' bounding box in the pivot frame must match the data's size (per axis within
 	    max(0.1, 0.5 %)) and centre (0.25). A Model that does not (a wrong import scale or axes, a moved pivot, a mesh gone)
 	    is rejected: Kit.prop builds the stand-in instead, and the reason is logged ONCE per asset id (never an error).
-	Ids the data does not list pass through Kit.prop exactly as before (a Model in the folder is cloned as is).
+	Ids the data does not list pass through Kit.prop unchanged (a Model in the folder is cloned as is, nothing is checked).
 
 	API
 		EnvMesh.accept(assetId, clone) -> (Model?, string?)   -- the clone made ready, or nil + why (the caller builds the stand-in)
@@ -45,8 +47,8 @@ EnvMesh.REL_TOLERANCE = 0.005
 EnvMesh.CENTER_TOLERANCE = 0.25
 EnvMesh.SOLID_HEIGHT = 7 -- WorldService.COLLIDE_HEIGHT: only parts below it block movement
 EnvMesh.FAMILIES = table.freeze({ "tree", "bush", "rock", "flower", "crop", "haystack", "fence" })
--- Triangles per prop (the contract's: trees 300-900, bushes/rocks/flowers 40-400; crops, haystacks and fences are FORGE-02's
--- proposal, the contract is silent). The specs and env_to_luau.py read these and nothing else (--print-budget).
+-- Triangles per prop (D-057 (19): trees 300-900, bushes/rocks/flowers 40-400; crops, haystacks and fences are FORGE-02's
+-- proposal, the decision is silent). The specs and env_to_luau.py read these and nothing else (--print-budget).
 EnvMesh.BUDGET = table.freeze({
 	tree = table.freeze({ min = 300, max = 900 }),
 	bush = table.freeze({ min = 40, max = 400 }),
@@ -194,7 +196,7 @@ end
 local function prepare(assetId: string, def: any, model: Model): (Model?, string?)
 	local root = model.PrimaryPart
 	if root == nil or root:IsA("MeshPart") or not root:IsA("BasePart") then
-		return nil, "its PrimaryPart is not an invisible Root Part"
+		return nil, "it has no PrimaryPart that is a plain Part (the Root)"
 	end
 	if not (isVec3(def.size) and isVec3(def.bbox_center)) then
 		return nil, "the data has no size or bbox_center"
@@ -287,8 +289,9 @@ local function prepare(assetId: string, def: any, model: Model): (Model?, string
 		mesh.Reflectance = 0
 		mesh.Material = Enum.Material.SmoothPlastic
 		mesh.Color = Color3.new(1, 1, 1) -- the colours are baked into the mesh (tint "fixed")
-		-- CollisionFidelity is not set here: a game script cannot write it (Plugin security). The Studio import sets Hull on every
-		-- Body (blender/studio/import_env_kit.luau) and the saved Forge.Assets Model carries it.
+		-- CollisionFidelity is not set here: scripts cannot manipulate it at runtime (API reference) and the API dump lists it as not
+		-- saved and not replicated. The Studio import sets Hull on every Body (blender/studio/import_env_kit.luau) in the open place; it is
+		-- not in the saved .rbxm, and nothing here relies on it (the Body does not collide, a raycast hits its default shape).
 	end
 	local box = colliderOf(def)
 	if box then

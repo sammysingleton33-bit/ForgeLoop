@@ -460,5 +460,21 @@ Desktop window and the phone emulator.
    the keep. FORGE-04's siege tip marks this button.
 3. Drive the attackers off the keep while raiders remain: it reads "Raid" again; once the lands are clear it is gone.
 
+## U32 — Arena: the co-rulers' champion vote (FL-0142; needs FORGE-01's ArenaState.vote, see the 2026-10-19 handoff)
+Without `ArenaState.vote` nothing shows (dark launch): check that first on today's build. Then two clients in one
+kingdom (Studio "Start" with 2 players, both seated rulers of the same kingdom), desktop window and the phone emulator.
+1. Play into the Crown Arena with that kingdom in the top two. Both clients see "Choose your champion" with a
+   countdown, the two rulers ("You" for yourself) and "0 of 2 voted"; a client of another kingdom sees nothing.
+2. Tap a ruler: it turns gold, the line reads "You voted for …", and the other client's count reads "1 of 2 voted".
+   Tap the other ruler: the gold moves (the latest vote counts).
+3. When both have voted, or the time runs out, the panel closes as the loadout opens, and each voter sees one toast:
+   "<name> fights for <kingdom> in the Crown Arena" (or "You fight…"). The champion is the one most voted for; with a
+   tie, the higher leadership.
+4. Phone emulator (667 × 375): the panel sits below the Roblox top bar; the candidate buttons are thumb-sized. A long
+   display name ends with "…" inside its button.
+5. Tap each candidate ten times in a row, quickly, while the clock runs: every tap answers (the gold moves or the
+   line says "Sending your vote…"); the buttons are not rebuilt by the countdown (FORGE-07 M1 on #265).
+6. How to play → card 5 says co-rulers vote in 10 seconds and a tie goes to the higher leadership.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.

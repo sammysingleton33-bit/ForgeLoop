@@ -73,7 +73,7 @@ function MeshKit.assets(data: any, opts: any?): Folder
 				end
 				piece.Size = Vector3.new(def.size[1], def.size[2], def.size[3])
 				piece.Anchored = true -- an imported piece sits anchored in Workspace
-				piece.CollisionFidelity = Enum.CollisionFidelity.Hull -- what the Studio import left; the Kit must not write it (Plugin security)
+				piece.CollisionFidelity = Enum.CollisionFidelity.Hull -- what the Studio import left; the Kit must not touch it (not scriptable at runtime)
 				piece.Color = Color3.fromRGB(0, 255, 0) -- the Kit must paint it, not inherit it
 				piece.Material = Enum.Material.Neon
 			elseif piece:IsA("BasePart") then
@@ -97,7 +97,13 @@ function MeshKit.with(data: any, assets: Instance?, fn: () -> ())
 	end
 end
 
+-- The Kit says 'mesh rig not used' once for each reason a rig fell back (CharacterMesh.setLogger, default warn). Most specs break the
+-- kit on purpose, so the fixture keeps that quiet; the spec that tests the line sets its own logger.
+local function silent(_message: string) end
+CharacterMesh.setLogger(silent)
+
 function MeshKit.install(data: any, assets: Instance?)
+	CharacterMesh.setLogger(silent)
 	CharacterMesh.setData(data)
 	Kit.setAssetSource(assets)
 end
@@ -105,6 +111,7 @@ end
 function MeshKit.uninstall()
 	Kit.setAssetSource(nil)
 	CharacterMesh.setData(nil)
+	CharacterMesh.setLogger(silent)
 end
 
 -- ------------------------------------------------------------------ queries
