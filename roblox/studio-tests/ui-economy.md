@@ -441,5 +441,17 @@ remote (Rivals tab) and the Arena debug preset for step 3.
    "Kingdom" title with four tabs, and Results / Your reign, Spectate, the loadout picker, intro card and duel strip
    sit centred (top-centre for the duel strip), not stuck in a corner.
 
+## U30 — Drag a building (FL-0123; Build.Move served; FORGE-04's edit mode and edge-pan)
+Mouse on a desktop window, then touch in the phone emulator (or a real phone).
+1. Press and hold one of your houses (not the keep): after about half a second the ghost lifts where it stands, the
+   house dims, the Move bar shows. A quick click/tap on it still opens its panel instead.
+2. Keep holding and move: the ghost follows the pointer, tinted green/red as before; dragging does not pan the camera.
+   Move the pointer to a screen edge: the view pans that way (FORGE-04 tunes the speed; say how it feels).
+3. Let go on a green spot: the house moves (toast "House moved"), the bar closes. Let go on a red spot: nothing is
+   sent, the bar stays open with the reason; aim again or Cancel.
+4. Pressing and moving straight away (before the hold) pans the camera as usual and never lifts the house.
+5. Right after a move the same house cannot be dragged until the move cooldown passes (its panel says "Moved").
+6. Touch: one finger holds and drags; a second finger still pinches/rotates the camera.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.
