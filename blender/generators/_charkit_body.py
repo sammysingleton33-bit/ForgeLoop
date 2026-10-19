@@ -114,7 +114,7 @@ def build_head(S, p):
             parts.append(_blob(S, 0.1, 0.06, 0.02, eseg, mix(TINT, BLUSH, 0.45), "blush").move(x, 4.4, fz(x, 4.4) + 0.005))
     if p.get("freckles"):
         for sx in (-1, 1):
-            for dx, dy in ((0.0, 0.0), (0.12, 0.06)):
+            for dx, dy in ((0.0, 0.0),):
                 x = sx * (0.34 + dx)
                 parts.append(box(0.04, 0.04, 0.03, color=mix(TINT, (0.65, 0.42, 0.28), 0.8), tag="freckle").move(
                     x, 4.46 + dy, fz(x, 4.46 + dy) + 0.003))
@@ -190,7 +190,7 @@ def build_hair(S, R):
 
 def _torso(S, rings, bands=(), n=None):
     """Torso shell from (y, rx, rz) rings; `bands` are (y0, y1, colour) faces painted by height (belts, collars)."""
-    seg = S.seg(12, 8)
+    seg = S.seg(10, 8)
     m = loft(rings, seg=seg, n=n or (S.n if S.A else 2.5), caps=(True, True), phase=ph(S, seg), color=TINT, smooth=S.smooth, tag="cloth")
     for (y0, y1, c) in bands:
         m.paint(c, where=lambda x, y, z, y0=y0, y1=y1: y0 <= y <= y1)
@@ -230,7 +230,7 @@ def build_torsos(S, R):
                              bands=[(2.5, 2.8, DARK), (3.8, 4.0, DARK)]), width=2.1, tags=("robe",))
     # smock: to the knee-ish, a patch pocket (healer)
     sm = _torso(S, [(1.82, 1.06, 0.7), (2.4, 0.9, 0.6), (3.0, 0.84, 0.55), (3.4, 0.95, 0.57), (3.64, 1.0, 0.56), (3.88, 0.53, 0.40)], bands=[(3.8, 4.0, DARK)])
-    reg("torso_smock", merge(sm, box(0.5, 0.34, 0.1, bevel=0.04, color=mix(TINT, (0.78, 0.78, 0.78), 0.8), smooth=False,
+    reg("torso_smock", merge(sm, box(0.5, 0.34, 0.1, color=mix(TINT, (0.78, 0.78, 0.78), 0.8), smooth=False,
                                      tag="pocket").move(0.38, 2.4, -0.62)), width=2.1, tags=("smock",))
     # tabard: soldier, broad shoulders, skirt to 1.84
     reg("torso_tabard", _torso(S, [(1.84, 1.04, 0.66), (2.3, 0.98, 0.6), (2.56, 0.86, 0.54), (2.8, 0.86, 0.54), (3.22, 1.0, 0.58),
@@ -249,10 +249,9 @@ def build_torsos(S, R):
 ARM_PROFILE = [  # y, rx, rz, cx, cz (the right arm, unrotated, centred on x = 0): shoulder cap down to the fist
     (3.98, 0.0, 0.0, -0.08, 0.0),
     (3.84, 0.4, 0.38, -0.05, 0.0),
-    (3.3, 0.38, 0.38, 0.0, 0.0),
-    (2.7, 0.31, 0.33, 0.0, 0.0),
-    (2.5, 0.31, 0.37, 0.0, -0.05),
-    (2.3, 0.32, 0.38, 0.0, -0.06),
+    (3.2, 0.38, 0.38, 0.0, 0.0),
+    (2.62, 0.31, 0.34, 0.0, 0.0),
+    (2.36, 0.32, 0.38, 0.0, -0.06),
     (2.2, 0.0, 0.0, 0.0, -0.05),
 ]
 
@@ -275,8 +274,8 @@ def build_arms(S, R):
     arm = loft(ARM_PROFILE, seg=seg, n=n, caps=(False, False), phase=ph0, color=TINT, smooth=S.smooth, tag="skin")
     R.add_sided("arm_bare", place_arm(arm), "arm", "skin", None, tags=("arm",))
     # a hand only (for long sleeves): the fist and wrist
-    hand = loft([(2.78, 0.0, 0.0, 0.0, 0.0), (2.62, 0.29, 0.31, 0.0, 0.0), (2.46, 0.32, 0.38, 0.0, -0.05), (2.3, 0.32, 0.38, 0.0, -0.06),
-                 (2.2, 0.0, 0.0, 0.0, -0.05)], seg=seg, n=n, caps=(False, False), phase=ph0, color=TINT, smooth=S.smooth, tag="skin")
+    hand = loft([(2.78, 0.0, 0.0, 0.0, 0.0), (2.6, 0.3, 0.33, 0.0, 0.0), (2.36, 0.32, 0.38, 0.0, -0.06), (2.2, 0.0, 0.0, 0.0, -0.05)],
+                seg=seg, n=n, caps=(False, False), phase=ph0, color=TINT, smooth=S.smooth, tag="skin")
     R.add_sided("arm_hand", place_arm(hand), "arm", "skin", None, tags=("hand",))
 
     def sleeve(prof, name, dark_y=None, tags=()):
@@ -286,15 +285,15 @@ def build_arms(S, R):
         R.add_sided(name, place_arm(m), "sleeve", "cloth", "arm", tags=tags)
 
     g = 0.055
-    sleeve([(3.99, 0.1, 0.1, -0.08, 0.0), (3.84, 0.4 + g, 0.38 + g, -0.05, 0.0), (3.4, 0.38 + g, 0.38 + g, 0.0, 0.0),
-            (3.2, 0.37 + g, 0.37 + g, 0.0, 0.0)], "sleeve_short", dark_y=3.36, tags=("short",))
-    sleeve([(3.99, 0.1, 0.1, -0.08, 0.0), (3.84, 0.4 + g, 0.38 + g, -0.05, 0.0), (3.3, 0.38 + g, 0.38 + g, 0.0, 0.0),
-            (2.74, 0.31 + g, 0.33 + g, 0.0, 0.0), (2.58, 0.3 + g, 0.34 + g, 0.0, 0.0)], "sleeve_long", dark_y=2.72, tags=("long",))
-    sleeve([(3.99, 0.1, 0.1, -0.08, 0.0), (3.84, 0.44, 0.42, -0.05, 0.0), (3.3, 0.45, 0.45, 0.0, 0.0), (2.9, 0.48, 0.47, 0.0, 0.0),
-            (2.5, 0.52, 0.5, 0.0, 0.0)], "sleeve_robe", dark_y=2.7, tags=("robe",))
+    sleeve([(3.99, 0.1, 0.1, -0.08, 0.0), (3.84, 0.4 + g, 0.38 + g, -0.05, 0.0), (3.3, 0.38 + g, 0.38 + g, 0.0, 0.0)], "sleeve_short",
+           dark_y=3.5, tags=("short",))
+    sleeve([(3.99, 0.1, 0.1, -0.08, 0.0), (3.84, 0.4 + g, 0.38 + g, -0.05, 0.0), (3.1, 0.37 + g, 0.37 + g, 0.0, 0.0),
+            (2.6, 0.31 + g, 0.34 + g, 0.0, 0.0)], "sleeve_long", dark_y=2.78, tags=("long",))
+    sleeve([(3.99, 0.1, 0.1, -0.08, 0.0), (3.84, 0.44, 0.42, -0.05, 0.0), (3.1, 0.46, 0.46, 0.0, 0.0), (2.5, 0.52, 0.5, 0.0, 0.0)],
+           "sleeve_robe", dark_y=2.75, tags=("robe",))
     # soldier: fixed steel sleeve with a shoulder plate
-    m = loft([(3.99, 0.1, 0.1, -0.08, 0.0), (3.9, 0.5, 0.46, -0.05, 0.0), (3.7, 0.5, 0.46, 0.0, 0.0), (3.55, 0.4 + g, 0.4 + g, 0.0, 0.0),
-              (2.74, 0.31 + g, 0.33 + g, 0.0, 0.0), (2.58, 0.3 + g, 0.34 + g, 0.0, 0.0)], seg=seg, n=n, caps=(True, True), phase=ph0,
+    m = loft([(3.99, 0.1, 0.1, -0.08, 0.0), (3.9, 0.5, 0.46, -0.05, 0.0), (3.62, 0.5, 0.46, 0.0, 0.0), (3.4, 0.4 + g, 0.4 + g, 0.0, 0.0),
+              (2.6, 0.3 + g, 0.34 + g, 0.0, 0.0)], seg=seg, n=n, caps=(True, True), phase=ph0,
              color=STEEL_DARK, smooth=S.smooth, tag="mail")
     m.paint(STEEL, where=lambda x, y, z: y > 3.62)
     R.add_sided("sleeve_mail", place_arm(m), "sleeve", "fixed", "arm", tags=("mail", "soldier"))
@@ -340,14 +339,13 @@ def build_boots(S, R):
     def reg(name, m, tags):
         R.add_sided(name, m.move(LEG_X, 0, 0), "boot", "fixed", "leg", tags=tags)
 
-    reg("boot_low", _boot(S, [(0.0, 0.36, 0.56, 0, -0.12), (0.12, 0.45, 0.66, 0, -0.14), (0.5, 0.41, 0.48, 0, 0.0),
-                              (0.72, 0.43, 0.46, 0, 0.0)], LEATHER, soleC), ("low",))
-    reg("boot_high", _boot(S, [(0.0, 0.36, 0.56, 0, -0.12), (0.12, 0.46, 0.68, 0, -0.14), (0.55, 0.42, 0.49, 0, 0.0),
-                               (1.1, 0.46, 0.5, 0, 0.0), (1.3, 0.49, 0.52, 0, 0.0)], LEATHER, soleC), ("high",))
-    reg("boot_work", _boot(S, [(0.0, 0.38, 0.58, 0, -0.12), (0.16, 0.48, 0.7, 0, -0.14), (0.52, 0.43, 0.5, 0, 0.0),
-                               (0.84, 0.46, 0.49, 0, 0.0)], rgb(96, 64, 40), soleC), ("work",))
-    reg("boot_plate", _boot(S, [(0.0, 0.36, 0.58, 0, -0.14), (0.12, 0.45, 0.7, 0, -0.18), (0.55, 0.42, 0.5, 0, 0.0),
-                                (0.92, 0.45, 0.48, 0, 0.0)], STEEL_DARK, rgb(40, 40, 46)), ("plate", "soldier"))
+    reg("boot_low", _boot(S, [(0.0, 0.36, 0.56, 0, -0.12), (0.14, 0.45, 0.66, 0, -0.14), (0.7, 0.42, 0.47, 0, 0.0)], LEATHER, soleC), ("low",))
+    reg("boot_high", _boot(S, [(0.0, 0.36, 0.56, 0, -0.12), (0.14, 0.46, 0.68, 0, -0.14), (0.7, 0.43, 0.49, 0, 0.0), (1.3, 0.49, 0.52, 0, 0.0)],
+                           LEATHER, soleC), ("high",))
+    reg("boot_work", _boot(S, [(0.0, 0.38, 0.58, 0, -0.12), (0.18, 0.48, 0.7, 0, -0.14), (0.84, 0.45, 0.5, 0, 0.0)], rgb(96, 64, 40), soleC),
+        ("work",))
+    reg("boot_plate", _boot(S, [(0.0, 0.36, 0.58, 0, -0.14), (0.14, 0.45, 0.7, 0, -0.18), (0.92, 0.44, 0.49, 0, 0.0)], STEEL_DARK,
+                            rgb(40, 40, 46)), ("plate", "soldier"))
 
 
 def build_body(S, R):

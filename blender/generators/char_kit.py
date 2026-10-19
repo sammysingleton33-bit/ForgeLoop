@@ -25,7 +25,7 @@ CHECKS = {}
 DEFAULT_VARIANTS = 1
 KIT = True  # multi-piece kit: build.py hands over to lib/ckit_kit.run_generator
 LICENSE = "project-original"
-STYLE = "A"
+STYLE = "B"  # picked once by the D-019 comparison (games/game-001/art/reviews/char-mesh.md): faceted, flat-shaded chunky
 
 
 def variants(n, seed):
