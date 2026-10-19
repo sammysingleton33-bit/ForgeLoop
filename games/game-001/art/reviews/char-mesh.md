@@ -62,7 +62,7 @@ Consequences of the pick:
 builder cap, merchant beret + feather, healer coif, smith cap, helm, crown, hood, headband), 14 tools (hoe, axe, pick, mallet, hammer, scale,
 healer staff, hauler sack, spear + pennant, sword, bow, ruler staff), ruler cape + ermine collar + trim, four kingdom crests (crown, star, oak
 leaf, sun) + shields + a neutral crest and shield, quiver, aprons, satchels, and a kingdom-coloured shoulder mantle on every worker.
-13 assemblies (farmer, woodcutter, miner, builder, hauler, blacksmith, merchant, healer, idle, soldier, soldier_swordsman, soldier_archer,
+13 assemblies (farmer, woodcutter, miner, builder, hauler, blacksmith, merchant, healer, idle, soldier, soldier_knight, soldier_archer,
 governor). `rig.json` passes `python3 games/game-001/art/char_kit/rig_to_luau.py --validate-only` (0 warnings; the converter is the runtime
 worker's file, copied verbatim); variants are resolved by `blender/lib/ckit_resolve.py`, a port of the runtime's `CharacterMesh.luau` rules, in
 every render, test and budget check.
@@ -86,7 +86,7 @@ FBX 483,788 bytes; 103 mesh objects, 6,804 triangles in all; largest mesh 188; m
 | healer | 928 | 904 | 954 | 1000 | 866 | 88 | 14 | 0 B | PASS |
 | idle | 676 | 636 | 814 | 1000 | 814 | 0 | 13 | 0 B | PASS |
 | soldier | 810 | 806 | 856 | 1500 | 770 | 86 | 14 | 0 B | PASS |
-| soldier_swordsman | 854 | 846 | 920 | 1500 | 862 | 58 | 14 | 0 B | PASS |
+| soldier_knight | 854 | 846 | 920 | 1500 | 862 | 58 | 14 | 0 B | PASS |
 | soldier_archer | 888 | 884 | 934 | 1500 | 850 | 84 | 14 | 0 B | PASS |
 | governor | 900 | 900 | 926 | 1500 | 834 | 92 | 16 | 0 B | PASS |
 
@@ -137,7 +137,7 @@ crowd at 40 and 170 studs (old vs new, same camera), the headgear x face grid, p
 defects; additionally the hauler's sack hangs 0.2 stud off the back (rest pose), faces are geometry only, ears are thin diamonds, the red mantle
 reads like a scarf, and Cycles renders add a green bounce on skin unless the ground is neutral (a render artefact, not Roblox).
 **Placeholder / unverified:** everything about Studio (importer axes and scale, MeshPart pivot and bounding box, vertex colours and
-`MeshPart.Color` multiplication in sRGB, draw-call cost at crowd sizes); no textures; unit-kind keys `soldier_swordsman` / `soldier_archer` are
+`MeshPart.Color` multiplication in sRGB, draw-call cost at crowd sizes); no textures; unit-kind keys `soldier_knight` / `soldier_archer` are
 guesses; the cloth colours of workers follow the runtime's old job panels, not a new palette.
 
 Reproduce: `~/forge-bpy/bin/python blender/build.py --generator char_kit`, `blender/scripts/charkit_scenes.py` (scenes crowd170 / crowd40 / jobs /

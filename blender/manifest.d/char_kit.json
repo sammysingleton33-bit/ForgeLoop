@@ -21,22 +21,22 @@
       },
       "generator": "char_kit",
       "generator_version": 1,
-      "geometry_hash": "f2565ba8e89a45e2",
+      "geometry_hash": "6b77577afecf3b9d",
       "id": "char_kit_01",
       "kingdom": null,
       "kit": {
         "jobs": {
           "blacksmith": {
             "pieces_max": 13,
-            "tris_max": 752
+            "tris_max": 822
           },
           "builder": {
             "pieces_max": 15,
-            "tris_max": 878
+            "tris_max": 862
           },
           "farmer": {
             "pieces_max": 16,
-            "tris_max": 944
+            "tris_max": 928
           },
           "governor": {
             "pieces_max": 16,
@@ -44,23 +44,23 @@
           },
           "hauler": {
             "pieces_max": 15,
-            "tris_max": 940
+            "tris_max": 912
           },
           "healer": {
             "pieces_max": 15,
-            "tris_max": 974
+            "tris_max": 966
           },
           "idle": {
             "pieces_max": 14,
-            "tris_max": 826
+            "tris_max": 810
           },
           "merchant": {
             "pieces_max": 16,
-            "tris_max": 954
+            "tris_max": 938
           },
           "miner": {
             "pieces_max": 15,
-            "tris_max": 906
+            "tris_max": 890
           },
           "soldier": {
             "pieces_max": 15,
@@ -70,20 +70,20 @@
             "pieces_max": 15,
             "tris_max": 978
           },
-          "soldier_swordsman": {
+          "soldier_knight": {
             "pieces_max": 15,
             "tris_max": 964
           },
           "woodcutter": {
             "pieces_max": 16,
-            "tris_max": 926
+            "tris_max": 910
           }
         },
-        "max_citizen_tris": 974,
+        "max_citizen_tris": 966,
         "max_ruler_tris": 978,
-        "pieces": 110,
+        "pieces": 111,
         "style": "B",
-        "total_piece_tris": 7028
+        "total_piece_tris": 7180
       },
       "license": "project-original",
       "material": "M_charkit_vc",
@@ -100,10 +100,10 @@
           "miner",
           "soldier",
           "soldier_archer",
-          "soldier_swordsman",
+          "soldier_knight",
           "woodcutter"
         ],
-        "pieces": 110,
+        "pieces": 111,
         "style": "B"
       },
       "preview": "previews/char_kit.jpg",
@@ -157,7 +157,7 @@
       "texture": "none (vertex colours, 0 bytes of texture memory)",
       "triangles": {
         "budget_lod0": 1000,
-        "lod0": 974,
+        "lod0": 966,
         "lod1": 12
       },
       "validation_pass": true

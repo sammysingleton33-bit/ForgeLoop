@@ -86,7 +86,9 @@ BEANIE = (0.97, 0.5, 0.1)  # woodcutter's orange knit (baked: the runtime's clot
 KNIT_CUFF = (0.98, 0.93, 0.84)
 MINER_HELMET = (0.98, 0.8, 0.12)  # miner's yellow pot helmet: a value no other job's head has
 HARDHAT = (0.06, 0.7, 0.72)  # builder's teal hard hat: the one saturated cyan on the field
-MERCHANT_HAT = (0.34, 0.2, 0.47)  # merchant's violet beret
+MERCHANT_HAT = (0.5, 0.27, 0.74)  # merchant's violet beret (a lighter value than the dark first pass: reads on the grass)
+HAULER_CAP = (0.1, 0.26, 0.86)  # hauler's cobalt flat cap: the one royal blue on the field
+TABARD_GREEN = (0.1, 0.42, 0.22)  # healer's forest-green tabard (white cross)
 COIF = (0.97, 0.96, 0.93)  # healer's white headscarf
 SMITH_CAP = (0.2, 0.18, 0.18)  # blacksmith's soot-black skull cap
 
@@ -155,21 +157,28 @@ def build_hats(S, R):
     hat(R, "hat_merchant", merge(beret, brimb), tint="fixed", tags=("merchant",))
     hat(R, "hat_feather", feather, slot="hatband", tint="fixed", tags=("merchant",))
 
-    # ---- healer coif: a linen headscarf wrapped over the head, knotted at the back
+    # ---- healer coif: a linen coif with a wide stiff white brim (a big white ring from above) and a flat top carrying a big green cross
     coif = _hood(S, 0.07, 4.55, -0.5, back=False, color=COIF)
-    knot = sphere(0.26, 0.2, 0.2, seg=S.seg(6, 5), rings=2, color=COIF, smooth=sm, tag="cloth").move(0, 4.9, 0.9)
-    tail = tube([(0, 4.82, 0.85), (0, 4.4, 1.05), (0, 3.95, 1.0)], [0.2, 0.16, 0.08], seg=S.seg(4, 3), color=COIF, smooth=sm, tag="cloth")
-    cross = merge(box(0.1, 0.3, 0.06, color=rgb(40, 120, 60), tag="cross"), box(0.3, 0.1, 0.06, color=rgb(40, 120, 60), tag="cross")).rot(
-        -22, "x").move(0, 5.16, -0.74)
+    wing = loft([(4.97, 1.5, 1.42), (5.07, 1.5, 1.42)], seg=S.seg(10, 8), n=2.0, caps=(True, True), phase=ph(S, S.seg(10, 8)), color=COIF,
+                smooth=sm, tag="cloth")
     green = rgb(34, 150, 74)
-    top_cross = merge(box(1.15, 0.07, 0.3, color=green, smooth=False, tag="cross"), box(0.3, 0.07, 1.15, color=green, smooth=False, tag="cross")).move(0, 5.43, 0.0)
-    hat(R, "hat_coif", merge(coif, knot, tail, cross, top_cross), tint="fixed", tags=("healer",))
+    drum = loft([(5.3, 0.74, 0.74), (5.5, 0.74, 0.74)], seg=S.seg(8, 6), n=2.0, caps=(True, True), phase=0.0, color=COIF, smooth=False,
+                tag="cloth")
+    top_cross = merge(box(1.5, 0.08, 0.4, color=green, smooth=False, tag="cross"), box(0.4, 0.08, 1.5, color=green, smooth=False, tag="cross")).move(0, 5.52, 0.0)
+    hat(R, "hat_coif", merge(coif, wing, drum, top_cross), tint="fixed", tags=("healer",))
 
-    # ---- blacksmith: a sooty leather skull cap (the beard is his hair piece)
-    smith_cap = _cap(S, 0.06, 4.74, -0.36, rim_flare=0.04, thick=0.12)
-    smith_cap.paint(SMITH_CAP)
-    smith_cap.paint(mix(SMITH_CAP, (0.5, 0.42, 0.34), 0.5), where=lambda x, y, z: y < 5.0)
-    hat(R, "hat_smith", smith_cap, tint="fixed", tags=("blacksmith",))
+    # ---- blacksmith: a wide soot-black forge hat (broad brim, flat crown, an ember-orange band); the beard is his hair piece
+    sbrim = loft([(4.96, 1.26, 1.22), (5.06, 1.26, 1.22)], seg=S.seg(10, 8), n=2.0, caps=(True, True), phase=ph(S, S.seg(10, 8)),
+                 color=mix(SMITH_CAP, (0.5, 0.42, 0.34), 0.35), smooth=sm, tag="leather")
+    scrown = loft([(5.04, 0.97, 0.94), (5.3, 0.95, 0.92), (5.62, 0.84, 0.82), (5.72, 0.0, 0.0)], seg=seg, n=n, caps=(True, False), phase=p0,
+                  color=SMITH_CAP, smooth=sm, tag="leather")
+    scrown.paint((0.95, 0.42, 0.1), where=lambda x, y, z: 5.06 < y < 5.28)
+    hat(R, "hat_smith", merge(sbrim, scrown), tint="fixed", tags=("blacksmith",))
+    # ---- hauler's flat cap: cobalt blue, a wide squashed crown and a short peak (the only blue head on the field)
+    hcrown = loft([(4.97, 0.98, 0.95), (5.12, 1.02, 0.99), (5.36, 0.98, 0.95), (5.5, 0.62, 0.6), (5.54, 0.0, 0.0)], seg=seg, n=n,
+                  caps=(True, False), phase=p0, color=HAULER_CAP, smooth=sm, tag="cloth")
+    hpeak = box(1.1, 0.1, 0.55, color=mix(HAULER_CAP, (0.0, 0.0, 0.25), 0.5), smooth=False, tag="cloth").move(0, 5.04, -1.12)
+    hat(R, "hat_hauler", merge(hcrown, hpeak), tint="fixed", tags=("hauler",))
     # headband (idle accessory): a band with a knot and two tails
     hb = loft([(4.88, 0.92, 0.88), (5.02, 0.93, 0.89)], seg=seg, n=n, caps=(True, True), phase=p0, color=TINT, smooth=sm, tag="cloth")
     hbk = sphere(0.17, 0.14, 0.12, seg=S.seg(6, 4), rings=2, color=TINT, smooth=sm, tag="cloth").move(0.0, 4.96, 0.92)
@@ -267,21 +276,21 @@ def build_tools(S, R):
     mall = merge(h3, mh, *bands).rot(90, "y")
     tool(R, "tool_mallet", held(mall, lean=4), tags=("builder",))
 
-    # ---- smith hammer: a thick handle, a very big steel head with a peen (about 1.4x)
-    h4 = _shaft(S, -0.9, 2.5, 0.21, WOOD_DARK, 0.19)
-    head4 = merge(box(1.2, 1.1, 1.1, color=rgb(190, 198, 210), smooth=False, tag="metal").move(0, 2.95, 0),
-                  hull([(0.6, 3.5, -0.55), (0.6, 2.4, -0.55), (0.6, 3.5, 0.55), (0.6, 2.4, 0.55), (1.6, 3.15, -0.12),
-                        (1.6, 2.75, -0.12), (1.6, 3.15, 0.12), (1.6, 2.75, 0.12)], color=STEEL_DARK, smooth=False, tag="metal"))
+    # ---- smith hammer: a thick handle, a huge steel head with a peen (about 1.6x the first kit's)
+    h4 = _shaft(S, -0.9, 2.8, 0.22, WOOD_DARK, 0.2)
+    head4 = merge(box(1.6, 1.4, 1.4, color=rgb(200, 208, 220), smooth=False, tag="metal").move(0, 3.2, 0),
+                  hull([(0.8, 3.9, -0.7), (0.8, 2.5, -0.7), (0.8, 3.9, 0.7), (0.8, 2.5, 0.7), (1.9, 3.55, -0.15),
+                        (1.9, 2.85, -0.15), (1.9, 3.55, 0.15), (1.9, 2.85, 0.15)], color=STEEL_DARK, smooth=False, tag="metal"))
     tool(R, "tool_hammer", held(merge(h4, head4.rot(30, "y")), lean=10), tags=("blacksmith",))
 
     # ---- merchant's hand scale: a tall stave, a long beam and two big pans
     st = _shaft(S, -1.0, 3.3, 0.12, WOOD_DARK)
-    beam = box(3.4, 0.16, 0.16, color=GOLD, smooth=False, tag="metal").move(0, 3.4, 0)
+    beam = box(4.2, 0.18, 0.18, color=GOLD, smooth=False, tag="metal").move(0, 3.4, 0)
     fin = cone(0.2, 0.4, seg=4, y0=3.3, color=GOLD, smooth=False, tag="metal")
     pans = []
     for sx in (-1, 1):
-        cx = sx * 1.6
-        pans.append(cyl(0.72, 0.4, 0.16, seg=S.seg(8, 6), y0=1.6, color=GOLD_DARK, smooth=sm, tag="metal").move(cx, 0, 0))
+        cx = sx * 2.0
+        pans.append(cyl(0.85, 0.46, 0.18, seg=S.seg(8, 6), y0=1.6, color=GOLD_DARK, smooth=sm, tag="metal").move(cx, 0, 0))
         pans.append(box(0.06, 1.8, 0.06, color=IRON, smooth=False, tag="metal").move(cx, 2.5, 0))
     scale = merge(st, beam, fin, *pans)
     tool(R, "tool_scale", held(scale, lean=6), tags=("merchant",))
@@ -413,14 +422,14 @@ def build_regalia(S, R):
     n = S.n if S.A else 2.5
     p0 = ph(S, seg)
     # crown: gold band + five points with a red jewel on the front point
-    band = loft([(5.0, 0.9, 0.88), (5.34, 0.9, 0.88)], seg=S.seg(8, 8), n=n, caps=(True, True), phase=ph(S, S.seg(8, 8)), color=GOLD, smooth=sm, tag="metal")
+    band = loft([(5.0, 1.0, 0.98), (5.4, 1.0, 0.98)], seg=S.seg(8, 8), n=n, caps=(True, True), phase=ph(S, S.seg(8, 8)), color=GOLD, smooth=sm, tag="metal")
     band.paint(GOLD_DARK, where=lambda x, y, z: y < 5.1)
     pts = []
     for i in range(5):
         a = math.tau * i / 5
-        c = cone(0.17, 0.5, seg=3, y0=5.3, color=GOLD, smooth=False, tag="metal").move(math.sin(a) * 0.82, 0, math.cos(a) * -0.8)
+        c = cone(0.26, 0.95, seg=3, y0=5.36, color=GOLD, smooth=False, tag="metal").move(math.sin(a) * 0.9, 0, math.cos(a) * -0.88)
         pts.append(c)
-    gem = sphere(0.14, 0.14, 0.1, seg=S.seg(5, 4), rings=2, color=RED_GEM, smooth=False, tag="gem").move(0, 5.17, -0.9)
+    gem = sphere(0.18, 0.18, 0.12, seg=S.seg(5, 4), rings=2, color=RED_GEM, smooth=False, tag="gem").move(0, 5.2, -1.0)
     hat(R, "hat_crown", merge(band, gem, *pts), tags=("governor",))
     cap = loft([(5.2, 0.86, 0.84), (5.5, 0.82, 0.8), (5.78, 0.52, 0.5), (5.9, 0.0, 0.0)], seg=seg, n=n, caps=(True, False), phase=p0,
                color=TINT, smooth=sm, tag="cloth")
@@ -435,7 +444,7 @@ def build_regalia(S, R):
     cape.h = [1.0] * len(cape.v)
     R.add("cape", cape, "Torso", "cape", "kingdom", weld="torso", tags=("governor",))
     # ermine collar (white, black spots painted on a deterministic subset of faces)
-    col = loft([(3.5, 1.05, 0.66), (3.76, 1.02, 0.63), (4.02, 0.5, 0.4)], seg=seg, n=n, caps=(True, True), phase=p0,
+    col = loft([(3.4, 1.32, 0.8), (3.74, 1.28, 0.76), (4.02, 0.5, 0.4)], seg=seg, n=n, caps=(True, True), phase=p0,
                color=ERMINE, smooth=sm, tag="fur")
     for i in range(len(col.f)):
         if (i * 7 + 3) % 6 == 0:
@@ -488,17 +497,28 @@ def build_extras(S, R):
     sa = panel(rx_of, rz_of, 2.05, 3.78, -0.7, 0.7, 0.07, front=True, nx=1, ny=2, off=0.03, flare=0.03, color=rgb(206, 160, 104),
                smooth=False, tag="leather")
     sa.paint(rgb(60, 40, 26), where=lambda x, y, z: y > 3.55)
-    _extra(R, "gear_smith", sa, tags=("blacksmith",))
+    anv_c, anv_top = rgb(86, 92, 104), rgb(170, 178, 192)
+    anvil = merge(box(1.0, 0.22, 0.62, color=anv_c, smooth=False, tag="anvil").move(0, 3.0, 1.08),
+                  box(0.5, 0.42, 0.46, color=anv_c, smooth=False, tag="anvil").move(0, 3.32, 1.08),
+                  box(1.9, 0.36, 0.64, color=anv_c, smooth=False, tag="anvil").move(0.12, 3.7, 1.08),
+                  cone(0.3, 0.95, seg=4, color=anv_c, smooth=False, tag="anvil").rot(-90, "z").move(-1.05, 3.7, 1.08))
+    anvil.paint(anv_top, where=lambda x, y, z: y > 3.84)
+    _extra(R, "gear_smith", merge(sa, anvil), tags=("blacksmith",))
     # merchant: a big pack with a yellow bedroll on top and two shoulder straps
     mpack = box(1.6, 1.5, 0.9, color=rgb(120, 62, 40), smooth=False, tag="pack").move(0, 3.1, 1.05)
     roll = cyl(0.42, 0.42, 1.9, seg=5, y0=0.0, color=rgb(246, 208, 66), smooth=False, tag="roll").rot(90, "z").move(0.0, 3.95, 1.4)
     straps = [box(0.16, 1.4, 0.1, color=LEATHER_DARK, smooth=False, tag="leather").move(sx * 0.45, 3.2, 0.58) for sx in (-1, 1)]
     _extra(R, "gear_merchant", merge(mpack, roll, *straps), tags=("merchant",))
-    # healer: a white herb bag with green herbs sticking out, on a strap
-    hstrap = box(0.18, 1.5, 0.1, color=LEATHER, smooth=False, tag="leather").rot(40, "z").move(-0.3, 3.2, -0.6)
-    hbag = merge(box(0.9, 0.7, 0.5, color=mix(CANVAS, (0.86, 0.8, 0.66), 1.0), smooth=False, tag="cloth").move(-0.72, 2.62, 0.88),
-                 *[_leaf(0.2, 0.8, rgb(60, 160, 70)).rot(a, "z").move(-0.72 + dx, 2.95, 0.88) for a, dx in ((-22, -0.17), (22, 0.17))])
-    _extra(R, "gear_healer", merge(hstrap, hbag), tags=("healer",))
+    # healer: a forest-green tabard (front and back) with a big white cross: a body colour no other job has
+    white = rgb(246, 244, 236)
+    tab = [panel(rx_of, rz_of, 2.42, 3.5, -0.74, 0.74, 0.06, front=fr, nx=1, ny=1, off=0.03, flare=0.03, color=TABARD_GREEN, smooth=False, tag="cloth")
+           for fr in (True, False)]
+    crosses = []
+    for sgn in (-1.0, 1.0):
+        zc = sgn * (rz_of(3.0) + 0.12)
+        crosses.append(box(0.3, 0.9, 0.07, color=white, smooth=False, tag="cross").move(0, 2.95, zc))
+        crosses.append(box(0.8, 0.28, 0.07, color=white, smooth=False, tag="cross").move(0, 3.1, zc))
+    _extra(R, "gear_healer", merge(*tab, *crosses), tags=("healer",))
     # archer's quiver on the back with three arrows
     qv = loft([(2.7, 0.28, 0.28), (3.85, 0.34, 0.34)], seg=seg, n=2.0, caps=(True, True), color=LEATHER, smooth=sm, tag="leather")
     arrows = [cyl(0.05, 0.05, 0.9, seg=4, y0=3.78, color=ASH, smooth=False, tag="arrow").move(dx, 0, dz) for dx, dz in ((-0.1, 0.0), (0.1, 0.06), (0.0, -0.08))]
@@ -557,9 +577,9 @@ def build_mantle(S, R):
     It is the large kingdom-coloured area seen from above; the job lives in the tunic colour, hat and tool. Wider than the
     torso by 0.04 at the sides (the sleeves start at x = 1.01) and 0.12 in front / behind (clear of aprons and straps)."""
     seg = S.seg(10, 8)
-    rings = [(y, torso_r(y)[0] + 0.04, torso_r(y)[1] + 0.12) for y in (3.22, 3.46, 3.7, 3.86)] + [(3.97, 0.5, 0.42)]
+    rings = [(y, torso_r(y)[0] + 0.04, torso_r(y)[1] + 0.12) for y in (3.46, 3.7, 3.86)] + [(3.97, 0.5, 0.42)]
     m = loft(rings, seg=seg, n=S.n if S.A else 2.5, caps=(True, True), phase=ph(S, seg), color=TINT, smooth=S.smooth, tag="cloth")
-    m.paint((0.8, 0.8, 0.8), where=lambda x, y, z: y < 3.34)  # a darker hem band
+    m.paint((0.8, 0.8, 0.8), where=lambda x, y, z: y < 3.56)  # a darker hem band
     m.h = [1.0] * len(m.v)
     R.add("mantle_kingdom", m, "Torso", "extra", "kingdom", weld="torso", tags=("citizen",))
 

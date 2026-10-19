@@ -113,7 +113,7 @@ def main(argv):
         ckit_scene.gameplay(cam, (0, 2.6, 12.0), a.dist or 36.0, a.pitch or 30.0, fov=48)
     elif scene == "kingdoms":
         for i, kd in enumerate(KINGDOMS):
-            for r, job in enumerate(("soldier", "soldier_swordsman", "soldier_archer", "governor")):
+            for r, job in enumerate(("soldier", "soldier_knight", "soldier_archer", "governor")):
                 kit.spawn(job, {"skin": 1 + (i + r) % 6, "hair": 1, "hairColor": 1, "outfit": 1}, kd, (1.5 - i) * 8.0, r * 7.0, 0, tag=f"{kd}{job}_")
         ckit_scene.gameplay(cam, (0, 2.8, 10.0), a.dist or 56.0, a.pitch or 30.0, az_deg=a.az, fov=60)
     elif scene == "poses":
