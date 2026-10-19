@@ -274,6 +274,23 @@ function ConversationService:_onEvent(name: string, event: any)
 		self:_raise(event.kingdomId, "soldiers_recruited")
 	elseif name == "ObjectiveCaptured" then
 		self:_raise(event.kingdomId, "objective_captured")
+		if event.previousOwner ~= nil and event.previousOwner ~= event.kingdomId then
+			self:_raise(event.previousOwner, "objective_lost")
+		end
+	elseif name == "WarDeclared" then
+		self:_raise(event.kingdomId, "war_declared") -- both sides: the declarer and the target
+		self:_raise(event.targetId, "war_declared")
+	elseif name == "SiegeChanged" and event.on then
+		self:_raise(event.kingdomId, "siege")
+	elseif name == "RaidChanged" and event.on then
+		self:_raise(event.kingdomId, "raid")
+	end
+end
+
+-- ConsequenceService's rules: a strike or a riot that starts is something citizens talk about (the end raises nothing).
+function ConversationService:_onConsequence(kingdomId: string, rule: string, on: boolean)
+	if on and (rule == "strike" or rule == "riot") then
+		self:_raise(kingdomId, rule)
 	end
 end
 
@@ -1124,15 +1141,27 @@ function ConversationService:start()
 			self:_onEvent(name, event)
 		end)
 	)
+	local consequences = self._registry:find("ConsequenceService")
+	if consequences and consequences.changed then
+		table.insert(
+			self._connections,
+			consequences.changed:connect(function(kingdomId: string, rule: string, on: boolean)
+				self:_onConsequence(kingdomId, rule, on)
+			end)
+		)
+	end
 	self._remotes:handle("Kingdom.Converse", function(player: any, entityId: number)
+		self:_sim():touchRuler(player.UserId) -- an input, not a passive poll (D-054 idle senior)
 		return self:converse(player, entityId)
 	end)
 	self._remotes:handle("Kingdom.EndConversation", function(player: any, entityId: number)
+		self:_sim():touchRuler(player.UserId)
 		return self:endConversation(player, entityId)
 	end)
 	self._remotes:handle(
 		"Kingdom.Choose",
 		function(player: any, entityId: number, scenarioId: string, responseId: string)
+			self:_sim():touchRuler(player.UserId)
 			return self:choose(player, entityId, scenarioId, responseId)
 		end
 	)

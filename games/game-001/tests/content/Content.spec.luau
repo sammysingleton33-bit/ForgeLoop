@@ -59,6 +59,9 @@ local EVENT_TAGS = {
 	"soldiers_recruited",
 	"strike",
 	"riot",
+	"war_declared", -- FL-0134 (D-056 (3))
+	"siege",
+	"objective_lost",
 }
 local CONSEQUENCE_KINDS = {
 	productivity = true,

@@ -43,7 +43,7 @@ Def.EVENTS = table.freeze({
 	"MatchEnded",
 	"ConsequenceChanged", -- FORGE-01's ConsequenceService (G9 v0.4-g10c)
 	"KingdomEliminated",
-	-- proposed G9 rows (FL-0130 handoff); Bus.connectAll waits for them until the bus declares them
+	-- G9 war rows (FL-0134, declared by #204); Bus.connectAll would wait for any the bus did not declare
 	"WarChanged",
 	"SiegeChanged",
 	"RaidChanged",

@@ -550,3 +550,20 @@ main (#154 plus #158) in every render. Images in `img/`:
   the change: it is in front of it in space (FORGE-01's `PoseClearance` passes on the Kit), so that is projection.
 - **Crowd:** the cheering crowd crop shows the raised arms beside the heads instead of overlapping them; kingdom-red pixels in the crop 283 before, 341
   after (more sleeve and shoulder visible from above). No visible clip. Studio unverified.
+
+## FL-0118 fix: the miner's pick reads as a pickaxe (fallback rig, superseded as the main art route by D-057)
+The owner's first playtest said the pick reads as a hammer: a short dark bar across a stick (0.45 x 0.5 x 3.6) is a T-hammer
+from most angles. The miner's tool is now an arch: a 5.4 handle with two iron wedge tines (0.45 x 0.8 x 2.5 each, `pickhead`
+and `pickpoint`, lighter iron than the pot) drooped 28 degrees from a hub 4.2 above the grip, yawed 30 degrees. The pot's
+lamp head detail is gone (D-048: still 11 parts, both details now on the Tool), so the miner's head is a plain ochre pot.
+- Render: `img/citizen_pick_before_after.jpg` (top row main, bottom row this change, camera azimuths 35/110/200/290, 20 degrees up).
+  I looked at it: at 110 and 290 degrees it is an unmistakable pickaxe arch; at 35 and 200 the arch is foreshortened and reads
+  as a long angled blade, clearly longer and sharper than the old slab, but not a perfect pickaxe from every side. Aerial: a
+  planar tool is a bar from straight above, as every tool is.
+- Clearance (KitCharacter spec, every Pose action, exact shapes 0.1, bounding boxes 0.03): yaw 40 and hub 4.0 failed
+  (-0.066 vs the pot in the walk); yaw 30, hub 4.2, thickness 0.8 clear. The spec now names the pair at the box minimum too.
+- Spec changes: miner details are `pickhead`/`pickpoint` on the Tool, two wedge tines, long and thin, drooping below the hub
+  and spanning at least 2.3 between centres; head-detail spec skips the miner. 5 mutants killed (droop 0, short tines, fat
+  tines, a single tine, hub on the pot). Full game-001 Lune specs: 1732 passed, 0 failed (108 files).
+- Not done: the hauler and idle looks (FL-0118 is superseded by FL-0135, which replaces the primitive rigs with imported meshes).
+  Studio unverified.

@@ -438,6 +438,29 @@ describe("Arena/DuelModel: determinism and bad input", function()
 		end).toThrow("unknown armour")
 	end)
 
+	it(
+		"a bad step (NaN, infinite, zero, negative) lets no time pass, so a clock can never go NaN or backwards",
+		function()
+			local state = duel()
+			idle(state, 1)
+			local t = state.t
+			for _, bad in { 0 / 0, math.huge, -math.huge, 0, -1 } do
+				expect(#DuelModel.step(state, { a = input("light") }, bad)).toBe(0)
+				expect(state.t).toBe(t)
+			end
+			expect(state.ended).toBe(false)
+			idle(state, 1)
+			expect(state.t > t).toBe(true) -- the duel is still alive and still ticks
+		end
+	)
+
+	it("clamps a long step to one second: a stall cannot end the duel in a single call", function()
+		local state = duel()
+		DuelModel.step(state, {}, 10000)
+		expect(state.ended).toBe(false)
+		expect(state.t).toBe(1)
+	end)
+
 	it("takes a config: custom rules change the duel", function()
 		local rules = table.clone(DuelModel.CONFIG)
 		rules.maxHp = 10
