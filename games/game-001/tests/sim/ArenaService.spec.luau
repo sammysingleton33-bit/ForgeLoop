@@ -103,7 +103,7 @@ local function fakeKit(env: any, log: { any }): any
 		return p
 	end
 	local kit = {}
-	function kit.character(kind: string, job: string, color: Color3, look: any, kingdom: string?): any
+	function kit.character(kind: string, job: string, color: Color3, _look: any, kingdom: string?): any
 		table.insert(log, { what = "character", kind = kind, job = job, color = color, kingdom = kingdom })
 		local model = env.newInstance("Model")
 		model.Name = "Rig"
