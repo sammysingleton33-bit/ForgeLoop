@@ -318,12 +318,12 @@ local function prepare(assetId: string, def: any, model: Model): (Model?, string
 	return model, nil
 end
 
-local function log(assetId: string, why: string)
+local function log(assetId: string, why: string, consequence: string?)
 	if logged[assetId] then
 		return
 	end
 	logged[assetId] = true
-	local message = `Kit.prop: the imported {assetId} is not used ({why}); building the stand-in`
+	local message = `Kit.prop: the imported {assetId} is not used ({why}); {consequence or "building the stand-in"}`
 	if logger then
 		logger(message)
 	elseif type(warn :: any) == "function" then
@@ -332,24 +332,38 @@ local function log(assetId: string, why: string)
 end
 
 -- Would Kit.prop(assetId) build the imported mesh from `source` (a Model for the id that passes the checks against the data)?
--- Used by the world's mesh-only dressing (WorldService: fences, cabbage variants, cliffs) so a world without the imported kit stays exactly
--- the part-built one. Silent: no log line, no change to the accepted counter or the rejection list (status()).
+-- Used by the world's mesh-only dressing (WorldService: fences, cabbage variants) so a world without the imported kit stays exactly
+-- the part-built one. An id that is not imported (not in the data, or no Model of that name) is simply not ready: silent, nothing
+-- counted. An id that IS imported but does not pass the checks (a wrong size, no mesh, a template that cannot be cloned) is recorded in
+-- status().rejected and logged once, like Kit.prop does for a prop: otherwise a bad fence or cabbage would pass the import page's
+-- `rejected` check and the dressing would quietly not appear. `accepted` is never changed by asking.
 function EnvMesh.ready(assetId: string, source: Instance?): boolean
 	local def = propsOf(activeData())[assetId]
 	if type(def) ~= "table" then
 		return false
 	end
 	local found = EnvMesh.find(source, assetId)
-	if found == nil or not found:IsA("Model") then
+	if found == nil then
 		return false
+	end
+	local function reject(reason: string): boolean
+		rejected[assetId] = reason
+		log(assetId, reason, "its dressing is not placed")
+		return false
+	end
+	if not found:IsA("Model") then
+		return reject(`it is a {found.ClassName}, not a Model`)
 	end
 	local clone = found:Clone()
 	if clone == nil then -- the template is not Archivable: it clones to nil
-		return false
+		return reject("the template cannot be cloned (Archivable is false)")
 	end
-	local ok, model = pcall(prepare, assetId, def, clone :: Model)
+	local ok, model, why = pcall(prepare, assetId, def, clone :: Model)
 	clone:Destroy()
-	return ok and model ~= nil
+	if ok and model ~= nil then
+		return true
+	end
+	return reject(if ok then tostring(why) else `error: {tostring(model)}`)
 end
 
 function EnvMesh.accept(assetId: string, clone: Model?): (Model?, string?)

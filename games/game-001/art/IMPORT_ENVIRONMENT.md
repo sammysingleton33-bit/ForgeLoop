@@ -38,7 +38,7 @@ fall back in Play; and a quiet Output also looks fine when nothing was imported 
    fields should be the mesh kind. (Nothing is wrong if a few ids are still stand-ins because they were not in the kit: say which.)
 2. The **server** Output (View > Output, Server) has **no** line `Kit.prop: the imported ... is not used (...)`.
 3. In the server command bar: `local s = require(game.ReplicatedStorage.Game.Kit.Kit).envMeshStatus(); print(s.props, s.accepted, next(s.rejected))` must print
-   props = 56, `accepted` above 0 and **no rejected id** (`rejected` empty). `accepted` counts every mesh prop the world has built (hundreds), not the ids. The command bar can hand
+   props = 56, `accepted` above 0 and **no rejected id** (`rejected` empty). `accepted` counts every mesh prop the world has built (hundreds), not the ids. A fence or cabbage variant that is imported but does not match its data now also shows in `rejected` (and logs `Kit.prop: the imported farm_fence_01 is not used (...); its dressing is not placed`); an id that was simply not imported stays silent and its dressing is not placed. The command bar can hand
    you a fresh copy of the module (accepted 0, and the Kit has no asset source): if `accepted` is 0, trust step 1 (Explorer), and tell FORGE-02 what you saw in both.
 4. **CollisionFidelity (UNVERIFIED: please check and report).** The import script sets Hull on every `Body` in the open place. Scripts cannot manipulate the property at runtime (API reference), and the API dump
    lists it as not saved and not replicated, so **we expect `EnvKit.rbxm` and a `rojo build` to show Default instead of Hull; that is a guess from the dump, nobody has looked.** Check it: save `EnvKit.rbxm`,
