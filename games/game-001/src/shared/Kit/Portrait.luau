@@ -3,7 +3,8 @@
 	Kit/Portrait — Kit.portrait: a character rig for a UI ViewportFrame (CONTRACTS G13.8, D-036; FL-0098).
 
 	Portrait.portrait(kind, job, kingdomColor, look?, kingdom?) -> Model
-		Calls Character.character with the same arguments (never a copy of the rig code), so the portrait and
+		Calls Kit.character's builder (CharacterMesh.character: the imported-mesh rig when the kit is imported, else
+		Character.character) with the same arguments (never a copy of the rig code), so the portrait and
 		the world rig look identical: the same ≤ 9 parts with the same names, classes, sizes, colours,
 		materials, CFrames, look and soldier crest, and the same attributes (KitKind, KitJob, KitLook,
 		KitRootHeight; KitTint, KitHeadwear, KitTool). Portrait-only changes:
@@ -32,6 +33,7 @@
 ]]
 
 local Character = require("./Character")
+local CharacterMesh = require("./CharacterMesh")
 
 local Portrait = {}
 
@@ -66,17 +68,30 @@ local function frame(model: Model): (CFrame, number)
 	local torso = model:FindFirstChild("Torso") :: BasePart
 	local head = model:FindFirstChild("Head") :: BasePart
 	local arm = model:FindFirstChild("RightArm") :: BasePart
-	local hair = model:FindFirstChild("Hair") :: BasePart?
-	-- everything worn on the head: the hair or hat, and the D-048 detail parts welded to the Head (lamp, visor, pompom,
-	-- the farmer's crown, the governor's velvet cap)
+	-- everything worn on the head: every part welded to it, directly or through other welds (never across a Motor6D): the hair
+	-- or hat, a crown or helm crest, the D-048 detail parts (lamp, visor, pompom, the farmer's crown, the governor's velvet cap),
+	-- an accessory, and on a mesh rig (Kit/CharacterMesh) any extra welded to the Head or to its hat
 	local worn: { BasePart } = {}
-	if hair then
-		table.insert(worn, hair)
+	local reached: { [BasePart]: boolean } = { [head] = true }
+	local queue: { BasePart } = { head }
+	local welds: { Weld } = {}
+	for _, d in model:GetDescendants() do
+		if d:IsA("Weld") and not d:IsA("Motor6D") then
+			table.insert(welds, d :: Weld)
+		end
 	end
-	for _, d in model:GetChildren() do
-		local weld = if d:IsA("BasePart") then d:FindFirstChild("DetailWeld") else nil
-		if d:IsA("BasePart") and weld and (weld :: Weld).Part0 == head then
-			table.insert(worn, d)
+	local at = 1
+	while at <= #queue do
+		local part = queue[at]
+		at += 1
+		for _, w in welds do
+			local a, b = w.Part0, w.Part1
+			local other = if a == part then b elseif b == part then a else nil
+			if other and not reached[other] then
+				reached[other] = true
+				table.insert(queue, other)
+				table.insert(worn, other)
+			end
 		end
 	end
 	local shoulders = torso.CFrame.Position.Y + torso.Size.Y / 2
@@ -105,7 +120,7 @@ function Portrait.portrait(
 	look: Character.CitizenLook?,
 	kingdom: string?
 ): Model
-	local model = Character.character(kind, job, kingdomColor, look, kingdom)
+	local model = CharacterMesh.character(kind, job, kingdomColor, look, kingdom)
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") then
 			d.Anchored = true

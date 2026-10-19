@@ -583,3 +583,27 @@ Pass: steps 1–5 hold (6 and 7 when FL-0071 is on the build). Copy every red li
 History:
 - 2026-10-18 FORGE-04: written (FL-0075; G12.6 DRAFT).
 - 2026-10-18 FORGE-04: step 2 checks that a HUD click is not also a light attack (FORGE-07's #191 L1).
+
+## E17 — The arena crowd you hear and read: reactions, subtitles, ducking (FL-0074 part 2a, game-001)
+
+The Crown Arena crowd reacts to the duel by each stand's support tier (crown-arena §3, §7), and every reaction has a subtitle. The stands' figures come later (part 2b, after FORGE-02's FL-0072).
+
+Needs:
+- Steps 1–4: nothing beyond the build. They use the **Studio preview**, a scripted duel played through the real code path.
+- Step 5: FORGE-01's arena (FL-0071: `Arena.State`, `Arena.Events`). Until then write "blocked: needs FL-0071".
+- Every crowd sound is silent until the owner picks assets (`production/handoffs/2026-10-18-forge-04-to-user-crowd-sounds.md`). Write "silent (no asset)". The subtitles show either way.
+
+Steps
+1. Play Solo. In the command bar run `game.Players:GetPlayers()[1]:SetAttribute("ForgeCrowdPreview", "adoring,hostile")`. Within 30 s, about every 3.5 s, one or two subtitle lines appear above the bottom HUD, for example "Crimson: (The crowd roars)" and "Azure: (The stand turns its back)". Each line goes after about 2.5 s. Screenshot **E17-1** with two lines on screen.
+2. During the preview: "Crimson: Mara steps up: Reforge!" (a perk) stays about 4 s and is not replaced early. A chant line reads "Crimson: Crimson! Crimson!". The last step is the ending: "(The stand floods the arena to crown its ruler)" for Crimson and "(The stand empties)" for Azure.
+3. Run it again with `"hostile,adoring"`: Crimson now boos or turns its back, and the ending reads "(A thin crowd watches the crowning)" for Crimson and "They fought for us! (The stand salutes)" for Azure. Then `""` stops it and the lines go.
+4. Phone emulator (667×375): the two subtitle boxes fit inside the screen and don't cover the bottom HUD buttons. The longest lines, the ending's "(The stand floods the arena to crown its ruler)" and the salute, wrap onto a second line inside their box and are not cut off (FORGE-07's #199 M1). Screenshot **E17-2**. Then also turn on the duel preview (E16 step 1, `ForgeDuelPreview`) and run the crowd preview again: the boxes now sit left of the duel's touch buttons, just above the thumbstick, never on a button or on the thumbstick, and well below the top of the screen. Screenshot **E17-3**. Then hold and drag the thumbstick while the lines show (the champion can walk in the duel): the stick, its ring and your thumb stay below the lowest box, and every line stays readable. If they cover a line, note how far (FORGE-07 on #199).
+5. (Needs FL-0071.) In a real duel, a big hit and a parry make both stands react, and an announcer line makes the crowd quieter for about 2.5 s (once sounds exist). At crowning, the ending lines show once, and they go at Results.
+
+Pass: steps 1–4 hold (5 when FL-0071 is on the build). Copy every red line from Output.
+
+History:
+- 2026-10-18 FORGE-04: written (FL-0074 part 2a; G12 DRAFT).
+- 2026-10-18 FORGE-04: step 4 checks the lines keep clear of the duel's touch buttons (FORGE-03 on #199).
+- 2026-10-19 FORGE-04: two-line boxes and the kingdom's short name, so the longest lines are not cut off (FORGE-07's #199 M1).
+- 2026-10-19 FORGE-04: step 4 also holds the thumbstick under the lowest box (FORGE-07 on #199).

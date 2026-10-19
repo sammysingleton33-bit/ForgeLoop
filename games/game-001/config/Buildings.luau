@@ -41,19 +41,19 @@ return {
 			maxCount = 1,
 			levels = {
 				{
-					hp = 6000,
+					hp = 12000,
 					popCap = 12,
 					territory = 130,
 					attack = { damage = 10, range = 40, cooldown = 1.5 },
 				},
 				{
-					hp = 9000,
+					hp = 18000,
 					popCap = 16,
 					territory = 170,
 					attack = { damage = 14, range = 45, cooldown = 1.5 },
 				},
 				{
-					hp = 12000,
+					hp = 24000,
 					popCap = 20,
 					territory = 210,
 					attack = { damage = 18, range = 50, cooldown = 1.5 },

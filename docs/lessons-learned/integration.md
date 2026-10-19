@@ -153,3 +153,9 @@ Format: date · lesson · evidence · tag (`observed-once` / `repeated` / `stand
   than the 30-minute default background limit; the run was stopped mid-mutation and left
   `games/game-001/config/Society.luau` mutated in the test worktree. Give long gates an explicit timeout
   (≥ 60 min), check `git status` in the worktree after any killed run, and restore before re-running.
+- 2026-10-19 B20.1 (FORGE-05) `observed-once`: two stacked PRs (#198 on #195, #201 on #198) showed "merged" but
+  landed in their stacked base branches, not main, because GitHub keeps a stacked PR's base after the lower PR merges
+  (it retargets only when the base branch is deleted). The gate tree had merged their heads onto main, so every local
+  check passed. B20.1 shipped without them and its row claimed them; FORGE-00 caught it with
+  `git merge-base --is-ancestor`. Check `base.ref == main` before every merge, and run the ancestor check for every
+  claimed PR before cutting a build (merge-checklist §5, §6).
