@@ -2,7 +2,7 @@
 
 These contracts let five workers build at the same time. Code against them; use mocks for parts not built yet. Additive changes are fine in your own area; breaking changes need a PR reviewed by FORGE-05 and approved by FORGE-00, with the version bumped below.
 
-Contract version: **0.3.2** · custodian FORGE-05 · Luau files in `roblox/src/shared/Contracts/`.
+Contract version: **0.3.3** · custodian FORGE-05 · Luau files in `roblox/src/shared/Contracts/`.
 
 ## 1. Code layout and requires
 - Rojo project `roblox/default.project.json` maps:
