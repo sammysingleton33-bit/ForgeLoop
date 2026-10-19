@@ -1,0 +1,1524 @@
+{
+ "assemblies": {
+  "builder": {
+   "arm_l": "arm_l",
+   "arm_r": "arm_r",
+   "boot": "boot_%look.boots%",
+   "extras": [
+    "hat_builder_visor"
+   ],
+   "hair": "hat_builder",
+   "head": "head_%look.face%",
+   "leg": "leg_trousers",
+   "sleeve_l": "sleeve_l",
+   "sleeve_r": "sleeve_r",
+   "tool": "tool_hammer",
+   "tool_extra": "tool_hammer_head",
+   "torso": "torso_%look.outfit%"
+  },
+  "farmer": {
+   "arm_l": "arm_l",
+   "arm_r": "arm_r",
+   "boot": "boot_%look.boots%",
+   "extras": [
+    "hat_farmer_crown"
+   ],
+   "hair": "hat_farmer",
+   "head": "head_%look.face%",
+   "leg": "leg_trousers",
+   "sleeve_l": "sleeve_l",
+   "sleeve_r": "sleeve_r",
+   "tool": "tool_hoe",
+   "tool_extra": "tool_hoe_blade",
+   "torso": "torso_%look.outfit%"
+  },
+  "governor": {
+   "arm_l": "arm_l",
+   "arm_r": "arm_r",
+   "boot": "boot_02",
+   "cape": "cape_%kingdom%",
+   "extras": [
+    "tool_staff_orb"
+   ],
+   "hair": "crown_gold",
+   "head": "head_%look.face%",
+   "leg": "leg_trousers",
+   "sleeve_l": "sleeve_kingdom_l",
+   "sleeve_r": "sleeve_kingdom_r",
+   "tool": "tool_staff",
+   "torso": "torso_regal"
+  },
+  "hauler": {
+   "arm_l": "arm_l",
+   "arm_r": "arm_r",
+   "boot": "boot_%look.boots%",
+   "extras": [
+    "tool_sack_strap"
+   ],
+   "hair": "hair_%look.hair%",
+   "head": "head_%look.face%",
+   "leg": "leg_trousers",
+   "sleeve_l": "sleeve_l",
+   "sleeve_r": "sleeve_r",
+   "tool": "tool_sack",
+   "torso": "torso_%look.outfit%"
+  },
+  "idle": {
+   "acc": "acc_%look.acc%",
+   "arm_l": "arm_l",
+   "arm_r": "arm_r",
+   "boot": "boot_%look.boots%",
+   "hair": "hair_%look.hair%",
+   "head": "head_%look.face%",
+   "leg": "leg_trousers",
+   "sleeve_l": "sleeve_l",
+   "sleeve_r": "sleeve_r",
+   "torso": "torso_%look.outfit%"
+  },
+  "miner": {
+   "arm_l": "arm_l",
+   "arm_r": "arm_r",
+   "boot": "boot_%look.boots%",
+   "extras": [
+    "hat_miner_lamp"
+   ],
+   "hair": "hat_miner",
+   "head": "head_%look.face%",
+   "leg": "leg_trousers",
+   "sleeve_l": "sleeve_l",
+   "sleeve_r": "sleeve_r",
+   "tool": "tool_pick",
+   "tool_extra": "tool_pick_head",
+   "torso": "torso_%look.outfit%"
+  },
+  "soldier": {
+   "arm_l": "arm_l",
+   "arm_r": "arm_r",
+   "boot": "boot_01",
+   "extras": [
+    "tool_spear_head",
+    "tool_spear_pennant"
+   ],
+   "hair": "crest_%kingdom%",
+   "head": "head_helm",
+   "leg": "leg_mail",
+   "sleeve_l": "sleeve_kingdom_l",
+   "sleeve_r": "sleeve_kingdom_r",
+   "tool": "tool_spear",
+   "torso": "armour_%kingdom%"
+  },
+  "soldier_archer": {
+   "arm_l": "arm_l",
+   "arm_r": "arm_r",
+   "boot": "boot_01",
+   "hair": "crest_%kingdom%",
+   "head": "head_helm",
+   "leg": "leg_mail",
+   "sleeve_l": "sleeve_kingdom_l",
+   "sleeve_r": "sleeve_kingdom_r",
+   "tool": "tool_bow",
+   "torso": "armour_%kingdom%"
+  },
+  "woodcutter": {
+   "arm_l": "arm_l",
+   "arm_r": "arm_r",
+   "boot": "boot_%look.boots%",
+   "hair": "hat_woodcutter",
+   "head": "head_%look.face%",
+   "leg": "leg_trousers",
+   "sleeve_l": "sleeve_l",
+   "sleeve_r": "sleeve_r",
+   "tool": "tool_axe",
+   "tool_extra": "tool_axe_head",
+   "torso": "torso_%look.outfit%"
+  }
+ },
+ "joints": {
+  "Head": {
+   "parent": "Torso",
+   "pos": [
+    0.0,
+    3.9,
+    0.0
+   ]
+  },
+  "LeftArm": {
+   "parent": "Torso",
+   "pos": [
+    -1.46,
+    3.5,
+    0.0
+   ]
+  },
+  "LeftLeg": {
+   "parent": "Torso",
+   "pos": [
+    -0.5,
+    2.2,
+    0.0
+   ]
+  },
+  "RightArm": {
+   "parent": "Torso",
+   "pos": [
+    1.46,
+    3.5,
+    0.0
+   ]
+  },
+  "RightLeg": {
+   "parent": "Torso",
+   "pos": [
+    0.5,
+    2.2,
+    0.0
+   ]
+  },
+  "Tool": {
+   "parent": "RightArm",
+   "pos": [
+    1.591,
+    2.4582,
+    0.0
+   ]
+  },
+  "Torso": {
+   "parent": "Root",
+   "pos": [
+    0.0,
+    2.2,
+    0.0
+   ]
+  },
+  "TorsoTool": {
+   "parent": "Torso",
+   "pos": [
+    0.86,
+    3.8,
+    0.575
+   ]
+  }
+ },
+ "pieces": {
+  "acc_01": {
+   "bbox_center": [
+    0.0,
+    5.04,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.6,
+    0.22,
+    1.6
+   ],
+   "slot": "acc",
+   "tags": [],
+   "tint": "kingdom",
+   "tint_factor": 0.72,
+   "tris": 24,
+   "weld_to": "Head"
+  },
+  "acc_02": {
+   "bbox_center": [
+    0.0,
+    4.0,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.5,
+    0.35,
+    1.5
+   ],
+   "slot": "acc",
+   "tags": [],
+   "tint": "cloth",
+   "tris": 30,
+   "weld_to": "Head"
+  },
+  "acc_03": {
+   "empty": true,
+   "joint": "Head",
+   "slot": "acc",
+   "tags": [
+    "none"
+   ],
+   "tint": "fixed",
+   "tris": 0,
+   "weld_to": "Head"
+  },
+  "arm_l": {
+   "bbox_center": [
+    -1.5118,
+    3.1033,
+    0.0
+   ],
+   "joint": "LeftArm",
+   "size": [
+    0.9814,
+    1.7824,
+    0.82
+   ],
+   "slot": "arm",
+   "tags": [],
+   "tint": "skin",
+   "tris": 45,
+   "weld_to": null
+  },
+  "arm_r": {
+   "bbox_center": [
+    1.5118,
+    3.1033,
+    0.0
+   ],
+   "joint": "RightArm",
+   "size": [
+    0.9814,
+    1.7824,
+    0.82
+   ],
+   "slot": "arm",
+   "tags": [],
+   "tint": "skin",
+   "tris": 45,
+   "weld_to": null
+  },
+  "armour_azure": {
+   "bbox_center": [
+    0.0,
+    3.05,
+    0.0
+   ],
+   "joint": "Torso",
+   "size": [
+    2.1,
+    1.7,
+    1.2
+   ],
+   "slot": "armour",
+   "tags": [
+    "azure"
+   ],
+   "tint": "kingdom",
+   "tris": 220,
+   "weld_to": null
+  },
+  "armour_crimson": {
+   "bbox_center": [
+    0.0,
+    3.05,
+    0.0
+   ],
+   "joint": "Torso",
+   "size": [
+    2.1,
+    1.7,
+    1.2
+   ],
+   "slot": "armour",
+   "tags": [
+    "crimson"
+   ],
+   "tint": "kingdom",
+   "tris": 220,
+   "weld_to": null
+  },
+  "armour_emerald": {
+   "bbox_center": [
+    0.0,
+    3.05,
+    0.0
+   ],
+   "joint": "Torso",
+   "size": [
+    2.1,
+    1.7,
+    1.2
+   ],
+   "slot": "armour",
+   "tags": [
+    "emerald"
+   ],
+   "tint": "kingdom",
+   "tris": 220,
+   "weld_to": null
+  },
+  "armour_gold": {
+   "bbox_center": [
+    0.0,
+    3.05,
+    0.0
+   ],
+   "joint": "Torso",
+   "size": [
+    2.1,
+    1.7,
+    1.2
+   ],
+   "slot": "armour",
+   "tags": [
+    "gold"
+   ],
+   "tint": "kingdom",
+   "tris": 220,
+   "weld_to": null
+  },
+  "armour_neutral": {
+   "bbox_center": [
+    0.0,
+    3.05,
+    0.0
+   ],
+   "joint": "Torso",
+   "size": [
+    2.1,
+    1.7,
+    1.2
+   ],
+   "slot": "armour",
+   "tags": [
+    "neutral"
+   ],
+   "tint": "kingdom",
+   "tris": 220,
+   "weld_to": null
+  },
+  "boot_01": {
+   "bbox_center": [
+    -0.5,
+    0.3,
+    -0.15
+   ],
+   "joint": "LeftLeg",
+   "mirror": true,
+   "size": [
+    1.0,
+    0.6,
+    1.3
+   ],
+   "slot": "boot",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 35,
+   "weld_to": "LeftLeg"
+  },
+  "boot_02": {
+   "bbox_center": [
+    -0.5,
+    0.3,
+    -0.15
+   ],
+   "joint": "LeftLeg",
+   "mirror": true,
+   "size": [
+    1.0,
+    0.6,
+    1.3
+   ],
+   "slot": "boot",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 45,
+   "weld_to": "LeftLeg"
+  },
+  "cape_azure": {
+   "bbox_center": [
+    0.0,
+    2.45,
+    0.775
+   ],
+   "joint": "Torso",
+   "size": [
+    2.5,
+    3.3,
+    0.18
+   ],
+   "slot": "cape",
+   "tags": [
+    "azure"
+   ],
+   "tint": "kingdom",
+   "tris": 12,
+   "weld_to": "Torso"
+  },
+  "cape_crimson": {
+   "bbox_center": [
+    0.0,
+    2.45,
+    0.775
+   ],
+   "joint": "Torso",
+   "size": [
+    2.5,
+    3.3,
+    0.18
+   ],
+   "slot": "cape",
+   "tags": [
+    "crimson"
+   ],
+   "tint": "kingdom",
+   "tris": 12,
+   "weld_to": "Torso"
+  },
+  "cape_emerald": {
+   "bbox_center": [
+    0.0,
+    2.45,
+    0.775
+   ],
+   "joint": "Torso",
+   "size": [
+    2.5,
+    3.3,
+    0.18
+   ],
+   "slot": "cape",
+   "tags": [
+    "emerald"
+   ],
+   "tint": "kingdom",
+   "tris": 12,
+   "weld_to": "Torso"
+  },
+  "cape_gold": {
+   "bbox_center": [
+    0.0,
+    2.45,
+    0.775
+   ],
+   "joint": "Torso",
+   "size": [
+    2.5,
+    3.3,
+    0.18
+   ],
+   "slot": "cape",
+   "tags": [
+    "gold"
+   ],
+   "tint": "kingdom",
+   "tris": 12,
+   "weld_to": "Torso"
+  },
+  "cape_neutral": {
+   "bbox_center": [
+    0.0,
+    2.45,
+    0.775
+   ],
+   "joint": "Torso",
+   "size": [
+    2.5,
+    3.3,
+    0.18
+   ],
+   "slot": "cape",
+   "tags": [
+    "neutral"
+   ],
+   "tint": "kingdom",
+   "tris": 12,
+   "weld_to": "Torso"
+  },
+  "crest_azure": {
+   "bbox_center": [
+    0.0,
+    5.72,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.95,
+    0.48,
+    1.95
+   ],
+   "slot": "hair",
+   "tags": [
+    "azure"
+   ],
+   "tint": "kingdom",
+   "tris": 24,
+   "weld_to": "Head"
+  },
+  "crest_crimson": {
+   "bbox_center": [
+    0.0,
+    6.25,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.41,
+    1.6,
+    1.41
+   ],
+   "slot": "hair",
+   "tags": [
+    "crimson"
+   ],
+   "tint": "kingdom",
+   "tris": 40,
+   "weld_to": "Head"
+  },
+  "crest_emerald": {
+   "bbox_center": [
+    0.0,
+    6.1,
+    0.7
+   ],
+   "joint": "Head",
+   "size": [
+    0.7,
+    1.6,
+    2.4
+   ],
+   "slot": "hair",
+   "tags": [
+    "emerald"
+   ],
+   "tint": "kingdom",
+   "tris": 60,
+   "weld_to": "Head"
+  },
+  "crest_gold": {
+   "bbox_center": [
+    0.0,
+    5.65,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.3,
+    1.3,
+    1.3
+   ],
+   "slot": "hair",
+   "tags": [
+    "gold"
+   ],
+   "tint": "kingdom",
+   "tris": 90,
+   "weld_to": "Head"
+  },
+  "crest_neutral": {
+   "bbox_center": [
+    0.0,
+    5.6,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    0.6,
+    0.4,
+    0.6
+   ],
+   "slot": "hair",
+   "tags": [
+    "neutral"
+   ],
+   "tint": "kingdom",
+   "tris": 24,
+   "weld_to": "Head"
+  },
+  "crown_gold": {
+   "bbox_center": [
+    0.0,
+    5.36,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.9,
+    0.6,
+    1.9
+   ],
+   "slot": "hair",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 100,
+   "weld_to": "Head"
+  },
+  "hair_01": {
+   "bbox_center": [
+    0.0,
+    4.77,
+    0.13
+   ],
+   "joint": "Head",
+   "size": [
+    1.66,
+    1.66,
+    1.66
+   ],
+   "slot": "hair",
+   "tags": [
+    "short"
+   ],
+   "tint": "hair",
+   "tris": 90,
+   "weld_to": "Head"
+  },
+  "hair_02": {
+   "bbox_center": [
+    0.0,
+    4.86,
+    0.1
+   ],
+   "joint": "Head",
+   "size": [
+    2.05,
+    2.05,
+    2.05
+   ],
+   "slot": "hair",
+   "tags": [
+    "curls"
+   ],
+   "tint": "hair",
+   "tris": 100,
+   "weld_to": "Head"
+  },
+  "hair_03": {
+   "bbox_center": [
+    0.0,
+    4.59,
+    0.29
+   ],
+   "joint": "Head",
+   "size": [
+    1.87,
+    1.87,
+    1.87
+   ],
+   "slot": "hair",
+   "tags": [
+    "long"
+   ],
+   "tint": "hair",
+   "tris": 100,
+   "weld_to": "Head"
+  },
+  "hair_04": {
+   "bbox_center": [
+    0.0,
+    4.16,
+    -0.5
+   ],
+   "joint": "Head",
+   "size": [
+    1.14,
+    0.76,
+    0.52
+   ],
+   "slot": "hair",
+   "tags": [
+    "beard"
+   ],
+   "tint": "hair",
+   "tris": 40,
+   "weld_to": "Head"
+  },
+  "hair_05": {
+   "empty": true,
+   "joint": "Head",
+   "slot": "hair",
+   "tags": [
+    "bald"
+   ],
+   "tint": "hair",
+   "tris": 0,
+   "weld_to": "Head"
+  },
+  "hair_06": {
+   "bbox_center": [
+    0.0,
+    4.72,
+    0.3
+   ],
+   "joint": "Head",
+   "size": [
+    1.83,
+    1.83,
+    1.83
+   ],
+   "slot": "hat",
+   "tags": [
+    "hood"
+   ],
+   "tint": "kingdom",
+   "tris": 90,
+   "weld_to": "Head"
+  },
+  "hair_07": {
+   "bbox_center": [
+    0.0,
+    5.04,
+    0.3
+   ],
+   "joint": "Head",
+   "size": [
+    1.7,
+    1.9,
+    1.7
+   ],
+   "slot": "hair",
+   "tags": [
+    "bun"
+   ],
+   "tint": "hair",
+   "tris": 100,
+   "weld_to": "Head"
+  },
+  "hair_08": {
+   "bbox_center": [
+    0.0,
+    4.74,
+    0.05
+   ],
+   "joint": "Head",
+   "size": [
+    1.62,
+    1.5,
+    1.62
+   ],
+   "slot": "hair",
+   "tags": [
+    "crop"
+   ],
+   "tint": "hair",
+   "tris": 60,
+   "weld_to": "Head"
+  },
+  "hat_builder": {
+   "bbox_center": [
+    0.0,
+    5.455,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.8,
+    0.75,
+    1.8
+   ],
+   "slot": "hat",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 60,
+   "weld_to": "Head"
+  },
+  "hat_builder_visor": {
+   "bbox_center": [
+    0.0,
+    5.2,
+    -1.2
+   ],
+   "joint": "Head",
+   "size": [
+    1.3,
+    0.16,
+    0.9
+   ],
+   "slot": "hat",
+   "tags": [
+    "detail"
+   ],
+   "tint": "fixed",
+   "tris": 12,
+   "weld_to": "hat_builder"
+  },
+  "hat_farmer": {
+   "bbox_center": [
+    0.0,
+    5.26,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    3.1,
+    0.42,
+    3.1
+   ],
+   "slot": "hat",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 50,
+   "weld_to": "Head"
+  },
+  "hat_farmer_crown": {
+   "bbox_center": [
+    0.0,
+    5.74,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.5,
+    0.55,
+    1.5
+   ],
+   "slot": "hat",
+   "tags": [],
+   "tint": "kingdom",
+   "tris": 30,
+   "weld_to": "hat_farmer"
+  },
+  "hat_miner": {
+   "bbox_center": [
+    0.0,
+    5.43,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.9,
+    0.7,
+    1.9
+   ],
+   "slot": "hat",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 60,
+   "weld_to": "Head"
+  },
+  "hat_miner_lamp": {
+   "bbox_center": [
+    0.0,
+    5.44,
+    -1.05
+   ],
+   "joint": "Head",
+   "size": [
+    0.5,
+    0.4,
+    0.35
+   ],
+   "slot": "hat",
+   "tags": [
+    "detail"
+   ],
+   "tint": "fixed",
+   "tris": 12,
+   "weld_to": "hat_miner"
+  },
+  "hat_woodcutter": {
+   "bbox_center": [
+    0.0,
+    5.34,
+    0.05
+   ],
+   "joint": "Head",
+   "size": [
+    1.5,
+    1.5,
+    1.5
+   ],
+   "slot": "hat",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 60,
+   "weld_to": "Head"
+  },
+  "head_01": {
+   "bbox_center": [
+    0.0,
+    4.64,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.6,
+    1.6,
+    1.6
+   ],
+   "slot": "head",
+   "tags": [
+    "face_1"
+   ],
+   "tint": "skin",
+   "tris": 150,
+   "weld_to": null
+  },
+  "head_02": {
+   "bbox_center": [
+    0.0,
+    4.64,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.6,
+    1.6,
+    1.6
+   ],
+   "slot": "head",
+   "tags": [
+    "face_2"
+   ],
+   "tint": "skin",
+   "tris": 140,
+   "weld_to": null
+  },
+  "head_03": {
+   "bbox_center": [
+    0.0,
+    4.64,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.6,
+    1.6,
+    1.6
+   ],
+   "slot": "head",
+   "tags": [
+    "face_3"
+   ],
+   "tint": "skin",
+   "tris": 170,
+   "weld_to": null
+  },
+  "head_04": {
+   "bbox_center": [
+    0.0,
+    4.64,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.6,
+    1.6,
+    1.6
+   ],
+   "slot": "head",
+   "tags": [
+    "face_4"
+   ],
+   "tint": "skin",
+   "tris": 160,
+   "weld_to": null
+  },
+  "head_helm": {
+   "bbox_center": [
+    0.0,
+    4.7,
+    0.0
+   ],
+   "joint": "Head",
+   "size": [
+    1.45,
+    1.6,
+    1.45
+   ],
+   "slot": "head",
+   "tags": [
+    "soldier"
+   ],
+   "tint": "fixed",
+   "tris": 80,
+   "weld_to": null
+  },
+  "leg_mail": {
+   "bbox_center": [
+    -0.5,
+    1.1,
+    0.0
+   ],
+   "joint": "LeftLeg",
+   "mirror": true,
+   "size": [
+    0.95,
+    2.2,
+    1.0
+   ],
+   "slot": "leg",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 60,
+   "weld_to": null
+  },
+  "leg_trousers": {
+   "bbox_center": [
+    -0.5,
+    1.1,
+    0.0
+   ],
+   "joint": "LeftLeg",
+   "mirror": true,
+   "size": [
+    0.95,
+    2.2,
+    1.0
+   ],
+   "slot": "leg",
+   "tags": [],
+   "tint": "cloth",
+   "tris": 55,
+   "weld_to": null
+  },
+  "sleeve_kingdom_l": {
+   "bbox_center": [
+    -1.5118,
+    3.4598,
+    0.0
+   ],
+   "joint": "LeftArm",
+   "size": [
+    1.0214,
+    1.0694,
+    0.86
+   ],
+   "slot": "sleeve",
+   "tags": [],
+   "tint": "kingdom",
+   "tris": 25,
+   "weld_to": "LeftArm"
+  },
+  "sleeve_kingdom_r": {
+   "bbox_center": [
+    1.5118,
+    3.4598,
+    0.0
+   ],
+   "joint": "RightArm",
+   "size": [
+    1.0214,
+    1.0694,
+    0.86
+   ],
+   "slot": "sleeve",
+   "tags": [],
+   "tint": "kingdom",
+   "tris": 25,
+   "weld_to": "RightArm"
+  },
+  "sleeve_l": {
+   "bbox_center": [
+    -1.5118,
+    3.4598,
+    0.0
+   ],
+   "joint": "LeftArm",
+   "size": [
+    1.0214,
+    1.0694,
+    0.86
+   ],
+   "slot": "sleeve",
+   "tags": [],
+   "tint": "cloth",
+   "tris": 25,
+   "weld_to": "LeftArm"
+  },
+  "sleeve_r": {
+   "bbox_center": [
+    1.5118,
+    3.4598,
+    0.0
+   ],
+   "joint": "RightArm",
+   "size": [
+    1.0214,
+    1.0694,
+    0.86
+   ],
+   "slot": "sleeve",
+   "tags": [],
+   "tint": "cloth",
+   "tris": 25,
+   "weld_to": "RightArm"
+  },
+  "tool_axe": {
+   "bbox_center": [
+    1.621,
+    3.3582,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    0.42,
+    3.9,
+    0.42
+   ],
+   "slot": "tool",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 40,
+   "weld_to": null
+  },
+  "tool_axe_head": {
+   "bbox_center": [
+    1.621,
+    4.4582,
+    -1.35
+   ],
+   "joint": "Tool",
+   "size": [
+    0.5,
+    1.7,
+    1.9
+   ],
+   "slot": "tool",
+   "tags": [
+    "detail"
+   ],
+   "tint": "fixed",
+   "tris": 50,
+   "weld_to": "tool_axe"
+  },
+  "tool_bow": {
+   "bbox_center": [
+    1.621,
+    3.4582,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    0.3,
+    3.4,
+    0.9
+   ],
+   "slot": "tool",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 60,
+   "weld_to": null
+  },
+  "tool_hammer": {
+   "bbox_center": [
+    1.621,
+    2.9582,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    0.42,
+    3.0,
+    0.42
+   ],
+   "slot": "tool",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 40,
+   "weld_to": null
+  },
+  "tool_hammer_head": {
+   "bbox_center": [
+    1.621,
+    4.4582,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    0.8,
+    1.15,
+    1.6
+   ],
+   "slot": "tool",
+   "tags": [
+    "detail"
+   ],
+   "tint": "fixed",
+   "tris": 40,
+   "weld_to": "tool_hammer"
+  },
+  "tool_hoe": {
+   "bbox_center": [
+    1.621,
+    4.0582,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    0.38,
+    4.2,
+    0.38
+   ],
+   "slot": "tool",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 40,
+   "weld_to": null
+  },
+  "tool_hoe_blade": {
+   "bbox_center": [
+    1.621,
+    5.9582,
+    -1.15
+   ],
+   "joint": "Tool",
+   "size": [
+    1.1,
+    0.34,
+    1.3
+   ],
+   "slot": "tool",
+   "tags": [
+    "detail"
+   ],
+   "tint": "fixed",
+   "tris": 30,
+   "weld_to": "tool_hoe"
+  },
+  "tool_pick": {
+   "bbox_center": [
+    1.621,
+    3.6832,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    0.4,
+    4.55,
+    0.4
+   ],
+   "slot": "tool",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 40,
+   "weld_to": null
+  },
+  "tool_pick_head": {
+   "bbox_center": [
+    1.621,
+    6.1582,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    0.9,
+    0.5,
+    1.6
+   ],
+   "slot": "tool",
+   "tags": [
+    "detail"
+   ],
+   "tint": "fixed",
+   "tris": 50,
+   "weld_to": "tool_pick"
+  },
+  "tool_sack": {
+   "bbox_center": [
+    0.0,
+    2.8,
+    2.1
+   ],
+   "joint": "TorsoTool",
+   "size": [
+    2.7,
+    2.7,
+    2.7
+   ],
+   "slot": "back",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 100,
+   "weld_to": null
+  },
+  "tool_sack_strap": {
+   "bbox_center": [
+    -0.1,
+    3.08,
+    0.775
+   ],
+   "joint": "TorsoTool",
+   "size": [
+    0.34,
+    2.7,
+    0.26
+   ],
+   "slot": "back",
+   "tags": [
+    "detail"
+   ],
+   "tint": "kingdom",
+   "tris": 12,
+   "weld_to": "tool_sack"
+  },
+  "tool_spear": {
+   "bbox_center": [
+    1.621,
+    4.6582,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    0.4,
+    9.0,
+    0.4
+   ],
+   "slot": "tool",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 40,
+   "weld_to": null
+  },
+  "tool_spear_head": {
+   "bbox_center": [
+    1.621,
+    10.0582,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    0.75,
+    1.9,
+    0.75
+   ],
+   "slot": "tool",
+   "tags": [
+    "detail"
+   ],
+   "tint": "fixed",
+   "tris": 24,
+   "weld_to": "tool_spear"
+  },
+  "tool_spear_pennant": {
+   "bbox_center": [
+    2.321,
+    7.9582,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    1.2,
+    0.1,
+    0.8
+   ],
+   "slot": "tool",
+   "tags": [
+    "detail"
+   ],
+   "tint": "kingdom",
+   "tris": 12,
+   "weld_to": "tool_spear"
+  },
+  "tool_staff": {
+   "bbox_center": [
+    1.621,
+    3.5582,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    0.5,
+    6.4,
+    0.5
+   ],
+   "slot": "tool",
+   "tags": [],
+   "tint": "fixed",
+   "tris": 40,
+   "weld_to": null
+  },
+  "tool_staff_orb": {
+   "bbox_center": [
+    1.621,
+    7.0082,
+    -0.55
+   ],
+   "joint": "Tool",
+   "size": [
+    0.9,
+    0.9,
+    0.9
+   ],
+   "slot": "tool",
+   "tags": [
+    "detail"
+   ],
+   "tint": "fixed",
+   "tris": 60,
+   "weld_to": "tool_staff"
+  },
+  "torso_01": {
+   "bbox_center": [
+    0.0,
+    3.05,
+    0.0
+   ],
+   "joint": "Torso",
+   "size": [
+    2.1,
+    1.7,
+    1.15
+   ],
+   "slot": "torso",
+   "tags": [
+    "tunic"
+   ],
+   "tint": "kingdom",
+   "tris": 130,
+   "weld_to": null
+  },
+  "torso_02": {
+   "bbox_center": [
+    0.0,
+    3.05,
+    0.0
+   ],
+   "joint": "Torso",
+   "size": [
+    2.1,
+    1.7,
+    1.15
+   ],
+   "slot": "torso",
+   "tags": [
+    "apron"
+   ],
+   "tint": "cloth",
+   "tris": 140,
+   "weld_to": null
+  },
+  "torso_03": {
+   "bbox_center": [
+    0.0,
+    3.05,
+    0.0
+   ],
+   "joint": "Torso",
+   "size": [
+    2.1,
+    1.7,
+    1.15
+   ],
+   "slot": "torso",
+   "tags": [
+    "vest"
+   ],
+   "tint": "kingdom",
+   "tint_factor": 0.9,
+   "tris": 120,
+   "weld_to": null
+  },
+  "torso_regal": {
+   "bbox_center": [
+    0.0,
+    3.05,
+    0.0
+   ],
+   "joint": "Torso",
+   "size": [
+    2.1,
+    1.7,
+    1.15
+   ],
+   "slot": "torso",
+   "tags": [
+    "governor"
+   ],
+   "tint": "kingdom",
+   "tint_factor": 1.0,
+   "tris": 200,
+   "weld_to": null
+  }
+ },
+ "root_height": 3.2,
+ "schema_version": 1,
+ "unit": "stud"
+}
