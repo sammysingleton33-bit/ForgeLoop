@@ -806,6 +806,160 @@ function WorldPlan.props(layout: any, dressed: { [string]: boolean }?, density: 
 	return WorldPlan.trim(layout, WorldPlan.clear(layout, WorldPlan.plan(layout, dressed)), density)
 end
 
+-- ---------------------------------------------------------------- mesh-only dressing (FL-0136 phase 3)
+
+-- Dressing the part-built world never had. It is placed ONLY for asset ids the Kit would build as imported meshes (`ready(id)`,
+-- Kit.envMeshReady), so a world without the imported kit is exactly today's world (same placements, same parts, same pins).
+-- Two kinds, both pure and deterministic (no PRNG), folded into / appended to the trimmed props:
+--   * cabbage variants: a cabbage field takes farm_field_cabbage_01..03 by its kingdom (it was always _03);
+--   * fences (farm_fence_NN) along the outside of each plot's crop fields: the back and flank sides, never the side that faces the
+--     keep or a neighbouring field, and a segment is dropped (never nudged) when it would touch a slot, a building, a build zone,
+--     a road, the river or the arena.
+-- (Rock cliffs on the mountain rim were placed in the first round of phase 3 and dropped by FORGE-00; rock_cliff_01/02 are on the bench.)
+WorldPlan.MESH_DRESSING = table.freeze({
+	cabbageIds = table.freeze({ "farm_field_cabbage_01", "farm_field_cabbage_02", "farm_field_cabbage_03" }),
+	fenceIds = table.freeze({ "farm_fence_01", "farm_fence_02" }),
+	fenceLength = 16.5, -- the mesh's length (env.json size.x)
+	fenceOffset = 2.4, -- studs from a field's edge to the fence line
+	fenceFacing = 0.35, -- a side whose outward normal points this much toward the keep stays open
+	fenceHalfWidth = 0.4, -- the fence's half thickness plus a little
+})
+
+local function fenceSegmentLegal(layout: any, rects: { any }, x: number, z: number): boolean
+	local f = layout.features
+	local hw = WorldPlan.MESH_DRESSING.fenceHalfWidth
+	if x < f.bounds.min.X + 8 or x > f.bounds.max.X - 8 or z < f.bounds.min.Y + 8 or z > f.bounds.max.Y - 8 then
+		return false
+	end
+	if distToPolyline(x, z, f.river.points) < f.river.width / 2 + 4 then
+		return false
+	end
+	for _, road in f.roads do
+		if distToPolyline(x, z, road.points) < road.width / 2 + hw + 1 then
+			return false
+		end
+	end
+	for _, rect in rects do
+		if rect.kind ~= "field" then
+			local gap = if rect.kind == "zone" then hw else hw + WorldPlan.CLEAR.wallGap
+			if WorldPlan.rectDistance(rect, x, z) < gap then
+				return false
+			end
+		end
+	end
+	local arena = WorldPlan.arenaRect(layout)
+	if arena and WorldPlan.rectDistance(arena, x, z) < hw + WorldPlan.CLEAR.margin then
+		return false
+	end
+	return true
+end
+
+-- the kingdom whose keep is nearest to (x, z): 1..4 in KINGDOM_ORDER
+local function plotIndexOf(layout: any, x: number, z: number): number
+	local best, bestD = 1, math.huge
+	for i, kingdom in KINGDOM_ORDER do
+		local c = layout.plots[kingdom].anchors.keep.Position
+		local d = (c.X - x) ^ 2 + (c.Z - z) ^ 2
+		if d < bestD then
+			best, bestD = i, d
+		end
+	end
+	return best
+end
+
+function WorldPlan.meshDressing(layout: any, placements: { Placement }, ready: ((string) -> boolean)?): { Placement }
+	local D = WorldPlan.MESH_DRESSING
+	local isReady = ready or function(_: string): boolean
+		return false
+	end
+	local f = layout.features
+	local out: { Placement } = {}
+	-- cabbage variants
+	for _, p in placements do
+		local id = p.assetId
+		if p.feature == "crops" and string.sub(id, 1, 20) == "farm_field_cabbage_0" then
+			local pos = p.cframe.Position
+			local variant = D.cabbageIds[1 + (plotIndexOf(layout, pos.X, pos.Z) - 1) % #D.cabbageIds]
+			if isReady(variant) then
+				p = { assetId = variant, cframe = p.cframe, feature = p.feature }
+			end
+		end
+		table.insert(out, p)
+	end
+	-- fences along the outside of the crop fields
+	local fenceReady = {}
+	for _, id in D.fenceIds do
+		if isReady(id) then
+			table.insert(fenceReady, id)
+		end
+	end
+	if #fenceReady > 0 then
+		local rects = WorldPlan.reservedRects(layout)
+		local fields = f.fields
+		local n = 0
+		for i, field in fields do
+			local fcf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
+			local keep =
+				layout.plots[KINGDOM_ORDER[plotIndexOf(layout, field.center.X, field.center.Y)]].anchors.keep.Position
+			local toKeep = Vector3.new(keep.X - field.center.X, 0, keep.Z - field.center.Y).Unit
+			-- the four sides: local normal, half extent along the normal, side length
+			for _, side in
+				{
+					{ Vector3.new(1, 0, 0), field.size.X / 2, field.size.Y },
+					{ Vector3.new(-1, 0, 0), field.size.X / 2, field.size.Y },
+					{ Vector3.new(0, 0, 1), field.size.Y / 2, field.size.X },
+					{ Vector3.new(0, 0, -1), field.size.Y / 2, field.size.X },
+				}
+			do
+				local normal = fcf:VectorToWorldSpace(side[1])
+				local mid = fcf.Position + normal * (side[2] + D.fenceOffset)
+				local open = normal:Dot(toKeep) > D.fenceFacing
+				local beside = false -- another field close on this side
+				for j, other in fields do
+					if j ~= i then
+						local ocf = CFrame.new(other.center.X, 0, other.center.Y) * CFrame.Angles(0, other.yaw or 0, 0)
+						local rect = { cf = ocf, half = other.size / 2 }
+						if WorldPlan.rectDistance(rect, mid.X, mid.Z) < 8 then
+							beside = true
+							break
+						end
+					end
+				end
+				if not open and not beside then
+					local tangent = Vector3.new(-normal.Z, 0, normal.X)
+					local count = math.max(1, math.floor(side[3] / D.fenceLength + 0.5))
+					local step = side[3] / count
+					for k = 1, count do
+						local at = mid + tangent * ((k - (count + 1) / 2) * step)
+						local legal = true
+						for t = -2, 2 do -- five samples along the segment
+							local q = at + tangent * (t * D.fenceLength / 4)
+							if not fenceSegmentLegal(layout, rects, q.X, q.Z) then
+								legal = false
+								break
+							end
+						end
+						if legal then
+							n += 1
+							local id = fenceReady[1 + (n % #fenceReady)]
+							-- the lateral nudge keeps two overlapping neighbours (30 studs / 2 = 15 < 16.5) from z-fighting
+							local shift = normal * (if k % 2 == 0 then 0.3 else 0)
+							local y = WorldPlan.groundHeight(layout, at.X, at.Z)
+							table.insert(out, {
+								assetId = id,
+								cframe = CFrame.new(at.X + shift.X, y, at.Z + shift.Z)
+									* CFrame.Angles(0, math.atan2(-tangent.Z, tangent.X), 0),
+								feature = "fence",
+							})
+						end
+					end
+				end
+			end
+		end
+	end
+	return out
+end
+
 -- ---------------------------------------------------------------- dressing density (D-047)
 
 -- The plan above is the untrimmed valley. The trim only removes placements from it, never moves or adds one,

@@ -47,6 +47,7 @@ bound: run more duels before concluding anything.
 |---|---|---|---|---|
 | 2026-10-19 | design numbers (fieldRemedy 5/8 %, Adoring passive +2 %) | 65.8 / **67.7** / 67.0 % (FAIL) | 78.8 / 72.1 % | 69.8 % |
 | 2026-10-19 | trim C (#209: fieldRemedy 3/5 %, Adoring passive +1 %; FORGE-00 ruling) | 60.1 / 60.7 / 61.3 % | 81.8 / 77.2 % | 67.0 % (novice, Adoring, greatsword/medium; FORGE-07's full sweep 152/152 agrees) |
+| 2026-10-19 | trim C + #250 arena hardening (DuelModel/Runner/AI; FORGE-00 accepted: fixed seeds, bound not widened) | see #250 | see #250 | **68.3 %** (novice, Adoring, greatsword/medium) and **68.1 %** (average, same cell): marginal, under the 70 % bound; FORGE-01 full sweep 152 bounds PASS |
 
 These say the numbers keep support inside the bounds against scripted duellists. They do not say a duel feels fair to a
 player: that is the Studio arena script.

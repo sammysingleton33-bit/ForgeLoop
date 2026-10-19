@@ -14,11 +14,14 @@
 	     (Kit.slotMarker; its Root part is tagged BuildSlot + SlotId, Size, Kingdom; G13.5);
 	  4. places the Crown Arena (Kit.arena at Layout.arena, FL-0072, G12.6): once, neutral, tagged CrownArena with its attachments
 	     as Kit builds them; ArenaService dresses it with Kit.arenaDress when the two kingdoms are known;
-	  5. places props and forests from WorldPlan.props (deterministic), PROPS_PER_FRAME per frame, cleared off the
+	  5. places props and forests from WorldPlan.props (deterministic; plus WorldPlan.meshDressing for the imported FL-0136 meshes: cabbage
+	     variants, field fences, rim cliffs, none of it without the kit), PROPS_PER_FRAME per frame, cleared off the
 	     plots' fields, buildings, slots and roads and thinned by the dressing density knob (world/Layout
 	     features.density, D-047; 1.0 = the untrimmed valley);
 	  6. fires `ready` and logs the build time in ms.
-	It never calls Kit.build: BuildingService and ObjectiveService build buildings (G6, G10).
+	It never calls Kit.build: Sim/WorldView builds the building models (Kit.build for each building in the simulation, placed with
+	WorldView.placeModel; BuildingService is only the server API and the Build.* remotes that put buildings into the simulation),
+	and ObjectiveService builds the objective watchtowers (G6, G10).
 	Tags are for visuals and client hints only; the sim reads Layout.
 
 	API
@@ -284,6 +287,7 @@ function WorldService:_build()
 	-- resource nodes (tagged; the sim reads Layout, tags are for visuals and client hints)
 	for _, node in layout.resourceNodes do
 		local model = Kit.prop(node.assetId)
+		Kit.nodeMarker(model, node.resource) -- FL-0136: a resource-coloured post, so the node reads from the aerial camera (visual only)
 		model.Name = node.id
 		local p = node.cframe.Position
 		local y = WorldPlan.groundHeight(layout, p.X, p.Z)
@@ -374,6 +378,8 @@ function WorldService:_build()
 
 	-- props and forests, deterministic, at most partsPerFrame parts per frame
 	local placements = WorldPlan.props(layout, self.dressed, self.density)
+	-- FL-0136: cabbage variants, field fences and rim cliffs, only for imported meshes the Kit would really build (none without the kit)
+	placements = WorldPlan.meshDressing(layout, placements, Kit.envMeshReady)
 	for _, placement in placements do
 		local model = Kit.prop(placement.assetId)
 		placeModel(model, placement.cframe)
