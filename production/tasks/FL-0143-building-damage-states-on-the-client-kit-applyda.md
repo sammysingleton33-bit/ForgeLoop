@@ -3,13 +3,14 @@ id: FL-0143
 title: Building damage states on the client (Kit.applyDamage from Hp/MaxHp)
 track: build
 owner: forge-04
-status: READY
+status: REVIEW
 priority: P1
 game: game-001
 created: 2026-10-19
 updated: 2026-10-19
 depends_on: []
-evidence: []
+evidence:
+  - "headless: bash roblox/scripts/check.sh on 49f42822 OVERALL PASS (game-001 2729/0, framework 573/0); BuildingDamage 3/3; mutations FL-0143 9/9 CAUGHT. Not seen in Studio (E15 step 7)."
 ---
 
 # Building damage states on the client (Kit.applyDamage from Hp/MaxHp)
@@ -37,3 +38,5 @@ Damaged buildings, walls, gates and towers look damaged in play. The look follow
 
 ## Log
 - 2026-10-19 FORGE-00: created on FORGE-04's routing question. After FL-0141.
+- 2026-10-19 forge-04: READY → BUILDING. FORGE-04 started (after FL-0141's PR work): FeedbackController's 0.5 s building poll also sets Damage from Hp/MaxHp and calls Kit.applyDamage only when the damage state changes; the model's own Damage attribute is the cache, so a rebuilt model starts fresh.
+- 2026-10-19 forge-04: BUILDING → REVIEW. Draft PR open; merges only after FORGE-02's Kit/Damage.luau fix (turned and moved buildings) is on main, per FORGE-00's g11l ordering rule. Then main is merged and the specs re-run on top of it. FeedbackController's 0.5 s building poll writes Damage = Kit.damageFromHp(Hp, MaxHp) only when it changes, and calls Kit.applyDamage only when Kit.damageState changes; E15 step 7 covers turned and moved buildings.

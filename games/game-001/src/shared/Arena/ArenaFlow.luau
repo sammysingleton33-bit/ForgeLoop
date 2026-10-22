@@ -343,10 +343,12 @@ function ArenaFlow:vote(userId: number, candidate: number): (boolean, string?)
 			if not contains(candidates, candidate) then
 				return false, "not_a_candidate"
 			end
-			if self._votes[userId] ~= candidate then -- the same vote again changes nothing, so nothing is broadcast
-				self._votes[userId] = candidate
-				self._rev += 1
+			if self._votes[userId] == nil then
+				self._rev += 1 -- the first ballot of a ruler changes the public view (`voted`)
 			end
+			-- a changed vote changes nobody's standing in `voted` (who has voted, never for whom), and the same vote again
+			-- changes nothing: neither is broadcast
+			self._votes[userId] = candidate
 			return true, nil
 		end
 	end
@@ -501,12 +503,9 @@ function ArenaFlow:forfeit(userId: number, now: number): boolean
 				changed = true
 			end
 		end
+		-- the leaver's own ballot goes. Ballots cast FOR the leaver stay as spent (the tally ignores a non-candidate): clearing
+		-- them would show, in the next state's `voted`, exactly who had voted for the leaver
 		self._votes[userId] = nil
-		for voter, candidate in self._votes do
-			if candidate == userId then
-				self._votes[voter] = nil
-			end
-		end
 		if changed then
 			self._rev += 1
 		end

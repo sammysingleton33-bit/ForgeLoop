@@ -28,6 +28,7 @@ export type Shape = {
 	hz: number, -- half depth along the local Z axis
 	ux: number, -- local X axis on the XZ plane: (ux, uz); local Z axis: (-uz, ux)
 	uz: number,
+	gap: number?, -- a no-build area: the free ground a placement keeps from it (sim.noBuild; none = touching is fine)
 }
 
 local EPSILON = 1e-6
