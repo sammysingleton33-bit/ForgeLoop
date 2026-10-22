@@ -9,8 +9,8 @@ Writes blender/previews/world_<view>.jpg (<= 250 KB). Terrain colours match worl
 terrainColors; Roblox Terrain smoothing/textures and Lighting (Future, Atmosphere) are approximated.
 
 Default-camera views (the visual upgrade, D-019). They stand where the ruler's camera stands (RulerCameraController overview, focus =
-the plot spawn, yaw 0 = looking toward -Z, 16:9, vertical field of view as listed; the pitch follows the zoom linearly from 38 degrees at
-zoom 40 to 65 at zoom 220):
+the yard 40 studs in front of the seated ruler's throne (Def.startFocus), looking along the throne's facing, 16:9, vertical field of view
+as listed; the pitch follows the zoom linearly from 38 degrees at zoom 40 to 65 at zoom 220):
   default_<kingdom>        the START view approved by FORGE-00 on 2026-10-19: zoom 70, FOV 55, pitch 42.5   (kingdom: crimson azure emerald gold)
   default_phone_<kingdom>  the same camera at 750 x 311
   far_<kingdom>            players zoom out: zoom 220, FOV 55, pitch 65 (the composition has to hold here too)
@@ -40,7 +40,7 @@ from lib import contact, kitparts, rig  # noqa: E402
 
 TERRAIN_RGB = {  # world/Lighting.luau terrainColors
     "Grass": (106, 168, 62), "LeafyGrass": (84, 150, 52), "Ground": (150, 116, 78), "Mud": (110, 86, 60),
-    "Sand": (214, 190, 138), "Rock": (128, 124, 118), "Cobblestone": (150, 144, 132), "Water": (52, 128, 170),
+    "Sand": (214, 190, 138), "Rock": (128, 124, 118), "Slate": (110, 108, 104), "Cobblestone": (150, 144, 132), "Water": (52, 128, 170),
 }
 
 
@@ -157,10 +157,10 @@ def views(data):
 
 
 # RulerCameraController overview: pitch 38 deg at minZoom 40 up to 65 at maxZoom 220 (Def.pitchFor); the field of view is one value
-CAMERAS = {  # name: (zoom studs, vertical FOV degrees)
-    "default": (70.0, 55.0),   # the new start view (FORGE-00, 2026-10-19): pitch 42.5
-    "far": (220.0, 55.0),      # fully zoomed out
-    "legacy": (120.0, 70.0),   # the B22 build's start view: pitch 50
+CAMERAS = {  # name: (zoom studs, vertical FOV degrees, studs ahead of the throne the focus lies)
+    "default": (70.0, 55.0, 40.0),   # the new start view (FORGE-00, 2026-10-19): pitch 42.5, the yard in front of the keep
+    "far": (220.0, 55.0, 40.0),      # fully zoomed out
+    "legacy": (120.0, 70.0, 0.0),    # the B22 build's start view: pitch 50, focus on the throne
 }
 KINGDOMS = ("crimson", "azure", "emerald", "gold")
 
@@ -169,24 +169,30 @@ def ruler_pitch(zoom):
     return 38.0 + (65.0 - 38.0) * (zoom - 40.0) / (220.0 - 40.0)
 
 
-def ruler_view(data, kingdom, zoom, yaw_deg=0.0):
-    """The ruler's overview camera: focus = the plot spawn, `zoom` studs away, yaw 0 (toward -Z) -> (location, focus)."""
-    sp = data["plots"][kingdom]["spawn"]
-    fx, fy, fz = sp[0], sp[1], sp[2]
-    yaw, pitch = math.radians(yaw_deg), math.radians(ruler_pitch(zoom))
-    fwd = (-math.sin(yaw), -math.cos(yaw))
-    loc = (fx - fwd[0] * zoom * math.cos(pitch), fy + zoom * math.sin(pitch), fz - fwd[1] * zoom * math.cos(pitch))
-    return loc, (fx, fy, fz)
+def ruler_view(data, kingdom, zoom, ahead=40.0):
+    """The ruler's real overview camera (RulerCameraController): the focus is the yard `ahead` studs in front of the throne (Def.startFocus:
+    the seated ruler's root + its flat look direction * startAhead) and the camera looks along the throne's facing (Roblox's default
+    camera sits behind the seated ruler when the overview starts), `zoom` studs from the focus at the pitch for that zoom ->
+    (location, focus). The dump's `throne` is the seated ruler's root (tests/world/support/StartView; the seat's height is an estimate)."""
+    th = data["plots"][kingdom]["throne"]
+    rx, ry, rz = th[0], th[1], th[2]
+    look = (-th[5], -th[8], -th[11])  # a CFrame's LookVector is minus its third column: components R02, R12, R22
+    flat = math.hypot(look[0], look[2]) or 1.0
+    fx, fz = look[0] / flat, look[2] / flat
+    pitch = math.radians(ruler_pitch(zoom))
+    focus = (rx + fx * ahead, ry, rz + fz * ahead)
+    loc = (focus[0] - fx * zoom * math.cos(pitch), focus[1] + zoom * math.sin(pitch), focus[2] - fz * zoom * math.cos(pitch))
+    return loc, focus
 
 
 def default_views(data):
     out = {}
     for k in KINGDOMS:
-        for name, (zoom, fov) in CAMERAS.items():
-            loc, tgt = ruler_view(data, k, zoom)
+        for name, (zoom, fov, ahead) in CAMERAS.items():
+            loc, tgt = ruler_view(data, k, zoom, ahead)
             out[f"{name}_{k}"] = (loc, tgt, fov, None, (1600, 900))
-        zoom, fov = CAMERAS["default"]
-        loc, tgt = ruler_view(data, k, zoom)
+        zoom, fov, ahead = CAMERAS["default"]
+        loc, tgt = ruler_view(data, k, zoom, ahead)
         out[f"default_phone_{k}"] = (loc, tgt, fov, None, (750, 311))
     return out
 
@@ -252,6 +258,9 @@ def main(argv):
     ap.add_argument("--samples", type=int, default=0)
     args = ap.parse_args(argv)
     data = json.loads(Path(args.json).read_text())
+    # the terrain colours come from the dumped world/Lighting preset (terrainColors), so a palette change shows; the table above is the fallback
+    for name, rgb in data.get("lighting", {}).get("terrainColors", {}).items():
+        TERRAIN_RGB[name] = tuple(rgb)
     names = [v for v in args.views.split(",") if v]
     preset = lighting_params(data["lighting"]) if any(n.split("_")[0] in CAMERAS for n in names) and "lighting" in data else None
 
