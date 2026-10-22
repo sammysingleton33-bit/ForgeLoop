@@ -22,6 +22,7 @@ local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Terrain = require("@game/ReplicatedStorage/Game/Kit/Terrain")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
+local StartView = require("./support/StartView")
 
 local ALL = { crimson = true, azure = true, emerald = true, gold = true }
 local KINGDOMS = { "crimson", "azure", "emerald", "gold" }
@@ -266,7 +267,7 @@ describe("Forest stands are clumps, not an even scatter", function()
 				expect(inside).toBe(true)
 			end
 		end
-		expect(n).toBeGreaterThan(150)
+		expect(n).toBeGreaterThan(140) -- the Layout's 222 at 0.7 (WorldPlan.NATURE.standShare): 155
 	end)
 
 	it("mixes species per stand: no stand is one species unless the Layout says so, and the leaders differ", function()
@@ -681,8 +682,8 @@ describe("Tree lines, groves, hedges and drifts", function()
 			end
 			return n
 		end
-		-- measured: 63 placements within 24 studs of a field's edge (25 before the pass: the old scatter's flowers by the plots)
-		expect(near(plan)).toBeGreaterThanOrEqual(45)
+		-- measured: 39 placements within 24 studs of a field's edge (25 before the pass, mostly the old scatter's flowers by the plots)
+		expect(near(plan)).toBeGreaterThanOrEqual(32)
 		local rng = WorldPlan._prng(2468)
 		local b = Layout.features.bounds
 		local scattered = {}
@@ -695,11 +696,79 @@ describe("Tree lines, groves, hedges and drifts", function()
 		expect(near(scattered)).toBeLessThan(25)
 	end)
 
-	it("weights the camera's ground: the start view 3, the zoomed-out view 1.6, elsewhere 0.35", function()
-		local crimson = Layout.plots.crimson.spawn.Position
-		expect(WorldPlan.viewWeight(Layout, crimson.X, crimson.Z)).toBe(3)
-		expect(WorldPlan.viewWeight(Layout, crimson.X + 200, crimson.Z - 40)).toBe(1.6) -- beside the start view (it is narrow), inside the far view
-		expect(WorldPlan.viewWeight(Layout, 100, 0)).toBe(0.35) -- the valley's middle: no plot's camera sees it
+	-- the start view's ground, cut into 3 columns x 3 depth bands beyond its near quarter (the keep's towers fill that), from the spec-side
+	-- copy of the camera maths (support/StartView, not WorldPlan's): { cell centres }, as Vector2
+	local function frameCells(kingdom: string): { Vector2 }
+		local cam = StartView.camera(StartView.root(Kit, Layout, kingdom), 70, 42.5)
+		local ty = math.tan(math.rad(55 / 2))
+		local tx = ty * 16 / 9
+		local function ground(sx: number, sy: number): Vector2
+			local dir = cam.forward + cam.right * (sx * tx) + cam.up * (sy * ty)
+			local hit = cam.position + dir * (-cam.position.Y / dir.Y)
+			return Vector2.new(hit.X, hit.Z)
+		end
+		local tl, tr, br, bl = ground(-1, 1), ground(1, 1), ground(1, -1), ground(-1, -1)
+		local cells = {}
+		for band = 0, 2 do
+			for col = 0, 2 do
+				local u, v = (col + 0.5) / 3, 0.25 + (band + 0.5) * 0.25
+				table.insert(cells, bl:Lerp(br, u):Lerp(tl:Lerp(tr, u), v))
+			end
+		end
+		return cells
+	end
+
+	local function coverage(list: { any }, kingdom: string): number
+		local covered = 0
+		for _, centre in frameCells(kingdom) do
+			for _, p in list do
+				if NATURAL[p.feature] and (xz(p) - centre).Magnitude < 38 then
+					covered += 1
+					break
+				end
+			end
+		end
+		return covered
+	end
+
+	it(
+		"leaves no stretch of a start view bare: most of its 9 cells beyond the keep hold nature within 38 studs of their middle",
+		function()
+			for _, k in KINGDOMS do
+				expect(coverage(plan, k)).toBeGreaterThanOrEqual(7)
+			end
+		end
+	)
+
+	it("MUTANT: without what the generator plants where the start view looks, the cells are bare", function()
+		local bare = {}
+		for _, p in plan do
+			if
+				not (NATURAL[p.feature] and WorldPlan.viewWeight(Layout, p.cframe.Position.X, p.cframe.Position.Z) >= 3)
+			then
+				table.insert(bare, p)
+			end
+		end
+		local worst = 9
+		for _, k in KINGDOMS do
+			worst = math.min(worst, coverage(bare, k))
+		end
+		expect(worst).toBeLessThan(7)
+	end)
+
+	it("weights the camera's ground: the start view 3, the zoomed-out view 1.6, behind the keep 0.35", function()
+		-- the start view looks along the keep's facing from above the throne at the yard 40 studs in front of it; the points are in the keep's frame
+		for _, k in KINGDOMS do
+			local keep = Layout.plots[k].anchors.keep
+			local function weightAt(x: number, z: number): number
+				local w = keep:PointToWorldSpace(Vector3.new(x, 0, z))
+				return WorldPlan.viewWeight(Layout, w.X, w.Z)
+			end
+			expect(weightAt(0, -52)).toBe(3) -- the yard in front of the throne: the middle of the start view
+			expect(weightAt(0, -150)).toBe(3) -- the ground beyond it, toward the horizon edge
+			expect(weightAt(150, -60)).toBe(1.6) -- beside the start view (it is narrow), inside the zoomed-out view
+			expect(weightAt(0, 100)).toBe(0.35) -- behind the keep: no camera of the plot sees it
+		end
 	end)
 end)
 
@@ -712,7 +781,7 @@ describe("The same world every time, and no part more than before (D-047)", func
 	end)
 
 	it(
-		"costs no more parts at the shipped density than the scatter it replaces (4,762 of trees, bushes, rocks and flowers; 4,443 now)",
+		"costs no more parts at the shipped density than the scatter it replaces (4,762 of trees, bushes, rocks and flowers; 4,637 now)",
 		function()
 			local parts = 0
 			for _, p in WorldPlan.props(Layout, { crimson = true }) do

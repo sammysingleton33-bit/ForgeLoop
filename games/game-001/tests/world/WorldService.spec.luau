@@ -388,29 +388,29 @@ describe("Dressing density knob (D-047)", function()
 		function()
 			-- re-pin only when the world itself changes on purpose: the generated plan, then the cleared plan
 			local plan = WorldPlan.plan(Layout, { crimson = true })
-			expect(#plan).toBe(510)
-			expect(fingerprint(plan)).toBe(2036169873) -- re-pinned for FORGE-02 visual pass 1 (nature in clumps: WorldPlan.generateNature grows stands, tree lines, groves, rock groups, bush clumps and flower drifts in place of the even scatter; 618 placements -> 510: stands keep their Layout counts at 0.8, lone trees, bushes and rocks are fewer and grouped; placements carry scale and tint, which this fingerprint leaves out: NatureClumps.spec pins those). Before that: main d78d9cb's props, re-pinned for FL-0127 (three outposts), FL-0072 (the arena's footprint) and FL-0124 (decor keeps 9 studs off every world node)
+			expect(#plan).toBe(469)
+			expect(fingerprint(plan)).toBe(797610758) -- re-pinned for FORGE-02 visual pass 1 (nature in clumps: WorldPlan.generateNature grows stands, tree lines, groves, rock groups, bush clumps and flower drifts in place of the even scatter; 618 placements -> 469: stands keep 0.7 of their Layout counts, lone trees, bushes and rocks are fewer and grouped; placements carry scale and tint, which this fingerprint leaves out: NatureClumps.spec pins those). Before that: main d78d9cb's props, re-pinned for FL-0127 (three outposts), FL-0072 (the arena's footprint) and FL-0124 (decor keeps 9 studs off every world node)
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
-			expect(#one).toBe(510)
-			expect(fingerprint(one)).toBe(1209447030)
+			expect(#one).toBe(469)
+			expect(fingerprint(one)).toBe(2118371562)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
-			expect(#all).toBe(537)
-			expect(fingerprint(all)).toBe(1216474694)
+			expect(#all).toBe(496)
+			expect(fingerprint(all)).toBe(1679825541)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
 			svc:start()
 			env.mock:advance(30)
 			expect(svc.stats.error).toBeNil()
-			expect(svc.stats.props).toBe(510)
+			expect(svc.stats.props).toBe(469)
 			-- the dressing, the arena counted apart: 8,271 props and nodes as drawn before FL-0136 phase 3 (8,309 on main with the outposts; the arena keep-out
 			-- re-seats decor) + 76 = the resource markers, 2 parts on each of the 38 nodes (tests/world/KitNodeMarker.spec). The placements themselves
 			-- are unchanged (the fingerprints above); with the imported meshes the world also gets the mesh-only dressing (KitEnvDressing.spec).
-			expect(svc.stats.parts - svc.stats.arenaParts).toBe(7388) -- 8,347 before the nature pass: the untrimmed valley is 959 parts lighter (fewer, better-placed trees)
+			expect(svc.stats.parts - svc.stats.arenaParts).toBe(6927) -- 8,347 before the nature pass: the untrimmed valley is 1,420 parts lighter (fewer, better-placed trees)
 			-- the terrain too: one floor disc per stand, fitted to its trees (WorldPlan.forestFloors): never beyond the old full disc
 			-- (the stand's centre, 1.05 x its radius) and within 0.2 of the radius of the stand's centre
 			local forests = Layout.features.forests
@@ -541,12 +541,12 @@ describe("Dressing density knob (D-047)", function()
 					end
 				end
 			end
-			if lostN >= 3 then
+			if lostN >= 2 then -- (stands hold 0.7 of the Layout's counts now, so the trim takes 2 or 3 from a thinned one)
 				checked += 1
 				expect(lostSum / lostN).toBeGreaterThan(keptSum / keptN) -- what goes was further out than what stays
 			end
 		end
-		expect(checked).toBeGreaterThanOrEqual(4)
+		expect(checked).toBeGreaterThanOrEqual(3) -- (4 before the nature pass: stands hold 0.7 of the Layout's counts now, so the knob's cut is spent on the 3 least-seen)
 	end)
 
 	it("fits each stand's ground disc to the trees that stay (forest floors)", function()

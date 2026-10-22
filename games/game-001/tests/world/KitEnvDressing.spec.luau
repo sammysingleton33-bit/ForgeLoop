@@ -248,7 +248,7 @@ describe("a world without the imported kit is exactly today's world", function()
 			expect(model.Name).never.toBe("farm_field_cabbage_01")
 			expect(model.Name).never.toBe("farm_field_cabbage_02")
 		end
-		expect(svc.stats.props).toBe(435) -- 416 before FORGE-02's nature pass (WorldPlan.generateNature): the shipped density keeps more of what stands in view
+		expect(svc.stats.props).toBe(425) -- 416 before FORGE-02's nature pass (WorldPlan.generateNature): the shipped density keeps more of what stands in view
 		svc:destroy()
 	end)
 end)

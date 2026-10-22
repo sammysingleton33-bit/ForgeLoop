@@ -694,34 +694,45 @@ end
 
 -- ---------------------------------------------------------------- the nature generator (visual pass 1)
 
--- Where the ruler camera looks (RulerCameraController overview: focus = the plot spawn, yaw 0 = toward -Z, pitch 38 degrees at zoom
--- 40 rising to 65 at zoom 220, 16:9). A WEIGHT for where nature clumps, never a rule: the start view (zoom 70) sees a small patch
--- round the plot, the fully zoomed-out view (zoom 220) sees the stands and tree lines as the composition.
+-- Where the ruler camera looks (RulerCameraController overview). The ruler starts seated on the keep's throne; the first focus is the
+-- yard `startAhead` studs in front of the throne and the camera looks along the keep's facing (its -Z), standing `zoom` studs from the
+-- focus at the pitch for that zoom (38 degrees at zoom 40 rising to 65 at zoom 220), 16:9: the start view (zoom 70) sees the yard and
+-- the ground beyond it out to the horizon edge, the fully zoomed-out view (zoom 220) sees the stands and tree lines as the
+-- composition. A WEIGHT for where nature clumps, never a rule. (tests/world/support/StartView.luau is the spec-side copy of this maths.)
 WorldPlan.VIEW = table.freeze({
 	default = table.freeze({ zoom = 70, fov = 55 }),
 	far = table.freeze({ zoom = 220, fov = 55 }),
 	aspect = 16 / 9,
 	near = 30, -- studs round the start view's ground that still count as in it
 	reach = 900, -- rays that never reach the ground stop here
+	startAhead = 40, -- RulerCameraController.DEFAULTS.overview.startAhead
+	throne = Vector3.new(0, 7.7, -11.8), -- the seated ruler's root in the keep's frame (the Kit's throne seat, a little above it)
 })
 
 type Poly = { Vector2 }
 local viewCache: { [any]: { default: { Poly }, far: { Poly } } } = setmetatable({}, { __mode = "k" }) :: any
 
--- The ground a ruler camera at `zoom` studs from the plot spawn sees (4 corners, a trapezoid).
-local function groundPolygon(spawn: Vector3, zoom: number, fovDeg: number): Poly
+-- The ground a ruler camera at `zoom` studs from a keep's start focus sees (4 corners: top-left, top-right, bottom-right, bottom-left
+-- as the player sees them; the first two are the far edge).
+local function groundPolygon(keep: CFrame, zoom: number, fovDeg: number): Poly
+	local V = WorldPlan.VIEW
+	local look = keep.LookVector
+	local flat = Vector3.new(look.X, 0, look.Z).Unit
+	local focus = keep:PointToWorldSpace(V.throne) + flat * V.startAhead
 	local pitch = math.rad(38 + (65 - 38) * (zoom - 40) / (220 - 40))
 	local sp, cp = math.sin(pitch), math.cos(pitch)
-	local locY, locZ = spawn.Y + zoom * sp, spawn.Z + zoom * cp
+	local pos = focus - flat * (zoom * cp) + Vector3.new(0, zoom * sp, 0)
+	local forward = flat * cp + Vector3.new(0, -sp, 0)
+	local right = flat:Cross(Vector3.yAxis)
+	local up = right:Cross(forward)
 	local ty = math.tan(math.rad(fovDeg) / 2)
-	local tx = ty * WorldPlan.VIEW.aspect
+	local tx = ty * V.aspect
 	local poly: Poly = {}
 	for _, c in { { -1, 1 }, { 1, 1 }, { 1, -1 }, { -1, -1 } } do
-		local dx = c[1] * tx
-		local dy = -sp + c[2] * ty * cp
-		local dz = -cp - c[2] * ty * sp
-		local t = if dy < -1e-3 then math.min(-locY / dy, WorldPlan.VIEW.reach) else WorldPlan.VIEW.reach
-		table.insert(poly, Vector2.new(spawn.X + dx * t, locZ + dz * t))
+		local dir = forward + right * (c[1] * tx) + up * (c[2] * ty)
+		local t = if dir.Y < -1e-3 then math.min(-pos.Y / dir.Y, V.reach) else V.reach
+		local hit = pos + dir * t
+		table.insert(poly, Vector2.new(hit.X, hit.Z))
 	end
 	return poly
 end
@@ -755,9 +766,9 @@ function WorldPlan.viewWeight(layout: any, x: number, z: number): number
 	if not cached then
 		cached = { default = {}, far = {} }
 		for _, kingdom in KINGDOM_ORDER do
-			local spawn = layout.plots[kingdom].spawn.Position
-			table.insert(cached.default, groundPolygon(spawn, WorldPlan.VIEW.default.zoom, WorldPlan.VIEW.default.fov))
-			table.insert(cached.far, groundPolygon(spawn, WorldPlan.VIEW.far.zoom, WorldPlan.VIEW.far.fov))
+			local keep = layout.plots[kingdom].anchors.keep
+			table.insert(cached.default, groundPolygon(keep, WorldPlan.VIEW.default.zoom, WorldPlan.VIEW.default.fov))
+			table.insert(cached.far, groundPolygon(keep, WorldPlan.VIEW.far.zoom, WorldPlan.VIEW.far.fov))
 		end
 		viewCache[layout] = cached
 	end
@@ -883,10 +894,12 @@ WorldPlan.NATURE = table.freeze({
 		m = table.freeze({ 0.9, 1.25 }),
 		l = table.freeze({ 0.82, 1.12 }),
 	}),
-	fringeSeeds = 4, -- groves and hedges on the fringe of each plot
-	openGroves = 8, -- loose groves across the open land
-	fieldHedge = 0.45, -- chance that an outer side of a crop field gets a hedge
-	standShare = 0.8, -- of a Layout stand's `count` the generator plants (the D-047 part budget decides; dense cores read as a forest with fewer)
+	fringeSeeds = 2, -- groves and hedges on the fringe of each plot
+	openGroves = 4,
+	frameHoles = 3, -- plantings per kingdom that fill the emptiest ground of its start view
+	holeGap = 40, -- studs from any other nature that make a spot a hole -- loose groves across the open land
+	fieldHedge = 0.35, -- chance that an outer side of a crop field gets a hedge
+	standShare = 0.7, -- of a Layout stand's `count` the generator plants (the D-047 part budget decides; dense cores read as a forest with fewer)
 	tintSteps = 2, -- tint is a multiple of 1/tintSteps in -1..1 (5 steps): WorldPlan.tintColor shifts foliage by it
 })
 
@@ -1245,7 +1258,7 @@ local function generateNature(layout: any): { Placement }
 		end
 		local taken: { { number } } = {}
 		for _, site in ranked(rng, sites) do
-			if runs >= 4 then
+			if runs >= 6 then
 				break
 			end
 			local road = f.roads[site.z]
@@ -1264,7 +1277,7 @@ local function generateNature(layout: any): { Placement }
 				local s = 0
 				while s < len do
 					local px, pz, tx, tz = pointAt(road.points, cum, site.x + s)
-					local sp = pickWeighted(rng, { { "tree_oak", 0.4 }, { "tree_birch", 0.45 }, { "tree_pine", 0.15 } })
+					local sp = pickWeighted(rng, { { "tree_oak", 0.4 }, { "tree_birch", 0.55 }, { "tree_pine", 0.05 } })
 					local off = (road.width / 2 + 4 + WorldPlan.footprintRadius(sp) * 1.0 + rng.range(0.5, 5)) * side
 					if rng.next() > 0.15 then
 						tryTree(rng, sp, px - tz * off, pz + tx * off, "lone_tree", 0.62)
@@ -1281,7 +1294,7 @@ local function generateNature(layout: any): { Placement }
 
 	-- a grove: one species leads, n trees, a few bushes round its foot
 	local function grove(rng: any, x0: number, z0: number, n: number)
-		local lead = pickWeighted(rng, { { "tree_oak", 0.5 }, { "tree_birch", 0.4 }, { "tree_pine", 0.1 } })
+		local lead = pickWeighted(rng, { { "tree_oak", 0.5 }, { "tree_birch", 0.45 }, { "tree_pine", 0.05 } })
 		local mix = { { lead, 0.85 }, { "tree_birch", 0.15 } }
 		local sigma = 6 + n
 		local placed, tries = 0, 0
@@ -1292,7 +1305,7 @@ local function generateNature(layout: any): { Placement }
 				placed += 1
 			end
 		end
-		if rng.next() < 0.6 then
+		if rng.next() < 0.45 then
 			clump(rng, x0, z0, rng.int(1, 3), sigma * 1.4, false)
 		end
 	end
@@ -1306,9 +1319,14 @@ local function generateNature(layout: any): { Placement }
 			local sites = {}
 			-- the start view's far edge: trees just beyond it show their crowns along the top of the frame (a backdrop), so sites in
 			-- that band count 1.7 times as much
-			local spawn = layout.plots[kingdom].spawn.Position
-			local frame = groundPolygon(spawn, WorldPlan.VIEW.default.zoom, WorldPlan.VIEW.default.fov)
-			local farZ = frame[1].Y
+			local frame = groundPolygon(
+				layout.plots[kingdom].anchors.keep,
+				WorldPlan.VIEW.default.zoom,
+				WorldPlan.VIEW.default.fov
+			)
+			local farMid, nearMid = (frame[1] + frame[2]) / 2, (frame[3] + frame[4]) / 2
+			local outward = (farMid - nearMid).Unit -- the way the camera looks, on the ground
+			local across = Vector2.new(-outward.Y, outward.X)
 			for _ = 1, 160 do
 				local a, d = rng.range(0, TWO_PI), rng.range(60, 290)
 				local x, z = keep.X + math.cos(a) * d, keep.Z + math.sin(a) * d
@@ -1317,7 +1335,10 @@ local function generateNature(layout: any): { Placement }
 					reserved = math.min(reserved, WorldPlan.rectDistance(rect, x, z))
 				end
 				if reserved <= 52 and legal("tree", 8, x, z, 0.62) then
-					local backdrop = z <= farZ + 40 and z >= farZ - 110 and math.abs(x - spawn.X) <= 180
+					local beyond = (Vector2.new(x, z) - farMid):Dot(outward)
+					local backdrop = beyond >= -40
+						and beyond <= 110
+						and math.abs((Vector2.new(x, z) - farMid):Dot(across)) <= 180
 					table.insert(sites, {
 						x = x,
 						z = z,
@@ -1387,7 +1408,7 @@ local function generateNature(layout: any): { Placement }
 				table.insert(sites, {
 					x = x,
 					z = z,
-					w = (if WorldPlan.viewWeight(layout, x, z) > 1 then 1.4 else 1) * (if edge < 70 then 1.8 else 1),
+					w = (WorldPlan.viewWeight(layout, x, z) + 0.4) * (if edge < 70 then 1.5 else 1),
 				})
 			end
 		end
@@ -1398,7 +1419,7 @@ local function generateNature(layout: any): { Placement }
 			end
 			local near = false
 			for _, o in fringeSeeds do
-				if (o.x - site.x) ^ 2 + (o.z - site.z) ^ 2 < 95 * 95 then
+				if (o.x - site.x) ^ 2 + (o.z - site.z) ^ 2 < 80 * 80 then
 					near = true
 				end
 			end
@@ -1408,6 +1429,83 @@ local function generateNature(layout: any): { Placement }
 				grove(rng, site.x, site.z, rng.int(3, 5))
 				if rng.next() < 0.35 then
 					clump(rng, site.x + rng.range(-12, 12), site.z + rng.range(-12, 12), rng.int(3, 4), 3, true)
+				end
+			end
+		end
+	end
+
+	-- ---- 4c. fill the holes of each kingdom's start view: the frame is cut into 3 x 3 cells beyond its near quarter (the keep's own towers
+	-- fill that), and in each cell the legal spot farthest from any other nature is a candidate; the emptiest few get a grove, a hedge
+	-- with a flower drift, or a rock group with bushes. Coverage, not chance: no stretch of the start view is left bare.
+	do
+		local rng = prng(5470)
+		for _, kingdom in KINGDOM_ORDER do
+			local frame = groundPolygon(
+				layout.plots[kingdom].anchors.keep,
+				WorldPlan.VIEW.default.zoom,
+				WorldPlan.VIEW.default.fov
+			)
+			local function at(u: number, v: number): Vector2
+				return frame[4]:Lerp(frame[3], u):Lerp(frame[1]:Lerp(frame[2], u), v)
+			end
+			local function gapAt(x: number, z: number): number
+				local gap = math.huge
+				for _, o in out do
+					local q = o.cframe.Position
+					gap = math.min(gap, (q.X - x) ^ 2 + (q.Z - z) ^ 2)
+				end
+				return math.sqrt(gap)
+			end
+			local holes = {}
+			for band = 1, 3 do
+				for col = 1, 3 do
+					local best, bestGap = nil, 0
+					for _ = 1, 24 do
+						local p = at((col - 1 + rng.next()) / 3, 0.25 + (band - 1 + rng.next()) * 0.25)
+						if legal("tree", 8, p.X, p.Y, 0.62) then
+							local gap = gapAt(p.X, p.Y)
+							if gap > bestGap then
+								best, bestGap = p, gap
+							end
+						end
+					end
+					if best then
+						table.insert(holes, { x = best.X, z = best.Y, w = bestGap, band = band })
+					end
+				end
+			end
+			table.sort(holes, function(a, b)
+				if a.w ~= b.w then
+					return a.w > b.w
+				end
+				return a.x < b.x
+			end)
+			local planted = 0
+			for _, hole in holes do
+				if planted >= N.frameHoles then
+					break
+				end
+				if gapAt(hole.x, hole.z) > N.holeGap then -- (an earlier planting may have filled it)
+					planted += 1
+					local roll = rng.next()
+					if roll < 0.55 then
+						grove(rng, hole.x, hole.z, rng.int(3, 5))
+					elseif roll < 0.8 then
+						local a = rng.range(0, math.pi)
+						local dx, dz = math.cos(a), math.sin(a)
+						for k = -2, 2 do
+							local x, z = hole.x + dx * k * 8, hole.z + dz * k * 8
+							if k % 2 == 0 then
+								tryBush(rng, x, z)
+							else
+								tryFlower(rng, x, z)
+							end
+						end
+						tryTree(rng, "tree_birch", hole.x, hole.z, "lone_tree", 0.62)
+					else
+						rockGroup(rng, hole.x, hole.z, rng.int(2, 4), 1, 0)
+						clump(rng, hole.x + 10, hole.z + 6, rng.int(2, 3), 3, false)
+					end
 				end
 			end
 		end
@@ -1543,7 +1641,7 @@ local function generateNature(layout: any): { Placement }
 	-- ---- 6. bush clumps: stand fringes, field corners, road verges
 	do
 		local rng = prng(5700)
-		for s, forest in f.forests do
+		for s in f.forests do
 			local list = standTrees[s]
 			if #list > 0 then
 				local mx, mz = 0, 0
@@ -1552,7 +1650,7 @@ local function generateNature(layout: any): { Placement }
 					mz += t.z
 				end
 				mx, mz = mx / #list, mz / #list
-				for _ = 1, if WorldPlan.viewWeight(layout, forest.center.X, forest.center.Y) > 1 then 2 else 1 do
+				for _ = 1, 1 do
 					local a = rng.range(0, TWO_PI)
 					local dx, dz = math.cos(a), math.sin(a)
 					local best, bestP = nil, -math.huge
@@ -1572,7 +1670,7 @@ local function generateNature(layout: any): { Placement }
 		for _, field in f.fields do
 			local cf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
 			for _, corner in { { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } } do
-				if rng.next() < 0.3 then
+				if rng.next() < 0.2 then
 					local out3 = cf:PointToWorldSpace(
 						Vector3.new(
 							corner[1] * (field.size.X / 2 + 9.5 + rng.range(0, 5)),
@@ -1658,7 +1756,7 @@ local function generateNature(layout: any): { Placement }
 		local rng = prng(5800)
 		for _, field in f.fields do
 			local cf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
-			if rng.next() < 0.8 then
+			if rng.next() < 0.5 then
 				local cx, cz = if rng.next() < 0.5 then 1 else -1, if rng.next() < 0.5 then 1 else -1
 				local at = cf:PointToWorldSpace(
 					Vector3.new(
