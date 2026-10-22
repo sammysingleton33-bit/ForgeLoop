@@ -13,7 +13,7 @@
 			level-1 price per resource (cannot_afford). Then the refund is paid, the price spent, the wall destroyed and
 			a gate site (state "planned") added where it stood, facing as it did; both pushed; answers the gate's id.
 			The gate's ground (blocked / out_of_territory) is not modelled: use svc.answer for those.
-		GateDoubles.wall(world, position, yaw?) -> id
+		GateDoubles.wall(world, position, yaw?, level?) -> id
 			a level-1 wall piece of the player's kingdom at `position`, turned `yaw` radians (its long side along the
 			local X axis, as Simulation:placeLine lays them), with the G2 `cframe` the real snapshot carries; pushed.
 ]]
@@ -42,8 +42,8 @@ local function place(build, kingdom, buildingType, position, yaw, state, level)
 	return id
 end
 
-function GateDoubles.wall(world, position: Vector3, yaw: number?): number
-	return place(world.build, world.kingdomId, "wall", position, yaw, "complete", 1)
+function GateDoubles.wall(world, position: Vector3, yaw: number?, level: number?): number
+	return place(world.build, world.kingdomId, "wall", position, yaw, "complete", level or 1)
 end
 
 function GateDoubles.service(_world)

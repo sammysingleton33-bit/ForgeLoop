@@ -174,8 +174,19 @@ describe("Build menu: the gate (FL-0129c slice 2)", function()
 		m:aimAt(Vector3.new(66, 0, -3))
 		expect(m.ghost.visible).toBe(true)
 		local before = world.hud.store:balances()
+		local remotes = world.hud.remotes
+		local invoke = remotes.invoke
+		local busyWhileAsking = nil
+		remotes.invoke = function(self, name, ...)
+			if name == "Build.PlaceGate" then
+				busyWhileAsking = m.placing ~= nil and m.placing.busy -- waiting for the answer: Make gate is off
+			end
+			return invoke(self, name, ...)
+		end
 		tap(find(bar(world), "Place"))
 		world:advance(0.2)
+		remotes.invoke = invoke
+		expect(busyWhileAsking).toBe(true) -- FORGE-07 L2 on #319
 		expect(world.gate.calls).toEqual({ wallId })
 		expect(m.placing).toBeNil() -- placed: build mode ends
 		expect(mine(world, "gate")).toBe(1)
@@ -193,7 +204,7 @@ describe("Build menu: the gate (FL-0129c slice 2)", function()
 		world:advance(0.1)
 		local m = world.menu
 		m:startPlacement("gate")
-		m:aimAt(Vector3.new(60, 0, 0))
+		m:aimAt(Vector3.new(66, 0, -3)) -- off the piece's centre: the ghost still stands on the piece (FORGE-07 L2)
 		local wall = world.hud.store:building(wallId).cframe
 		local base = m.ghost.base.CFrame
 		expect((base.Position - wall.Position) * Vector3.new(1, 0, 1)).toEqual(Vector3.zero)
@@ -277,6 +288,33 @@ describe("Build menu: the gate (FL-0129c slice 2)", function()
 		m:confirm()
 		world:advance(0.2)
 		expect(#world.gate.calls).toBe(0)
+	end)
+
+	it("asks once before turning an upgraded piece into the gate: its upgrades are lost", function()
+		world = newWorld()
+		local wallId = GateDoubles.wall(world, Vector3.new(60, 0, 0), 0, 2)
+		world:advance(0.1)
+		local m = world.menu
+		m:startPlacement("gate")
+		m:aimAt(Vector3.new(60, 0, 0))
+		expect(m.placing.status).toBe("ok")
+		local function said()
+			for _, d in bar(world):GetDescendants() do
+				if d:IsA("TextLabel") and string.find(d.Text, "upgrades are lost", 1, true) then
+					return d.Text
+				end
+			end
+			return nil
+		end
+		expect(said()).toBe("Its upgrades are lost")
+		tap(find(bar(world), "Place"))
+		world:advance(0.2)
+		expect(#world.gate.calls).toBe(0) -- the first tap only asks
+		expect(said()).toBe("Tap again: its upgrades are lost")
+		tap(find(bar(world), "Place"))
+		world:advance(0.2)
+		expect(world.gate.calls).toEqual({ wallId })
+		expect(m.placing).toBeNil()
 	end)
 
 	it("keeps Place off in the menu for a treasury one short of the price less the refund", function()

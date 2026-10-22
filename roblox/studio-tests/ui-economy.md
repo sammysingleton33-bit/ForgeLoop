@@ -511,7 +511,10 @@ Desktop window and the phone emulator, one client, a kingdom with a few wall pie
    comes back"; a gate ghost (thicker than the wall) stands exactly on that piece, turned as it is. Move along the
    line: the ghost jumps piece to piece. Move off the wall: the ghost goes and the bar says to point at a piece.
 3. Tap Make gate: a toast "Gate placed", build mode ends, the piece is replaced in place by a gate site facing the
-   same way, and the treasury drops by the net price (30 wood, 30 stone: 40 wood spent, 10 back).
+   same way, and the treasury ends 30 wood and 30 stone lower: the spend pills read −40 wood and −30 stone, and the
+   wall's refund comes back as its own +10 wood (the server pays the refund in a separate entry). Do it once with
+   an upgraded piece (level 2): the bar says "Its upgrades are lost", the first Make gate only asks ("Tap again: its
+   upgrades are lost"), the second places it, and the refund is still half the level-1 price.
 4. Place a gate again and aim at another piece: "✕ Your kingdom has its gate already", Make gate off.
 5. A piece hard against a building or the territory edge (the gate needs 2 more studs each side): Make gate shows
    "✕ No room for a gate there" (or "A gate there leaves your land") with an error toast; nothing is charged and

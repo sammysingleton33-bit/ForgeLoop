@@ -873,6 +873,13 @@ function BuildMenuController:_confirmGate()
 		return
 	end
 	local hud = self.hud
+	-- An upgraded piece: the server refunds half its level-1 price and the upgrades are gone (FORGE-07 L1 on #319).
+	-- The bar says so, and the first Make gate only asks; the second sends.
+	if (tonumber(wall.level) or 1) > 1 and p.gate.asked ~= wall.id then
+		p.gate.asked = wall.id
+		hud:render()
+		return
+	end
 	p.busy = true
 	hud:render()
 	self._env.spawn(function()
@@ -1094,7 +1101,11 @@ function BuildMenuController:render(metrics: any)
 					elseif line.from then "Move the mouse to the far end · Click builds the wall · Q cancels"
 					else "Move the mouse to one end · Click sets it · Q cancels",
 				okText = if gate
-					then "Half the wall's price comes back"
+					then (if gate.wall and (tonumber(gate.wall.level) or 1) > 1
+						then (if gate.asked == gate.wall.id
+							then "Tap again: its upgrades are lost"
+							else "Its upgrades are lost")
+						else "Half the wall's price comes back")
 					elseif line then (if line.from
 						then "Builds in one go: all pieces or none"
 						else "✓ Start here")

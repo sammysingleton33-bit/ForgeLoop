@@ -50,6 +50,13 @@ ROWS = [
     ("Turn shown on a gate", B, "noTurn = line ~= nil or gate ~= nil,", "noTurn = line ~= nil,", "fits the phone bar"),
     ("detail ignores the price", M, "if entry and opts and opts.cost then", "if false then", "holds the price less the refund"),
     ("row ignores the price", M, "if entry and price then", "if false then", "holds the price less the refund"),
+    # FORGE-07 L1-L2 on #319
+    ("upgraded piece not asked", B, "if (tonumber(wall.level) or 1) > 1 and p.gate.asked ~= wall.id then",
+     "if false then", "asks once before turning an upgraded piece"),
+    ("asks every time", B, "if (tonumber(wall.level) or 1) > 1 and p.gate.asked ~= wall.id then",
+     "if (tonumber(wall.level) or 1) > 1 then", "asks once before turning an upgraded piece"),
+    ("no busy while asking", B, "\t\treturn\n\tend\n\tp.busy = true\n\thud:render()\n\tself._env.spawn(function()\n\t\tlocal called, gateId, reason",
+     "\t\treturn\n\tend\n\thud:render()\n\tself._env.spawn(function()\n\t\tlocal called, gateId, reason", "sends the piece's id"),
     ("gate reasons unused", X, "\tif context == \"gate\" and GATE_REASONS[key] then", "\tif false then", "words every"),
 ]
 
