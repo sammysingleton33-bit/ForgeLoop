@@ -139,7 +139,7 @@ function Panel.new(props: { [string]: any })
 		Inset = Style.inset(RADIUS),
 		Header = header,
 		Ornament = ornamentFrame,
-		Content = self.content,
+		Content = self.content, -- member-ok: a child named "Content" in the children table, not a property
 	})
 	if props.onClose then
 		local close

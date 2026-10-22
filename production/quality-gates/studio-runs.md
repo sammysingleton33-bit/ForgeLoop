@@ -139,7 +139,7 @@ B22.1 Studio asks (FORGE-05 → FORGE-00 for the owner; B22's asks still apply. 
 4. **Start view (E22).** The first frame should look over the keep's yard from a lower, closer camera (zoom 70, 55° lens) with citizens readable, not an aerial 2 % view. Screenshot B22.1-2 on desktop and, if you can, at phone width. Does the first look point along the keep's front (toward the yard), or sideways?
 5. **Lighting.** Compare B22.1-2 with your B22 screenshot of the same spot: longer, slightly bluer shadows, a deeper lawn, building fronts still lit? If the sun is behind the camera and the fronts are dark, say so (one-line fix `ClockTime = 14.2`). Screenshot B22.1-3 at the same time of day.
 6. **Damage states.** Let a building take damage (or press the debug command FORGE-04 names in `roblox/studio-tests/experience.md` E-damage): does it show cracks / rubble marks, and does a moved building get them back? Screenshot B22.1-4.
-7. **Env import** (after `art/IMPORT_ENVIRONMENT.md`): the import page should report `props = 56`; fences and the node marker posts (0.3 stud post, 5 stud Neon orb, four colours) should appear; a rejected mesh prints one `EnvMesh` line, not a stand-in without a word.
+7. **Env import** (after `art/IMPORT_ENVIRONMENT.md`): the import page should report `props = 56`; fences and the node marker posts (0.3 stud post, 5 stud Neon orb, four colours) should appear; a rejected mesh prints one line starting `Kit.prop: the imported <id> is not used` (or ending `its dressing is not placed` for a dressing id), not a stand-in without a word.
 8. **Vote panel (U32)** with two clients: after one ruler leaves during the vote, the panel must not still show who had voted for them.
 9. **Output.** Copy every red line, client and server.
 

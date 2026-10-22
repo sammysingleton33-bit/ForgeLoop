@@ -30,10 +30,10 @@ M = [
  ("FL-0090", C2+"RulerCameraController.luau", 'phoneOffset = Vector2.new(0, -7.5),', 'phoneOffset = Vector2.new(0, -12),', "RulerCamera", "on a phone the citizen's head", "game"),
  ("FL-0090", G+"config/Crowd.luau", 'standZoom = 74, ringZoom = 108,', 'standZoom = 55, ringZoom = 80,', "CrowdStage", "the intro: one horn", "game"),
  # D-059: the first view centres the yard in front of the keep (FORGE-00)
- ("FL-0090", C2+"RulerCameraController.luau", 'startAhead = 40, -- studs', 'startAhead = 0, -- studs', "RulerCamera", "starts in the overview over the yard", "game"),
- ("FL-0090", C2+"RulerCameraController.luau", 'startAhead = 40, -- studs', 'startAhead = 120, -- studs', "RulerCamera", "starts in the overview over the yard", "game"),
+ ("FL-0090", C2+"RulerCameraController.luau", 'startAhead = 20, -- studs', 'startAhead = 0, -- studs', "RulerCamera", "starts in the overview over the yard", "game"),
+ ("FL-0090", C2+"RulerCameraController.luau", 'startAhead = 20, -- studs', 'startAhead = 60, -- studs', "RulerCamera", "starts in the overview over the yard", "game"),
  ("FL-0090", C2+"RulerCameraController.luau", 'if look.Magnitude < 1e-3 then\n\t\treturn root.Position\n\tend\n', '', "RulerCamera", "startFocus() is `ahead` studs", "game"),
- # (left out, equivalent: the startFocus call in _apply runs only when no character set the focus first,
- # which no spec can reach; _onCharacter's call is the row below)
- ("FL-0090", C2+"RulerCameraController.luau", 'self:focusOn(Def.startFocus(root.CFrame, self._config.overview.startAhead or 0)) -- the yard', 'self:focusOn(root.CFrame.Position) -- the yard', "RulerCamera", "starts in the overview over the yard", "game"),
+ # (left out, equivalent: the _startView call in _apply runs only when no character set the focus first,
+ # which no spec can reach; _startView's focus is the row below, FL-0147)
+ ("FL-0090", C2+"RulerCameraController.luau", 'self:focusOn(Def.startFocus(root, overview.startAhead or 0))', 'self:focusOn(root.Position)', "RulerCamera", "starts in the overview over the yard", "game"),
 ]

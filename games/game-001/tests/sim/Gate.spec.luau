@@ -230,7 +230,7 @@ describe("Sim/Military: what a gate lets through (FL-0126, G13.5)", function()
 	end)
 
 	it("the owner's units walk through a gate (and a wall of their own), and so does anyone at peace", function()
-		local sim, k1, k2 = warWorld()
+		local sim, k1 = warWorld()
 		Diplomacy.setRelation(sim, "crimson", "azure", "War")
 		addBuilding(sim, k1, "gate", 125, 0)
 		local mine = unit(sim, k1, "soldier", 150, 0, { kind = "Move", x = 100, z = 0 })

@@ -396,7 +396,14 @@ function Catalog.validate(catalog: any): (boolean, { string })
 		if job.id ~= id then
 			table.insert(errors, `jobs.{tostring(id)}: id field must equal its key`)
 		end
-		if table.find(JOB_IDS, id) == nil or id == "idle" or id == "soldier" then
+		if
+			table.find(JOB_IDS, id) == nil
+			or id == "idle"
+			or id == "soldier"
+			or id == "archer"
+			or id == "knight"
+			or id == "ram"
+		then
 			table.insert(errors, `jobs.{tostring(id)}: not a citizen job of CONTRACTS G2`)
 		end
 		for _, res in job.resources or {} do

@@ -16,7 +16,7 @@ M = [
  ("FL-0141", P, 'anim.start = now - anim.windup', 'anim.start = anim.start', DP, "the hit jumps a winding-up swing", "game"),
  ("FL-0141", P, 'if now - self._lastStrike < DuelPoses.RECENT_STRIKE then\n\t\treturn\n\tend', '', DP, "the hit jumps a winding-up swing", "game"),
  ("FL-0141", P, 'return math.clamp(w, DuelPoses.HEAVY_WINDUP.min, DuelPoses.HEAVY_WINDUP.max)', 'return w', DP, "heavyWindup holds the wind-up", "game"),
- ("FL-0141", P, 'track:play("heavy", now, { windup = impactIn })', 'track:play("heavy", now)', DP, "heavyWindup holds the wind-up", "game"),
+ ("FL-0141", P, 'track:play("heavy", now, { windup = impactIn, warned = warned })', 'track:play("heavy", now, { warned = warned })', DP, "heavyWindup holds the wind-up", "game"),
  ("FL-0141", P, 'if self:_guarding(now) then\n\t\tself:play("guardHit", now)', 'if false then\n\t\tself:play("guardHit", now)', DP, "the target of a hit flinches", "game"),
  ("FL-0141", P, 'self:play(if heavy then "flinchHeavy" else "flinch", now)', 'self:play("flinch", now)', DP, "the target of a hit flinches", "game"),
  ("FL-0141", P, 'self[OTHER[side]]:hitBy(heavy, now)', 'track:hitBy(heavy, now)', DP, "the target of a hit flinches", "game"),
@@ -95,4 +95,30 @@ M = [
  ("FL-0141", R, 'write(joints.RightLeg, undo * pose.RightLeg, weight * body, false, io)\n\tend', 'write(joints.RightLeg, undo * pose.RightLeg, weight, false, io)\n\tend', DP, "over an avatar's Animator", "game"),
  ("FL-0141", A, 'local fading = self._stoppedAt ~= nil and t - self._stoppedAt <= DuelPoses.XFADE + 0.05', 'local fading = false', FD, "depends on DuelController and follows", "game"),
  ("FL-0141", A, 'duellist.userId == me and duellist.isAI ~= true then', 'duellist.userId == me then', FD, "your own sent press animates", "game"),
+ # follow-up 2: FORGE-07 #278 L2 (the waist, the weapon, the legs' fade, the preview, the namesake on b)
+ ("FL-0141", R, 'write(joints.Waist, pose.Waist, weight, false, io)', 'write(joints.Waist, pose.Waist, weight * body, false, io)', DP, "over an avatar's Animator", "game"),
+ ("FL-0141", R, 'write(joints.Tool, pose.Tool, weight, false, io)\n\t\twrite(joints.LeftLeg', 'write(joints.Tool, pose.Tool, weight * body, false, io)\n\t\twrite(joints.LeftLeg', DP, "over an avatar's Animator", "game"),
+ ("FL-0141", P, 'self._body = self._fromBody + (body - self._fromBody) * u', 'self._body = body', DP, "weights: upper-body swings", "game"),
+ ("FL-0141", A, 'if self._preview ~= nil or type(action) ~= "string" then', 'if type(action) ~= "string" then', FD, "Studio preview: your character plays every action", "game"),
+ ("FL-0141", A, 'duellist.userId == me and duellist.isAI ~= true then', 'duellist.userId == me and (side == "b" or duellist.isAI ~= true) then', FD, "your own sent press animates", "game"),
+ # follow-up 2: a pair first seen in the crowning (a late join, a coronation) is not posed (FORGE-00 g11n)
+ ("FL-0141", A, 'if not self._running and self._sawDuel then', 'if not self._running then', FD, "a pair first seen in the crowning", "game"),
+ ("FL-0141", A, '\t\t\tself._running = false\n\t\t\tself._sawDuel = false', '\t\t\tself._running = false', FD, "a pair first seen in the crowning", "game"),
+ ("FL-0141", A, 'if state.stage == "duel" then\n\t\t\tself._sawDuel = true', 'if false then\n\t\t\tself._sawDuel = true', FD, "depends on DuelController", "game"),
+ # follow-up 2: heavyWindup.warned (Called Warning) raises the telegraph sooner (FORGE-00 g11n)
+ ("FL-0141", P, 'local warned = if type(data) == "table" then data.warned else nil', 'local warned = nil', DP, "a Called Warning", "game"),
+ ("FL-0141", P, 'local keys = DuelPoses.keys(name, self.style, options.windup, dir, options.warned) :: { Key }', 'local keys = DuelPoses.keys(name, self.style, options.windup, dir) :: { Key }', DP, "a Called Warning", "game"),
+ ("FL-0141", P, 'raised = math.min(raised, math.max(raise.min, raised - lead))', 'local _ = lead', DP, "a Called Warning", "game"),
+ ("FL-0141", P, 'raised = math.min(raised, math.max(raise.min, raised - lead))', 'raised = math.max(raise.min, raised - lead)', DP, "a Called Warning", "game"),
+ ("FL-0141", P, 'raised = math.min(raised, math.max(raise.min, raised - lead))', 'raised = math.min(raised, raised - lead)', DP, "crossfades: no joint jumps more than 25", "game"),
+ ("FL-0141", P, 'if type(warned) == "number" and warned == warned then', 'if type(warned) == "number" then', DP, "a Called Warning", "game"),
+ # follow-up 2: a press the stamina refuses plays winded (E21 step 4, FORGE-00 g11n)
+ ("FL-0141", P, '\t\t\tself:play("winded", now)', '\t\t\tlocal _ = now', DP, "a press the stamina refuses plays winded", "game"),
+ ("FL-0141", P, 'if self:_current(now) == nil then\n\t\t\tself:play("winded", now)', 'if true then\n\t\t\tself:play("winded", now)', DP, "a press the stamina refuses plays winded", "game"),
+ ("FL-0141", P, 'winded = 0, -- never in the way', 'winded = 1, -- never in the way', DP, "a press the stamina refuses plays winded", "game"),
+ ("FL-0141", P, '\t\t\t{ t = 0.3, pose = WINDED },\n', '', DP, "a press the stamina refuses plays winded", "game"),
+ # follow-up 2: STARTS_FROM is DuelModel.step's rule (FORGE-00 g11n)
+ ("FL-0141", P, 'dodge = table.freeze({ idle = true, block = true }),\n})', 'dodge = table.freeze({ idle = true }),\n})', DP, "STARTS_FROM is DuelModel.step's rule", "game"),
+ ("FL-0141", P, 'block = table.freeze({ idle = true }),\n\tparry', 'block = table.freeze({ idle = true, block = true }),\n\tparry', DP, "STARTS_FROM is DuelModel.step's rule", "game"),
+ ("FL-0141", P, 'light = table.freeze({ idle = true }),\n\theavy', 'light = table.freeze({ idle = true, recover = true }),\n\theavy', DP, "STARTS_FROM is DuelModel.step's rule", "game"),
 ]
