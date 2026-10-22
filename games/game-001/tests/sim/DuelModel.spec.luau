@@ -87,6 +87,73 @@ describe("Arena/DuelModel: attacks", function()
 		expect(hit.data.damage > DuelModel.WEAPONS.swordShield.light).toBe(true)
 	end)
 
+	it("a light swing is announced when it starts (lightWindup with its impact time), at any step size", function()
+		local s = duel()
+		local events = act(s, "a", "light", 0.6)
+		local windups = kinds(events, "lightWindup")
+		expect(#windups).toBe(1)
+		expect(windups[1].side).toBe("a")
+		expect(windups[1].t).toBe(DT) -- the step the input is read
+		local hit = kinds(events, "hit")[1]
+		expect(math.abs(hit.t - windups[1].data.impactAt) < 1e-6).toBe(true)
+		expect(#kinds(events, "heavyWindup")).toBe(0) -- and a light swing is not a heavy
+		for _, dt in { 1 / 60, 1 / 30, 0.05 } do
+			local state = duel()
+			local first = DuelModel.step(state, { a = input("light") }, dt)
+			local announced = kinds(first, "lightWindup")[1]
+			local landed
+			for _ = 1, math.floor(1.5 / dt) do
+				for _, e in DuelModel.step(state, {}, dt) do
+					if e.kind == "hit" and landed == nil then
+						landed = e
+					end
+				end
+			end
+			assert(landed, "the light lands")
+			expect(math.abs(landed.t - announced.data.impactAt) < dt * 0.51).toBe(true)
+		end
+		-- no stamina: no swing, no announcement
+		local tired = duel()
+		tired.a.stamina = 0
+		expect(#kinds(act(tired, "a", "light", 0.6), "lightWindup")).toBe(0)
+	end)
+
+	it("a dodge is announced when it begins, and only when it begins", function()
+		local s = duel()
+		local events = act(s, "b", "dodge", 0.5)
+		local starts = kinds(events, "dodgeStart")
+		expect(#starts).toBe(1)
+		expect(starts[1].side).toBe("b")
+		expect(starts[1].t).toBe(DT)
+		-- while dodging, another dodge key does nothing and says nothing
+		local mid = duel()
+		DuelModel.step(mid, { b = input("dodge") }, DT)
+		expect(#kinds(DuelModel.step(mid, { b = input("dodge") }, DT), "dodgeStart")).toBe(0)
+		-- no stamina for it: no dodge, no announcement
+		local tired = duel()
+		tired.b.stamina = 0
+		expect(#kinds(act(tired, "b", "dodge", 0.5), "dodgeStart")).toBe(0)
+	end)
+
+	it("a hit says whether the target was guarding, even when the guard broke on it", function()
+		local open = duel()
+		expect(kinds(act(open, "a", "light", 0.6), "hit")[1].data.blocked).toBe(false)
+		local guarded = duel()
+		DuelModel.step(guarded, { b = input("block") }, DT)
+		local events = act(guarded, "a", "light", 0.6)
+		expect(kinds(events, "hit")[1].data.blocked).toBe(true)
+		-- a guard that breaks under the blow is still a blocked hit
+		local breaking = duel()
+		DuelModel.step(breaking, { b = input("block") }, DT)
+		breaking.b.stamina = 0.01
+		local broke = act(breaking, "a", "light", 0.6)
+		expect(#kinds(broke, "stagger")).toBe(1)
+		expect(kinds(broke, "hit")[1].data.blocked).toBe(true)
+		-- a hit in a dodge's place (dodge finished) or a parry window is not blocked
+		local after = duel()
+		expect(kinds(act(after, "a", "heavy", 1.3), "hit")[1].data.blocked).toBe(false)
+	end)
+
 	it("the telegraphed impact time is the time the heavy actually lands", function()
 		local s = duel()
 		local events = act(s, "a", "heavy", 1.2)

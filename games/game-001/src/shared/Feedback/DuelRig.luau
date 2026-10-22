@@ -31,6 +31,8 @@
 		DuelRig.scan(model) -> Rig?          nil when the model has none of these joints
 		DuelRig.apply(rig, out, adapter?)    out = DuelPoses track:sample's { pose, weight, body }
 		DuelRig.release(rig, adapter?)       an avatar's joints back to the Animator; a Kit rig at rest
+		DuelRig.leftShield(model) -> boolean the model wears Kit.shield (an Accessory carrying KitShield) on the
+		                                     left hand; a shield on the weapon (Kit.weapon's default Tool) is not
 		Rig = { kind: "kit" | "r15" | "r6", joints: { [name]: { joint, rest } }, scale, model, class, count }
 		    class: "Motor6D" or "AnimationConstraint" (the joints' kind); count: the joints found
 		adapter = { get(joint) -> CFrame, set(joint, CFrame) } (specs); default: joint.Transform
@@ -187,6 +189,22 @@ local function write(entry: Joint?, value: CFrame, weight: number, owned: boolea
 	local result = if weight >= 1 then framed else base:Lerp(framed, math.clamp(weight, 0, 1))
 	pcall(adapter.set, entry.joint, result)
 	entry.last = result
+end
+
+-- Kit.shield worn on the left hand (FL-0141 follow-up 3): an Accessory carrying KitShield, wherever it is
+-- parented (an avatar's AddAccessory puts it on the character; the AI figure may weld it under a part). The
+-- sword-and-shield's default Tool also carries KitShield, but a Tool is the right hand's: not counted. No
+-- model (nil) wears none.
+function DuelRig.leftShield(model: any): boolean
+	local ok, found = pcall(function()
+		for _, d in model:GetDescendants() do
+			if d:IsA("Accessory") and d:GetAttribute("KitShield") ~= nil then
+				return true
+			end
+		end
+		return false
+	end)
+	return ok and found == true
 end
 
 function DuelRig.apply(rig: Rig, out: any, adapter: Adapter?)

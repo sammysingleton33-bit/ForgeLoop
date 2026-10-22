@@ -34,6 +34,21 @@
 	reference). Attributes: KitPiece = "Shield", KitShield = "shield" (the value Kit.weapon("swordShield") also carries), no
 	KitArmour.
 
+	Carried goods (Kit.carried(resource) -> Model, resource = food | wood | stone | gold; visual upgrade, FORGE-04's carry pose): what a
+	citizen holds in both hands while it carries a load home, readable at the start camera (zoom 70: about 0.07 studs per pixel). A Model
+	of 3 or 4 part-built primitives with ONE PrimaryPart (a part of the prop, at the origin: the model's pivot is the build origin, via
+	PivotOffset) and every other part welded to it; no scripts; unanchored, massless, no collide, no touch, no query. Modelled for the
+	carry pose (arms forward, hands about 2.6 studs apart, chest height) about its centre: +Y up, front -Z; at most 2.6 wide (between
+	the hands), 1.2 tall and 1.2 deep (it starts in front of the chest). The attacher (EntityController, FORGE-01's, under FORGE-04's
+	exception) places the pivot on the Torso at CFrame.new(0, 0, -1.2) (the hands' midpoint is (0, 0.02, -1.17) in the Torso frame),
+	shows it only while the citizen carries that resource and removes it otherwise. Colours match the resource markers
+	(Props.NODE_MARKER_COLORS: stone ice white, gold yellow, wood orange, food red-pink) so a load reads like its node.
+		food    a wicker basket with a rim, a red apple and a golden loaf (4 parts)
+		wood    a bundle of three logs (the top one paler) tied with a rope band (4 parts)
+		stone   a pale block with a darker block and a chip on it (3 parts)
+		gold    a stepped stack of three gold bars (3 parts)
+	Attributes: KitCarried = the resource, KitPiece = "Carried".
+
 	Weapon = a Tool with a Handle (the grip, at the origin), no scripts, RequiresHandle, not droppable. Modelled in grip space (the
 	frame an equipped Tool's Grip puts on the hand: +Y up, -Z forward, +X right): the blade (or haft) rises along +Y, so an avatar
 	holding it with the arm forward carries it upright. Grip = the Handle's CFrame inverse (the cylinder Handle is turned upright). The other parts are welded to the Handle; hits are resolved server-side, so no part
@@ -62,6 +77,9 @@ Gear.ARMOURS = table.freeze({ "light", "medium", "heavy" })
 Gear.WEAPONS = table.freeze({ "swordShield", "greatsword", "spear", "mace" })
 Gear.MAX_PARTS_PER_ACCESSORY = 10
 Gear.MAX_PARTS_PER_WEAPON = 12
+Gear.RESOURCES = table.freeze({ "food", "wood", "stone", "gold" })
+Gear.MAX_PARTS_PER_CARRIED = 4
+Gear.CARRIED_BOUNDS = Vector3.new(2.6, 1.2, 1.2) -- the most a carried prop may measure: between the hands, tall, deep (studs)
 Gear.NEUTRAL_COLOR = Color3.fromRGB(208, 200, 184)
 
 local STEEL = Color3.fromRGB(176, 182, 192)
@@ -435,6 +453,96 @@ function Gear.shield(kingdomColor: Color3?): Accessory
 		accessory(nil, "Shield", "LeftGripAttachment", roundShieldSpecs(SHIELD_CF), kingdomColor or Gear.NEUTRAL_COLOR)
 	acc:SetAttribute("KitShield", "shield")
 	return acc
+end
+
+-- ------------------------------------------------------------------ carried goods
+
+local BASKET = Color3.fromRGB(190, 142, 84)
+local BASKET_DARK = Color3.fromRGB(138, 96, 54)
+local APPLE = Color3.fromRGB(232, 40, 84) -- the food node marker's red-pink
+local LOAF = Color3.fromRGB(238, 190, 86)
+local BARK = Color3.fromRGB(122, 78, 44)
+local LOG_PALE = Color3.fromRGB(182, 130, 78)
+local ROPE = Color3.fromRGB(226, 202, 140)
+local STONE_LIGHT = Color3.fromRGB(214, 220, 230) -- ice white, like the stone node marker
+local STONE_MID = Color3.fromRGB(150, 156, 168)
+local GOLD = Color3.fromRGB(248, 190, 24)
+local GOLD_LIGHT = Color3.fromRGB(255, 224, 92)
+
+-- the specs of one load, centred on the origin (the first one is the PrimaryPart)
+local function carriedSpecs(resource: string): { Spec }
+	local function log(name: string, x: number, y: number, z: number, color: Color3): Spec
+		return {
+			name = name,
+			shape = Enum.PartType.Cylinder,
+			size = up(2.4, 0.42), -- a cylinder along X: the log lies across the arms
+			cf = CFrame.new(x, y, z),
+			color = color,
+			material = M.Wood,
+		}
+	end
+	if resource == "wood" then
+		return {
+			boxSpec("Rope", Vector3.new(0.3, 0.9, 0.94), CFrame.new(0, 0, 0), ROPE, M.Fabric),
+			log("LogLeft", 0, -0.2, -0.22, BARK),
+			log("LogRight", 0, -0.2, 0.22, BARK),
+			log("LogTop", 0, 0.18, 0, LOG_PALE),
+		}
+	elseif resource == "stone" then
+		return {
+			boxSpec(
+				"StoneBlock",
+				Vector3.new(1.5, 0.72, 0.9),
+				CFrame.new(0, -0.12, 0) * CFrame.Angles(0, rad(8), 0),
+				STONE_LIGHT,
+				M.Slate
+			),
+			boxSpec(
+				"StoneTop",
+				Vector3.new(0.95, 0.46, 0.7),
+				CFrame.new(-0.18, 0.34, -0.02) * CFrame.Angles(0, rad(-14), 0),
+				STONE_MID,
+				M.Slate
+			),
+			boxSpec(
+				"StoneChip",
+				Vector3.new(0.5, 0.34, 0.5),
+				CFrame.new(0.62, 0.22, 0.08) * CFrame.Angles(0, rad(30), 0),
+				STONE_LIGHT,
+				M.Slate
+			),
+		}
+	elseif resource == "gold" then
+		return {
+			boxSpec("BarLow", Vector3.new(1.9, 0.32, 0.8), CFrame.new(0, -0.24, 0), GOLD, M.SmoothPlastic),
+			boxSpec("BarMid", Vector3.new(1.5, 0.32, 0.7), CFrame.new(0, 0.08, 0), GOLD, M.SmoothPlastic),
+			boxSpec("BarTop", Vector3.new(1.0, 0.32, 0.6), CFrame.new(0, 0.4, 0), GOLD_LIGHT, M.SmoothPlastic),
+		}
+	elseif resource == "food" then
+		return {
+			boxSpec("Basket", Vector3.new(1.8, 0.5, 1.0), CFrame.new(0, -0.3, 0), BASKET, M.Wood),
+			boxSpec("BasketRim", Vector3.new(1.95, 0.12, 1.12), CFrame.new(0, -0.02, 0), BASKET_DARK, M.Wood),
+			ballSpec("Apple", 0.56, CFrame.new(-0.45, 0.26, 0.02), APPLE, M.SmoothPlastic),
+			ballSpec("Loaf", 0.62, CFrame.new(0.4, 0.28, -0.02), LOAF, M.SmoothPlastic),
+		}
+	end
+	error(`Kit.carried: unknown resource {resource} (food | wood | stone | gold)`)
+end
+
+-- What a citizen holds in both hands while it carries `resource`: a Model of 3 or 4 welded parts about its own centre (see the header).
+function Gear.carried(resource: string): Model
+	local specs = carriedSpecs(resource)
+	local model = Instance.new("Model")
+	model.Name = `Carried_{resource}`
+	model:SetAttribute("KitCarried", resource)
+	model:SetAttribute("KitPiece", "Carried")
+	local primary = build(model, specs[1], Gear.NEUTRAL_COLOR, nil)
+	for i = 2, #specs do
+		weld(primary, build(model, specs[i], Gear.NEUTRAL_COLOR, nil))
+	end
+	model.PrimaryPart = primary
+	primary.PivotOffset = primary.CFrame:Inverse() -- the pivot is the build origin, not the primary part's own centre
+	return model
 end
 
 -- ------------------------------------------------------------------ weapons

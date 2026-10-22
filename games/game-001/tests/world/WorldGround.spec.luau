@@ -8,7 +8,7 @@
 	  * the cover is deterministic and bounded: the same ops twice, every op a legal Terrain call, the added voxels and ops under a ceiling;
 	  * the open ground of every plot's frame is varied: no material covers more than MAX_SHARE of it and both greens, Grass and LeafyGrass,
 	    each cover MIN_DRIFT (the grass of old was one flat colour with 28 discs for the valley; bare earth is for work areas and far land);
-	  * the START FRAME (the ruler's real start camera, support/StartView: the yard 40 studs in front of the throne along the throne's facing; zoom 70, vertical FOV 55, pitch 42.5, 16:9) is mostly green: of the
+	  * the START FRAME (the ruler's real start camera, support/StartView: the yard 20 studs in front of the throne, looking back at the keep, FL-0147; zoom 70, vertical FOV 55, pitch 42.5, 16:9) is mostly green: of the
 	    ground it shows, off the field, building and slot footprints, Grass + LeafyGrass are at least MIN_GREEN, Ground + Mud (lanes, roads,
 	    pads and headlands included) at most MAX_BROWN and the greys (court, kerb, rock floors) at most MAX_GREY, measured once per screen
 	    sample (what the eye sees) and once per ground area;
@@ -34,16 +34,17 @@ local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local WorldGround = require("@game/ReplicatedStorage/Game/Kit/WorldGround")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local StartView = require("./support/StartView")
+local CameraDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/RulerCameraController")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 
 local KINGDOMS = { "crimson", "azure", "emerald", "gold" }
 local MAX_SHARE = 0.72 -- the largest share one material may cover of a frame's open ground
 local MIN_DRIFT = 0.15 -- ... and what each of the two greens must cover (the greens carry the variety near a plot)
 local MIN_GREEN, MAX_BROWN, MAX_GREY = 0.6, 0.25, 0.12 -- the start frame's shares
-local START = { zoom = 70, fov = 55, pitch = 42.5 } -- RulerCameraController.DEFAULTS (overview), the owner-approved start view
+local START = StartView.START -- RulerCameraController.DEFAULTS (overview): zoom 70, FOV 55, pitch 42.5, the yard 20 studs ahead of the throne, looking back at the keep (FL-0147)
 local FRAME = 110 -- the plot frame: studs around the spawn (the start view and the far view's near half)
-local ADDED_OPS = 5600 -- ceiling on the new ground ops (patch, apron, path, plaza, border; the whole plan had 482 ops before)
-local ADDED_VOXELS = 70000 -- ceiling on the voxels of those ops (48 k now; the plan had 7.72 M before, 99 % of it the hills and the base ground)
+local ADDED_OPS = 5600 -- ceiling on the new ground ops (patch, apron, path, plaza, border; the whole plan had 482 ops before; 5,499 used when #296 merged: 101 of headroom)
+local ADDED_VOXELS = 70000 -- ceiling on the voxels of those ops (39,750 when #296 merged; the plan had 7.72 M before, 99 % of it the hills and the base ground)
 local LANES =
 	{ "keep", "storehouse", "farm", "fields", "quarry", "lumbercamp", "quarry_slot", "lumber_slot", "stone", "timber" }
 local BROWN = { Ground = true, Mud = true }
@@ -198,7 +199,7 @@ local function startFrames(layout, rects)
 	local tanH = tanV * 16 / 9
 	local out = {}
 	for _, kingdom in KINGDOMS do
-		-- the camera of the ruler's first view: over the keep, looking out along the throne's facing at the yard (support/StartView)
+		-- the camera of the ruler's first view (FL-0147): over the yard, looking back across it at the keep's front (support/StartView)
 		local view = StartView.camera(StartView.root(Kit, layout, kingdom), START.zoom, START.pitch)
 		local sp = view.focus
 		local cam = view.position
@@ -518,6 +519,44 @@ end
 
 -- ---------------------------------------------------------------- the plan
 
+-- The keep's cobbled court (the cobble ops of the kingdom's yard, averaged) and the keep's centre on the start frame: u across (-1 left edge,
+-- 1 right edge), v up (-1 bottom edge, 1 top edge) at the camera's field of view and a 16:9 frame; nil behind the camera.
+local function onFrame(layout, view: any, x: number, z: number): (number?, number?)
+	local rel = Vector3.new(x, layout.features.groundY or 0, z) - view.position
+	local depth = rel:Dot(view.forward)
+	if depth <= 0 then
+		return nil, nil
+	end
+	local tanV = math.tan(math.rad(START.fov / 2))
+	return rel:Dot(view.right) / depth / (tanV * 16 / 9), rel:Dot(view.up) / depth / tanV
+end
+
+-- The court is in the middle of the frame (not off to a side) and the keep stands above it (the camera looks back at the keep from the
+-- yard, FL-0147): the pre-FL-0147 camera hung over the keep, with the keep at the bottom of the frame and the court above it.
+local function courtBelowKeep(layout, kingdom: string, view: any): boolean
+	local plot = layout.plots[kingdom]
+	local yard = (plot.anchors.keep * CFrame.new(0, 0, -62)).Position
+	local sx, sz, n = 0, 0, 0
+	for _, op in WorldPlan.terrainOps(layout) do
+		if op.feature == "plaza" and op.material == "Cobblestone" then
+			local p = op.cframe.Position
+			if (p.X - yard.X) ^ 2 + (p.Z - yard.Z) ^ 2 < 40 ^ 2 then
+				sx, sz, n = sx + p.X, sz + p.Z, n + 1
+			end
+		end
+	end
+	local cu, cv = onFrame(layout, view, sx / n, sz / n)
+	local keep = plot.anchors.keep.Position
+	local _, kv = onFrame(layout, view, keep.X, keep.Z)
+	return cu ~= nil
+		and cv ~= nil
+		and kv ~= nil
+		and math.abs(cu) <= 0.3
+		and cv >= -0.6
+		and cv <= 0.05
+		and kv >= cv + 0.2
+end
+
 describe("WorldGround: the ground plan", function()
 	it("is deterministic and legal", function()
 		local floors = WorldPlan.forestFloors(Layout)
@@ -616,6 +655,35 @@ describe("WorldGround: the ground plan", function()
 		for _, path in Layout.features.paths do
 			expect(path.width).toBeGreaterThanOrEqual(6)
 			expect(#path.points).toBeGreaterThanOrEqual(2)
+		end
+	end)
+
+	it(
+		"measures the ruler's real start view (the controller's DEFAULTS, FL-0147), looking back across the yard at the keep",
+		function()
+			local overview = CameraDef.DEFAULTS.overview
+			expect(START.zoom).toBe(overview.startZoom)
+			expect(START.fov).toBe(overview.fieldOfView)
+			expect(START.pitch).toBe(CameraDef.pitchFor(overview.startZoom, overview))
+			expect(START.ahead).toBe(overview.startAhead or 40)
+			expect(START.turn).toBe(overview.startTurn or 0)
+			for _, kingdom in KINGDOMS do
+				local root = StartView.root(Kit, Layout, kingdom)
+				local view = StartView.camera(root, START.zoom, START.pitch)
+				local look = Vector3.new(root.LookVector.X, 0, root.LookVector.Z).Unit
+				-- the focus is startAhead studs in front of the throne, the camera looks back at the keep when the turn is 180
+				expect((view.focus - root.Position).Magnitude).toBeNear(START.ahead, 1e-3)
+				expect(view.focus:Dot(look) - root.Position:Dot(look)).toBeNear(START.ahead, 1e-3)
+				local flat = Vector3.new(view.forward.X, 0, view.forward.Z).Unit
+				expect(flat:Dot(look)).toBeNear(math.cos(math.rad(START.turn)), 1e-3)
+			end
+		end
+	)
+
+	it("puts each keep's cobbled court in the middle of the start frame with the keep standing above it", function()
+		for _, kingdom in KINGDOMS do
+			local view = StartView.camera(StartView.root(Kit, Layout, kingdom), START.zoom, START.pitch)
+			expect(courtBelowKeep(Layout, kingdom, view)).toBe(true)
 		end
 	end)
 end)
@@ -717,6 +785,23 @@ describe("WorldGround: the checks catch each way of breaking the rule (mutants)"
 		end)
 		expect(has(violations(layout, ops), "is also a road")).toBe(true)
 	end)
+
+	it(
+		"flags a start view that hangs over the keep instead of looking back at it (the pre-FL-0147 camera: yard 40 ahead, no turn)",
+		function()
+			for _, kingdom in KINGDOMS do
+				local root = StartView.root(Kit, Layout, kingdom)
+				local old = StartView.camera(root, START.zoom, START.pitch, 40, 0)
+				expect(courtBelowKeep(Layout, kingdom, old)).toBe(false)
+				local unturned = StartView.camera(root, START.zoom, START.pitch, START.ahead, 0)
+				expect(courtBelowKeep(Layout, kingdom, unturned)).toBe(false)
+				-- the focus 40 studs to one side of the throne: the court slides to the side of the frame (the |u| <= 0.3 rule; a turn alone
+				-- would not, the camera orbits the focus and the court stands 7 studs from it)
+				local askew = StartView.camera(root * CFrame.new(40, 0, 0), START.zoom, START.pitch)
+				expect(courtBelowKeep(Layout, kingdom, askew)).toBe(false)
+			end
+		end
+	)
 
 	it("flags a start frame that is mostly dirt or mostly paving", function()
 		local sp = Layout.plots.crimson.spawn.Position
