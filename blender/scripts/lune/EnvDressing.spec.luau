@@ -93,7 +93,8 @@ local function run(withMeshes: boolean, density: { [string]: number }?)
 			e.tris += Data.props[assetOf].tris
 		end
 	end
-	local out = { parts = svc.stats.parts, arenaParts = svc.stats.arenaParts, props = svc.stats.props, byFeature = byFeature }
+	local out =
+		{ parts = svc.stats.parts, arenaParts = svc.stats.arenaParts, props = svc.stats.props, byFeature = byFeature }
 	svc:destroy()
 	EnvKit.uninstall()
 	return out
@@ -105,9 +106,10 @@ describe("FL-0136 phase 3: mesh-only dressing", function()
 			shipped = { plain = run(false, nil), mesh = run(true, nil) },
 			full = { plain = run(false, WorldPlan.FULL_DENSITY), mesh = run(true, WorldPlan.FULL_DENSITY) },
 		}
-		-- a world without the kit places exactly today's props
-		expect(runs.shipped.plain.props).toBe(416)
-		expect(runs.full.plain.props).toBe(615)
+		-- a world without the kit places exactly today's props (the nature pass, visual upgrade 1: clumped stands and lanes, 416 -> 409 at the shipped
+		-- density and 615 -> 464 at 1.0: fewer, better-placed trees and rocks, 8 more yard props a kingdom)
+		expect(runs.shipped.plain.props).toBe(409)
+		expect(runs.full.plain.props).toBe(464)
 		local extra = { shipped = {}, full = {} }
 		local counts = {}
 		for label, density in { shipped = WorldPlan.density(Layout), full = WorldPlan.FULL_DENSITY } do
@@ -136,7 +138,9 @@ describe("FL-0136 phase 3: mesh-only dressing", function()
 		local o = process.env.FORGE_ENV_DRESSING
 		if o and o ~= "" then
 			fs.writeFile(o, serde.encode("json", { runs = runs, extra = extra, counts = counts }, false))
-			print(`dressing: shipped {runs.shipped.plain.parts} -> {runs.shipped.mesh.parts} parts, full {runs.full.plain.parts} -> {runs.full.mesh.parts} -> {o}`)
+			print(
+				`dressing: shipped {runs.shipped.plain.parts} -> {runs.shipped.mesh.parts} parts, full {runs.full.plain.parts} -> {runs.full.mesh.parts} -> {o}`
+			)
 		end
 	end)
 end)

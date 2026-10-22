@@ -96,7 +96,7 @@ describe("FL-0136 part-count relief", function()
 			shipped = { plain = run(false, nil), mesh = run(true, nil) },
 			full = { plain = run(false, WorldPlan.FULL_DENSITY), mesh = run(true, WorldPlan.FULL_DENSITY) },
 		}
-		expect(runs.full.plain.parts - runs.full.plain.arenaParts).toBe(8347) -- the dressing, the pinned figure of WorldService.spec: 8,271 + 76 resource-marker parts (phase 3); the arena is counted apart
+		expect(runs.full.plain.parts - runs.full.plain.arenaParts).toBe(6841) -- the dressing, the pinned figure of WorldService.spec (8,347 before the nature pass of visual upgrade 1: 1,506 parts lighter); the arena is counted apart
 		expect(runs.full.mesh.parts).toBeLessThan(runs.full.plain.parts)
 		local o = process.env.FORGE_ENV_RELIEF
 		if o and o ~= "" then
