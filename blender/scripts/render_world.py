@@ -279,7 +279,13 @@ def main(argv):
     col = sc.collection
     n_objs = 0
     for p in data["placements"]:
-        objs = kitparts.build_model(data["assets"][p["assetId"]], col, transform=cf_matrix(p["cframe"]))
+        m = cf_matrix(p["cframe"])
+        s = p.get("scale")
+        if s and s != 1:
+            # a placement's size against the asset's own, about the model origin (WorldService scales every part's size and its
+            # offset from the pivot, rotations stay): the 4x4 scale goes before the placement's own frame
+            m = m @ Matrix.Diagonal((s, s, s, 1))
+        objs = kitparts.build_model(data["assets"][p["assetId"]], col, transform=m)
         n_objs += len(objs)
     for m in bpy.data.materials:
         if m.node_tree and (m.name.startswith("kit_") or m.name in ("M_terrain", "M_water")):
