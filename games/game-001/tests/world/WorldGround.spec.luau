@@ -521,7 +521,7 @@ end
 
 -- The keep's cobbled court (the cobble ops of the kingdom's yard, averaged) and the keep's centre on the start frame: u across (-1 left edge,
 -- 1 right edge), v up (-1 bottom edge, 1 top edge) at the camera's field of view and a 16:9 frame; nil behind the camera.
-local function onFrame(layout, kingdom: string, view: any, x: number, z: number): (number?, number?)
+local function onFrame(layout, view: any, x: number, z: number): (number?, number?)
 	local rel = Vector3.new(x, layout.features.groundY or 0, z) - view.position
 	local depth = rel:Dot(view.forward)
 	if depth <= 0 then
@@ -545,9 +545,9 @@ local function courtBelowKeep(layout, kingdom: string, view: any): boolean
 			end
 		end
 	end
-	local cu, cv = onFrame(layout, kingdom, view, sx / n, sz / n)
+	local cu, cv = onFrame(layout, view, sx / n, sz / n)
 	local keep = plot.anchors.keep.Position
-	local _, kv = onFrame(layout, kingdom, view, keep.X, keep.Z)
+	local _, kv = onFrame(layout, view, keep.X, keep.Z)
 	return cu ~= nil
 		and cv ~= nil
 		and kv ~= nil
@@ -795,6 +795,10 @@ describe("WorldGround: the checks catch each way of breaking the rule (mutants)"
 				expect(courtBelowKeep(Layout, kingdom, old)).toBe(false)
 				local unturned = StartView.camera(root, START.zoom, START.pitch, START.ahead, 0)
 				expect(courtBelowKeep(Layout, kingdom, unturned)).toBe(false)
+				-- the focus 40 studs to one side of the throne: the court slides to the side of the frame (the |u| <= 0.3 rule; a turn alone
+				-- would not, the camera orbits the focus and the court stands 7 studs from it)
+				local askew = StartView.camera(root * CFrame.new(40, 0, 0), START.zoom, START.pitch)
+				expect(courtBelowKeep(Layout, kingdom, askew)).toBe(false)
 			end
 		end
 	)
