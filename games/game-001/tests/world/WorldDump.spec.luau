@@ -109,11 +109,35 @@ local function covers(o: OpReach, x: number, z: number): boolean
 	return true -- a disc (ball cap) or a cylinder: inside its radius, which the reach test above already settled
 end
 
+-- The ops are bucketed on a grid (BUCKET studs), each bucket holding the ops that reach it in plan order, so a point only tests
+-- its own bucket (the plan has thousands of ops; every heightfield point used to test them all).
+local BUCKET = 48
+local BUCKETS: { [number]: { OpReach } } = {}
+local function bucketKey(bx: number, bz: number): number
+	return bz * 4096 + bx
+end
+for _, o in OPS do
+	for bz = math.floor((o.cz - o.reach) / BUCKET), math.floor((o.cz + o.reach) / BUCKET) do
+		for bx = math.floor((o.cx - o.reach) / BUCKET), math.floor((o.cx + o.reach) / BUCKET) do
+			local key = bucketKey(bx, bz)
+			local list = BUCKETS[key]
+			if not list then
+				list = {}
+				BUCKETS[key] = list
+			end
+			table.insert(list, o)
+		end
+	end
+end
+
 local function surfaceMaterial(x: number, z: number, _h: number): string
 	local found = "Grass"
-	for _, o in OPS do
-		if covers(o, x, z) then
-			found = o.op.material
+	local list = BUCKETS[bucketKey(math.floor(x / BUCKET), math.floor(z / BUCKET))]
+	if list then
+		for _, o in list do
+			if covers(o, x, z) then
+				found = o.op.material
+			end
 		end
 	end
 	return found

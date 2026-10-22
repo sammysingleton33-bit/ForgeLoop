@@ -40,7 +40,7 @@ from lib import contact, kitparts, rig  # noqa: E402
 
 TERRAIN_RGB = {  # world/Lighting.luau terrainColors
     "Grass": (106, 168, 62), "LeafyGrass": (84, 150, 52), "Ground": (150, 116, 78), "Mud": (110, 86, 60),
-    "Sand": (214, 190, 138), "Rock": (128, 124, 118), "Cobblestone": (150, 144, 132), "Water": (52, 128, 170),
+    "Sand": (214, 190, 138), "Rock": (128, 124, 118), "Slate": (110, 108, 104), "Cobblestone": (150, 144, 132), "Water": (52, 128, 170),
 }
 
 
@@ -252,6 +252,9 @@ def main(argv):
     ap.add_argument("--samples", type=int, default=0)
     args = ap.parse_args(argv)
     data = json.loads(Path(args.json).read_text())
+    # the terrain colours come from the dumped world/Lighting preset (terrainColors), so a palette change shows; the table above is the fallback
+    for name, rgb in data.get("lighting", {}).get("terrainColors", {}).items():
+        TERRAIN_RGB[name] = tuple(rgb)
     names = [v for v in args.views.split(",") if v]
     preset = lighting_params(data["lighting"]) if any(n.split("_")[0] in CAMERAS for n in names) and "lighting" in data else None
 
