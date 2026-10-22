@@ -25,6 +25,7 @@ local serde = require("@lune/serde")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
+local StartView = require("./support/StartView")
 local LightingPreset = require("@game/ReplicatedStorage/Game/World/Lighting")
 
 local KINGDOM_COLORS = {
@@ -309,7 +310,11 @@ local function dump()
 		plots = (function()
 			local out = {}
 			for k, plot in Layout.plots do
-				out[k] = { keep = cf12(plot.anchors.keep), spawn = cf12(plot.spawn) }
+				out[k] = {
+					keep = cf12(plot.anchors.keep),
+					spawn = cf12(plot.spawn),
+					throne = cf12(StartView.root(Kit, Layout, k)),
+				}
 			end
 			return out
 		end)(),

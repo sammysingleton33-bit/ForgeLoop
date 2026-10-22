@@ -8,7 +8,7 @@
 	  * the cover is deterministic and bounded: the same ops twice, every op a legal Terrain call, the added voxels and ops under a ceiling;
 	  * the open ground of every plot's frame is varied: no material covers more than MAX_SHARE of it and both greens, Grass and LeafyGrass,
 	    each cover MIN_DRIFT (the grass of old was one flat colour with 28 discs for the valley; bare earth is for work areas and far land);
-	  * the START FRAME (the ruler's default camera at a kingdom's spawn: zoom 70, vertical FOV 55, pitch 42.5, 16:9) is mostly green: of the
+	  * the START FRAME (the ruler's real start camera, support/StartView: the yard 40 studs in front of the throne along the throne's facing; zoom 70, vertical FOV 55, pitch 42.5, 16:9) is mostly green: of the
 	    ground it shows, off the field, building and slot footprints, Grass + LeafyGrass are at least MIN_GREEN, Ground + Mud (lanes, roads,
 	    pads and headlands included) at most MAX_BROWN and the greys (court, kerb, rock floors) at most MAX_GREY, measured once per screen
 	    sample (what the eye sees) and once per ground area;
@@ -22,6 +22,8 @@
 	`violations` is the rule as code; the mutants at the end prove it catches each way of breaking it.
 ]]
 
+local process = require("@lune/process")
+
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
@@ -30,6 +32,8 @@ local WorldDef = require("@game/ServerScriptService/Game/Services/WorldService")
 local Terrain = require("@game/ReplicatedStorage/Game/Kit/Terrain")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local WorldGround = require("@game/ReplicatedStorage/Game/Kit/WorldGround")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local StartView = require("./support/StartView")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 
 local KINGDOMS = { "crimson", "azure", "emerald", "gold" }
@@ -190,19 +194,16 @@ local function startFrames(layout, rects)
 		return frameCache[layout]
 	end
 	local gy = layout.features.groundY or 0
-	local pitch = math.rad(START.pitch)
 	local tanV = math.tan(math.rad(START.fov / 2))
 	local tanH = tanV * 16 / 9
-	local fwd, right, up =
-		Vector3.new(0, -math.sin(pitch), -math.cos(pitch)),
-		Vector3.new(1, 0, 0),
-		Vector3.new(0, math.cos(pitch), -math.sin(pitch))
 	local out = {}
 	for _, kingdom in KINGDOMS do
-		local sp = layout.plots[kingdom].spawn.Position
-		local cam = Vector3.new(sp.X, sp.Y + START.zoom * math.sin(pitch), sp.Z + START.zoom * math.cos(pitch))
+		-- the camera of the ruler's first view: over the keep, looking out along the throne's facing at the yard (support/StartView)
+		local view = StartView.camera(StartView.root(Kit, layout, kingdom), START.zoom, START.pitch)
+		local sp = view.focus
+		local cam = view.position
 		local function ground(u: number, v: number): Vector2
-			local dir = fwd + right * (u * tanH) + up * (v * tanV)
+			local dir = view.forward + view.right * (u * tanH) + view.up * (v * tanV)
 			local hit = cam + dir * ((gy - cam.Y) / dir.Y)
 			return Vector2.new(hit.X, hit.Z)
 		end
@@ -336,6 +337,13 @@ local function violations(layout, ops): { string }
 	for kingdom, frame in startFrames(layout, rects) do
 		for _, mode in { "screen", "area" } do
 			local sh = shares(read, frame[mode])
+			if process.env.FORGE_GROUND_SHARES == "1" then
+				print(
+					`SHARES {kingdom} {mode}: green {math.floor(sh.green * 1000 + 0.5) / 10} brown {math.floor(
+						sh.brown * 1000 + 0.5
+					) / 10} grey {math.floor(sh.grey * 1000 + 0.5) / 10}`
+				)
+			end
 			if sh.green < MIN_GREEN then
 				add(`start frame {kingdom} ({mode}): only {math.floor(sh.green * 100)} % green`)
 			end
