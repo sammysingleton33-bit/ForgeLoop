@@ -154,6 +154,12 @@ function LeadershipService:leadership(kingdom: string, userId: number?): number
 		+ Ledger.level(self._ledger, kingdom, userId, "conduct")
 end
 
+-- D-060: a supporter comes with their building (config Support roles[r].building). The five support buildings are not
+-- placeable yet (FL-0149), so until then every role counts; FL-0149 turns this on: a finished building of that type.
+local function bringsSupporter(_sim: any, _kingdom: any, _role: string): boolean
+	return true
+end
+
 function LeadershipService:keyCitizens(kingdom: string): { any }
 	local sim = self:_sim()
 	local k = sim.kingdoms[kingdom]
@@ -166,7 +172,7 @@ function LeadershipService:keyCitizens(kingdom: string): { any }
 		local c = sim.citizens[id]
 		-- the population gives each role to one citizen; a second one in the same role is not a key citizen
 		local role = if c and c.profile then c.profile.keyRole else nil
-		if c and c.alive and role and not seen[role] and self.config.roles[role] then
+		if c and c.alive and role and not seen[role] and self.config.roles[role] and bringsSupporter(sim, k, role) then
 			seen[role] = true
 			table.insert(out, {
 				role = role,

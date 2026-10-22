@@ -722,6 +722,31 @@ describe("LeadershipService.keyCitizens", function()
 		end
 	end)
 
+	it("names only one key citizen per role, the first in the kingdom's citizen order", function()
+		local w = boot()
+		local first = keyed(w)[1]
+		local twin
+		local after = false
+		for _, c in citizensOf(w) do
+			if c == first then
+				after = true
+			elseif after and not (c.profile and c.profile.keyRole) then
+				twin = c
+				break
+			end
+		end
+		assert(twin, "a citizen without a key role, after the first one in the kingdom's order")
+		twin.profile.keyRole = first.profile.keyRole -- a second citizen in the same role
+		local count = 0
+		for _, k in w.service:keyCitizens("crimson") do
+			if k.role == first.profile.keyRole then
+				count += 1
+				expect(k.citizenId).toBe(first.id)
+			end
+		end
+		expect(count).toBe(1)
+	end)
+
 	it("falls back to neutral loyalty when a citizen has none", function()
 		local w = boot()
 		local c = keyed(w)[1]
@@ -752,4 +777,24 @@ describe("LeadershipService.keyCitizens", function()
 		c.loyalty = 95
 		expect(perkOf(SupportModel.offers(w.service:keyCitizens("crimson"), "loyal")).power).toBe("empowered")
 	end)
+
+	it(
+		"names each role's building by its catalog id, and lists every role while the buildings cannot be placed yet",
+		function()
+			local w = boot()
+			expect(Support.roles.blacksmith.building).toBe("blacksmith")
+			for _, building in { "blacksmith", "market", "infirmary", "granary", "shrine", "barracks" } do
+				local found = false
+				for _, role in Support.roles do
+					found = found or role.building == building
+				end
+				expect(found).toBe(true)
+			end
+			-- interim (D-060, until FL-0149): no support building stands, and the key citizens are still listed
+			for _, b in w.sim.buildings do
+				expect(b.kind == "blacksmith" or b.kind == "infirmary" or b.kind == "shrine").toBe(false)
+			end
+			expect(#w.service:keyCitizens("crimson") > 0).toBe(true)
+		end
+	)
 end)
