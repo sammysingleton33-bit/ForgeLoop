@@ -116,6 +116,8 @@ export type Tuning = {
 	arriveRadius: number,
 	placementGap: number,
 	wallGap: number, -- the placement gap between two line pieces (wall, gate); placementGap when not set
+	lineGrid: number, -- studs the ends of a wall line (Build.PlaceLine) snap to
+	maxLineSegments: number, -- the most segments one wall line may have
 	moveCooldown: number, -- seconds a building waits between moves (G13.9)
 	moveSettle: number, -- seconds a moved drop-off takes no deliveries and gives no gather bonus
 	moveLockout: number, -- seconds a kingdom can't move anything after a war declaration or peace
@@ -188,6 +190,8 @@ local function assemble(): Catalog
 	tuning.carry = JobsConfig.carry
 	tuning.placementGap = BuildingsConfig.placementGap
 	tuning.wallGap = (BuildingsConfig :: any).wallGap or BuildingsConfig.placementGap
+	tuning.lineGrid = (BuildingsConfig :: any).lineGrid or 4
+	tuning.maxLineSegments = (BuildingsConfig :: any).maxLineSegments or 12
 	tuning.moveCooldown = (BuildingsConfig :: any).moveCooldown or 10
 	tuning.moveSettle = (BuildingsConfig :: any).moveSettle or 30
 	tuning.moveLockout = (BuildingsConfig :: any).moveLockout or 30
