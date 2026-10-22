@@ -37,6 +37,9 @@ local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local ArenaFlow = require("@game/ReplicatedStorage/Game/Arena/ArenaFlow")
 local DuelRunner = require("@game/ReplicatedStorage/Game/Arena/DuelRunner")
 local SupportModel = require("@game/ReplicatedStorage/Game/Arena/SupportModel")
+local Figures = require("@game/ReplicatedStorage/Game/Arena/Figures")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 
 local ArenaService = {}
 ArenaService.__index = ArenaService
@@ -50,6 +53,11 @@ local Def = {
 }
 
 local IDLE_STATE = table.freeze({ stage = "done" })
+
+local COLORS: { [string]: Color3 } = {}
+for _, identity in KingdomsConfig.identities do
+	COLORS[identity.id] = Color3.fromRGB(identity.color[1], identity.color[2], identity.color[3])
+end
 
 function Def.new(env: any, registry: any)
 	local self = setmetatable({}, ArenaService)
@@ -69,6 +77,9 @@ function Def.new(env: any, registry: any)
 	self._connections = {} :: { any }
 	self._held = {} :: { [number]: any } -- userId -> { character, humanoid, walkSpeed } while a champion is held to the ring
 	self.config = ArenaConfig -- specs may swap in a table of their own (short stages)
+	self.kit = Kit -- what builds the AI champion's figure, the gear and the venue's dress (specs swap in a recorder)
+	self._figures = nil :: any -- Arena/Figures while an arena runs
+	self._figureClock = nil :: number? -- when the AI figures last walked
 	self.placeAt = nil :: ((userId: number, x: number, z: number, toX: number, toZ: number) -> ())?
 	return self
 end
@@ -84,6 +95,10 @@ end
 
 -- Where a character stands and which way it faces, read on the server; nil when it has no body.
 function ArenaService:poseOf(userId: number): { x: number, z: number, fx: number, fz: number }?
+	local figures = self._figures
+	if figures ~= nil and figures:has(userId) then
+		return figures:poseOf(userId) -- an AI champion stands where its figure does
+	end
 	local ok, pose = pcall(function()
 		local player = self._env.Players:GetPlayerByUserId(userId)
 		local character = player and player.Character
@@ -175,17 +190,117 @@ function ArenaService:_placer(): (number, number, number, number, number, number
 		end
 end
 
+-- The Crown Arena model (WorldService tags and names it CrownArena); nil in a bare test world.
+function ArenaService:_venue(): any?
+	local ok, model = pcall(function()
+		return self._env.Workspace:FindFirstChild("CrownArena", true)
+	end)
+	return if ok then model else nil
+end
+
+function ArenaService:_colorOf(kingdom: string): Color3
+	return COLORS[kingdom] or Figures.NEUTRAL_COLOR
+end
+
+-- The server moved a champion's character: the ruler position clamp starts over from where it stands now.
+function ArenaService:_snap(userId: number)
+	pcall(function()
+		self._match.host:snapRuler(userId)
+	end)
+end
+
+-- The loadout gear on a human champion's current character.
+function ArenaService:_wear(champion: any, character: any)
+	local figures = self._figures
+	if figures ~= nil then
+		figures:wear(character, {
+			color = self:_colorOf(champion.kingdom),
+			weapon = champion.weapon,
+			armour = champion.armour,
+		})
+	end
+end
+
+-- Everything the arena put in the world besides the venue: the AI champion's figure, the gear, the venue's dress.
+function ArenaService:_clearFigures()
+	local figures = self._figures
+	if figures == nil then
+		return
+	end
+	self._figures = nil
+	local venue = self:_venue()
+	if venue ~= nil then
+		figures:reset(venue)
+	end
+	figures:clear()
+end
+
 function ArenaService:_placeChampions()
 	local place = self:_placer()
 	local layout = self:_layout()
+	local figures = Figures.new({
+		kit = self.kit,
+		parent = self._env.Workspace,
+		new = self._env.newInstance,
+		collection = self._env.CollectionService,
+		log = self._env.log,
+	})
+	self._figures = figures
+	self._figureClock = nil
+	local colors = {}
 	for _, side in { "a", "b" } do
 		local champion = self._flow:champion(side)
-		if champion and not champion.isAI then
-			local mark = layout[side]
+		if champion == nil then
+			continue
+		end
+		local mark = layout[side]
+		colors[side] = self:_colorOf(champion.kingdom)
+		if champion.isAI then
+			-- no avatar to place: a server-owned figure stands on the mark, and the duel measures it like a player
+			local y = if mark.height then mark.height - Figures.FEET_BELOW_MARK else 0
+			figures:spawn(champion.userId, {
+				side = side,
+				color = colors[side],
+				kingdom = champion.kingdom,
+				weapon = champion.weapon,
+				armour = champion.armour,
+				cframe = CFrame.lookAt(Vector3.new(mark.x, y, mark.z), Vector3.new(mark.toX, y, mark.toZ)),
+			})
+		else
 			place(champion.userId, mark.x, mark.z, mark.toX, mark.toZ, mark.height)
+			self:_snap(champion.userId)
 			local character = characterOf(self._env, champion.userId)
 			if character ~= nil then
 				self:_hold(champion.userId, character) -- from here on they are held to the ring
+				self:_wear(champion, character)
+			end
+		end
+	end
+	local venue = self:_venue()
+	if venue ~= nil then
+		figures:dress(venue, colors.a, colors.b)
+	end
+end
+
+-- An AI champion's figure closes in on the opponent at the fixed WalkSpeed, to just inside its own reach, so the duel's
+-- range and facing (measured from where both stand) are real for it.
+function ArenaService:_walkFigures(now: number)
+	local figures = self._figures
+	local flow = self._flow
+	local last = self._figureClock
+	self._figureClock = now
+	if figures == nil or flow == nil or last == nil then
+		return
+	end
+	local dt = math.clamp(now - last, 0, self.config.maxCatchup)
+	local step = dt * self.config.ring.walkSpeed
+	local ring = self:_layout().ring
+	for side, other in { a = "b", b = "a" } do
+		local champion, opponent = flow:champion(side), flow:champion(other)
+		if champion and opponent and champion.isAI and figures:has(champion.userId) then
+			local target = self:poseOf(opponent.userId)
+			if target then
+				figures:approach(champion.userId, target.x, target.z, step, self.config.reach * 0.7, ring)
 			end
 		end
 	end
@@ -240,7 +355,9 @@ function ArenaService:_guard()
 		if held == nil or held.character ~= character then
 			local mark = layout[side]
 			place(champion.userId, mark.x, mark.z, mark.toX, mark.toZ, mark.height)
+			self:_snap(champion.userId)
 			self:_hold(champion.userId, character)
+			self:_wear(champion, character) -- the gear stayed on the old character
 			continue
 		end
 		local position = root.CFrame.Position
@@ -249,6 +366,7 @@ function ArenaService:_guard()
 		if distance > limit then
 			local scale = ring.radius / distance
 			place(champion.userId, ring.x + dx * scale, ring.z + dz * scale, ring.x, ring.z, ring.height)
+			self:_snap(champion.userId)
 		end
 	end
 end
@@ -333,6 +451,7 @@ function ArenaService:_cancel(reason: string)
 	flow:cancel(reason)
 	self:_publish()
 	self:_releaseAll()
+	self:_clearFigures()
 	self._flow, self._runner = nil, nil
 	self._remotes:fireAll("Arena.State", IDLE_STATE)
 end
@@ -397,6 +516,7 @@ function ArenaService:_finish()
 	local winner = flow:winnerKingdom()
 	self:_publish()
 	self:_releaseAll()
+	self:_clearFigures()
 	self._flow, self._runner = nil, nil
 	self._remotes:fireAll("Arena.State", IDLE_STATE)
 	self._match:arenaEnded(winner)
@@ -413,6 +533,9 @@ function ArenaService:step()
 	if stage == "intro" and not self._placed then
 		self._placed = true
 		self:_placeChampions()
+	end
+	if stage == "duel" then
+		self:_walkFigures(now)
 	end
 	if stage == "intro" or stage == "duel" then
 		self:_guard()
@@ -535,6 +658,7 @@ end
 function ArenaService:destroy()
 	self._running = false
 	self:_releaseAll()
+	self:_clearFigures()
 	self.stageChanged:disconnectAll()
 	for _, connection in self._connections do
 		connection:Disconnect()

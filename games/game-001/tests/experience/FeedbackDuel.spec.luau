@@ -260,10 +260,42 @@ describe("FeedbackDuelController: the champions move with the duel (FL-0141)", f
 		sent:fire("light")
 		expect(t.anim.poses.a.name).toBeNil()
 		expect(t.anim.poses.b.name).toBeNil()
-		-- an AI champion with our id (Studio's negative test ids) is not us
+		-- an AI champion with our id (Studio's negative test ids) is not us, on either side
 		t.duel:setState({ stage = "duel", a = duellist(ME, true), b = duellist(RIVAL) })
 		sent:fire("light")
 		expect(t.anim.poses.a.name).toBeNil()
+		t.duel:setState({ stage = "duel", a = duellist(RIVAL), b = duellist(ME, true) })
+		sent:fire("light")
+		expect(t.anim.poses.a.name).toBeNil()
+		expect(t.anim.poses.b.name).toBeNil()
+	end)
+
+	it("a pair first seen in the crowning (a late join, a coronation) is not posed: no ready stance", function()
+		local winner, rival = avatar(), avatar()
+		local t = boot({ characters = { [ME] = winner, [RIVAL] = rival } })
+		t.duel:setState({ stage = "crowning", a = duellist(ME), b = duellist(RIVAL), winner = ME }) -- GetState
+		frames(t, 0.5)
+		expect(t.anim.poses.a.active).toBe(false)
+		expect(t.anim:rig("a")).toBeNil()
+		expect(t.counts.sets).toBe(0) -- the avatars stay their Animators' own
+		expect(t.counts.looks).toBe(0)
+		t.duel:setState({ stage = "done" })
+		frames(t, 0.3)
+		expect(t.counts.sets).toBe(0)
+		-- a coronation: one kingdom left, straight to the crowning with no duel
+		local crowned = boot({ characters = { [ME] = avatar() } })
+		crowned.duel:setState({ stage = "crowning", a = duellist(ME), winner = ME })
+		frames(crowned, 0.5)
+		expect(crowned.counts.sets).toBe(0)
+		-- the next duel this client sees from its start is posed as usual
+		t.duel:setState({ stage = "duel", a = duellist(ME), b = duellist(9999) })
+		frames(t, 0.1)
+		expect(t.anim.poses.a.active).toBe(true)
+		expect(t.anim:rig("a").model).toBe(winner)
+		-- and a later pair first seen in its crowning is not, though this client watched the last duel
+		t.duel:setState({ stage = "crowning", a = duellist(RIVAL), b = duellist(9999), winner = RIVAL })
+		frames(t, 0.2)
+		expect(t.anim.poses.a.active).toBe(false)
 	end)
 
 	it("a late joiner starts from DuelController's state and animates from the next event", function()
@@ -330,8 +362,11 @@ describe("FeedbackDuelController: the champions move with the duel (FL-0141)", f
 		local me = avatar()
 		local t = boot({ characters = { [ME] = me }, studio = false })
 		expect(t.anim:preview("spear")).toBe(false)
-		local s = boot({ characters = { [ME] = me }, studio = true, player = { UserId = ME } })
+		local sent = Signal.new()
+		local s = boot({ characters = { [ME] = me }, studio = true, player = { UserId = ME }, sent = sent })
 		expect(s.anim:preview("spear")).toBe(true)
+		sent:fire("heavy") -- the preview ignores presses (it plays as side a = you)
+		expect(s.anim.poses.a.name).toBeNil()
 		expect(s.anim.poses.a.style).toBe("slash") -- the weapon comes with the first preview snapshot
 		local seen = {}
 		for _ = 1, 60 * 16 do

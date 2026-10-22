@@ -3,13 +3,14 @@ id: FL-0140
 title: "Arena champions visible: AI champion body, loadout gear, venue dress"
 track: build
 owner: forge-01
-status: READY
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-19
 updated: 2026-10-19
 depends_on: []
-evidence: []
+evidence:
+  - "sim/ArenaService 44/0, FL-0140.py 12/12 caught; Studio: unverified"
 ---
 
 # Arena champions visible: AI champion body, loadout gear, venue dress
@@ -40,3 +41,5 @@ In a Crown Arena duel both champions are visible and dressed for the fight. An A
 
 ## Log
 - 2026-10-19 FORGE-00: created from the v0.4-g11k pass. P0 for B23 RC: the arena cannot be called finished while the AI opponent is invisible.
+- 2026-10-19 forge-01: READY → BUILDING. started: Figures module and ArenaService wiring
+- 2026-10-19 forge-01: BUILDING → REVIEW. AI champion figure, loadout gear, venue dress and snapRuler in ArenaService/Figures; headless specs and 12 mutation rows

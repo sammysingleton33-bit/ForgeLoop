@@ -215,6 +215,17 @@ describe("a world without the imported kit is exactly today's world", function()
 			expect(Kit.envMeshReady("farm_field_cabbage_02")).toBe(false)
 			expect(Kit.envMeshReady("farm_fence_02")).toBe(true)
 			expect(Kit.envMeshReady("tree_nonexistent_01")).toBe(false)
+			-- the fence that IS imported but does not match its data is recorded (the import page's `rejected` check sees it) and logged
+			-- once, saying its dressing is not placed; the cabbage that was never imported and the id the data does not list stay silent
+			expect(Kit.envMeshReady("farm_fence_01")).toBe(false) -- asking again changes nothing
+			local status = EnvMesh.status()
+			expect(status.rejected.farm_fence_01).never.toBeNil()
+			expect(status.rejected.farm_field_cabbage_02).toBeNil()
+			expect(status.rejected.tree_nonexistent_01).toBeNil()
+			expect(status.accepted).toBe(0)
+			expect(#EnvKit.logs).toBe(1)
+			expect(string.find(EnvKit.logs[1], "farm_fence_01", 1, true)).never.toBeNil()
+			expect(string.find(EnvKit.logs[1], "its dressing is not placed", 1, true)).never.toBeNil()
 			-- a world that can build only some of them places only those
 			local base = WorldPlan.props(Layout, DRESSED, nil)
 			local out = WorldPlan.meshDressing(Layout, base, Kit.envMeshReady)
