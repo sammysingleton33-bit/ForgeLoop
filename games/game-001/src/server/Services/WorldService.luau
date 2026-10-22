@@ -7,7 +7,7 @@
 	  1. applies world/Lighting (Lighting properties, Atmosphere, Sky, ColorCorrection, Bloom, SunRays,
 	     Clouds, terrain material colours, water);
 	  2. runs Kit/WorldPlan terrain ops through the terrain adapter (Kit/Terrain): one Fill* per feature
-	     piece, at most VOXELS_PER_FRAME voxels per frame;
+	     piece, at most VOXELS_PER_FRAME voxels and TERRAIN_OPS_PER_FRAME calls per frame;
 	  3. places resource nodes (Kit.prop by asset id, tagged ResourceNode + NodeId), build zones
 	     (invisible parts tagged BuildZone + ZoneId, Kingdom), the objective zone (ObjectiveZone +
 	     ObjectiveId, Radius), plot markers (KingdomPlot + Kingdom) and build slot markers
@@ -51,6 +51,7 @@ WorldService.__index = WorldService
 
 WorldService.DRESSED = { crimson = true } -- VS-1: one kingdom fully dressed, the others blocked out
 WorldService.VOXELS_PER_FRAME = 64 * 64 * 64
+WorldService.TERRAIN_OPS_PER_FRAME = 300 -- Fill* calls per frame too: the ground cover is thousands of small ops (a few voxels each), so the voxel budget alone never yields
 WorldService.PARTS_PER_FRAME = 400 -- parts created per frame before yielding (nodes, markers, props)
 -- decoration parts higher than this above their model's pivot do not collide (canopies, banners, roofs)
 WorldService.COLLIDE_HEIGHT = 7
@@ -259,15 +260,16 @@ function WorldService:_build()
 
 	-- terrain, chunked by voxel budget
 	local ops = WorldPlan.terrainOps(layout, self.density)
-	local budget = 0
+	local budget, calls = 0, 0
 	for _, op in ops do
 		local v = WorldPlan.voxels(op)
-		if budget > 0 and budget + v > self.voxelsPerFrame then
-			budget = 0
+		if (budget > 0 and budget + v > self.voxelsPerFrame) or calls >= WorldService.TERRAIN_OPS_PER_FRAME then
+			budget, calls = 0, 0
 			self:_wait()
 		end
 		self.terrain.fill(op)
 		budget += v
+		calls += 1
 	end
 	self.stats.terrainOps = #ops
 	self:_wait()

@@ -760,15 +760,15 @@ History:
 
 ## E22 — The default aerial framing (D-059, FL-0145, game-001)
 
-The owner's B22 review found citizens barely recognisable from the start view. At zoom 120 and a 70° field of view, a citizen stood about 2 % of the screen's height: about 23 px at 1080p and 8 pt on a phone. The overview now starts at **zoom 70** with a **55° field of view** (pitch 42.5°), so a citizen stands about 6 %. The view is centred on the **yard 40 studs in front of your throne**, not the throne itself, so the village and its people fill the middle rather than the keep's roof. The zoom limits (40–220) and the player's own zoom are unchanged. Walk mode and the duel keep Roblox's 70°. The conversation shot and the arena intro shots were re-tuned so they frame what they did.
+The owner's B22 review found citizens barely recognisable from the start view. At zoom 120 and a 70° field of view, a citizen stood about 2 % of the screen's height: about 23 px at 1080p and 8 pt on a phone. The overview now starts at **zoom 70** with a **55° field of view** (pitch 42.5°), so a citizen stands about 6 %. Since FL-0147 the first view stands over the **yard 20 studs in front of your throne** and **looks back across it at the keep's front**: the keep at the top of the picture, the village and its working citizens around and below it. Before, it looked out from behind the throne, so the camera hung over the keep and its towers filled the bottom quarter (FORGE-02's #296 render). Later returns to the aerial view keep the direction you last looked. The zoom limits (40–220) and the player's own zoom are unchanged. Walk mode and the duel keep Roblox's 70°. The conversation shot and the arena intro shots were re-tuned so they frame what they did.
 
 Needs: nothing (Play Solo). FORGE-02's FL-0145 pass 1 changes the look at the same time; judge the framing (how big and readable things are), not the art.
 
 Steps
-1. Play Solo on a desktop window (about 1920×1080). At spawn the aerial view is centred on the yard in front of your keep, with the keep at the edge of the picture. Citizens are clearly people: you can tell head, body and what they carry. Screenshot **E22-1**, and compare it with your B22 screenshot from the same spot.
+1. Play Solo on a desktop window (about 1920×1080). At spawn the aerial view looks back across the yard at your keep's front: the keep stands at the top of the picture, with your throne in its doorway. The farm is on one side and the storehouse on the other. **Nothing crosses the bottom of the screen**: no roof, tower or house. Within about 30 s, count the citizens at work in view: at least 4 (the headless render shows 7 of 12). Citizens are clearly people: you can tell head, body and what they carry. Screenshot **E22-1** at Play and again at about 30 s, and compare them with your B22 screenshot.
 2. Device emulator, a phone in landscape (for example 750×311, or the smallest phone you have). Repeat step 1. Citizens are small but readable, and tapping one is easy. Screenshot **E22-2**.
 3. Zoom all the way out with the wheel or a pinch: it still goes as far as before (220 studs), and the whole kingdom fits. Zoom all the way in: it still stops at 40.
-4. Press V for walk mode. The view looks like Roblox's normal third-person camera, with no narrow "tunnel" feel. Press V again: the aerial view comes back with no jump.
+4. Press V for walk mode. The view looks like Roblox's normal third-person camera, with no narrow "tunnel" feel. Press V again: the aerial view comes back with no jump, looking the way your walk camera looked (not back at the keep again).
 5. On the phone, open a conversation with a citizen. The camera glides in, and the citizen's head sits just under the HUD with the portrait below (E10's framing row).
 6. If an arena runs (B22.1): the intro pass frames each stand and then the ring, as in E18 step 1, with nothing important cut off at the edges.
 
@@ -776,3 +776,4 @@ Pass: steps 1–5 hold (6 when an arena runs). Write what you think of the close
 
 History:
 - 2026-10-19 FORGE-04: written (D-059; FORGE-00 approved the zoom 70 / 55° framing and the yard focus).
+- 2026-10-22 FORGE-04: FL-0147. The first view looks back at the keep from 20 studs before the throne. Step 1 counts the citizens at about 30 s and checks the bottom edge; step 4 keeps the walk camera's direction.
