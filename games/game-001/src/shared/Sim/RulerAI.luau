@@ -40,6 +40,7 @@
 local Commands = require("./Commands")
 local Military = require("./Military")
 local Snapshot = require("./Snapshot")
+local Support = require("@game/ReplicatedStorage/Forge/Config/Support")
 
 local RulerAI = {}
 
@@ -489,6 +490,86 @@ local function assault(sim: any, kingdom: any, target: any): string?
 	return nil
 end
 
+-- ---------------------------------------------------------------- support buildings (FL-0149, D-060)
+-- Each support building brings its key citizen, whose perk the Crown Arena can offer (config Support roles[r].building). A
+-- governor builds them one at a time, in SUPPORT_ORDER, near its keep (the village cluster, not the yard's edge): once it
+-- has reached day SUPPORT_DAY with a level-2 keep, its storehouse, lumber camp and quarry standing. It builds the first
+-- one in the order it can pay (wood is plentiful and stone is not, so it does not wait for a dear one) and only for a role
+-- whose key citizen is alive: a building without its citizen brings no support. Stone is the bottleneck, so the keep's L2
+-- upgrade and the palisade's gate come first.
+local SUPPORT_ORDER = { "blacksmith", "infirmary", "granary", "shrine", "market" }
+local SUPPORT_DAY = 3
+local SUPPORT_MARGIN = { wood = 60 } -- wood left over after the price: a support building never empties the stores
+
+-- The palisade has its pieces and waits for its gate (it costs the stone a support building would take).
+local function gateWanted(sim: any, kingdom: any, aggression: number): boolean
+	if aggression < FORTIFY_AGGRESSION or sim:keepLevel(kingdom) < 2 then
+		return false
+	end
+	local walls = 0
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b.kind == "gate" then
+			return false
+		elseif b.kind == "wall" and b.level >= 1 then
+			walls += 1
+		end
+	end
+	return walls >= GATE_AFTER
+end
+
+-- The support buildings whose key citizen is alive in the kingdom (config Support roles[r].building -> true).
+local function livingRoles(sim: any, kingdom: any): { [string]: boolean }
+	local out: { [string]: boolean } = {}
+	for _, cid in kingdom.citizenIds do
+		local c = sim.citizens[cid]
+		local role = if c and c.alive and c.profile then c.profile.keyRole else nil
+		local def = if role then Support.roles[role] else nil
+		if def then
+			out[def.building] = true
+		end
+	end
+	return out
+end
+
+local function buildSupport(sim: any, kingdom: any, aggression: number, day: number): string?
+	if day < SUPPORT_DAY or sim:keepLevel(kingdom) < 2 then
+		return nil
+	end
+	for _, kind in { "storehouse", "lumbercamp", "quarry" } do
+		if count(sim, kingdom, kind, false) == 0 then
+			return nil
+		end
+	end
+	for _, kind in SUPPORT_ORDER do
+		if hasSite(sim, kingdom, kind) then
+			return nil -- one at a time
+		end
+	end
+	if gateWanted(sim, kingdom, aggression) then
+		return nil
+	end
+	local alive = livingRoles(sim, kingdom)
+	for _, kind in SUPPORT_ORDER do
+		if count(sim, kingdom, kind, true) == 0 and alive[kind] then
+			local price = sim.costs.building(kind, 1)
+			if price and sim:canAfford(kingdom.id, price.cost) then
+				local spare = true
+				for res, margin in SUPPORT_MARGIN do
+					spare = spare and sim:balance(kingdom.id, res) >= (price.cost[res] or 0) + margin
+				end
+				if spare then
+					local issued = place(sim, kingdom, kind)
+					if issued then
+						return issued
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
 function RulerAI.think(sim: any, kingdom: any): string?
 	if not kingdom.alive then
 		return nil
@@ -708,6 +789,10 @@ function RulerAI.think(sim: any, kingdom: any): string?
 				return issued
 			end
 		end
+	end
+	local support = buildSupport(sim, kingdom, aggression, day)
+	if support then
+		return support
 	end
 	if sim:balance(kingdom.id, "wood") > 150 and sim:balance(kingdom.id, "stone") > 120 then
 		local issued = tryUpgrade(sim, kingdom, "house", 3)
