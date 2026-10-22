@@ -17,7 +17,8 @@
 		now()           os.time() (UTC unix seconds); clock() os.clock(); serverTimeNow() workspace:GetServerTimeNow()
 		wait/spawn      task.wait / task.spawn
 		random(seed?)   Random.new(seed?)
-		log(level, message, fields?)  "[Forge] <level> <message> k=v ..." via print (info) or warn (warn, error)
+		log(level, message, fields?)  "[Forge] <level> <message> k=v ..." via print (info), warn (warn) or a red
+		                non-fatal engine error, task.spawn(error, line) (error; every error-level site, server and client)
 		bindToClose(fn) game:BindToClose(fn); errors on the client (server-only API)
 		newInstance     Instance.new
 		sharedModules(fileName)  { [Area] = require(ReplicatedStorage.<Root>.<Area>.<fileName>) } for every
@@ -159,8 +160,11 @@ function Env.live(): Env
 		local line = Env.formatLog(level, message, fields)
 		if level == "info" then
 			print(line)
-		else
+		elseif level == "warn" then
 			warn(line)
+		else
+			-- a red line in the Output without stopping the caller (FORGE-07 L3 on #283: `warn` printed errors yellow)
+			task.spawn(error, line, 0)
 		end
 	end
 
