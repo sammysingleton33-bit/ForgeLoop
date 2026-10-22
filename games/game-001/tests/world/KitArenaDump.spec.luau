@@ -1,6 +1,6 @@
 --[[
 	Crown Arena preview dump (FL-0072, FORGE-02): the arena in several kingdom pairings, seated crowds, the role-prop
-	line-up, the armour x weapon sheet and the shield-on-the-left-hand group ("shield"), serialised like KitDump.spec.luau (class, shape, size, CFrame, colour, material).
+	line-up, the armour x weapon sheet and the shield-on-the-left-hand group ("shield"), the carried goods in the carry pose ("carried"), serialised like KitDump.spec.luau (class, shape, size, CFrame, colour, material).
 
 	Always: asserts the catalogue serialises to finite numbers.
 	With FORGE_KIT_DUMP_ARENA=<path.json>: also writes the JSON for the scratch Blender renderer (D-019 review). Run:
@@ -25,6 +25,8 @@ for _, identity in KingdomsConfig.identities do
 	local c = identity.color
 	CANON[identity.id] = Color3.fromRGB(c[1], c[2], c[3])
 end
+
+local rad = math.rad
 
 local function round(n: number): number
 	return math.floor(n * 1000 + 0.5) / 1000
@@ -214,6 +216,39 @@ local function catalogue()
 		geared("R15", "medium", "swordShield", CANON.azure, true, false),
 		{ kingdom = "azure" }
 	)
+	-- the goods a citizen carries (Kit.carried), held at the Torso's CFrame.new(0, 0, -1.2) with the arms in the carry pose (rx(70) rz(+-10))
+	local function carrying(resource: string, job: string, color: Color3): Model
+		local citizen = Kit.character("citizen", job, color)
+		local torso = citizen:FindFirstChild("Torso") :: BasePart
+		for _, name in { "LeftArm", "RightArm" } do
+			local arm = citizen:FindFirstChild(name) :: BasePart?
+			if arm then
+				local sign = if name == "LeftArm" then 1 else -1
+				local shoulder = arm.CFrame * Vector3.new(0, arm.Size.Y / 2, 0)
+				arm.CFrame = CFrame.new(shoulder)
+					* CFrame.Angles(rad(70), 0, rad(sign * 10))
+					* CFrame.new(0, -arm.Size.Y / 2, 0)
+			end
+		end
+		local prop = Kit.carried(resource)
+		place(prop, torso.CFrame * CFrame.new(0, 0, -1.2))
+		prop.Parent = citizen
+		return citizen
+	end
+	for _, e in
+		{
+			{ "food", "farmer", "crimson" },
+			{ "wood", "woodcutter", "crimson" },
+			{ "stone", "miner", "crimson" },
+			{ "gold", "hauler", "crimson" },
+			{ "food", "farmer", "azure" },
+			{ "wood", "woodcutter", "emerald" },
+			{ "stone", "miner", "azure" },
+			{ "gold", "hauler", "gold" },
+		}
+	do
+		add("carried", `carried_{e[1]}_{e[3]}`, carrying(e[1], e[2], CANON[e[3]]), { kingdom = e[3] })
+	end
 	-- the old form, for comparison: the Tool carries the shield, the left arm hangs
 	add("shield", "shield_old_tool_form", geared("R15", "medium", "swordShield", CANON.gold), { kingdom = "gold" })
 	return groups
