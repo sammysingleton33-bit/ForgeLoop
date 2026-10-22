@@ -3,13 +3,14 @@ id: FL-0148
 title: "Citizens alive at the start frame: work slots, readable swings, facing, carried goods"
 track: build
 owner: forge-04
-status: BUILDING
+status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-22
 updated: 2026-10-22
 depends_on: []
-evidence: []
+evidence:
+  - "check.sh OVERALL PASS on a156247f (main 06230ecd merged in): game-001 2957/0, framework 588/0, selene 0, stylua 729 files, both builds and place checks PASS; FL-0148 rows 42/42 CAUGHT; production 32 seeds main vs head: all resources +0.0 % (sd 1.1 %), food +0.6 %, wood -0.8 %, stone -1.0 %, gold +0.6 %; workers within 1.5 studs 56 % -> 0.1 %; sheet games/game-001/design/pacing/citizens/fl0148-start-citizens.jpg (headless Blender, not Studio)"
 ---
 
 # Citizens alive at the start frame: work slots, readable swings, facing, carried goods
@@ -48,3 +49,4 @@ At the default start view (FL-0147), the ruler sees their citizens as separate, 
 - 2026-10-22 FORGE-00: filed for FORGE-04's D-059 citizens-alive PR (branch forge/04-experience-citizen-motion).
 - 2026-10-22 forge-00: SPECIFIED → READY. Filed for FORGE-04's D-059 PR
 - 2026-10-22 forge-00: READY → BUILDING. FORGE-04 building on forge/04-experience-citizen-motion
+- 2026-10-22 forge-04: BUILDING → REVIEW. PR open: work slots (3.5 studs, production unchanged on 32 seeds), facing, blows that read at zoom 70 (hoe to 105 deg), carried goods, blow start at phase 0; before/after sheet opened and judged
