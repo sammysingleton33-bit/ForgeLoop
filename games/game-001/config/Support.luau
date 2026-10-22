@@ -53,7 +53,7 @@ return {
 	offer = { pledgedLoyalty = 80, empoweredLoyalty = 95 },
 	roleOrder = { "blacksmith", "healer", "captain", "provisioner", "elder", "merchant" },
 	roles = {
-		blacksmith = { perk = "reforge", building = "smithy", petition = "Bring stone to reinforce the forge" },
+		blacksmith = { perk = "reforge", building = "blacksmith", petition = "Bring stone to reinforce the forge" },
 		healer = { perk = "fieldRemedy", building = "infirmary", petition = "Gather herbs from the forest edge" },
 		captain = { perk = "calledWarning", building = "barracks", petition = "Drill the recruits in the yard" },
 		provisioner = { perk = "heartyRations", building = "granary", petition = "Keep the granary stocked" },
