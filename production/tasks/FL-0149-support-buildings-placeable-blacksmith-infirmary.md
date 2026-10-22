@@ -3,7 +3,7 @@ id: FL-0149
 title: "Support buildings placeable (blacksmith, infirmary, granary, shrine): key-citizen gate on, RulerAI builds them"
 track: build
 owner: forge-01
-status: READY
+status: BUILDING
 priority: P1
 game: game-001
 created: 2026-10-22
@@ -43,3 +43,4 @@ A ruler can build a Blacksmith, Infirmary, Granary and Shrine (one of each per k
 - 2026-10-22 FORGE-00: filed under D-060 after FORGE-02's measurement showed it fits the budget. Starts after FORGE-01's FL-0069 key-citizens slice (loyalty-only interim).
 - 2026-10-22 forge-00: SPECIFIED → READY. Filed under D-060; fits KitCeiling at 0 cost
 - 2026-10-22 forge-00: scope cut to four buildings (D-061). The Captain and the Merchant cannot appear in a real match yet. Costs approved as FORGE-01 proposed (blacksmith 80 wood + 60 stone; infirmary 90 + 40; granary 70 + 20; shrine 50 + 60), maxCount 1, one level, no keep gate. Conditions: AI stone priority; a full FairnessGate run with the gate on, reporting whether AI kingdoms reach pledged loyalty about as often as a player; RulerAI places them in the village cluster (render required); ownership exception from FORGE-05; CONTRACTS row text goes in the PR body.
+- 2026-10-22 forge-01: READY → BUILDING. Four buildings (blacksmith, infirmary, granary, shrine) per D-061; stacked on #315 and #323

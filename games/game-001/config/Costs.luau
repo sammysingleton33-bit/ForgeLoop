@@ -65,6 +65,19 @@ local BUILDINGS: { [string]: { BuildingCost } } = {
 		{ cost = { wood = 150, stone = 120, gold = 20 }, buildSeconds = 35 },
 		{ cost = { wood = 200, stone = 180, gold = 50 }, buildSeconds = 60 },
 	},
+	-- the support buildings (FL-0149, D-060): one level, no gold; each brings a key citizen to the Crown Arena (config Support)
+	blacksmith = {
+		{ cost = { wood = 80, stone = 60 }, buildSeconds = 30 },
+	},
+	infirmary = {
+		{ cost = { wood = 90, stone = 40 }, buildSeconds = 30 },
+	},
+	granary = {
+		{ cost = { wood = 70, stone = 20 }, buildSeconds = 25 },
+	},
+	shrine = {
+		{ cost = { wood = 50, stone = 60 }, buildSeconds = 30 },
+	},
 	watchtower = {
 		{ cost = { wood = 60, stone = 80 }, buildSeconds = 40 },
 		{ cost = { wood = 60, stone = 100 }, buildSeconds = 40 },

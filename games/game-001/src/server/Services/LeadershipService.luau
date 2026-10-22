@@ -17,7 +17,8 @@
 		LeadershipService:leadership(kingdom, userId?): number
 			valour + conduct: a ruler's personal leadership, the tie-break for a champion (design §2)
 		LeadershipService:keyCitizens(kingdom): { KeyCitizen }
-			the kingdom's key citizens for SupportModel.offers (none until key citizens exist, FL-0069 later slice)
+			the kingdom's living key citizens whose building stands (one per role, in the kingdom's citizen order) for SupportModel.offers:
+			{ role, citizenId, name, loyalty (live, 50 if unset), alive = true }
 		LeadershipService.sampled: Signal<()>      fires after every sample round (SupportService pushes the views)
 		LeadershipService:closeOut()                    -- a final round when the arena begins; credits the open phase
 		LeadershipService.acted: Signal<(kingdom, userId?, act, component, delta)>
@@ -153,8 +154,51 @@ function LeadershipService:leadership(kingdom: string, userId: number?): number
 		+ Ledger.level(self._ledger, kingdom, userId, "conduct")
 end
 
-function LeadershipService:keyCitizens(_kingdom: string): { any }
-	return {}
+-- D-060: a supporter comes with their building (config Support roles[r].building): the role counts only while a finished
+-- building of that type stands in the kingdom (FL-0149 made the four reachable support buildings placeable; the captain's
+-- barracks and the merchant's market bring nobody today, D-061).
+local function bringsSupporter(config: any, sim: any, kingdom: any, role: string): boolean
+	local building = config.roles[role].building
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b and not b.destroyed and b.kind == building and b.level >= 1 then
+			return true
+		end
+	end
+	return false
+end
+
+function LeadershipService:keyCitizens(kingdom: string): { any }
+	local sim = self:_sim()
+	local k = sim.kingdoms[kingdom]
+	if k == nil then
+		return {}
+	end
+	local out = {}
+	local seen: { [string]: boolean } = {}
+	for _, id in k.citizenIds do
+		local c = sim.citizens[id]
+		-- the population gives each role to one citizen; a second one in the same role is not a key citizen
+		local role = if c and c.profile then c.profile.keyRole else nil
+		if
+			c
+			and c.alive
+			and role
+			and not seen[role]
+			and self.config.roles[role]
+			and bringsSupporter(self.config, sim, k, role)
+		then
+			seen[role] = true
+			table.insert(out, {
+				role = role,
+				citizenId = id,
+				name = c.name,
+				loyalty = c.loyalty or NEUTRAL,
+				alive = true,
+			})
+		end
+	end
+	return out
 end
 
 -- ---------------------------------------------------------------- sampling
