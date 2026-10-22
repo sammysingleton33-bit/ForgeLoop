@@ -141,8 +141,9 @@ end
 -- A governor with aggression >= FORTIFY_AGGRESSION (and a keep at level 2 with its two towers) walls the approach: an arc
 -- of up to FORTIFY_SLOTS pieces, one at a time, centred on the direction of the nearest other keep, laid tangent to the
 -- circle FORTIFY_RING studs from its own keep. The yard (farms, houses, quarry, camps, towers) fills the ground out to
--- about 120 studs, so the arc stands just beyond it, inside the L2 territory (170). The middle slot is kept for the gate,
--- which goes up once GATE_AFTER pieces are finished. Each slot tries a few radii (RING_OFFSETS); a slot that still does
+-- about 120 studs, so the arc stands just beyond it, inside the L2 territory (170). Once GATE_AFTER pieces are finished the
+-- finished piece nearest the middle of the arc becomes the gate, in place (Build.PlaceGate: the gate needs no free ground of
+-- its own, and its price counts the wall's refund); a piece the thicker gate does not fit in is passed over for the next. Each slot tries a few radii (RING_OFFSETS); a slot that still does
 -- not fit (a field, a tree, a rock) is skipped, so the arc may have holes: the walls hold an assault, they do not seal a
 -- keep. The D-047 part count is unchanged (12 walls and one gate, 11 and the gate here).
 local FORTIFY_AGGRESSION = 0.5
@@ -150,10 +151,10 @@ local FORTIFY_RING = 132 -- studs from the keep's centre to the middle of a wall
 local RING_OFFSETS = { 0, 8, -8, 16 } -- radii tried for a slot, in this order
 local ARC_STEP = 34 / FORTIFY_RING -- radians between slots: a 32-stud piece and a little air
 local FORTIFY_SLOTS = 12
-local GATE_SLOT = 6 -- the middle of the arc (slots 1..12): facing the nearest other keep
-local GATE_EXTRA = 2 -- the gate is thicker (12 against 8): its inner face sits where the walls' inner faces do
 local FORTIFY_WOOD_RESERVE = 120 -- a palisade is never built out of the wood the kingdom needs to live on
-local GATE_AFTER = 6 -- finished wall pieces before the gate is built
+local GATE_AFTER = 6 -- finished wall pieces before the gate is made
+local GATE_TRIES = 4 -- pieces tried for the gate in one think, nearest the middle first
+local GATE_PATIENCE = 300 -- seconds the palisade waits for the gate (stone, a free piece) before it goes on with walls
 
 local function nearestOtherKeep(sim: any, kingdom: any): any?
 	local best, bestDistance = nil, math.huge
@@ -203,14 +204,69 @@ local function slotTaken(pieces: { any }, keep: any, angle: number): boolean
 end
 
 -- The first radius at which the piece fits in this slot, or nil.
-local function fittingSpot(sim: any, kingdom: any, keep: any, kind: string, angle: number, extra: number)
+local function fittingSpot(sim: any, kingdom: any, keep: any, angle: number)
 	for _, offset in RING_OFFSETS do
-		local x, z, yaw = ringSpot(keep, angle, FORTIFY_RING + offset + extra)
-		if sim:canPlace(kingdom, kind, x, z, yaw) then
+		local x, z, yaw = ringSpot(keep, angle, FORTIFY_RING + offset)
+		if sim:canPlace(kingdom, "wall", x, z, yaw) then
 			return x, z, yaw
 		end
 	end
 	return nil, nil, nil
+end
+
+-- The gate: the finished piece nearest the middle of the arc turns into it, once the palisade has begun to stand. Called at
+-- the top of think (before the economy spends the stone it costs) and again by fortify. Returns the command issued, or
+-- "wait" while the palisade holds its other pieces for the gate, or nil when there is nothing to do.
+local function makeGate(sim: any, kingdom: any): string?
+	local keep = sim.buildings[kingdom.keepId]
+	if keep == nil then
+		return nil
+	end
+	local walls, finished = {}, 0
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b.kind == "gate" then
+			return nil -- one gate per kingdom: standing or being built
+		elseif b.kind == "wall" then
+			table.insert(walls, b)
+			if b.level >= 1 then
+				finished += 1
+			end
+		end
+	end
+	if finished < GATE_AFTER then
+		return nil
+	end
+	local centre = approachAngle(sim, kingdom, keep)
+	local candidates = {}
+	for _, b in walls do
+		if b.level >= 1 and b.pendingLevel == nil then
+			table.insert(candidates, b)
+		end
+	end
+	local function offCentre(b: any): number
+		local a = math.atan2(b.z - keep.z, b.x - keep.x)
+		return math.abs((a - centre + math.pi) % (2 * math.pi) - math.pi)
+	end
+	table.sort(candidates, function(l, r)
+		return offCentre(l) < offCentre(r)
+	end)
+	for i = 1, math.min(#candidates, GATE_TRIES) do
+		if Commands.executeFor(sim, kingdom, nil, "PlaceGate", candidates[i].id) then
+			return "PlaceGate"
+		end
+	end
+	-- The gate costs stone, which a governor spends on towers and upgrades. The palisade holds its other pieces for
+	-- GATE_PATIENCE seconds, so the gate comes before the last pieces, not never.
+	local since = sim.rulerAI.gateSince[kingdom.id]
+	if since == nil then
+		since = sim.time
+		sim.rulerAI.gateSince[kingdom.id] = since
+	end
+	if sim.time - since < GATE_PATIENCE then
+		return "wait"
+	end
+	return nil
 end
 
 local function fortify(sim: any, kingdom: any): string?
@@ -218,16 +274,11 @@ local function fortify(sim: any, kingdom: any): string?
 	if keep == nil then
 		return nil
 	end
-	local walls, finished, gates = {}, 0, {}
+	local pieces = {} -- walls and the gate: a slot a piece stands in is taken
 	for _, bid in kingdom.buildingIds do
 		local b = sim.buildings[bid]
-		if b.kind == "wall" then
-			table.insert(walls, b)
-			if b.level >= 1 then
-				finished += 1
-			end
-		elseif b.kind == "gate" then
-			table.insert(gates, b)
+		if b.kind == "wall" or b.kind == "gate" then
+			table.insert(pieces, b)
 		end
 	end
 	local resting = sim.rulerAI.noSpotUntil
@@ -236,18 +287,11 @@ local function fortify(sim: any, kingdom: any): string?
 		return nil
 	end
 	local centre = approachAngle(sim, kingdom, keep)
-	-- the gate, in the middle of the arc, once the palisade has begun to stand
-	if #gates == 0 and finished >= GATE_AFTER then
-		local price = sim.costs.building("gate", 1)
-		if price and sim:canAfford(kingdom.id, price.cost) then
-			local x, z, yaw = fittingSpot(sim, kingdom, keep, "gate", slotAngle(centre, GATE_SLOT), GATE_EXTRA)
-			if x ~= nil then
-				local ok = Commands.executeFor(sim, kingdom, nil, "PlaceBuilding", "gate", x, z, yaw)
-				if ok then
-					return "PlaceBuilding:gate"
-				end
-			end
-		end
+	local gateIssued = makeGate(sim, kingdom)
+	if gateIssued == "wait" then
+		return nil
+	elseif gateIssued then
+		return gateIssued
 	end
 	local price = sim.costs.building("wall", 1)
 	if price == nil or not sim:canAfford(kingdom.id, price.cost) then
@@ -255,8 +299,8 @@ local function fortify(sim: any, kingdom: any): string?
 	end
 	for slot = 1, FORTIFY_SLOTS do
 		local angle = slotAngle(centre, slot)
-		if slot ~= GATE_SLOT and not slotTaken(walls, keep, angle) then
-			local x, z, yaw = fittingSpot(sim, kingdom, keep, "wall", angle, 0)
+		if not slotTaken(pieces, keep, angle) then
+			local x, z, yaw = fittingSpot(sim, kingdom, keep, angle)
 			if x ~= nil then
 				local ok = Commands.executeFor(sim, kingdom, nil, "PlaceBuilding", "wall", x, z, yaw)
 				if ok then
@@ -508,6 +552,14 @@ function RulerAI.think(sim: any, kingdom: any): string?
 		end
 	end
 
+	-- the palisade's gate comes first: it costs stone, which the building decisions below would spend as it arrives
+	if aggression >= FORTIFY_AGGRESSION and sim:keepLevel(kingdom) >= 2 and not hasSite(sim, kingdom, "gate") then
+		local issued = makeGate(sim, kingdom)
+		if issued and issued ~= "wait" then
+			return issued
+		end
+	end
+
 	-- housing: beds are for citizens only, soldiers sleep in barracks bunks (D-041)
 	if #kingdom.citizenIds >= kingdom.popCap - 1 and not hasSite(sim, kingdom, "house") then
 		local issued = place(sim, kingdom, "house")
@@ -656,6 +708,7 @@ function RulerAI.install(sim: any, options: { [string]: any }?)
 		interval = opts.interval or 6,
 		assistHumans = opts.assistHumans == true,
 		noSpotUntil = {} :: { [string]: number }, -- "kingdom:kind" -> sim time before which no new search is made
+		gateSince = {} :: { [string]: number }, -- kingdom -> sim time its palisade was ready for the gate and none could be made yet
 		nextThink = {} :: { [string]: number },
 		aggression = {} :: { [string]: number },
 		lastAction = {} :: { [string]: string? },

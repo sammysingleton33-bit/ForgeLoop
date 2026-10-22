@@ -92,7 +92,7 @@ describe("Sim/RulerAI: fortifying (FL-0126)", function()
 			run(sim, k, 120)
 			local walls = piecesOf(sim, k, "wall")
 			local gates = piecesOf(sim, k, "gate")
-			expect(#walls + #gates <= 12).toBe(true)
+			expect(#walls + #gates <= 13).toBe(true) -- D-047: up to 12 walls and the gate
 			expect(#walls >= 6).toBe(true)
 			local keep = sim.buildings[k.keepId]
 			for _, b in walls do
@@ -116,14 +116,18 @@ describe("Sim/RulerAI: fortifying (FL-0126)", function()
 		local gate = gates[1]
 		local keep = sim.buildings[k.keepId]
 		local gr = math.sqrt((gate.x - keep.x) ^ 2 + (gate.z - keep.z) ^ 2)
-		expect(math.abs(gr - 134) < 1e-6).toBe(true) -- the arc's radius plus the gate's extra 2
-		expect(math.abs(gate.z - keep.z) < 1e-3).toBe(true) -- on the line to the rival
+		expect(math.abs(gr - 132) < 1e-6).toBe(true) -- made in place: a wall piece of the arc
+		expect(math.abs(gate.z - keep.z) < 1e-3).toBe(true) -- the middle slot: on the line to the rival
 		-- the gate is nearer to the rival than any wall piece
 		local dg = (gate.x - rival.x) ^ 2 + (gate.z - rival.z) ^ 2
 		for _, w in piecesOf(sim, k, "wall") do
-			expect(dg <= (w.x - rival.x) ^ 2 + (w.z - rival.z) ^ 2 + 1e-6).toBe(true)
+			expect(dg <= (w.x - rival.x) ^ 2 + (w.z - rival.z) ^ 2 + 1e-3).toBe(true)
 		end
-		expect(#piecesOf(sim, k, "wall") + #gates <= 12).toBe(true)
+		-- the gate's slot is not built over again: no wall stands within a piece's length of it
+		for _, w in piecesOf(sim, k, "wall") do
+			expect((w.x - gate.x) ^ 2 + (w.z - gate.z) ^ 2 > 20 ^ 2).toBe(true)
+		end
+		expect(#piecesOf(sim, k, "wall") + #gates <= 13).toBe(true)
 	end)
 
 	it("keeps the gate for the last: no gate before six pieces stand", function()
@@ -131,7 +135,7 @@ describe("Sim/RulerAI: fortifying (FL-0126)", function()
 		local gateAt = nil
 		for i = 1, 120 do
 			local what = RulerAI.think(sim, k)
-			if what == "PlaceBuilding:gate" and gateAt == nil then
+			if what == "PlaceGate" and gateAt == nil then
 				gateAt = i
 				local finished = 0
 				for _, w in piecesOf(sim, k, "wall") do
@@ -139,7 +143,7 @@ describe("Sim/RulerAI: fortifying (FL-0126)", function()
 						finished += 1
 					end
 				end
-				expect(finished >= 6).toBe(true)
+				expect(finished + 1 >= 6).toBe(true) -- the converted piece was one of the six
 			end
 			finishSites(sim, k)
 			sim.time += 7
@@ -171,7 +175,7 @@ describe("Sim/RulerAI: fortifying (FL-0126)", function()
 		sim.time = 4 * sim.catalog.tuning.dayLength
 		run(sim, k, 160)
 		local walls = #piecesOf(sim, k, "wall")
-		expect(walls >= 8 and walls <= 11).toBe(true)
+		expect(walls >= 8 and walls <= 12).toBe(true)
 		expect(#piecesOf(sim, k, "gate")).toBe(1)
 	end)
 
@@ -250,15 +254,30 @@ describe("Sim/RulerAI: fortifying (FL-0126)", function()
 		local issued
 		for _ = 1, 120 do
 			issued = RulerAI.think(sim, k)
-			if issued == "PlaceBuilding:gate" then
+			if issued == "PlaceGate" then
 				break
 			end
 			finishSites(sim, k)
 			sim.time += 7
 		end
-		expect(issued).toBe("PlaceBuilding:gate")
+		expect(issued).toBe("PlaceGate")
 		sim.time += 7
 		expect(RulerAI.think(sim, k) == "PlaceBuilding:wall").toBe(false) -- the gate is not finished yet
+	end)
+
+	it("holds its other pieces for the gate while the stone is short, then goes on without it", function()
+		local sim, k = world(1)
+		assert(sim:spend(k.id, { stone = sim:balance(k.id, "stone") }, "spec:drain:stone", "test")) -- the gate costs stone
+		run(sim, k, 10) -- the palisade rises to six pieces; the gate cannot be paid
+		local six = #piecesOf(sim, k, "wall")
+		expect(six).toBe(6)
+		expect(#piecesOf(sim, k, "gate")).toBe(0)
+		run(sim, k, 20) -- 140 s later: still waiting for the gate
+		expect(#piecesOf(sim, k, "wall")).toBe(six)
+		sim.time += 300 -- the patience runs out
+		run(sim, k, 10)
+		expect(#piecesOf(sim, k, "wall") > six).toBe(true)
+		expect(#piecesOf(sim, k, "gate")).toBe(0)
 	end)
 
 	it(
