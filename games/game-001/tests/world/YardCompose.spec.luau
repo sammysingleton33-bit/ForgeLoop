@@ -1,21 +1,27 @@
 --[[
 	The composed start yard (FORGE-02 visual pass 1b; the owner's P0: "the world feels empty", "buildings look disconnected, not like a
 	village"). The start camera (FL-0147: zoom 70, FOV 55, ahead 20, looking back across the yard at the keep) shows, in the bottom 40 % of
-	its picture, the court, the lanes and flat grass. WorldPlan.yard composes that ground as a village centre: a market cross at the
-	court's centre, two market stalls turned to the cross with a canopy in the kingdom colour, a hedge either side of the avenue mouth,
-	a cart and a haystack on the farm's side and crates on the store's side.
+	its picture, the court, the lanes and flat grass. WorldPlan.yard composes that ground as a village centre, in the keep's frame:
+	  * the avenue stays OPEN: the nav graph (Layout.nav) runs it along x = 0 from the keep door through the court to the yard node, and
+	    from there diagonally to the store and the farm; nothing the yard places stands on those edges;
+	  * a market cross and the well flank the keep door at the court's top corners (a symmetric pair), two market stalls with striped
+	    canopies in the kingdom colour stand at its lower corners, a hedge row runs along each nav diagonal on the court's side (the V that
+	    lines the approach to the store and the farm), and the farm's cart and a haystack stand in the open ground beside its diagonal.
 	HEADLESS (Lune): placements, part counts and arithmetic, not a look; the renders are the evidence for the look.
 
 	What this pins, in every kingdom (the composition is written once in the keep's frame and the four yards are rotated copies):
-	  * the part budget (<= 70 parts a dressed kingdom: D-047), what each new prop costs, and that only dressed kingdoms get a yard;
-	  * every piece stands on legal ground: off the lanes, roads, slots, buildings and fields by what it draws (the live Kit.prop bounds);
-	    the cross alone stands on the avenue road, at the court's middle, where the avenue ends; nothing in the cross's walking ring or
-	    on the keep door's sightline; no two pieces overlap; every axial piece is inside the start camera's picture;
-	  * it is axial: the stalls and the hedges mirror each other about the avenue's axis and the stalls face the cross;
-	  * it is deterministic, identical in every kingdom in the kingdom's own frame (only the canopy colour differs), and WorldPlan.clear
-	    and the shipped density trim remove or move none of it.
-	Each measure has a MUTANT (the cross on a lane, a stall in the ring, a lopsided hedge, an overfull yard, a stall turned away, a prop
-	across the door's sightline) that must trip it.
+	  * the part budget (<= 70 parts a dressed kingdom: D-047) and what each new prop costs; only dressed kingdoms get a yard;
+	  * NO Layout.nav edge passes within 2 studs of any piece's footprint (the footprint is the rectangle of the live Kit.prop bounds), and
+	    nothing stands in the door's sightline: |x| < 4 from the keep door down the court;
+	  * every piece stands on legal ground by the footprint it draws (not by a circle): off the lanes, the roads (the avenue's court-covered
+	    stretch apart), the slots, the buildings and the fields, clear of the focal pair's ring, overlapping no other piece, no tree, bush,
+	    rock or flower stands on it, and every axial piece is inside the start camera's picture;
+	  * it is axial: the focal pair, the stalls and the hedge rows mirror each other about the avenue's axis, the stalls face the focal
+	    piece above them;
+	  * it is deterministic, identical in every kingdom's own frame (the canopy and pennant colour apart), and WorldPlan.clear and the trim
+	    leave it exactly where it is (its feature is "yard").
+	Each measure has a MUTANT that must trip it: a prop dropped on the avenue, a hedge on a diagonal, a stall in the ring, a prop across
+	the door's sightline, a cross on a lane, a hedge on a slot, a lopsided pair, a stall turned away, an overfull yard.
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")
@@ -24,8 +30,8 @@ local describe, it, expect = T.describe, T.it, T.expect
 local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local WorldDef = require("@game/ServerScriptService/Game/Services/WorldService")
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
-local Terrain = require("@game/ReplicatedStorage/Game/Kit/Terrain")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
+local Terrain = require("@game/ReplicatedStorage/Game/Kit/Terrain")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 local StartView = require("./support/StartView")
@@ -34,12 +40,17 @@ local KINGDOMS = { "crimson", "azure", "emerald", "gold" }
 local COLOUR = { crimson = "red", azure = "blue", emerald = "green", gold = "yellow" }
 local ALL = { crimson = true, azure = true, emerald = true, gold = true }
 local FULL = WorldPlan.FULL_DENSITY
+local NATURAL = { forest = true, lone_tree = true, bush = true, rocks = true, flowers = true }
 local Y = WorldPlan.YARD
 
-local BUDGET = 70 -- parts a dressed kingdom's yard may cost (the brief: replaces the stopgap's 56, D-047)
+local BUDGET = 70 -- parts a dressed kingdom's yard may cost (the brief; D-047)
+local NAV_GAP = 2 -- studs between a nav edge and a piece's footprint (the coordinator's rule: a walker's reach is 3)
 local GAP = 1 -- studs of open ground a piece keeps off a lane, a road, a slot or a building beyond what it draws (a field: 4)
 local FIELD_GAP = 4
-local DOOR_HALF = 4 -- the keep door's sightline: studs either side of the avenue's axis, from the door to the cross
+local ROAD_GAP = 0.5
+local OVERLAP_GAP = 0.5 -- between two pieces
+local RING_GAP = Y.ring -- between a focal piece and any other piece
+local DOOR_HALF = 4 -- the keep door's sightline: studs either side of the avenue's axis, from the door down the court
 local TOL = 1e-6
 
 local function isYardId(id: string): boolean
@@ -48,14 +59,91 @@ local function isYardId(id: string): boolean
 		or string.find(id, "^prop_hedge_") ~= nil
 end
 
+-- ---- plane geometry on convex polygons ({ Vector2 } with X, Y = world x, z) and segments
+
+local function side(o: Vector2, p: Vector2, q: Vector2): number
+	return (p.X - o.X) * (q.Y - o.Y) - (p.Y - o.Y) * (q.X - o.X)
+end
+
+local function pointSeg(p: Vector2, a: Vector2, b: Vector2): number
+	local ab = b - a
+	local len2 = ab:Dot(ab)
+	local t = if len2 > 0 then math.clamp((p - a):Dot(ab) / len2, 0, 1) else 0
+	return (p - (a + ab * t)).Magnitude
+end
+
+local function segSeg(a: Vector2, b: Vector2, c: Vector2, d: Vector2): number
+	local d1, d2, d3, d4 = side(c, d, a), side(c, d, b), side(a, b, c), side(a, b, d)
+	if ((d1 > 0) ~= (d2 > 0)) and ((d3 > 0) ~= (d4 > 0)) then
+		return 0
+	end
+	return math.min(pointSeg(a, c, d), pointSeg(b, c, d), pointSeg(c, a, b), pointSeg(d, a, b))
+end
+
+local function inside(pt: Vector2, poly: { Vector2 }): boolean
+	local sign: boolean? = nil
+	for i = 1, #poly do
+		local c = side(poly[i], poly[i % #poly + 1], pt)
+		if c ~= 0 then
+			if sign == nil then
+				sign = c > 0
+			elseif sign ~= (c > 0) then
+				return false
+			end
+		end
+	end
+	return true
+end
+
+local function polySeg(poly: { Vector2 }, a: Vector2, b: Vector2): number
+	if inside(a, poly) or inside(b, poly) then
+		return 0
+	end
+	local best = math.huge
+	for i = 1, #poly do
+		best = math.min(best, segSeg(poly[i], poly[i % #poly + 1], a, b))
+	end
+	return best
+end
+
+local function polyPolyline(poly: { Vector2 }, pts: { Vector2 }): number
+	local best = math.huge
+	for i = 1, #pts - 1 do
+		best = math.min(best, polySeg(poly, pts[i], pts[i + 1]))
+	end
+	return best
+end
+
+local function polyPoly(p: { Vector2 }, q: { Vector2 }): number
+	if inside(p[1], q) or inside(q[1], p) then
+		return 0
+	end
+	local best = math.huge
+	for i = 1, #p do
+		for j = 1, #q do
+			best = math.min(best, segSeg(p[i], p[i % #p + 1], q[j], q[j % #q + 1]))
+		end
+	end
+	return best
+end
+
+local function rectPoly(cf: CFrame, lox: number, loz: number, hix: number, hiz: number): { Vector2 }
+	local out = {}
+	for _, c in { { lox, loz }, { hix, loz }, { hix, hiz }, { lox, hiz } } do
+		local v = cf * Vector3.new(c[1], 0, c[2])
+		table.insert(out, Vector2.new(v.X, v.Z))
+	end
+	return out
+end
+
 -- ---- the model's own measures (live Kit.prop, like PlotClearance.spec: a prop that grows fails here)
 
 local function partsOf(id: string): number
 	return Kit.partCount(Kit.prop(id))
 end
 
-local live: { [string]: { radius: number, lo: Vector3, hi: Vector3 } } = {}
--- radius: farthest reach of a visible part from the pivot on the ground plane; lo/hi: the local XZ bounds of the visible parts
+local live: { [string]: { radius: number, lox: number, loz: number, hix: number, hiz: number } } = {}
+-- the local XZ bounds of the visible parts (the footprint rectangle) and the farthest reach from the pivot
 local function measure(id: string)
 	local m = live[id]
 	if m then
@@ -63,7 +151,7 @@ local function measure(id: string)
 	end
 	local model = Kit.prop(id)
 	local pivot = model.PrimaryPart.CFrame * model.PrimaryPart.PivotOffset
-	local lo, hi, r = Vector3.new(1e9, 0, 1e9), Vector3.new(-1e9, 0, -1e9), 0
+	local lox, loz, hix, hiz, r = 1e9, 1e9, -1e9, -1e9, 0
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") and d.Transparency < 0.99 then
 			local rel = pivot:ToObjectSpace(d.CFrame)
@@ -71,14 +159,14 @@ local function measure(id: string)
 			for _, sx in { -1, 1 } do
 				for _, sz in { -1, 1 } do
 					local v = (rel * CFrame.new(sx * h.X, 0, sz * h.Z)).Position
-					lo = Vector3.new(math.min(lo.X, v.X), 0, math.min(lo.Z, v.Z))
-					hi = Vector3.new(math.max(hi.X, v.X), 0, math.max(hi.Z, v.Z))
+					lox, loz = math.min(lox, v.X), math.min(loz, v.Z)
+					hix, hiz = math.max(hix, v.X), math.max(hiz, v.Z)
 					r = math.max(r, math.sqrt(v.X * v.X + v.Z * v.Z))
 				end
 			end
 		end
 	end
-	m = { radius = r, lo = lo, hi = hi }
+	m = { radius = r, lox = lox, loz = loz, hix = hix, hiz = hiz }
 	live[id] = m
 	return m
 end
@@ -110,25 +198,20 @@ local function pieceOf(kingdom: string, p: any): Piece
 	}
 end
 
--- the yard placements WorldPlan.plan(ALL) holds for a kingdom (the pieces of the new ids and the hand-placed trade beside them)
+-- the yard pieces of a placement list for a kingdom, in the order WorldPlan.plan puts them (the rows' order)
 local function yardOf(list: { any }, kingdom: string): { Piece }
-	local keep = Layout.plots[kingdom].anchors.keep
-	local rows = WorldPlan.yardRows(COLOUR[kingdom])
 	local out = {}
 	for _, p in list do
-		if p.feature == "dressing" and nearestKeep(p.cframe) == kingdom then
-			for _, row in rows do
-				if row.id == p.assetId then
-					local lp = keep:PointToObjectSpace(p.cframe.Position)
-					if math.abs(lp.X - row.x) < 1 and math.abs(lp.Z - row.z) < 1 then
-						table.insert(out, pieceOf(kingdom, p))
-						break
-					end
-				end
-			end
+		if p.feature == "yard" and nearestKeep(p.cframe) == kingdom then
+			table.insert(out, pieceOf(kingdom, p))
 		end
 	end
 	return out
+end
+
+local function footprint(piece: Piece): { Vector2 }
+	local m = measure(piece.assetId)
+	return rectPoly(piece.cframe, m.lox, m.loz, m.hix, m.hiz)
 end
 
 local planAll = WorldPlan.plan(Layout, ALL)
@@ -144,45 +227,103 @@ local function sameCFrame(a: CFrame, b: CFrame): boolean
 	return true
 end
 
--- ---- reserved ground, rebuilt from Layout and Kit.footprint the way PlotClearance.spec does (zones are where the yard stands)
+-- ---- the world the pieces stand in: reserved ground (rebuilt from Layout and Kit.footprint the way PlotClearance.spec does), the nav
 
-local function rectDistance(cf: CFrame, half: Vector2, x: number, z: number): number
-	local p = cf:PointToObjectSpace(Vector3.new(x, cf.Position.Y, z))
-	local dx, dz = math.max(0, math.abs(p.X) - half.X), math.max(0, math.abs(p.Z) - half.Y)
-	return math.sqrt(dx * dx + dz * dz)
-end
-
-local reservedList: { { cf: CFrame, half: Vector2, label: string, field: boolean } }? = nil
+local reservedList: { { poly: { Vector2 }, label: string, field: boolean } }? = nil
 local function reserved()
 	if reservedList then
 		return reservedList
 	end
 	local out = {}
+	local function add(cf: CFrame, half: Vector2, label: string, field: boolean)
+		table.insert(out, { poly = rectPoly(cf, -half.X, -half.Y, half.X, half.Y), label = label, field = field })
+	end
 	for i, field in Layout.features.fields do
-		local cf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
-		table.insert(out, { cf = cf, half = field.size / 2, label = `field {i}`, field = true })
+		add(
+			CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0),
+			field.size / 2,
+			`field {i}`,
+			true
+		)
 	end
 	for _, k in KINGDOMS do
 		local plot = Layout.plots[k]
 		for name, anchor in plot.anchors do
-			table.insert(out, { cf = anchor, half = Kit.footprint(name, 99) / 2, label = `{k} {name}`, field = false })
+			add(anchor, Kit.footprint(name, 99) / 2, `{k} {name}`, false)
 		end
 		for _, slot in plot.buildSlots do
-			local cf = CFrame.new(slot.center) * CFrame.Angles(0, slot.rot, 0)
-			table.insert(out, { cf = cf, half = Layout.slotSizes[slot.size] / 2, label = slot.id, field = false })
+			add(
+				CFrame.new(slot.center) * CFrame.Angles(0, slot.rot, 0),
+				Layout.slotSizes[slot.size] / 2,
+				slot.id,
+				false
+			)
 		end
 	end
 	reservedList = out
 	return out
 end
 
--- the court (WorldGround.worn): the keep-frame rectangle of its kerb, 22 x 26 centred at (0, -39)
+-- Layout.nav as segments (x, z)
+local navSegments: { { a: Vector2, b: Vector2, label: string } } = {}
+for i, e in Layout.nav.edges do
+	local a, b = Layout.nav.nodes[e[1]], Layout.nav.nodes[e[2]]
+	table.insert(
+		navSegments,
+		{ a = Vector2.new(a.X, a.Z), b = Vector2.new(b.X, b.Z), label = `nav edge {i} ({e[1]}-{e[2]})` }
+	)
+end
+
+-- the court (WorldGround.worn): the keep-frame rectangle of its kerb, 22 x 26 centred at Y.court
 local COURT_HALF = Vector2.new(11, 13)
 
--- the problems of the pieces of ONE kingdom's yard (empty = legal). `pieces` come from yardOf or a mutant.
-local function legalityProblems(kingdom: string, pieces: { Piece }): { string }
+local function courtPoly(kingdom: string): { Vector2 }
 	local keep = Layout.plots[kingdom].anchors.keep
-	local court = keep * CFrame.new(Y.cross.X, 0, Y.cross.Y)
+	return rectPoly(
+		keep * CFrame.new(Y.court.X, 0, Y.court.Y),
+		-COURT_HALF.X,
+		-COURT_HALF.Y,
+		COURT_HALF.X,
+		COURT_HALF.Y
+	)
+end
+
+-- the door's sightline: the strip |x| < DOOR_HALF from the door (z = -23) down to the court's far edge
+local function doorStrip(kingdom: string): { Vector2 }
+	local keep = Layout.plots[kingdom].anchors.keep
+	return rectPoly(keep, -DOOR_HALF, Y.court.Y - COURT_HALF.Y, DOOR_HALF, Y.door.Y)
+end
+
+local function isFocal(piece: Piece): boolean
+	return string.find(piece.assetId, "^prop_cross_") ~= nil or string.find(piece.assetId, "^prop_well_") ~= nil
+end
+
+-- ---- the rules (each returns its problems; empty = fine)
+
+-- no nav edge within NAV_GAP of a footprint
+local function navProblems(kingdom: string, pieces: { Piece }): { string }
+	local bad = {}
+	for _, piece in pieces do
+		local poly = footprint(piece)
+		for _, seg in navSegments do
+			local d = polySeg(poly, seg.a, seg.b)
+			if d < NAV_GAP then
+				table.insert(
+					bad,
+					`{kingdom} {piece.assetId} at ({math.floor(piece.x + 0.5)}, {math.floor(piece.z + 0.5)}): {string.format(
+						"%.2f",
+						d
+					)} studs from {seg.label}`
+				)
+			end
+		end
+	end
+	return bad
+end
+
+-- legal ground by the footprint: lanes, roads, slots, buildings, fields
+local function legalityProblems(kingdom: string, pieces: { Piece }): { string }
+	local court = courtPoly(kingdom)
 	local bad = {}
 	local function say(piece: Piece, what: string)
 		table.insert(
@@ -191,157 +332,100 @@ local function legalityProblems(kingdom: string, pieces: { Piece }): { string }
 		)
 	end
 	for _, piece in pieces do
-		local r = measure(piece.assetId).radius
-		local isCross = string.find(piece.assetId, "^prop_cross_") ~= nil
-		local at = piece.cframe.Position
+		local poly = footprint(piece)
 		for _, rect in reserved() do
-			local gap = if rect.field then FIELD_GAP else GAP
-			if rectDistance(rect.cf, rect.half, at.X, at.Z) < r + gap then
+			if polyPoly(poly, rect.poly) < (if rect.field then FIELD_GAP else GAP) then
 				say(piece, `on {rect.label}`)
 			end
 		end
-		-- a lane or a road that begins inside the court (the keep's door lane, the avenue) is laid under it and ends at the cross: the
-		-- cross is the one piece that stands on those
-		local function underCourt(points: { Vector2 }): boolean
-			return isCross and rectDistance(court, COURT_HALF, points[1].X, points[1].Y) < 0.01
-		end
 		for i, lane in Layout.features.paths do
-			if
-				not underCourt(lane.points)
-				and WorldPlan.distToPolyline(at.X, at.Z, lane.points) < lane.width / 2 + r + GAP
-			then
+			if polyPolyline(poly, lane.points :: any) < lane.width / 2 + GAP then
 				say(piece, `on lane {i} ({lane.name})`)
 			end
 		end
 		for i, road in Layout.features.roads do
+			-- the avenue begins inside the court: the court is laid over its first stretch, and the nav rules (navProblems, the door's
+			-- sightline) are what keep its walkway open
+			local first = road.points[1]
 			if
-				not underCourt(road.points)
-				and WorldPlan.distToPolyline(at.X, at.Z, road.points) < road.width / 2 + r + GAP
+				not inside(Vector2.new(first.X, first.Y), court)
+				and polyPolyline(poly, road.points) < road.width / 2 + ROAD_GAP
 			then
 				say(piece, `on road {i}`)
 			end
 		end
-		if isCross and math.sqrt((at.X - court.Position.X) ^ 2 + (at.Z - court.Position.Z) ^ 2) > 0.5 then
-			say(piece, "is not at the middle of the court")
-		end
 	end
 	return bad
 end
 
--- the cross's walking ring and the door's sightline, for ONE kingdom's pieces
+-- the door's sightline, the focal pair's ring and the overlap of pieces, for ONE kingdom's pieces
 local function openGroundProblems(kingdom: string, pieces: { Piece }): { string }
 	local bad = {}
-	local cross
-	for _, piece in pieces do
-		if string.find(piece.assetId, "^prop_cross_") then
-			cross = piece
+	local strip = doorStrip(kingdom)
+	for i, piece in pieces do
+		local poly = footprint(piece)
+		if polyPoly(poly, strip) < 0.01 then
+			table.insert(bad, `{kingdom} {piece.assetId} at ({piece.x}, {piece.z}) stands in the door's sightline`)
 		end
-	end
-	for _, piece in pieces do
-		if piece ~= cross then
-			local r = measure(piece.assetId).radius
-			if cross then
-				local d = math.sqrt((piece.x - cross.x) ^ 2 + (piece.z - cross.z) ^ 2)
-				if d < measure(cross.assetId).radius + Y.ring + r then
-					table.insert(bad, `{kingdom} {piece.assetId} at ({piece.x}, {piece.z}) stands in the cross's ring`)
-				end
-			end
-			-- the sightline: the strip |x| < DOOR_HALF from the door (z = -23) to the cross's near edge, as a rectangle the piece's circle
-			-- must not reach
-			local zLow = (if cross then cross.z + measure(cross.assetId).radius else -34)
-			local dx = math.max(0, math.abs(piece.x) - DOOR_HALF)
-			local dz = math.max(0, zLow - piece.z, piece.z - Y.door.Y)
-			if math.sqrt(dx * dx + dz * dz) < r then
-				table.insert(
-					bad,
-					`{kingdom} {piece.assetId} at ({piece.x}, {piece.z}) stands across the door's sightline`
-				)
-			end
-		end
-	end
-	return bad
-end
-
--- local XZ footprints of two pieces overlap (oriented rectangles, SAT), with `gap` studs between them still counted as overlap
-local function corners(piece: Piece): { Vector2 }
-	local m = measure(piece.assetId)
-	local out = {}
-	for _, sx in { m.lo.X, m.hi.X } do
-		for _, sz in { m.lo.Z, m.hi.Z } do
-			local v = piece.cframe * Vector3.new(sx, 0, sz)
-			table.insert(out, Vector2.new(v.X, v.Z))
-		end
-	end
-	return out
-end
-
-local function overlap(a: Piece, b: Piece, gap: number): boolean
-	local ca, cb = corners(a), corners(b)
-	for _, piece in { a, b } do
-		local look, right = piece.cframe.LookVector, piece.cframe.RightVector
-		for _, axis in { Vector2.new(look.X, look.Z), Vector2.new(right.X, right.Z) } do
-			local aMin, aMax, bMin, bMax = math.huge, -math.huge, math.huge, -math.huge
-			for _, c in ca do
-				aMin, aMax = math.min(aMin, c:Dot(axis)), math.max(aMax, c:Dot(axis))
-			end
-			for _, c in cb do
-				bMin, bMax = math.min(bMin, c:Dot(axis)), math.max(bMax, c:Dot(axis))
-			end
-			if aMax + gap < bMin or bMax + gap < aMin then
-				return false
-			end
-		end
-	end
-	return true
-end
-
-local function overlapProblems(kingdom: string, pieces: { Piece }): { string }
-	local bad = {}
-	for i = 1, #pieces do
 		for j = i + 1, #pieces do
-			if overlap(pieces[i], pieces[j], 0.5) then
-				table.insert(bad, `{kingdom} {pieces[i].assetId} and {pieces[j].assetId} overlap`)
+			local other = pieces[j]
+			local need = if isFocal(piece) or isFocal(other) then RING_GAP else OVERLAP_GAP
+			if polyPoly(poly, footprint(other)) < need then
+				table.insert(bad, `{kingdom} {piece.assetId} and {other.assetId} are closer than {need} studs`)
 			end
 		end
 	end
 	return bad
 end
 
--- axial: rows (keep-frame { id, x, z, yaw, role }) whose stalls and hedges are mirror images about x = 0, whose cross is on it and whose
--- stalls face the cross
+-- axial: rows (keep-frame { id, x, z, yaw, role }): the focal pieces face each other across the axis, the stalls and the hedges are
+-- mirror images, every stall faces the focal piece above it
 local function axialProblems(rows: { any }): { string }
 	local bad = {}
-	for _, role in { "stall", "hedge" } do
+	local function sides(role: string): ({ any }, { any })
 		local right, left = {}, {}
 		for _, row in rows do
 			if row.role == role then
 				table.insert(if row.x > 0 then right else left, row)
 			end
 		end
-		if #right ~= 1 or #left ~= 1 then
-			table.insert(bad, `{role}: {#right} right of the axis and {#left} left of it, want one each`)
+		return right, left
+	end
+	for _, role in { "focal", "stall", "hedge" } do
+		local right, left = sides(role)
+		if #right == 0 or #right ~= #left then
+			table.insert(bad, `{role}: {#right} right of the axis and {#left} left of it`)
 		else
-			local a, b = right[1], left[1]
-			if
-				a.id ~= b.id
-				or math.abs(a.x + b.x) > TOL
-				or math.abs(a.z - b.z) > TOL
-				or math.abs(a.yaw + b.yaw) > TOL
-			then
-				table.insert(bad, `{role}: the two sides are not mirror images`)
+			for i, a in right do
+				local b = left[i]
+				local sameId = a.id == b.id or role == "focal" -- the focal pair is a cross and a well
+				local mirrored = math.abs(a.x + b.x) < TOL
+					and math.abs(a.z - b.z) < TOL
+					and math.abs(a.yaw + b.yaw) < TOL
+				if not (sameId and mirrored) then
+					table.insert(bad, `{role}: piece {i} is not the mirror image of its partner`)
+				end
 			end
 		end
 	end
 	for _, row in rows do
-		if row.role == "cross" and math.abs(row.x) > TOL then
-			table.insert(bad, "the cross is off the axis")
-		elseif row.role == "stall" then
-			-- the front (-Z turned by yaw) must point at the cross
-			local fx, fz = -math.sin(row.yaw), -math.cos(row.yaw)
-			local tx, tz = Y.cross.X - row.x, Y.cross.Y - row.z
-			local len = math.sqrt(tx * tx + tz * tz)
-			if (fx * tx + fz * tz) / len < math.cos(math.rad(2)) then
-				table.insert(bad, "a stall does not face the cross")
+		if row.role == "stall" then
+			-- the front (-Z turned by yaw) must point at the focal piece on its side
+			local target
+			for _, other in rows do
+				if other.role == "focal" and (other.x > 0) == (row.x > 0) then
+					target = other
+				end
+			end
+			if not target then
+				table.insert(bad, "a stall has no focal piece to face")
+			else
+				local fx, fz = -math.sin(row.yaw), -math.cos(row.yaw)
+				local tx, tz = target.x - row.x, target.z - row.z
+				local len = math.sqrt(tx * tx + tz * tz)
+				if (fx * tx + fz * tz) / len < math.cos(math.rad(2)) then
+					table.insert(bad, "a stall does not face the focal piece above it")
+				end
 			end
 		end
 	end
@@ -368,37 +452,37 @@ local function idsOf(pieces: { Piece }): { string }
 	return out
 end
 
--- a copy of a kingdom's yard with one piece replaced by (id, local x, z, yaw)
+-- a copy of a kingdom's yard with one piece moved to (keep-frame x, z, yaw)
 local function with(kingdom: string, pieces: { Piece }, index: number, x: number, z: number, yaw: number?): { Piece }
 	local keep = Layout.plots[kingdom].anchors.keep
 	local out = table.clone(pieces)
 	local old = pieces[index]
 	local p = keep:PointToWorldSpace(Vector3.new(x, 0, z))
 	local y = yaw or old.yaw
+	local keepYaw = math.atan2(-keep.LookVector.X, -keep.LookVector.Z)
 	out[index] = {
 		assetId = old.assetId,
 		x = x,
 		z = z,
 		yaw = y,
-		cframe = CFrame.new(p.X, p.Y, p.Z)
-			* CFrame.Angles(0, math.atan2(-keep.LookVector.X, -keep.LookVector.Z) + y, 0),
+		cframe = CFrame.new(p.X, p.Y, p.Z) * CFrame.Angles(0, keepYaw + y, 0),
 	}
 	return out
 end
 
-local function indexOfRole(rows: { any }, role: string, side: number): number
+local function indexOf(rows: { any }, id: string, rightHand: boolean?): number
 	for i, row in rows do
-		if row.role == role and (side == 0 or (row.x > 0) == (side > 0)) then
+		if string.find(row.id, id, 1, true) and (rightHand == nil or (row.x > 0) == rightHand) then
 			return i
 		end
 	end
-	error(`no {role} row`)
+	error(`no {id} row`)
 end
 
 describe("The composed start yard (FORGE-02 visual pass 1b)", function()
-	it("is the new props and the trade beside the lanes, in the dressed kingdoms only", function()
+	it("is the focal pair, two stalls, four hedges and the farm's trade, in the dressed kingdoms only", function()
 		local rows = rowsOf("crimson")
-		expect(#rows).toBe(9) -- the cross, 2 stalls, 2 hedges, a cart, a haystack, 2 crates
+		expect(#rows).toBe(10) -- the cross, the well, 2 stalls, 4 hedges, a cart, a haystack
 		for _, k in KINGDOMS do
 			expect(#yardOf(planAll, k)).toBe(#rows)
 		end
@@ -408,11 +492,11 @@ describe("The composed start yard (FORGE-02 visual pass 1b)", function()
 			for _, k in KINGDOMS do
 				local n = 0
 				for _, p in plan do
-					if p.feature == "dressing" and isYardId(p.assetId) and nearestKeep(p.cframe) == k then
+					if p.feature == "yard" and nearestKeep(p.cframe) == k then
 						n += 1
 					end
 				end
-				expect(n).toBe(if k == only then 5 else 0) -- the cross, 2 stalls, 2 hedges
+				expect(n).toBe(if k == only then #rows else 0)
 			end
 		end
 		expect(#WorldPlan.yard(Layout, "azure")).toBe(#rows)
@@ -423,13 +507,14 @@ describe("The composed start yard (FORGE-02 visual pass 1b)", function()
 		expect(partsOf("prop_stall_red_01")).toBe(9) -- counter, crate, back wall, 2 posts, canopy, 2 stripes and the Root
 		expect(partsOf("prop_hedge_01")).toBe(5) -- 4 leafy balls and the Root (12 long)
 		expect(partsOf("prop_hedge_02")).toBe(3) -- 2 balls and the Root (6.5 long)
+		expect(partsOf("prop_well_01")).toBe(10) -- the existing well
 		for _, k in KINGDOMS do
 			local pieces = yardOf(planAll, k)
 			local n = budgetOf(idsOf(pieces))
-			expect(n).toBe(66) -- 8 + 2 x 9 + 2 x 5 + cart 10 + haystack 4 + 2 x 8 crates
+			expect(n).toBe(66) -- 8 + 10 + 2 x 9 + 2 x (5 + 3) + cart 10 + haystack 4
 			expect(n).toBeLessThanOrEqual(BUDGET)
 		end
-		-- the stalls differ by colour alone
+		-- the stalls and crosses differ by colour alone
 		expect(partsOf("prop_stall_blue_01")).toBe(partsOf("prop_stall_yellow_01"))
 		expect(partsOf("prop_cross_blue_01")).toBe(partsOf("prop_cross_green_01"))
 	end)
@@ -442,72 +527,159 @@ describe("The composed start yard (FORGE-02 visual pass 1b)", function()
 		expect(budgetOf(ids)).toBeGreaterThan(BUDGET)
 	end)
 
+	it("keeps every Layout.nav edge at least 2 studs from every piece's footprint, in all four kingdoms", function()
+		-- the guard that the measure means something: the nav does run the avenue and the two diagonals through this ground
+		for _, k in KINGDOMS do
+			local keep = Layout.plots[k].anchors.keep
+			local near = 0
+			for _, seg in navSegments do
+				local a, b =
+					keep:PointToObjectSpace(Vector3.new(seg.a.X, 0, seg.a.Y)),
+					keep:PointToObjectSpace(Vector3.new(seg.b.X, 0, seg.b.Y))
+				if math.abs(a.X) < 70 and a.Z < -20 and a.Z > -70 or math.abs(b.X) < 70 and b.Z < -20 and b.Z > -70 then
+					near += 1
+				end
+			end
+			expect(near).toBeGreaterThanOrEqual(4) -- the avenue, the two diagonals and the cross street
+		end
+		for _, k in KINGDOMS do
+			expect(table.concat(navProblems(k, yardOf(planAll, k)), "; ")).toBe("")
+		end
+	end)
+
 	it(
-		"stands on legal ground in every kingdom, off the court's ring and the door's sightline, overlapping nothing",
+		"keeps every compact piece's middle a footprint radius + 2 studs from every Layout.nav edge (hedge rows run 4.5 off a diagonal)",
+		function()
+			for _, k in KINGDOMS do
+				local bad = {}
+				for _, piece in yardOf(planAll, k) do
+					if not string.find(piece.assetId, "^prop_hedge_") then
+						local at = Vector2.new(piece.cframe.Position.X, piece.cframe.Position.Z)
+						for _, seg in navSegments do
+							if pointSeg(at, seg.a, seg.b) < measure(piece.assetId).radius + 2 then
+								table.insert(bad, `{k} {piece.assetId} is within its radius + 2 of {seg.label}`)
+							end
+						end
+					end
+				end
+				expect(table.concat(bad, "; ")).toBe("")
+			end
+		end
+	)
+
+	it(
+		"MUTANT: a stall dropped on the avenue, a hedge on a diagonal and a crate on the cross street are caught by the nav measure",
+		function()
+			local rows = rowsOf("crimson")
+			local pieces = yardOf(planAll, "crimson")
+			for i, row in rows do
+				expect(pieces[i].assetId).toBe(row.id) -- the pieces come back in the rows' order
+			end
+			local stall = indexOf(rows, "prop_stall_", true)
+			local hedge = indexOf(rows, "prop_hedge_01", true)
+			local hay = indexOf(rows, "farm_haystack", nil)
+			expect(#navProblems("crimson", with("crimson", pieces, stall, 0, -45))).toBeGreaterThan(0) -- on the avenue
+			local along = Vector2.new(math.cos(Y.vAngle), math.sin(Y.vAngle))
+			expect(#navProblems("crimson", with("crimson", pieces, hedge, along.X * 26, Y.apex.Y + along.Y * 26))).toBeGreaterThan(
+				0
+			) -- on the farm diagonal
+			expect(#navProblems("crimson", with("crimson", pieces, hay, 40, -62))).toBeGreaterThan(0) -- on the cross street
+			-- the same pieces where the yard puts them: nothing
+			expect(#navProblems("crimson", pieces)).toBe(0)
+		end
+	)
+
+	it(
+		"stands on legal ground in every kingdom, off the door's sightline and the focal pair's ring, overlapping nothing",
 		function()
 			for _, k in KINGDOMS do
 				local pieces = yardOf(planAll, k)
 				expect(table.concat(legalityProblems(k, pieces), "; ")).toBe("")
 				expect(table.concat(openGroundProblems(k, pieces), "; ")).toBe("")
-				expect(table.concat(overlapProblems(k, pieces), "; ")).toBe("")
 			end
 		end
 	)
 
 	it(
-		"MUTANT: the cross on a lane, a stall in the cross's ring, a crate across the door's sightline and a hedge on a slot are caught",
+		"MUTANT: a cross on a lane, a stall in the focal ring, a crate across the sightline, a hedge on a slot and a hedge on a stall are caught",
 		function()
 			local rows = rowsOf("crimson")
 			local pieces = yardOf(planAll, "crimson")
-			-- the pieces come back in the rows' order
-			for i, row in rows do
-				expect(pieces[i].assetId).toBe(row.id)
-			end
-			local cross = indexOfRole(rows, "cross", 0)
-			local stall = indexOfRole(rows, "stall", 1)
-			local hedge = indexOfRole(rows, "hedge", 1)
-			expect(#legalityProblems("crimson", with("crimson", pieces, cross, 20, -35))).toBeGreaterThan(0) -- on the farm lane
-			expect(#legalityProblems("crimson", with("crimson", pieces, cross, 0, -50))).toBeGreaterThan(0) -- off the court's middle
-			expect(#openGroundProblems("crimson", with("crimson", pieces, stall, 7, -44))).toBeGreaterThan(0) -- in the ring
-			local crate = indexOfRole(rows, "flank", -1)
-			expect(#openGroundProblems("crimson", with("crimson", pieces, crate, 0, -28))).toBeGreaterThan(0) -- across the sightline
+			local cross = indexOf(rows, "prop_cross_", nil)
+			local stall = indexOf(rows, "prop_stall_", true)
+			local hedge = indexOf(rows, "prop_hedge_01", true)
+			local cart = indexOf(rows, "prop_cart_", nil)
+			expect(#legalityProblems("crimson", with("crimson", pieces, cross, -22, -34))).toBeGreaterThan(0) -- on the store lane
+			expect(#openGroundProblems("crimson", with("crimson", pieces, stall, 8, -38))).toBeGreaterThan(0) -- in the well's ring
+			expect(#openGroundProblems("crimson", with("crimson", pieces, cart, 0, -36))).toBeGreaterThan(0) -- across the sightline
 			expect(#legalityProblems("crimson", with("crimson", pieces, hedge, 20, -82))).toBeGreaterThan(0) -- on a build slot
-			expect(#overlapProblems("crimson", with("crimson", pieces, hedge, 14, -48))).toBeGreaterThan(0) -- against a stall
+			expect(#openGroundProblems("crimson", with("crimson", pieces, hedge, 8, -48))).toBeGreaterThan(0) -- against a stall
+			expect(#legalityProblems("crimson", with("crimson", pieces, cart, 30, -60))).toBeGreaterThan(0) -- on the cross street
 		end
 	)
 
-	it("is axial: the stalls and the hedges mirror each other about the avenue, the stalls face the cross", function()
+	it("keeps trees, bushes, rocks and flowers off every piece", function()
 		for _, k in KINGDOMS do
-			expect(table.concat(axialProblems(rowsOf(k)), "; ")).toBe("")
-		end
-		-- and the placements in the world are those rows turned with the keep (checked per kingdom below)
-	end)
-
-	it("MUTANT: a lopsided hedge, a stall turned away and an off-axis cross are caught", function()
-		local good = rowsOf("crimson")
-		local function mutated(change: (any) -> ()): { any }
-			local rows = {}
-			for _, row in good do
-				table.insert(rows, table.clone(row))
+			local polys = {}
+			for _, piece in yardOf(planAll, k) do
+				table.insert(polys, footprint(piece))
 			end
-			change(rows)
-			return rows
+			local bad = {}
+			for _, p in clearedAll do
+				if NATURAL[p.feature] and nearestKeep(p.cframe) == k then
+					local at = Vector2.new(p.cframe.Position.X, p.cframe.Position.Z)
+					for _, poly in polys do
+						if polySeg(poly, at, at) < 1.5 then
+							table.insert(bad, `{k} {p.assetId} at ({math.floor(at.X)}, {math.floor(at.Y)})`)
+						end
+					end
+				end
+			end
+			expect(table.concat(bad, "; ")).toBe("")
 		end
-		expect(#axialProblems(mutated(function(rows)
-			rows[indexOfRole(rows, "hedge", 1)].x += 1
-		end))).toBeGreaterThan(0)
-		expect(#axialProblems(mutated(function(rows)
-			rows[indexOfRole(rows, "stall", -1)].yaw = rows[indexOfRole(rows, "stall", -1)].yaw + math.pi
-		end))).toBeGreaterThan(0)
-		expect(#axialProblems(mutated(function(rows)
-			rows[indexOfRole(rows, "cross", 0)].x = 3
-		end))).toBeGreaterThan(0)
-		expect(#axialProblems(mutated(function(rows)
-			rows[indexOfRole(rows, "hedge", -1)].id = "prop_hedge_02"
-		end))).toBeGreaterThan(0)
 	end)
 
-	it("is the same yard in every kingdom's own frame, the canopy colour apart", function()
+	it(
+		"is axial: the focal pair, the stalls and the hedge rows mirror each other about the avenue, the stalls face the focal piece",
+		function()
+			for _, k in KINGDOMS do
+				expect(table.concat(axialProblems(rowsOf(k)), "; ")).toBe("")
+			end
+		end
+	)
+
+	it(
+		"MUTANT: a lopsided hedge, a stall turned away, a focal pair out of line and a mismatched hedge are caught",
+		function()
+			local good = rowsOf("crimson")
+			local function mutated(change: ({ any }) -> ()): { any }
+				local rows = {}
+				for _, row in good do
+					table.insert(rows, table.clone(row))
+				end
+				change(rows)
+				return rows
+			end
+			expect(#axialProblems(mutated(function(rows)
+				rows[indexOf(rows, "prop_hedge_01", true)].x += 1
+			end))).toBeGreaterThan(0)
+			expect(#axialProblems(mutated(function(rows)
+				local i = indexOf(rows, "prop_stall_", false)
+				rows[i].yaw += math.pi
+			end))).toBeGreaterThan(0)
+			expect(#axialProblems(mutated(function(rows)
+				rows[indexOf(rows, "prop_cross_", nil)].z -= 3
+			end))).toBeGreaterThan(0)
+			expect(#axialProblems(mutated(function(rows)
+				rows[indexOf(rows, "prop_hedge_01", false)].id = "prop_hedge_02"
+			end))).toBeGreaterThan(0)
+			expect(#axialProblems(mutated(function(rows)
+				rows[indexOf(rows, "prop_well_", nil)].role = "flank"
+			end))).toBeGreaterThan(0)
+		end
+	)
+
+	it("is the same yard in every kingdom's own frame, the canopy and pennant colour apart", function()
 		local crimson = yardOf(planAll, "crimson")
 		for _, k in KINGDOMS do
 			local pieces = yardOf(planAll, k)
@@ -520,68 +692,64 @@ describe("The composed start yard (FORGE-02 visual pass 1b)", function()
 				expect(math.abs(piece.z - row.z)).toBeLessThan(1e-3)
 				local turn = (piece.yaw - row.yaw + math.pi) % (2 * math.pi) - math.pi
 				expect(math.abs(turn)).toBeLessThan(1e-3)
-				-- against crimson's: the same id but for the stall's colour
+				-- against crimson's: the same id but for the colour of the stall and the cross
 				local a = (string.gsub(piece.assetId, "^(prop_%a+)_%a+_(%d+)$", "%1_*_%2"))
 				local b = (string.gsub(crimson[i].assetId, "^(prop_%a+)_%a+_(%d+)$", "%1_*_%2"))
 				expect(a).toBe(b)
 				expect(math.abs(piece.x - crimson[i].x)).toBeLessThan(1e-3)
 				expect(math.abs(piece.z - crimson[i].z)).toBeLessThan(1e-3)
 			end
-			-- the stalls wear their kingdom's colour (config/Kingdoms)
+			-- the stalls and the cross wear their kingdom's colour (config/Kingdoms)
 			local want
 			for _, identity in KingdomsConfig.identities do
 				if identity.id == k then
 					want = Color3.fromRGB(identity.color[1], identity.color[2], identity.color[3])
 				end
 			end
-			local stalls = 0
+			local stalls, crosses = 0, 0
 			for _, piece in pieces do
 				if string.find(piece.assetId, "^prop_stall_") then
 					stalls += 1
-					local canopy = Kit.prop(piece.assetId):FindFirstChild("Canopy")
-					expect(canopy.Color == want).toBe(true)
+					expect(Kit.prop(piece.assetId):FindFirstChild("Canopy").Color == want).toBe(true)
+				elseif string.find(piece.assetId, "^prop_cross_") then
+					crosses += 1
+					expect(Kit.prop(piece.assetId):FindFirstChild("Pennant").Color == want).toBe(true)
 				end
 			end
 			expect(stalls).toBe(2)
+			expect(crosses).toBe(1)
 		end
 	end)
 
-	it(
-		"is inside the start camera's picture, the focus below the keep door and the whole of it in the lower part",
-		function()
-			for _, k in KINGDOMS do
-				-- the camera of the start view (zoom 70, FOV 55, ahead 20, pitch 42.5, looking back across the yard)
-				local root = StartView.root(Kit, Layout, k)
-				local look = root.LookVector
-				local facing = Vector3.new(look.X, 0, look.Z).Unit
-				local focus = root.Position + facing * 20
-				local flat = -facing
-				local pitch = math.rad(42.5)
-				local position = focus - flat * (70 * math.cos(pitch)) + Vector3.new(0, 70 * math.sin(pitch), 0)
-				local forward = flat * math.cos(pitch) + Vector3.new(0, -math.sin(pitch), 0)
-				local right = flat:Cross(Vector3.yAxis)
-				local up = right:Cross(forward)
-				local ty = math.tan(math.rad(55 / 2))
-				local tx = ty * 16 / 9
-				for _, piece in yardOf(planAll, k) do
-					local role = if string.find(piece.assetId, "^prop_cross_")
-						then "cross"
-						elseif string.find(piece.assetId, "^prop_stall_") then "stall"
-						elseif string.find(piece.assetId, "^prop_hedge_") then "hedge"
-						else "flank"
-					local v = piece.cframe.Position + Vector3.new(0, 2, 0) - position
-					local depth = v:Dot(forward)
-					local sx, sy = v:Dot(right) / (depth * tx), v:Dot(up) / (depth * ty)
-					local rowFrac = (sy + 1) / 2 -- 0 at the bottom of the picture .. 1 at the top
-					expect(math.abs(sx)).toBeLessThan(1)
-					expect(rowFrac).toBeGreaterThan(0.02)
-					if role ~= "flank" then
-						expect(rowFrac).toBeLessThan(0.55) -- the axial composition fills the bottom half, where the grass was bare
-					end
+	it("is inside the start camera's picture, the axial pieces in its lower half", function()
+		for _, k in KINGDOMS do
+			-- the camera of the start view (zoom 70, FOV 55, ahead 20, pitch 42.5, looking back across the yard)
+			local root = StartView.root(Kit, Layout, k)
+			local look = root.LookVector
+			local facing = Vector3.new(look.X, 0, look.Z).Unit
+			local focus = root.Position + facing * 20
+			local flat = -facing
+			local pitch = math.rad(42.5)
+			local position = focus - flat * (70 * math.cos(pitch)) + Vector3.new(0, 70 * math.sin(pitch), 0)
+			local forward = flat * math.cos(pitch) + Vector3.new(0, -math.sin(pitch), 0)
+			local right = flat:Cross(Vector3.yAxis)
+			local up = right:Cross(forward)
+			local ty = math.tan(math.rad(55 / 2))
+			local tx = ty * 16 / 9
+			local rows = rowsOf(k)
+			for i, piece in yardOf(planAll, k) do
+				local v = piece.cframe.Position + Vector3.new(0, 2, 0) - position
+				local depth = v:Dot(forward)
+				local sx, sy = v:Dot(right) / (depth * tx), v:Dot(up) / (depth * ty)
+				local rowFrac = (sy + 1) / 2 -- 0 at the bottom of the picture .. 1 at the top
+				expect(math.abs(sx)).toBeLessThan(1)
+				expect(rowFrac).toBeGreaterThan(0.02)
+				if rows[i].role ~= "flank" then
+					expect(rowFrac).toBeLessThan(0.55) -- the axial composition fills the lower half, where the grass was bare
 				end
 			end
 		end
-	)
+	end)
 
 	it("is deterministic and the same whichever other kingdoms are dressed", function()
 		local a, b = WorldPlan.plan(Layout, ALL), WorldPlan.plan(Layout, ALL)
@@ -605,7 +773,7 @@ describe("The composed start yard (FORGE-02 visual pass 1b)", function()
 		end
 	end)
 
-	it("is left exactly where it is by WorldPlan.clear and by the shipped density trim", function()
+	it("is left exactly where it is by WorldPlan.clear and by the density trim", function()
 		local trimmed = WorldPlan.props(Layout, ALL)
 		local untrimmed = WorldPlan.props(Layout, ALL, FULL)
 		for _, k in KINGDOMS do
@@ -618,24 +786,6 @@ describe("The composed start yard (FORGE-02 visual pass 1b)", function()
 				end
 			end
 		end
-	end)
-
-	it("MUTANT: a stall dropped on a lane is moved by the clearance (so the check above would see it)", function()
-		local lane
-		for _, l in Layout.features.paths do
-			if l.kingdom == "crimson" and l.name == "farm" then
-				lane = l
-			end
-		end
-		local mid = (lane.points[1] + lane.points[2]) / 2
-		local stall = {
-			assetId = "prop_stall_red_01",
-			cframe = CFrame.new(mid.X, 0, mid.Y),
-			feature = "dressing",
-		}
-		local out = WorldPlan.clear(Layout, { stall })
-		expect(#out).toBe(1)
-		expect((out[1].cframe.Position - stall.cframe.Position).Magnitude).toBeGreaterThan(0.5)
 	end)
 
 	it("never builds the new ids from the imported-mesh kit: they are part-built whatever the asset source", function()
@@ -653,6 +803,7 @@ describe("The composed start yard (FORGE-02 visual pass 1b)", function()
 				"prop_hedge_02",
 			}
 		do
+			expect(isYardId(id)).toBe(true)
 			expect(Kit.envMeshReady(id)).toBe(false)
 			expect(Kit.prop(id):GetAttribute("KitStandIn")).toBe(true)
 		end
@@ -672,8 +823,7 @@ describe(
 			svc:start()
 			env.mock:advance(30)
 			expect(svc.stats.error).toBeNil()
-			local out = { props = svc.stats.props, parts = svc.stats.parts - svc.stats.arenaParts, svc = svc }
-			return out
+			return { props = svc.stats.props, parts = svc.stats.parts - svc.stats.arenaParts, svc = svc }
 		end
 
 		it("dresses all four kingdoms by default, so every one of them has its yard", function()
@@ -699,7 +849,7 @@ describe(
 				local all = build(nil)
 				expect(crimson.parts).toBe(6280)
 				expect(all.parts).toBe(6720)
-				expect(all.props - crimson.props).toBe(51) -- 3 kingdoms x 17 dressing placements (4 banners, 4 hand-placed, 9 of the yard)
+				expect(all.props - crimson.props).toBe(54) -- 3 kingdoms x 18 dressing placements (4 banners, 4 hand-placed, 10 of the yard)
 				crimson.svc:destroy()
 				all.svc:destroy()
 			end

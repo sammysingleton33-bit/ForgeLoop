@@ -248,7 +248,7 @@ describe("a world without the imported kit is exactly today's world", function()
 			expect(model.Name).never.toBe("farm_field_cabbage_01")
 			expect(model.Name).never.toBe("farm_field_cabbage_02")
 		end
-		expect(svc.stats.props).toBe(460) -- 409 with crimson alone dressed (17 dressing placements a kingdom: 4 banners, 4 hand-placed and the 9-piece start yard, as before it with the well and 8 yard props) + 3 x 17 for azure, emerald and gold, dressed since 2026-10-22; 416 before FORGE-02's nature pass (WorldPlan.generateNature)
+		expect(svc.stats.props).toBe(464) -- 410 with crimson alone dressed (18 dressing placements a kingdom: 4 banners, 4 hand-placed and the 10-piece start yard) + 3 x 18 for azure, emerald and gold, dressed since 2026-10-22; 409 with the first yard (9 pieces: the well and 8 scattered props before it); 416 before FORGE-02's nature pass (WorldPlan.generateNature)
 		svc:destroy()
 	end)
 end)
