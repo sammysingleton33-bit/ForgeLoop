@@ -7,19 +7,21 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Schema = require("@game/ReplicatedStorage/Forge/Experience/Schema")
+local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
+local CameraDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/RulerCameraController")
 local GlyphDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/FeedbackJobGlyphController")
 
 describe("FeedbackJobGlyphController (D-059 B22.4 prototype)", function()
 	local env, entities, world, controller
 	local settingValues, camera, input, conversation, bubbleOf
-	local origin, zoom, screenMaxX, phone
+	local origin, zoom, screenMaxX, phone, pxPerStud
 
 	local function rig(id, x, job, opts)
 		local o = opts or {}
 		local model = roblox.Instance.new("Model")
 		model.Name = `Citizen{id}`
 		local root = roblox.Instance.new("Part")
-		root.CFrame = CFrame.new(x, 2, 0)
+		root.CFrame = CFrame.new(x, 2, o.z or 0)
 		root.Parent = model
 		model.PrimaryPart = root
 		model:SetAttribute("KitKind", o.kind or "citizen")
@@ -33,6 +35,11 @@ describe("FeedbackJobGlyphController (D-059 B22.4 prototype)", function()
 
 	local function glyphIn(model)
 		return model:FindFirstChild("ForgeCitizenGlyph")
+	end
+
+	local function badgeIn(model)
+		local gui = glyphIn(model)
+		return gui and gui:FindFirstChild("Medallion")
 	end
 
 	local function ids()
@@ -62,7 +69,7 @@ describe("FeedbackJobGlyphController (D-059 B22.4 prototype)", function()
 		input = { mode = "explore" }
 		conversation = { state = nil }
 		bubbleOf = {}
-		origin, zoom, screenMaxX, phone = Vector3.zero, 70, 1000, false
+		origin, zoom, screenMaxX, phone, pxPerStud = Vector3.zero, 70, 1000, false, 20
 		local function double(name, value)
 			return {
 				name = name,
@@ -103,8 +110,8 @@ describe("FeedbackJobGlyphController (D-059 B22.4 prototype)", function()
 						zoom = function()
 							return zoom
 						end,
-						project = function(position)
-							return position.X <= screenMaxX
+						project = function(position) -- a top-down screen: pxPerStud px a stud
+							return Vector2.new(position.X, position.Z) * pxPerStud, position.X <= screenMaxX
 						end,
 						phone = function()
 							return phone
@@ -139,20 +146,28 @@ describe("FeedbackJobGlyphController (D-059 B22.4 prototype)", function()
 		expect(gui.AlwaysOnTop).toBe(false) -- a roof hides the citizen and its icon together
 		expect(gui.Active).toBe(false) -- a tap still picks the citizen
 		expect(gui.Adornee).toBe(farmer.PrimaryPart)
-		expect(gui.Disc.Glyph.Text).toBe(GlyphDef.GLYPH.farmer.text)
-		expect(gui.Disc.BackgroundColor3).toEqual(GlyphDef.GLYPH.farmer.color)
-		expect(glyphIn(miner).Disc.Glyph.Text).toBe(GlyphDef.GLYPH.miner.text)
+		-- FORGE-03's kit badge: the job's UITheme icon (its glyph until images are uploaded) on its colour
+		local badge = badgeIn(farmer)
+		expect(badge.Size).toEqual(UDim2.fromOffset(GlyphDef.GLYPH_PX, GlyphDef.GLYPH_PX))
+		expect(badge.Icon.Text).toBe(Theme.icon("farm").glyph)
+		expect(badge.UIGradient.Color.Keypoints[1].Value).toEqual(Theme.resource("food"))
+		expect(badgeIn(miner).Icon.Text).toBe(Theme.icon("quarry").glyph)
+		expect(badgeIn(miner).UIGradient.Color.Keypoints[1].Value).toEqual(Theme.resource("stone"))
 		-- a phone draws them smaller: its citizens are ~25 px tall at the start view
 		phone = true
 		controller:refresh()
 		expect(gui.Size).toEqual(UDim2.fromOffset(GlyphDef.PHONE_PX, GlyphDef.PHONE_PX))
+		expect(badgeIn(farmer).Size).toEqual(UDim2.fromOffset(GlyphDef.PHONE_PX, GlyphDef.PHONE_PX))
+		expect(#gui:GetChildren()).toBe(1) -- the desktop badge went, not left under the phone's
 		expect(GlyphDef.PHONE_PX < GlyphDef.GLYPH_PX).toBe(true)
-		-- meaning never by colour alone: every job has its own glyph and colour
-		local texts, colors = {}, {}
+		-- meaning never by colour alone: every job has its own icon (and glyph) and colour
+		local icons, texts, colors = {}, {}, {}
 		for job, look in GlyphDef.GLYPH do
-			expect(texts[look.text]).toBeNil()
+			local glyph = Theme.icon(look.icon).glyph
+			expect(icons[look.icon]).toBeNil()
+			expect(texts[glyph]).toBeNil()
 			expect(colors[tostring(look.color)]).toBeNil()
-			texts[look.text], colors[tostring(look.color)] = job, job
+			icons[look.icon], texts[glyph], colors[tostring(look.color)] = job, job, job
 		end
 	end)
 
@@ -184,22 +199,66 @@ describe("FeedbackJobGlyphController (D-059 B22.4 prototype)", function()
 		expect(guis).toBe(GlyphDef.MAX_SHOWN)
 	end)
 
+	it("a cluster shows one icon a job and none overlap (FL-0152: the farm trio on a phone)", function()
+		settingValues.jobGlyphs = true
+		phone = true
+		pxPerStud = 6 -- about a phone at the start view: the trio's 3.6 studs apart is ~22 px, under an icon width
+		local px = GlyphDef.PHONE_PX
+		rig(1, 0, "farmer") -- nearest the centre: its icon stands for the trio
+		rig(2, 3.6, "farmer") -- 22 px from it: shares it
+		rig(3, 7.2, "farmer") -- 43 px from it but 22 from farmer 2: chained, shares it too
+		rig(4, 0, "miner", { z = 2 }) -- 12 px from the farmer's icon: it would overlap, so it waits
+		rig(5, 30, "farmer") -- 180 px away: its own icon
+		rig(6, 0, "woodcutter", { z = -1.1 * px / pxPerStud }) -- 1.1 widths from the farmer: clear, drawn
+		controller:refresh()
+		expect(ids()).toEqual({ 1, 5, 6 })
+		-- no two drawn icons closer than one icon width
+		local points = {}
+		for id, gui in controller:shown() do
+			local position = gui.Adornee.CFrame.Position + gui.StudsOffsetWorldSpace
+			table.insert(points, { id = id, point = Vector2.new(position.X, position.Z) * pxPerStud })
+		end
+		for i, a in points do
+			for j = i + 1, #points do
+				expect((a.point - points[j].point).Magnitude >= GlyphDef.APART * px).toBe(true)
+			end
+		end
+		-- the same job merges a bit farther out than touching (MERGE), another job only when touching
+		expect(GlyphDef.MERGE > GlyphDef.APART).toBe(true)
+		-- zoom in (more px a stud): the trio splits into an icon each
+		pxPerStud = 12 -- 3.6 studs = 43 px, past MERGE widths
+		controller:refresh()
+		expect(ids()).toEqual({ 1, 2, 3, 4, 5, 6 })
+		-- the leader goes (a bubble): the next farmer leads the rest of the trio, and the miner is clear now
+		pxPerStud = 6
+		bubbleOf[1] = { kind = "thought" }
+		controller:refresh()
+		expect(ids()).toEqual({ 2, 4, 5, 6 })
+	end)
+
 	it("fades with the zoom: full from FADE_FULL out, half way between, gone at FADE_NONE and closer", function()
 		settingValues.jobGlyphs = true
 		local farmer = rig(1, 10, "farmer")
 		zoom = GlyphDef.FADE_FULL
 		controller:refresh()
-		expect(glyphIn(farmer).Disc.BackgroundTransparency).toBeNear(0, 1e-9)
-		expect(glyphIn(farmer).Disc.Glyph.TextTransparency).toBeNear(0, 1e-9)
+		expect(badgeIn(farmer).BackgroundTransparency).toBeNear(0, 1e-9)
+		expect(badgeIn(farmer).Icon.TextTransparency).toBeNear(0, 1e-9)
+		expect(badgeIn(farmer).UIStroke.Transparency).toBeNear(0, 1e-9)
 		zoom = (GlyphDef.FADE_FULL + GlyphDef.FADE_NONE) / 2
 		controller:refresh()
-		expect(glyphIn(farmer).Disc.BackgroundTransparency).toBeNear(0.5, 1e-6)
+		expect(badgeIn(farmer).BackgroundTransparency).toBeNear(0.5, 1e-6)
+		expect(badgeIn(farmer).Icon.TextTransparency).toBeNear(0.5, 1e-6)
+		expect(badgeIn(farmer).UIStroke.Transparency).toBeNear(0.5, 1e-6)
 		zoom = GlyphDef.FADE_NONE
 		controller:refresh()
 		expect(ids()).toEqual({})
 		expect(glyphIn(farmer)).toBeNil()
 		expect(GlyphDef.fade(0 / 0)).toBe(0)
-		expect(GlyphDef.fade(70)).toBe(1) -- the start view (FL-0147) shows them at full
+		-- FL-0152: full at the start view, where citizens are hardest to read; gone at the overview's closest
+		local overview = CameraDef.DEFAULTS.overview
+		expect(GlyphDef.fade(overview.startZoom)).toBe(1)
+		expect(GlyphDef.fade(overview.maxZoom)).toBe(1)
+		expect(GlyphDef.fade(overview.minZoom)).toBe(0)
 	end)
 
 	it("hides in walk mode, a scripted shot, the duel and a conversation, and where a bubble shows", function()
@@ -242,7 +301,9 @@ describe("FeedbackJobGlyphController (D-059 B22.4 prototype)", function()
 		local builder = rig(1, 10, "builder")
 		controller:refresh()
 		expect(glyphIn(builder)).toBe(gui) -- the same GUI, reused
-		expect(gui.Disc.Glyph.Text).toBe(GlyphDef.GLYPH.builder.text)
+		expect(badgeIn(builder).Icon.Text).toBe(Theme.icon("build").glyph)
+		expect(badgeIn(builder).UIGradient.Color.Keypoints[1].Value).toEqual(Theme.color("gold500"))
+		expect(#gui:GetChildren()).toBe(1) -- the farmer's badge went
 		entities.released:fire(0 / 0, builder) -- not an id: ignored
 		expect(ids()).toEqual({ 1 })
 	end)

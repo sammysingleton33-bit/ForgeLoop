@@ -10,18 +10,22 @@
 	  GLYPH, read from the rig's own Kit attributes (KitKind = "citizen", KitJob), so a job change (a
 	  new rig) changes the icon. Soldiers, governors and rigs EntityController's LOD hides (unparented)
 	  get none.
-	- How many: the MAX_SHOWN nearest the view's centre that are on screen (a phone draws ~50 without
-	  cost); the rest show none. A citizen with a bubble (CitizenBubbleController) shows the bubble
-	  instead: same spot, and the bubble matters more.
+	- How many: one icon per cluster, never overlapping (FL-0152: the farm trio on a phone). Nearest the
+	  view's centre first, on screen only: a neighbour with the same job closer than MERGE icon widths on
+	  screen shares that icon, and any other closer than APART widths waits until it moves clear. At most
+	  MAX_SHOWN icons (a phone draws ~50 without cost). A citizen with a bubble (CitizenBubbleController)
+	  shows the bubble instead: same spot, and the bubble matters more.
 	- Where: a BillboardGui GLYPH_PX px square at every zoom (PHONE_PX on a phone, where a 24 px citizen
 	  would sit under an icon its own size), its centre HEIGHT studs above the rig's
 	  pivot (where the bubble sits: clear of the head at RIG_SCALE). Not always on top, so a roof hides
 	  the citizen and its icon together. It takes no input: a tap still picks the citizen under it.
 	- When: only in the overview (not walk mode, the duel, a scripted shot or a conversation), and it
-	  fades with the zoom: full from FADE_FULL studs out, gone at FADE_NONE and closer, where the rigs
-	  read by themselves.
-	- Look (placeholder until FORGE-03's icon art): GLYPH[job] = { text, color }, a text glyph on a
-	  job-coloured disc with a dark ring. Meaning is never colour alone: each job has its own glyph.
+	  fades with the zoom: full from FADE_FULL studs out (the start view, 70, shows them at full), gone at
+	  FADE_NONE and closer (the overview's closest zoom), where the rigs read by themselves.
+	- Look: FORGE-03's kit badge, Icon.medallion(GLYPH[job].icon, px, GLYPH[job].color), so it matches the
+	  HUD and picks up uploaded icon images from UITheme.icons with no code change (until then, its glyph
+	  fallback). Colours are UITheme tokens; FORGE-03 picks the final job colours. Meaning is never colour
+	  alone: each job has its own icon.
 	Pooled: GUIs are reused, never more than MAX_SHOWN exist, and a released rig gives its GUI back.
 
 		FeedbackJobGlyphController:refresh()     -- re-pick and redraw (Heartbeat calls it every POLL_SEC)
@@ -29,7 +33,9 @@
 ]]
 
 local EntityControllerDef = require("./EntityController")
+local Icon = require("@game/ReplicatedStorage/Forge/UI/Icon")
 local ScreenLayout = require("../UI/Layout")
+local Theme = require("@game/ReplicatedStorage/Forge/UI/Theme")
 
 local Def = {
 	name = "FeedbackJobGlyphController",
@@ -45,15 +51,16 @@ Def.PHONE_PX = 20 -- a phone's citizen is ~25 px tall at the start view (#316)
 Def.HEIGHT = 3.2 * RIG_SCALE -- studs above the pivot: the bubble's height (CitizenBubbleController)
 Def.FADE_FULL = 55 -- studs from the view's centre: full from here out (the start view is 70)
 Def.FADE_NONE = 40 -- and gone from here in (the overview's closest zoom; a conversation is 35)
+Def.MERGE = 1.2 -- icon widths on screen: a same-job neighbour closer than this shares the icon (FL-0152)
+Def.APART = 1 -- icon widths on screen: no two icons closer (they would overlap); another job's waits
 Def.SETTING = "jobGlyphs"
-local rgb = Color3.fromRGB
-Def.RING = rgb(40, 32, 24)
-Def.GLYPH = table.freeze({ -- placeholder art (FORGE-03 owns the icons): a glyph each, never colour alone
-	farmer = table.freeze({ text = "🌾", color = rgb(232, 196, 74) }),
-	woodcutter = table.freeze({ text = "🪓", color = rgb(120, 170, 92) }),
-	miner = table.freeze({ text = "⛏", color = rgb(150, 160, 176) }),
-	builder = table.freeze({ text = "🔨", color = rgb(236, 140, 60) }),
-	hauler = table.freeze({ text = "📦", color = rgb(196, 150, 106) }),
+-- job -> FORGE-03's kit icon (UITheme.icons) and colour token (FORGE-03, 22 Oct; final colours to come)
+Def.GLYPH = table.freeze({
+	farmer = table.freeze({ icon = "farm", color = Theme.resource("food") }),
+	woodcutter = table.freeze({ icon = "lumbercamp", color = Theme.resource("wood") }),
+	miner = table.freeze({ icon = "quarry", color = Theme.resource("stone") }),
+	builder = table.freeze({ icon = "build", color = Theme.color("gold500") }),
+	hauler = table.freeze({ icon = "storehouse", color = Theme.color("textMuted") }), -- the token nearest #8C7A66
 })
 
 local Controller = {}
@@ -94,7 +101,7 @@ function Def.fade(zoom: number): number
 end
 
 -- opts (specs): { origin = () -> Vector3, zoom = () -> number, playerGui = Instance,
---   project = (Vector3) -> boolean (on screen), phone = () -> boolean }
+--   project = (Vector3) -> (Vector2, boolean) (screen point in px, on screen), phone = () -> boolean }
 function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 	local options = opts or {}
 	return setmetatable({
@@ -258,15 +265,20 @@ function Controller:_zoom(origin: Vector3): number
 	return if ok then distance else 0
 end
 
-function Controller:_onScreen(position: Vector3): boolean
+-- The screen point (px) of a world position, and whether it is on screen.
+function Controller:_screen(position: Vector3): (Vector2?, boolean)
 	if self._project then
-		return self._project(position) == true
+		local point, visible = self._project(position)
+		return point, visible == true
 	end
-	local ok, onScreen = pcall(function()
-		local _, visible = self._env.Workspace.CurrentCamera:WorldToViewportPoint(position)
-		return visible
+	local ok, point, visible = pcall(function()
+		local p, onScreen = self._env.Workspace.CurrentCamera:WorldToViewportPoint(position)
+		return Vector2.new(p.X, p.Y), onScreen
 	end)
-	return ok and onScreen == true
+	if not ok then
+		return nil, false
+	end
+	return point, visible == true
 end
 
 function Controller:_isPhone(): boolean
@@ -292,8 +304,7 @@ function Controller:_hasBubble(id: number): boolean
 end
 
 function Controller:_build(): any
-	local env = self._env
-	local gui = env.newInstance("BillboardGui")
+	local gui = self._env.newInstance("BillboardGui")
 	gui.Name = "ForgeCitizenGlyph"
 	gui.Size = UDim2.fromOffset(Def.GLYPH_PX, Def.GLYPH_PX)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, Def.HEIGHT, 0)
@@ -301,28 +312,23 @@ function Controller:_build(): any
 	gui.LightInfluence = 0
 	gui.Active = false
 	gui.ResetOnSpawn = false
-	local disc = env.newInstance("Frame")
-	disc.Name = "Disc"
-	disc.Size = UDim2.fromScale(1, 1)
-	disc.BorderSizePixel = 0
-	disc.Active = false
-	disc.Parent = gui
-	local corner = env.newInstance("UICorner")
-	corner.CornerRadius = UDim.new(0.5, 0)
-	corner.Parent = disc
-	local ring = env.newInstance("UIStroke")
-	ring.Name = "Ring"
-	ring.Color = Def.RING
-	ring.Thickness = 2
-	ring.Parent = disc
-	local glyph = env.newInstance("TextLabel")
-	glyph.Name = "Glyph"
-	glyph.BackgroundTransparency = 1
-	glyph.Size = UDim2.fromScale(1, 1)
-	glyph.TextScaled = true
-	glyph.Active = false
-	glyph.Parent = disc
 	return gui
+end
+
+-- The kit badge for this job and size: built once, rebuilt when a pooled GUI changes job or size.
+local function badgeFor(gui: any, look: any, px: number): any
+	local badge = gui:FindFirstChild("Medallion")
+	if badge ~= nil and badge:GetAttribute("icon") == look.icon and badge:GetAttribute("px") == px then
+		return badge
+	end
+	if badge ~= nil then
+		badge:Destroy()
+	end
+	badge = Icon.medallion(look.icon, px, look.color)
+	badge:SetAttribute("icon", look.icon)
+	badge:SetAttribute("px", px)
+	badge.Parent = gui
+	return badge
 end
 
 function Controller:_parentFor(model: any): any
@@ -339,30 +345,28 @@ function Controller:_parentFor(model: any): any
 	return self._folder
 end
 
-function Controller:_draw(id: number, model: any, look: any, alpha: number)
+function Controller:_draw(id: number, model: any, look: any, alpha: number, px: number)
 	local gui = self._drawn[id]
 	if gui == nil then
 		gui = table.remove(self._pool) or self:_build()
 		self._drawn[id] = gui
 	end
-	local px = if self:_isPhone() then Def.PHONE_PX else Def.GLYPH_PX
 	gui.Size = UDim2.fromOffset(px, px)
 	gui.Adornee = model.PrimaryPart or model
 	gui.Parent = self:_parentFor(model)
 	gui.Enabled = true
-	local disc = gui:FindFirstChild("Disc")
-	local glyph = disc and disc:FindFirstChild("Glyph")
-	local ring = disc and disc:FindFirstChild("Ring")
-	if disc then
-		disc.BackgroundColor3 = look.color
-		disc.BackgroundTransparency = 1 - alpha
+	local badge = badgeFor(gui, look, px)
+	local clear = 1 - alpha
+	badge.BackgroundTransparency = clear
+	local stroke = badge:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Transparency = clear
 	end
-	if glyph then
-		glyph.Text = look.text
-		glyph.TextTransparency = 1 - alpha
-	end
-	if ring then
-		ring.Transparency = 1 - alpha
+	local inner = badge:FindFirstChild("Icon")
+	if inner and inner:IsA("ImageLabel") then
+		inner.ImageTransparency = clear
+	elseif inner then
+		inner.TextTransparency = clear
 	end
 end
 
@@ -388,6 +392,53 @@ function Controller:_release(id: any)
 	self._models[id] = nil
 end
 
+-- Same-job clusters on screen: neighbours closer than `reach` px join (chained, so a farm's row is one
+-- cluster). `sorted` is nearest the view's centre first; returns each cluster's first member, in order.
+-- A screen grid of `reach` cells keeps it linear in the citizens on screen.
+local function clusters(sorted: { any }, reach: number): { any }
+	local parent: { number } = {}
+	local function root(i: number): number
+		while parent[i] ~= i do
+			parent[i] = parent[parent[i]]
+			i = parent[i]
+		end
+		return i
+	end
+	local grid: { [number]: { [number]: { number } } } = {}
+	for i, c in sorted do
+		parent[i] = i
+		local cx, cy = math.floor(c.point.X / reach), math.floor(c.point.Y / reach)
+		for x = cx - 1, cx + 1 do
+			local column = grid[x]
+			if column then
+				for y = cy - 1, cy + 1 do
+					for _, j in column[y] or {} do
+						local other = sorted[j]
+						if other.look == c.look and (other.point - c.point).Magnitude < reach then
+							local a, b = root(i), root(j)
+							if a ~= b then -- the nearer member leads
+								parent[math.max(a, b)] = math.min(a, b)
+							end
+						end
+					end
+				end
+			end
+		end
+		local column = grid[cx] or {}
+		grid[cx] = column
+		local cell = column[cy] or {}
+		column[cy] = cell
+		table.insert(cell, i)
+	end
+	local out = {}
+	for i, c in sorted do
+		if root(i) == i then
+			table.insert(out, c)
+		end
+	end
+	return out
+end
+
 function Controller:refresh()
 	local origin = self:_originOf()
 	local alpha = if origin then Def.fade(self:_zoom(origin)) else 0
@@ -397,13 +448,19 @@ function Controller:refresh()
 		end
 		return
 	end
+	local px = if self:_isPhone() then Def.PHONE_PX else Def.GLYPH_PX
 	local candidates = {}
 	for id, model in self._models do
 		local look = glyphOf(model)
 		if look ~= nil and model.Parent ~= nil and not self:_hasBubble(id) then
 			local pivot = pivotOf(model)
-			if pivot and self:_onScreen(pivot + Vector3.new(0, Def.HEIGHT, 0)) then
-				table.insert(candidates, { id = id, model = model, look = look, distance = (pivot - origin).Magnitude })
+			local point, visible = nil, false
+			if pivot then
+				point, visible = self:_screen(pivot + Vector3.new(0, Def.HEIGHT, 0))
+			end
+			if pivot and point and visible then
+				local distance = (pivot - origin).Magnitude
+				table.insert(candidates, { id = id, model = model, look = look, distance = distance, point = point })
 			end
 		end
 	end
@@ -413,9 +470,25 @@ function Controller:refresh()
 		end
 		return a.id < b.id
 	end)
-	local keep = {}
-	for i = 1, math.min(#candidates, Def.MAX_SHOWN) do
-		keep[candidates[i].id] = candidates[i]
+	local leaders = clusters(candidates, Def.MERGE * px)
+	-- one icon a cluster, over its member nearest the view's centre; a cluster closer than APART widths
+	-- to a drawn icon (another job's) waits, so no two icons overlap into a smear
+	local keep, kept = {}, {}
+	for _, c in leaders do
+		if #kept >= Def.MAX_SHOWN then
+			break
+		end
+		local clear = true
+		for _, k in kept do
+			if (c.point - k.point).Magnitude < Def.APART * px then
+				clear = false
+				break
+			end
+		end
+		if clear then
+			table.insert(kept, c)
+			keep[c.id] = c
+		end
 	end
 	for id in self._drawn do
 		if keep[id] == nil then
@@ -423,7 +496,7 @@ function Controller:refresh()
 		end
 	end
 	for id, c in keep do
-		self:_draw(id, c.model, c.look, alpha)
+		self:_draw(id, c.model, c.look, alpha, px)
 	end
 end
 
