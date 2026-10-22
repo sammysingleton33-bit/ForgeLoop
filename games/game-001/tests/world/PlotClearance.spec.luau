@@ -97,6 +97,9 @@ local function violations(items: { any }): { string }
 	for _, item in items do
 		-- the gate banners flank the road by design and are left exactly where the generator puts them
 		local banner = item.feature == "dressing" and string.sub(item.assetId, 1, 11) == "prop_banner"
+		-- the market cross stands in the middle of the keep's cobbled court, where the avenue road and the door lane begin (the court is
+		-- laid over them): off every field, building and slot here; YardCompose.spec holds it to the roads and lanes that do not
+		local cross = item.feature == "dressing" and string.sub(item.assetId, 1, 10) == "prop_cross"
 		if item.feature ~= "bridge" and item.feature ~= "crops" and not banner then
 			local r = liveRadius(item.assetId) * (item.scale or 1)
 			local natural = NATURAL[item.feature] == true
@@ -114,7 +117,7 @@ local function violations(items: { any }): { string }
 			end
 			for i, road in Layout.features.roads do
 				local gap = if natural then MARGIN else 0
-				if WorldPlan.distToPolyline(item.x, item.z, road.points) < road.width / 2 + r + gap then
+				if not cross and WorldPlan.distToPolyline(item.x, item.z, road.points) < road.width / 2 + r + gap then
 					table.insert(
 						bad,
 						`{item.assetId} ({item.feature}) at ({math.floor(item.x)}, {math.floor(item.z)}) near road {i}`
@@ -124,7 +127,7 @@ local function violations(items: { any }): { string }
 			-- the plots' village lanes (features.paths: ground only, not no-build roads) are kept clear like a road
 			for i, lane in Layout.features.paths or {} do
 				local gap = if natural then MARGIN else 0
-				if WorldPlan.distToPolyline(item.x, item.z, lane.points) < lane.width / 2 + r + gap then
+				if not cross and WorldPlan.distToPolyline(item.x, item.z, lane.points) < lane.width / 2 + r + gap then
 					table.insert(
 						bad,
 						`{item.assetId} ({item.feature}) at ({math.floor(item.x)}, {math.floor(item.z)}) near lane {i}`
@@ -235,14 +238,16 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		expect((cleared[1].cframe.Position - tree.cframe.Position).Magnitude).toBeGreaterThan(0.5)
 		expect((cleared[1].cframe.Position - tree.cframe.Position).Magnitude).toBeLessThanOrEqual(12 + 1e-6)
 		expect(table.concat(violations(itemsOf(cleared)), "; ")).toBe("")
-		-- the yard well and the gate banners are meant to stand in the build zones: they stay
+		-- the start yard (the market cross, stalls and hedges, WorldPlan.yard) and the gate banners are meant to stand in the build zones: they stay
 		local ids = {}
 		for _, p in WorldPlan.props(Layout, { crimson = true }) do
 			if p.feature == "dressing" then
 				ids[p.assetId] = true
 			end
 		end
-		expect(ids.prop_well_01).toBe(true)
+		expect(ids.prop_cross_red_01).toBe(true)
+		expect(ids.prop_stall_red_01).toBe(true)
+		expect(ids.prop_hedge_01).toBe(true)
 		expect(ids.prop_banner_red_01).toBe(true)
 	end)
 
@@ -296,7 +301,7 @@ describe("Plot clearance (user playtest, farm areas)", function()
 			end
 			expect(j).toBe(#cleared + 1)
 			expect(nudged).toBeGreaterThan(0)
-			-- every kingdom keeps all of its hand-placed dressing: 4 gate banners, the well, 2 goods, a haystack, a cart
+			-- every kingdom keeps all of its hand-placed dressing: 4 gate banners, 2 goods, a haystack, a cart and the start yard (9 pieces)
 			local function dressing(list: { any }): number
 				local n = 0
 				for _, p in list do

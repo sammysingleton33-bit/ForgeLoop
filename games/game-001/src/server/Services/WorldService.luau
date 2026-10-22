@@ -50,7 +50,9 @@ local LightingPreset = require("@game/ReplicatedStorage/Game/World/Lighting")
 local WorldService = {}
 WorldService.__index = WorldService
 
-WorldService.DRESSED = { crimson = true } -- VS-1: one kingdom fully dressed, the others blocked out
+-- All four kingdoms are dressed (FORGE-00, 2026-10-22: a ruler can start seated in any of them, and the start view's foreground is the
+-- composed yard, WorldPlan.yard): the gate banners, the hand-placed crates and carts and the market square. VS-1 dressed crimson only.
+WorldService.DRESSED = { crimson = true, azure = true, emerald = true, gold = true }
 WorldService.VOXELS_PER_FRAME = 64 * 64 * 64
 WorldService.TERRAIN_OPS_PER_FRAME = 300 -- Fill* calls per frame too: the ground cover is thousands of small ops (a few voxels each), so the voxel budget alone never yields
 WorldService.PARTS_PER_FRAME = 400 -- parts created per frame before yielding (nodes, markers, props)

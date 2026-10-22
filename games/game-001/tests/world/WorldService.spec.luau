@@ -340,7 +340,11 @@ describe("WorldService robustness (FORGE-05 review of #28)", function()
 		-- D-047 / FL-0116: 6,540 dressing parts with the trimmed dressing (8,315 untrimmed; plot showcase, in-view stands and relocated decor stay);
 		-- restoring the density knob after a phone test means raising this with it, since the 27k all-built ceiling depends on it.
 		-- stats.parts also counts the Crown Arena (FL-0072: about 350 neutral parts, Arena.PART_BUDGET.cap 900), which has its own cap.
-		expect(svc.stats.parts - svc.stats.arenaParts).toBeLessThan(6700)
+		-- Kingdom dressing is a world-level decision (FORGE-00, 2026-10-22): DRESSED is all four kingdoms, so the three that were blocked out
+		-- carry their banners, hand-placed crates and the 66-part start yard: 6,280 with crimson alone, 6,720 with all four (a kingdom's
+		-- dressing is 140 to 150 parts: its banners' emblems differ). The bound is the all-four world with room, below the 27k ceiling's
+		-- headroom (KitCeiling prints the total: 26,526).
+		expect(svc.stats.parts - svc.stats.arenaParts).toBeLessThan(6800)
 		expect(svc.stats.arenaParts).toBeGreaterThan(0)
 		expect(svc.stats.arenaParts).toBeLessThanOrEqual(Kit.ARENA.PART_BUDGET.cap)
 		svc:destroy()
@@ -389,20 +393,21 @@ describe("Dressing density knob (D-047)", function()
 			-- re-pin only when the world itself changes on purpose: the generated plan, then the cleared plan
 			local plan = WorldPlan.plan(Layout, { crimson = true })
 			expect(#plan).toBe(464)
-			expect(fingerprint(plan)).toBe(1728038995) -- re-pinned for FORGE-02 visual pass 1 (nature in clumps: WorldPlan.generateNature grows stands, tree lines, groves, rock groups, bush clumps and flower drifts in place of the even scatter; 618 placements -> 464: stands keep 0.7 of their Layout counts, lone trees, bushes and rocks are fewer and grouped; placements carry scale and tint, which this fingerprint leaves out: NatureClumps.spec pins those). Before that: main d78d9cb's props, re-pinned for FL-0127 (three outposts), FL-0072 (the arena's footprint) and FL-0124 (decor keeps 9 studs off every world node)
+			expect(fingerprint(plan)).toBe(1668603021) -- re-pinned for FORGE-02 visual pass 1b (the composed start yard, WorldPlan.yard, replaces the well and the 8 scattered yard props of 1: same 464 placements, same 66 parts a kingdom, new places, ids and colours; YardCompose.spec pins them) and before that for visual pass 1 (nature in clumps: WorldPlan.generateNature grows stands, tree lines, groves, rock groups, bush clumps and flower drifts in place of the even scatter; 618 placements -> 464: stands keep 0.7 of their Layout counts, lone trees, bushes and rocks are fewer and grouped; placements carry scale and tint, which this fingerprint leaves out: NatureClumps.spec pins those). Before that: main d78d9cb's props, re-pinned for FL-0127 (three outposts), FL-0072 (the arena's footprint) and FL-0124 (decor keeps 9 studs off every world node)
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
 			expect(#one).toBe(464)
-			expect(fingerprint(one)).toBe(1072361024)
+			expect(fingerprint(one)).toBe(1238739665)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
 			expect(#all).toBe(515)
-			expect(fingerprint(all)).toBe(1246505086)
+			expect(fingerprint(all)).toBe(287870882)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
+			svc.dressed = { crimson = true } -- the service dresses all four now (DRESSED): this pin is the crimson-only world, as before
 			svc:start()
 			env.mock:advance(30)
 			expect(svc.stats.error).toBeNil()

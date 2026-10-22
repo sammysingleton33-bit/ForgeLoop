@@ -36,7 +36,7 @@ end)
 
 local D = WorldPlan.MESH_DRESSING
 local KINGDOMS = { "crimson", "azure", "emerald", "gold" }
-local DRESSED = { crimson = true } -- what WorldService dresses (VS-1)
+local DRESSED = { crimson = true, azure = true, emerald = true, gold = true } -- what WorldService dresses (all four since 2026-10-22; VS-1: crimson)
 local DRESSING_IDS = {
 	"farm_fence_01",
 	"farm_fence_02",
@@ -248,7 +248,7 @@ describe("a world without the imported kit is exactly today's world", function()
 			expect(model.Name).never.toBe("farm_field_cabbage_01")
 			expect(model.Name).never.toBe("farm_field_cabbage_02")
 		end
-		expect(svc.stats.props).toBe(409) -- 416 before FORGE-02's nature pass (WorldPlan.generateNature): the shipped density keeps more of what stands in view
+		expect(svc.stats.props).toBe(460) -- 409 with crimson alone dressed (17 dressing placements a kingdom: 4 banners, 4 hand-placed and the 9-piece start yard, as before it with the well and 8 yard props) + 3 x 17 for azure, emerald and gold, dressed since 2026-10-22; 416 before FORGE-02's nature pass (WorldPlan.generateNature)
 		svc:destroy()
 	end)
 end)
