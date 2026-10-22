@@ -361,6 +361,7 @@ local function dump()
 		end)(),
 		objective = cf12(o.cframe),
 		lighting = plain(LightingPreset),
+		start = plain(StartView.START), -- the ruler's first view (zoom, fov, pitch, ahead, turn): the preview's default and far cameras follow it
 	}
 end
 
