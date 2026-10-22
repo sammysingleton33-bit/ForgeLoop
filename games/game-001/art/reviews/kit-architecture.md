@@ -588,7 +588,8 @@ the gate, the towers and the keep, two kingdoms, same camera).
 Part counts (Kit.partCount, all four kingdoms): wall L1 / L2 / L3 26-30 / 36-40 / 52-60 (caps 30 / 45 / 60), gate 72-77 /
 102-113 / 120-131 (caps 90 / 120 / 150), watchtower L1 107-116 and L2 105-122 (cap 130), ram 37-42 (cap 45), soldier / knight /
 archer 11 with the crest (cap 11), damage at most 14 extra parts and none at Damage 0. All-built worst case (D-047): 26,322 of
-27,000 (`tests/world/KitCeiling.spec.luau`: WorldService 6,869 + four kingdoms 19,117 + three neutral towers 336).
+27,000 when this was written (WorldService 6,869 + four kingdoms 19,117 + three neutral towers 336); **26,402 on main now**: WorldService
+6,945 (+76 node-marker parts, FL-0136 phase 3) + four kingdoms 19,121 + three neutral towers 336; the line `tests/world/KitCeiling.spec.luau` prints is the number.
 
 What was built:
 - **Wall:** L1 timber palisade (the same dark timber in every kingdom), L2 crenellated stone curtain on a batter with a banner and
@@ -681,7 +682,7 @@ onto the side face. KitWarKit: no tympanum at the closed L1/L2 arch, no panel be
 
 Numbers: parts per piece unchanged except the L3 gate, +1 for the tympanum (gate L1 72-77, L2 102-113, L3 121-132 against the 90 / 120 /
 150 caps; wall 26-30 / 36-40 / 52-60; watchtower L1 107-116, L2 105-122); the breach, crack and chip marks add 4 / 6 / 8 / 9 parts at state 1 to 4 (12 with rubble at state 4) within the 14
-extra-part budget. All-built worst case 26,326 of 27,000 (it was 26,322; the four L3 tympana), under the 27,000 ceiling.
+extra-part budget. All-built worst case 26,326 of 27,000 then (it was 26,322; the four L3 tympana), 26,402 on main since FL-0136 phase 3 added 76 node-marker parts to WorldService (6,945); under the 27,000 ceiling.
 Not chased (per FORGE-00): shield and bow grip (FL-0135), keep damage, framing, units at 170, tower L2 against L1, the ram at 170.
 
 ### FL-0128 damage frames (P1 before FL-0143 makes damage live; branch `forge/02-blender-damage-frames`, stacked on defects round B)
@@ -713,7 +714,7 @@ lie elsewhere on the face; the rest is unchanged).
 
 Not done here: the order the damage walks a model's parts in is now the part attribute `KitOrder`, written once by `Kit.build`; a model
 built by anything else, or a part re-formed by a recolour, is ordered by position (robust except at a rounding edge). The ceiling is
-unchanged (26,326 of 27,000: no part was added); farms are built at level 2 by the ceiling spec (level 3: +3 parts each).
+unchanged by this fix (26,326 of 27,000 then, no part was added; 26,402 on main with the 76 node-marker parts of FL-0136 phase 3); farms are built at level 2 by the ceiling spec (level 3: +3 parts each, +36 in all: 26,438).
 
 ## FL-0072 — Crown Arena venue, crowd figures, armour and weapons (G12.6; FORGE-02; Blender previews, not Studio)
 
