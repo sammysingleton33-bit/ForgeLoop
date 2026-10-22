@@ -28,7 +28,7 @@ GAME_PROJECTS=("game-001:games/game-001/default.project.json:games/game-001/test
 LOG_DIR="$(mktemp -d)"
 trap 'rm -rf "$LOG_DIR"' EXIT
 LUAU_DIRS=(roblox/src roblox/tests roblox/scripts games)
-EXPECTED_STEPS=$((8 + 3 * ${#GAME_PROJECTS[@]})) # 8 framework steps + (specs, build, place check) per game
+EXPECTED_STEPS=$((9 + 3 * ${#GAME_PROJECTS[@]})) # 9 framework steps + (specs, build, place check) per game
 STEP_TIMEOUT=600 # seconds per Lune step (coreutils `timeout`, when installed): a hung spec cannot stall CI
 # spec folders that run as several Lune steps (run.luau --shard i/n), each under STEP_TIMEOUT:
 # "<game id>/<folder>:<n>". game-001's sim/ took 572 s alone locally on 2026-10-15 (limit 600); its 49 files
@@ -37,7 +37,7 @@ STEP_TIMEOUT=600 # seconds per Lune step (coreutils `timeout`, when installed): 
 # world/ took 565 s of 600 on 2026-10-19 (gate 7: #217 arena venue, #226 citizen mesh kit), so it runs as 2 shards too;
 # with FORGE-02's war kit (#260: KitWarKit, KitCeiling, KitDamage) world shard 1/2 took 678 s run alone, so 3 shards;
 # gate 8n (+#268) put world#2/3 at 496 s, past FORGE-00's 480 s split line (KitEmblems alone ~176 s), so 4.
-SHARDS=("game-001/sim:3" "game-001/world:4")
+SHARDS=("game-001/sim:3" "game-001/world:6") # world 4 -> 6 on 2026-10-22: world#1/4 reached 358 s locally (split line 480)
 # sub-folders that run as their own Lune step and are left out of their parent folder's step(s) (run.luau
 # --exclude): "<game id>/<folder>/<sub>". game-001's sim/long holds the real-length full-match spec (FL-0125).
 SPLITS=("game-001/sim/long")
@@ -169,6 +169,23 @@ if command -v lune >/dev/null 2>&1; then
 	if [[ $code == 0 ]]; then record "ui members" "PASS" "$summary"; else record "ui members" "FAIL" "$summary"; fi
 else
 	record "ui members" "FAIL" "lune not found"
+fi
+
+# ---------------------------------------------------------------- world measurements (blender/scripts/lune)
+# FORGE-02's measurement specs pin the placed world (props, parts, dressing) at the shipped density and at 1.0. They ran
+# only under blender/tests (pytest + lune), never in check.sh or CI, so #303 changed the world and passed CI with three
+# stale pins; only FORGE-05's gate saw it (2026-10-22). Now every check.sh run and CI run them (about a minute).
+if command -v lune >/dev/null 2>&1; then
+	if [[ -d blender/scripts/lune ]]; then
+		run_step "world measurements" "$LOG_DIR/world-measurements.log" with_timeout lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs blender/scripts/lune
+		code=$?
+		summary="$(grep -E '^Lune tests:' "$LOG_DIR/world-measurements.log" | tail -1 | sed -E 's/^Lune tests: //')"
+		if [[ $code == 0 ]]; then record "world measurements" "PASS" "$summary"; else record "world measurements" "FAIL" "$summary"; fi
+	else
+		record "world measurements" "FAIL" "no blender/scripts/lune folder (the measurement specs must exist; see docs/lessons-learned/integration.md)"
+	fi
+else
+	record "world measurements" "FAIL" "lune not found"
 fi
 
 # ---------------------------------------------------------------- Rojo build

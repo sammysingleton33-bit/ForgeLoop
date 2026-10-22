@@ -349,24 +349,37 @@ describe("WorldPlan keeps decor out of the arena and its surroundings are never 
 		expect((kept.tree_oak_02.cframe.Position - far.cframe.Position).Magnitude).toBeLessThan(1e-6)
 	end)
 
-	it("is not vacuous: without the arena the generator does put decor on its footprint", function()
-		local none = table.clone(Layout)
-		none.arena = nil
-		local rect = WorldPlan.arenaRect(Layout) :: any
-		local hits = 0
-		for _, p in WorldPlan.clear(none, WorldPlan.plan(none, ALL)) do
-			if NATURAL[p.feature] then
-				local q = p.cframe.Position
-				if
-					WorldPlan.rectDistance(rect, q.X, q.Z)
-					< WorldPlan.footprintRadius(p.assetId) + WorldPlan.CLEAR.margin
-				then
-					hits += 1
+	it(
+		"is not vacuous: the generator plants decor where a footprint would be, and the reservation keeps it off",
+		function()
+			-- the real arena sits in the open heartland, where the clumped generator (FORGE-02's nature pass) plants little, so the same
+			-- footprint is laid over a forest stand: without the reservation decor stands on it, with it nothing does
+			local c = Layout.features.forests[3].center
+			local over = table.clone(Layout)
+			over.arena = table.clone(ARENA)
+			over.arena.cframe = CFrame.new(c.X, 0, c.Y)
+			local none = table.clone(Layout)
+			none.arena = nil
+			local rect = WorldPlan.arenaRect(over) :: any
+			local function hits(layout: any): number
+				local n = 0
+				for _, p in WorldPlan.clear(layout, WorldPlan.plan(layout, ALL)) do
+					if NATURAL[p.feature] then
+						local q = p.cframe.Position
+						if
+							WorldPlan.rectDistance(rect, q.X, q.Z)
+							< WorldPlan.footprintRadius(p.assetId) * (p.scale or 1) + WorldPlan.CLEAR.margin
+						then
+							n += 1
+						end
+					end
 				end
+				return n
 			end
+			expect(hits(none)).toBeGreaterThan(0)
+			expect(hits(over)).toBe(0)
 		end
-		expect(hits).toBeGreaterThan(0)
-	end)
+	)
 
 	it("never thins within TRIM.arenaReach of the footprint, with every other protection taken away", function()
 		-- an isolated layout: the plots, roads and objectives moved out of the way, so only the arena can protect
