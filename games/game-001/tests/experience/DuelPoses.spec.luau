@@ -367,6 +367,136 @@ describe("DuelPoses: Arena.Events → each champion's animation (FL-0141)", func
 		expect(lone.b._holding).toBe(false)
 	end)
 
+	it(
+		"a Called Warning (heavyWindup.warned) raises the heavy's telegraph sooner; the strike keeps its time",
+		function()
+			local R = DuelPoses.WARNED_RAISE
+			local function raisedAt(warned)
+				return (DuelPoses.keys("heavy", "slash", 0.8, nil, warned) :: any)[2].t
+			end
+			local function strikeAt(warned)
+				return (DuelPoses.keys("heavy", "slash", 0.8, nil, warned) :: any)[4].t
+			end
+			expect(raisedAt(nil)).toBe(R.normal)
+			expect(math.abs(raisedAt(0.1) - (R.normal - 0.1)) < 1e-9).toBe(true) -- that much sooner
+			expect(raisedAt(0.25)).toBe(R.min) -- config Support's 0.15 and 0.25 both reach the floor today
+			expect(raisedAt(0.15)).toBe(R.min)
+			for _, bad in { -1, 0 / 0, "0.25", 0 } do
+				expect(raisedAt(bad)).toBe(R.normal)
+			end
+			expect(strikeAt(0.25)).toBe(strikeAt(nil)) -- the strike lands when the server's hit does
+			expect(math.abs(strikeAt(nil) - (0.8 + DuelPoses.HEAVY_STRIKE)) < 1e-9).toBe(true)
+			-- a short wind-up raises at half of it, and a warning never makes the raise later
+			expect((DuelPoses.keys("heavy", "slash", 0.3, nil, 0.25) :: any)[2].t).toBe(0.15)
+			-- through the event: 0.2 s in, the warned arm is up while the plain one is still rising
+			local warned, plain = DuelPoses.newDuel(), DuelPoses.newDuel()
+			for _, duel in { warned, plain } do
+				duel:start(NOW)
+				duel:onEvent(snapshot(nil, "idle"), NOW)
+			end
+			warned:onEvent({ kind = "heavyWindup", side = "b", data = { impactIn = 0.8, warned = 0.25 } }, NOW + 1)
+			plain:onEvent({ kind = "heavyWindup", side = "b", data = { impactIn = 0.8 } }, NOW + 1)
+			local function armUp(duel)
+				local out = run(duel.b, NOW, NOW + 1.2)
+				local _, a = out.pose.RightArm:ToAxisAngle()
+				return math.deg(a)
+			end
+			local up, rising = armUp(warned), armUp(plain)
+			expect(up > 135).toBe(true)
+			expect(up > rising + 15).toBe(true)
+			expect(warned.b._anim.start + warned.b._anim.windup).toBe(plain.b._anim.start + plain.b._anim.windup)
+		end
+	)
+
+	it("a press the stamina refuses plays winded (out of breath), once, and only when nothing else plays", function()
+		local function tired(share)
+			return {
+				kind = "snapshot",
+				side = "a",
+				data = { a = { state = "idle", weapon = "mace", staminaShare = share } },
+			}
+		end
+		local duel = DuelPoses.newDuel()
+		duel:start(NOW)
+		duel:onEvent(tired(0.05), NOW) -- a heavy costs 22 of 100
+		expect(duel:predict("a", "heavy", NOW)).toBe(false) -- never a swing
+		expect(duel.a.name).toBe("winded")
+		local started = duel.a._anim.start
+		expect(duel:predict("a", "light", NOW + 0.1)).toBe(false) -- mashing does not restart it
+		expect(duel.a._anim.start).toBe(started)
+		local out = run(duel.a, NOW, NOW + 0.2)
+		expect(out.weight).toBe(1)
+		expect(out.body).toBe(0) -- the upper body only: a walking avatar keeps its legs
+		local sag = DuelPoses.pose((DuelPoses.keys("winded", "slash") :: any)[2].pose)
+		expect(DuelRig.same(out.pose.RightArm, sag.RightArm)).toBe(true) -- held, so it reads
+		run(duel.a, NOW + 0.2, NOW + DuelPoses.LENGTH.winded + 0.05)
+		expect(duel.a.name).toBeNil()
+		-- it is never in the way: the guard (free) rises over it at once
+		duel:predict("a", "heavy", NOW + 0.6)
+		expect(duel.a.name).toBe("winded")
+		expect(duel:predict("a", "block", NOW + 0.65)).toBe(true)
+		expect(duel.a.name).toBe("block")
+		duel:predict("a", "blockEnd", NOW + 0.7)
+		-- a hit cuts it; and while a flinch plays, a refused press shows nothing new
+		duel:predict("a", "heavy", NOW + 1)
+		duel:onEvent({ kind = "hit", side = "b", data = { heavy = false } }, NOW + 1.1)
+		expect(duel.a.name).toBe("flinch")
+		duel:predict("a", "heavy", NOW + 1.15)
+		expect(duel.a.name).toBe("flinch")
+		-- enough stamina: the press plays as before; the dodge's cost is the armour's
+		local fresh = DuelPoses.newDuel()
+		fresh:start(NOW)
+		fresh:onEvent(tired(0.5), NOW)
+		expect(fresh:predict("a", "heavy", NOW)).toBe(true)
+		expect(fresh.a.name).toBe("heavy")
+		-- outside a duel nothing plays at all
+		local idle = DuelPoses.newDuel()
+		idle:onEvent(tired(0), NOW)
+		expect(idle:predict("a", "heavy", NOW)).toBe(false)
+		expect(idle.a.name).toBeNil()
+	end)
+
+	it(
+		"STARTS_FROM is DuelModel.step's rule: each press starts from exactly the states the model starts it from",
+		function()
+			local fs = require("@lune/fs")
+			local DuelModel = require("@game/ReplicatedStorage/Game/Arena/DuelModel")
+			-- every state DuelModel can put a duellist in: the known ones, plus any its source names (a new one is
+			-- then checked too)
+			local states =
+				{ idle = true, windup = true, recover = true, block = true, parry = true, dodge = true, stagger = true }
+			local ok, source = pcall(fs.readFile, "games/game-001/src/shared/Arena/DuelModel.luau")
+			if ok then
+				for name in string.gmatch(source, 'state = "(%a+)"') do
+					states[name] = true
+				end
+			end
+			local STARTS = { light = "windup", heavy = "windup", block = "block", parry = "parry", dodge = "dodge" }
+			local actions = 0
+			for action in DuelPoses.STARTS_FROM do
+				assert(STARTS[action] ~= nil, `STARTS_FROM.{action}: not a press DuelModel starts`)
+				actions += 1
+			end
+			expect(actions).toBe(5)
+			local checked = 0
+			for action, into in STARTS do
+				for state in states do
+					local duel = DuelModel.new(nil, {}, {}, 1)
+					duel.a.state, duel.a.timer = state, 10 -- held in that state for the step
+					DuelModel.step(duel, { a = { action = action, inRange = false, facing = false } }, 1 / 60)
+					local started = state ~= into and duel.a.state == into
+					local copied = DuelPoses.STARTS_FROM[action][state] == true
+					assert(
+						started == copied,
+						`{action} from {state}: DuelModel {started}, DuelPoses.STARTS_FROM {copied}`
+					)
+					checked += 1
+				end
+			end
+			expect(checked >= 35).toBe(true)
+		end
+	)
+
 	it("every key pose stays within LIMITS and Root's offsets within 1.5 studs", function()
 		local names = {
 			"ready",
@@ -382,6 +512,7 @@ describe("DuelPoses: Arena.Events → each champion's animation (FL-0141)", func
 			"ko",
 			"yield",
 			"victory",
+			"winded",
 		}
 		local checked = 0
 		for _, name in names do
@@ -413,7 +544,7 @@ describe("DuelPoses: Arena.Events → each champion's animation (FL-0141)", func
 		local script = {
 			{ 0.1, snapshot("windup", "block") },
 			{ 0.3, { kind = "hit", side = "a", data = { heavy = false } } },
-			{ 0.9, { kind = "heavyWindup", side = "b", data = { impactIn = 0.8 } } },
+			{ 0.9, { kind = "heavyWindup", side = "b", data = { impactIn = 0.8, warned = 0.25 } } }, -- the fastest raise
 			{ 1.0, snapshot("dodge", "windup") },
 			{ 1.7, { kind = "hit", side = "b", data = { heavy = true } } },
 			{ 2.4, { kind = "stagger", side = "a" } },
@@ -456,8 +587,12 @@ describe("DuelPoses: Arena.Events → each champion's animation (FL-0141)", func
 			track:play("dodge", NOW + 1)
 			out = run(track, NOW + 0.3, NOW + 1.05 + DuelPoses.XFADE)
 			expect(out.body).toBe(1)
+			-- after the dodge the legs go back to the avatar over XFADE: no pop (FORGE-07 #278 L2)
+			local dodgeEnds = NOW + 1 + DuelPoses.LENGTH.dodge
+			local easing = run(track, NOW + 1.05 + DuelPoses.XFADE, dodgeEnds + DuelPoses.XFADE / 2)
+			expect(easing.body > 0.2 and easing.body < 0.9).toBe(true)
 			-- the ready stance between actions: weight 1; before a duel (not active): weight 0
-			out = run(track, NOW + 1.2, NOW + 3)
+			out = run(track, dodgeEnds + DuelPoses.XFADE / 2, NOW + 3)
 			expect(out.weight).toBe(1)
 			expect(out.body).toBe(0)
 			expect(run(DuelPoses.newTrack(), NOW, NOW + 1).weight).toBe(0)
@@ -704,16 +839,18 @@ describe("DuelRig: the same pose on a Kit rig, an R15 avatar (Motor6D or Animati
 			local hip = find(model, "LeftHip")
 			local rightHip = find(model, "RightHip")
 			local rootJoint = find(model, "Root")
+			local waist, wrist = find(model, "Waist"), find(model, "RightWrist")
 			local animated = CFrame.Angles(math.rad(30), 0, 0) -- the Animator's value this frame
-			shoulder.Transform = animated
-			hip.Transform = animated
-			rightHip.Transform = animated
-			rootJoint.Transform = animated
+			for _, j in { shoulder, hip, rightHip, rootJoint, waist, wrist } do
+				j.Transform = animated
+			end
 			local swing = poseWith({
 				Root = { -20, 0, 0 },
+				Waist = { 0, 20, 0 },
 				RightArm = { 90, 0, 0 },
 				LeftLeg = { 40, 0, 0 },
 				RightLeg = { -40, 0, 0 },
+				Tool = { -60, 0, 0 },
 			})
 			swing.body = 0
 			DuelRig.apply(rig, swing)
@@ -722,6 +859,11 @@ describe("DuelRig: the same pose on a Kit rig, an R15 avatar (Motor6D or Animati
 			expect(DuelRig.same(hip.Transform, animated)).toBe(true) -- an upper-body swing leaves the walk on the legs
 			expect(DuelRig.same(rightHip.Transform, animated)).toBe(true)
 			expect(DuelRig.same(rootJoint.Transform, animated)).toBe(true) -- ... and the hips (Root) to the Animator
+			-- ... but the swing is ours above the hips: the waist's twist and the weapon's angle (FORGE-07 #278 L2)
+			local _, twist = waist.Transform:ToAxisAngle()
+			expect(math.abs(math.deg(twist) - 20) < 1e-3).toBe(true)
+			local _, tipped = wrist.Transform:ToAxisAngle()
+			expect(math.abs(math.deg(tipped) - 60) < 1e-3).toBe(true)
 			-- R6 too (no waist): the torso and the legs stay the Animator's
 			local old6 = r6()
 			local rig6 = DuelRig.scan(old6) :: any
