@@ -88,6 +88,7 @@ Every citizen has **loyalty 0–100** (starting 50). It rises with ruler visits 
 - Before the duel, the champion fills their trigger slots (§3) from the offers, within 20 s. The picker shows each citizen's name, loyalty, effect, trigger condition and why they are loyal (their top memories).
 - Triggers are deterministic and readable. Each fires at most once per duel, and both players see the trigger (announcer line, the citizen animates at the rail, an icon on the HUD).
 - The Merchant role needs trade (VS-3). VS-2 ships Blacksmith, Healer, Captain and Provisioner; Elder and Merchant follow when their buildings exist.
+- **Status, 2026-10-22 (D-061):** in real matches only the Blacksmith, Healer, Provisioner and Elder can appear today. No generated citizen can be the Captain (its job is soldier) or the Merchant. The owner chooses how the Captain becomes reachable. The successor at loyalty 50 is not implemented yet.
 
 ## 5. Duel (FORGE-01 combat core; FORGE-04 input; FORGE-03 HUD)
 - **Readable melee.** Light attack, heavy attack (telegraphed), block, parry window, dodge, stamina, HP. Best of one round, 120 s cap; at the cap the ruler with the higher HP percentage wins (ties → sudden death, both take +20 % damage).
