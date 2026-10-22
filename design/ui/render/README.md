@@ -34,7 +34,8 @@ PROJECT=games/game-001/default.project.json bash design/ui/render/shoot-luau.sh 
 
 render.js flags: `--guides` (device insets and the top-bar band, as in the HTML prototypes),
 `--debug` (outline + name of every object, the notes list on the image), `--backdrop=plain`
-(neutral backdrop instead of the stylised world), `--dpr=2` (HiDPI screenshot for zooming in; the
+(neutral backdrop instead of the stylised world), `--backdrop=none` (transparent PNG, to lay over a world render:
+D-059's start-frame composites), `--dpr=2` (HiDPI screenshot for zooming in; the
 layout is unchanged), `--shots=<dir>` (another output folder). Notes (approximations, unset
 defaults, unknown classes) are printed per screenshot. Snapshot errors (a spawned thread errored)
 make snapshot.luau exit 1 and put a red banner on the screenshot.
@@ -51,10 +52,14 @@ also accepted: no device insets, same top bar.
 | Device | Size | Insets L / R / T / B | Top bar | Core (CoreUISafeInsets) | Top bar area (TopbarSafeInsets) |
 |---|---|---|---|---|---|
 | phone | 844 × 390 | 47 / 47 / 0 / 21 | 58 | 750 × 311 at (47, 58) | 646 × 58 at (151, 0) |
+| phone-wide | 750 × 311 | 0 / 0 / 0 / 0 | 58 | 750 × 253 at (0, 58) | 646 × 58 at (104, 0) |
 | tablet | 1024 × 768 | 0 / 0 / 0 / 20 | 58 | 1024 × 690 at (0, 58) | 920 × 58 at (104, 0) |
 | desktop | 1920 × 1080 | 0 / 0 / 0 / 0 | 58 | 1920 × 1022 at (0, 58) | 1816 × 58 at (104, 0) |
 | desktop-720 | 1280 × 720 | 0 / 0 / 0 / 0 | 58 | 1280 × 662 at (0, 58) | 1176 × 58 at (104, 0) |
 | desktop-1440 | 2560 × 1440 | 0 / 0 / 0 / 0 | 58 | 2560 × 1382 at (0, 58) | 2456 × 58 at (104, 0) |
+
+`phone-wide` is the `phone` device's core size taken as a whole screen with no insets (D-059's start-frame
+composites over a 750 × 311 world render); it tests no notch or home bar.
 
 The top bar (58 px band, ~104 px of Roblox controls on its left) is an estimate; in a live game
 `GuiService.TopbarInset` gives the real rectangle.

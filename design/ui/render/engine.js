@@ -1226,6 +1226,7 @@
 	}
 
 	function backdrop(w, h) {
+		if (OPT.backdrop === "none") return ""; // transparent: the UI alone, to lay over a world render (D-059 composites)
 		if (OPT.backdrop === "plain") return `<div style="position:absolute;inset:0;background:linear-gradient(180deg,#6f7783,#4a515c)"></div>`;
 		return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="position:absolute;left:0;top:0">
 			<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FB0D9"/><stop offset="1" stop-color="#D7E3D0"/></linearGradient></defs>
