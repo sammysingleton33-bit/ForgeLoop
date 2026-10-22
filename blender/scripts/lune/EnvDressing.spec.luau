@@ -107,9 +107,10 @@ describe("FL-0136 phase 3: mesh-only dressing", function()
 			full = { plain = run(false, WorldPlan.FULL_DENSITY), mesh = run(true, WorldPlan.FULL_DENSITY) },
 		}
 		-- a world without the kit places exactly today's props (the nature pass, visual upgrade 1: clumped stands and lanes, 416 -> 409 at the shipped
-		-- density and 615 -> 464 at 1.0: fewer, better-placed trees and rocks, 8 more yard props a kingdom)
-		expect(runs.shipped.plain.props).toBe(409)
-		expect(runs.full.plain.props).toBe(464)
+		-- density and 615 -> 464 at 1.0: fewer, better-placed trees and rocks, 8 more yard props a kingdom); the start yard (visual upgrade 1b) dresses
+		-- all four kingdoms with the composed yard: +55 props, 409 -> 464 shipped and 464 -> 519 at 1.0
+		expect(runs.shipped.plain.props).toBe(464)
+		expect(runs.full.plain.props).toBe(519)
 		local extra = { shipped = {}, full = {} }
 		local counts = {}
 		for label, density in { shipped = WorldPlan.density(Layout), full = WorldPlan.FULL_DENSITY } do
