@@ -19,7 +19,7 @@ ROWS = [
     ("wide letters counted narrow", V, "local WIDE = { W = 19, M = 18, m = 16, w = 15 }", "local WIDE = {}", "long names are cut"),
     ("side b never votes", M, "ArenaVoteModel.SIDES = table.freeze({ \"a\", \"b\" })", "ArenaVoteModel.SIDES = table.freeze({ \"a\" })",
      "side b"),
-    ("a vote for a ruler who left stays", M, "\t\tpick = nil -- the ruler voted for has left", "\t\tlocal _ = nil -- the ruler voted for has left",
+    ("a vote for a ruler who left stays", M, "\t\tpick = nil\n\tend\n\tlocal candidates", "\t\tlocal _ = nil\n\tend\n\tlocal candidates",
      "a vote for a ruler who left"),
     ("no tie hint", M, "A tie goes to the higher leadership.`", "`", "names, 'You', the countdown"),
     ("rebuilt every second", K, "\tstructure.seconds = nil\n\tstructure.clock = nil\n", "", "countdown moves in place"),
@@ -75,6 +75,10 @@ ROWS = [
      "countdown ticks down"),
     ("destroy keeps listening", K, "\tself._destroyed = true\n\tself._running = false", "\tself._running = false",
      "destroy removes the panel"),
+    ("phone status box too short", V, "local statusHeight = if phone then 32 else 40",
+     "local statusHeight = if phone then 8 else 40", "phone status line holds its longest text"),
+    ("left pick shows the opening hint", M, "\tif pickLeft then", "\tif false then",
+     "counts for nobody and says so"),
 ]
 bad = 0
 for name, path, old, new, expect in ROWS:

@@ -8,9 +8,11 @@
 	Writes the Markdown report (default roblox/build/fairness/report.md, which is gitignored) and
 	prints one line per bound check. Exit 1 when a bound fails, 2 on bad options.
 
-	Until FORGE-01's DuelModel and Support config land (FL-0070, FL-0071) the run uses DuelDouble and
-	the design numbers (DesignSupport), so the report says how the harness behaves, not whether the
-	game is fair. The merge gate is wired into check.sh when the real model replaces the double.
+	NOT THE MERGE GATE (FL-0146). This CLI runs the local DuelDouble with the PROVISIONAL design numbers
+	(DesignSupport): it measures the harness, not the game. The gate is FairnessGate.spec (real
+	Arena/DuelModel + config Support through ConfigSupport), run by check.sh and in full by:
+		FORGE_FAIRNESS_FULL=1 lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests/fairness FairnessGate
+	A bound that fails here says nothing about the gate; quote the gate's summary line, never this one.
 ]]
 
 local fs = require("@lune/fs")
@@ -48,6 +50,9 @@ while i <= #args do
 	i += 1
 end
 
+print(
+	"fairness CLI: instrument = DuelDouble with DesignSupport (design numbers). This is NOT the merge gate (FairnessGate.spec, FL-0146)."
+)
 local started = os.clock()
 options.onCell = function(index: number, result: any)
 	print(
@@ -84,7 +89,7 @@ for _, check in checks do
 end
 print(
 	string.format(
-		"fairness: %d cells x %d duels in %.1f s; %d of %d bound checks failed; report %s",
+		"fairness CLI (DuelDouble + design numbers; NOT the merge gate, see FairnessGate.spec): %d cells x %d duels in %.1f s; %d of %d bound checks failed; report %s",
 		#results,
 		options.n,
 		elapsed,

@@ -3,13 +3,14 @@ id: FL-0146
 title: "Fairness CLI --full runs the DuelDouble with design numbers and can be mistaken for the gate"
 track: build
 owner: forge-05
-status: READY
+status: REVIEW
 priority: P2
 game: game-001
 created: 2026-10-22
 updated: 2026-10-22
 depends_on: []
-evidence: []
+evidence:
+  - "CLI --duels 50: labelled lines, 10 of 28 bounds fail as before (the double); tests/fairness specs PASS on the branch; stylua/selene clean; validate 147/0"
 ---
 
 # Fairness CLI --full runs the DuelDouble with design numbers and can be mistaken for the gate
@@ -33,3 +34,7 @@ Nobody can mistake `games/game-001/tests/fairness/run.luau --full` for the merge
 - Run the gate command above on the PR head and quote its summary line.
 - Run the CLI `--full` and quote its new label or result.
 - `python tools/forge.py validate` passes.
+
+## Log
+- 2026-10-22 forge-05: READY → BUILDING. labelling the CLI, README gate-first, DesignSupport per-tier uses
+- 2026-10-22 forge-05: BUILDING → REVIEW. PR open: run.luau prints and exits with the instrument (DuelDouble + design numbers, NOT the merge gate); README names the gate command first; DesignSupport carries #292's per-tier uses (FORGE-00 13:17)
