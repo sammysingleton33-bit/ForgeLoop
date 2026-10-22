@@ -133,7 +133,7 @@ Character.TOOL_SCALE = 1.3
 Character.TOOL_SCALES = table.freeze({ hammer = 1.15 }) -- the mallet swings past the hard hat and the bigger head: any bigger and it clips them in the work and fight poses
 Character.SACK_SCALE = 1.15 -- the sack is bigger than the tools' handles already (2.7 across): any bigger and it meets the hauler's long hair
 Character.NECK_LIFT = 0.07 -- the bigger head sits this much higher (it still touches the shoulders): the raised arm keeps its 0.2 from it
-Character.HAT_SCALE = table.freeze({ farmer = 1.1 }) -- the straw disc is the widest thing on a citizen (3.1) and work slots are 3.5 apart
+Character.HAT_SCALE = table.freeze({ farmer = 0.9 }) -- the straw disc is the widest thing on a citizen (3.1) and farm work slots are 3.5 apart (4.95 at the 1.5 rig scale: 4.19 across clears its neighbour at rest and in the bend; 1.1 gave 5.1 at 1.5, brims touching)
 
 Character.ROOT_HEIGHT = 3.2 -- Root centre above the feet (Kit.CHARACTER_ROOT_HEIGHT), rig and LOD alike
 Character.LOD_ROOT_HEIGHT = Character.ROOT_HEIGHT

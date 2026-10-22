@@ -812,7 +812,7 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 		end
 		-- the shapes: a wide flat disc, a slouched tall wedge cap, a squat drum, a low peaked wedge cap
 		expect(rows.farmer.kind).toBe("Part/Cylinder")
-		expect(rows.farmer.width).toBeGreaterThan(3)
+		expect(rows.farmer.width).toBeGreaterThan(2.7) -- 3.1 before; x0.9 of the pass-2 size so the disc clears its neighbour at the 1.5 rig scale (KitCitizenAerial MAX_FARMER_HAT)
 		expect(rows.woodcutter.kind).toBe("Part/Ball")
 		expect(rows.miner.kind).toBe("Part/Cylinder")
 		expect(rows.builder.kind).toBe("Part/Cylinder")
@@ -825,7 +825,7 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 			end
 		end
 		-- the miner's pot is clearly smaller and darker than the farmer's disc
-		expect(rows.miner.width).toBeLessThanOrEqual(rows.farmer.width * 0.75) -- 0.65 before the silhouette pass (the straw disc grew 1.1 x, the pot 1.3 x)
+		expect(rows.miner.width).toBeLessThanOrEqual(rows.farmer.width * 0.9) -- 0.65 before the silhouette pass (the pot grew 1.3 x, the straw disc shrank to 0.9 x)
 		expect(rows.miner.hi).toBeLessThan(rows.farmer.lo - 0.1)
 	end)
 

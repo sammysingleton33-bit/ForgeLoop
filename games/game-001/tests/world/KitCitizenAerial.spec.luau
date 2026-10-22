@@ -197,7 +197,11 @@ end
 -- The studs the silhouette parts were before the pass, and the least each must now be (default look, rest pose).
 local OLD_HEAD = 1.6
 local MIN_HEAD = 2.0 -- 1.25 x
-local MIN_HAT = { farmer = 3.3, woodcutter = 1.85, miner = 2.35, builder = 2.2 } -- widths: was 3.1, 1.5, 1.9, 1.8
+local MIN_HAT = { farmer = 2.7, woodcutter = 1.85, miner = 2.35, builder = 2.2 } -- widths: was 3.1, 1.5, 1.9, 1.8 (the farmer's disc: 2.79, x0.9, see MAX_FARMER_HAT)
+-- The farmer's straw disc is the widest thing on a citizen. Farm work slots are 3.5 studs apart (EntityController scales the rig by RIG_SCALE 1.5, so 4.95
+-- apart in the world): the disc at that scale must clear its neighbour by 0.3 (x1.1 gave 3.41 -> 5.1 across, brims touching at rest and in the bend).
+local RIG_SCALE, SLOT_GAP, NEIGHBOUR_CLEARANCE = 1.5, 3.5 * 1.5, 0.3
+local MAX_FARMER_HAT = (SLOT_GAP - NEIGHBOUR_CLEARANCE) / RIG_SCALE
 local MIN_HANDLE = { farmer = 6.5, woodcutter = 4.8, miner = 6.7, builder = 3.3 } -- cylinder lengths: was 5.2, 3.9, 5.4, 3.0
 local MIN_SACK = 3.0 -- was 2.7
 
@@ -213,6 +217,15 @@ local function silhouetteFailures(): { string }
 		local hat = rig:FindFirstChild("Hair") :: BasePart?
 		if MIN_HAT[job] and hat and horizontal(hat) < MIN_HAT[job] then
 			table.insert(out, `{job} hat {string.format("%.2f", horizontal(hat))}`)
+		end
+		if job == "farmer" and hat and horizontal(hat) > MAX_FARMER_HAT then
+			table.insert(
+				out,
+				`farmer hat {string.format("%.2f", horizontal(hat))} is wider than {string.format(
+					"%.2f",
+					MAX_FARMER_HAT
+				)} (the 4.95-stud slots at the 1.5 rig scale)`
+			)
 		end
 		local tool = rig:FindFirstChild("Tool") :: BasePart?
 		if tool and MIN_HANDLE[job] and tool.Size.X < MIN_HANDLE[job] then
@@ -435,6 +448,11 @@ describe("citizen aerial readability (ground contrast, hat hues, size on screen)
 			Character.TOOL_SCALES = table.freeze({})
 		end, silhouetteFailures)
 		expect(#toolFails).toBeGreaterThanOrEqual(4)
+		-- the farmer's disc back at x1.1 (3.41 across): too wide for the slots at the 1.5 rig scale
+		local discFails = with(function()
+			Character.HAT_SCALE = table.freeze({ farmer = 1.1 })
+		end, silhouetteFailures)
+		expect(#discFails).toBeGreaterThanOrEqual(1)
 		-- the sack back to 1: the sack rule trips
 		local sackFails = with(function()
 			Character.SACK_SCALE = 1
