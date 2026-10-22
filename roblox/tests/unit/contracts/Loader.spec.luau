@@ -457,6 +457,40 @@ describe("Contracts/Loader", function()
 			expect(Loader.boot(MockEnv.new(), nil, req).order).toEqual({})
 		end)
 
+		it(
+			"bootClient isolates exactly as Main.client boots: one controller throwing in start() is logged, the rest start",
+			function()
+				-- FORGE-07 M1 on #283: this is the only case that boots through bootClient with something to fail; it fails
+				-- when bootClient stops forwarding CLIENT_OPTIONS (the boot would abort on A).
+				local log = {}
+				local env = MockEnv.new()
+				local registry = Loader.bootClient(env, folderWith({ "A", "B" }), function(module)
+					if module.Name == "A" then
+						return def(log, "A", nil, {
+							onStart = function()
+								error("A start boom")
+							end,
+						})
+					end
+					return def(log, module.Name)
+				end)
+				expect(registry.order).toEqual({ "A", "B" })
+				expect(log).toEqual({ "new A", "new B", "start A", "start B" })
+				expect(registry.failed.A).toContain("A:start() failed")
+				expect(registry:find("A")).toBeNil()
+				expect(registry:find("B")).toBeTruthy()
+				expect(function()
+					Loader.boot(MockEnv.new(), folderWith({ "A" }), function()
+						return def({}, "A", nil, {
+							onStart = function()
+								error("A start boom")
+							end,
+						})
+					end)
+				end).toThrow("A:start() failed") -- the server path: the same failure stops the boot
+			end
+		)
+
 		it("rejects a module whose definition name differs from the module name", function()
 			expect(function()
 				Loader.discover(folderWith({ "RoundService" }), function()
