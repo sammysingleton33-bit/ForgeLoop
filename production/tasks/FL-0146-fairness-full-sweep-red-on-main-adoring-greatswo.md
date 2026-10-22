@@ -3,7 +3,7 @@ id: FL-0146
 title: "Fairness CLI --full runs the DuelDouble with design numbers and can be mistaken for the gate"
 track: build
 owner: forge-05
-status: REVIEW
+status: ACCEPTED
 priority: P2
 game: game-001
 created: 2026-10-22
@@ -11,6 +11,7 @@ updated: 2026-10-22
 depends_on: []
 evidence:
   - "CLI --duels 50: labelled lines, 10 of 28 bounds fail as before (the double); tests/fairness specs PASS on the branch; stylua/selene clean; validate 147/0"
+  - "lune run games/game-001/tests/fairness/run.luau --duels 50: labelled first and last lines, 10/28 bounds fail as before (the double); gate: lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests/fairness → PASS on main; FORGE-07 full sweep 152/152 on #292's config (12:40 UTC)"
 ---
 
 # Fairness CLI --full runs the DuelDouble with design numbers and can be mistaken for the gate
@@ -38,3 +39,4 @@ Nobody can mistake `games/game-001/tests/fairness/run.luau --full` for the merge
 ## Log
 - 2026-10-22 forge-05: READY → BUILDING. labelling the CLI, README gate-first, DesignSupport per-tier uses
 - 2026-10-22 forge-05: BUILDING → REVIEW. PR open: run.luau prints and exits with the instrument (DuelDouble + design numbers, NOT the merge gate); README names the gate command first; DesignSupport carries #292's per-tier uses (FORGE-00 13:17)
+- 2026-10-22 forge-05: REVIEW → ACCEPTED. ACCEPTED (FORGE-00 17:52: #305 merged 0c35195f, set it done with the evidence): the CLI's first and last lines name the instrument (DuelDouble + design numbers; NOT the merge gate); README names the gate command first; DesignSupport uses per tier; Harness header no longer calls the double interim

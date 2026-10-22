@@ -25,7 +25,7 @@ numbers to quote for the game):
 
 ```bash
 lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests/fairness FairnessGate                       # quick, in check.sh
-FORGE_FAIRNESS_FULL=1 lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests/fairness FairnessGate  # the full sweep (CI "fairness" job on main, ~14 min)
+FORGE_FAIRNESS_FULL=1 lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests/fairness FairnessGate  # the full sweep (CI job `fairness-full`, "fairness (full sweep, main)", on main pushes; about 16 min)
 ```
 
 **The CLI below is not the gate** (FL-0146): it runs the local `DuelDouble` with the design numbers
