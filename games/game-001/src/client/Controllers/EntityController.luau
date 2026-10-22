@@ -71,6 +71,12 @@
 		  overview the hide distance is the larger of LOD_HIDE and LOD_ZOOM x the camera's distance from
 		  the focus (the zoom), with the same hysteresis.
 		- Soldiers get their kingdom as Kit.character's `kingdom` argument (the helmet crest, G13.2).
+		- D-059 (FORGE-04 under a one-PR exception): a citizen whose action is "carry" holds its load in
+		  both hands, Kit.carried(resource) (FORGE-02's prop, made once per resource and cloned), welded to
+		  its Torso at CARRY_OFFSET (the carry pose's hands). The load goes when the action or the resource
+		  changes and before the rig returns to the pool. Without Kit.carried nothing is held. A citizen
+		  that starts to work starts its blow from the beginning (phase 0: it stands and faces its work,
+		  then raises the tool), not from wherever its walk cycle was.
 	Engine calls (BulkMoveTo, Motor6D.Transform, camera and character reads) go through `adapter`
 	(Lune has no BulkMoveTo). Unverified in Studio until the FL-0049 playtest.
 ]]
@@ -105,6 +111,7 @@ Def.FOLDER_NAME = "KingdomEntities"
 Def.GET_ENTITIES_TRIES = 10 -- unanswered calls before giving up
 Def.GET_ENTITIES_PAGES = 64 -- at most this many pages (64 x 49 entities): a runaway cursor stops here
 Def.RETRY_SECONDS = 1.5
+Def.CARRY_OFFSET = CFrame.new(0, 0, -1.2) -- the carried load's pivot in the Torso's frame: the carry pose's hands (D-059)
 
 export type Adapter = {
 	bulkMove: (parts: { any }, cframes: { CFrame }) -> (), -- workspace:BulkMoveTo(..., FireCFrameChanged)
@@ -133,6 +140,9 @@ type Entity = {
 	diedAt: number?, -- env.clock() of the die cue
 	gone: boolean, -- despawned while the dead pose plays
 	done: boolean, -- dead and released: never rendered again
+	action: string?, -- the action animated last frame (a new "work" starts its blow at phase 0)
+	load: any?, -- the carried load's model (Kit.carried) while carrying, D-059
+	loadResource: string?,
 }
 
 local IDENTITY = CFrame.new()
@@ -204,6 +214,7 @@ function Def.new(env: any, registry: any)
 	self._cframes = {} :: { CFrame }
 	self._fresh = {} :: { Entity } -- rendered during this frame, announced after its BulkMoveTo
 	self._warned = {} :: { [string]: boolean }
+	self._loads = {} :: { [string]: any } -- resource -> Kit.carried template (false: none)
 	self._destroyed = false
 	return self
 end
@@ -549,6 +560,7 @@ function EntityController:_release(entity: Entity)
 		return
 	end
 	self.released:fire(entity.id, rig.model)
+	self:_holdLoad(entity, nil, nil) -- never left on a pooled rig
 	entity.rig = nil
 	rig.model.Parent = nil
 	rig.model:SetAttribute("EntityId", nil)
@@ -672,8 +684,55 @@ function EntityController:_stepEntity(
 	self:_animate(entity, rig, state, dt, now)
 end
 
+-- The template of a carried load: Kit.carried(resource), made once (false when there is none).
+function EntityController:_loadTemplate(resource: string): any?
+	local cached = self._loads[resource]
+	if cached == nil then
+		local carried = (Kit :: any).carried
+		local ok, model = false, nil
+		if type(carried) == "function" then
+			ok, model = pcall(carried, resource)
+		end
+		cached = if ok and model ~= nil and model.PrimaryPart ~= nil then model else false
+		self._loads[resource] = cached
+	end
+	return if cached then cached else nil
+end
+
+-- What the citizen holds in its hands: resource while carrying, else nil (the load goes).
+function EntityController:_holdLoad(entity: Entity, rig: Rig?, resource: string?)
+	if resource == entity.loadResource then
+		return
+	end
+	if entity.load ~= nil then
+		entity.load:Destroy()
+		entity.load = nil
+	end
+	entity.loadResource = resource
+	local torso = rig and rig.motors.Torso and rig.motors.Torso.Part1
+	local template = if resource ~= nil and torso ~= nil then self:_loadTemplate(resource) else nil
+	if template == nil or rig == nil then
+		return
+	end
+	local load = template:Clone()
+	local weld = self._env.newInstance("Weld")
+	weld.Name = "CarryWeld"
+	weld.Part0 = torso
+	weld.Part1 = load.PrimaryPart
+	weld.C0 = Def.CARRY_OFFSET
+	weld.C1 = load.PrimaryPart.PivotOffset -- the load's pivot (Kit: its centre), not its primary part, sits at the hands
+	weld.Parent = load.PrimaryPart
+	load.Parent = rig.model
+	entity.load = load
+end
+
 function EntityController:_animate(entity: Entity, rig: Rig, state: Interpolation.State, dt: number, now: number)
 	local action = state.action
+	if action == "work" and entity.action ~= "work" then
+		entity.phase = 0 -- a blow starts from its beginning: stand, face the work, raise the tool (D-059)
+	end
+	entity.action = action
+	self:_holdLoad(entity, rig, if action == "carry" then state.carrying else nil)
 	entity.phase = (entity.phase + dt * Pose.rate(action, entity.job, state.speed)) % 1
 	local joints = Pose.sample(action, entity.job, entity.phase, state.speed, entity.pose)
 	if entity.diedAt ~= nil then

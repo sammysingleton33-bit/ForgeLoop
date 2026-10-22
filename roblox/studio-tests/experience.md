@@ -777,3 +777,39 @@ Pass: steps 1–5 hold (6 when an arena runs). Write what you think of the close
 History:
 - 2026-10-19 FORGE-04: written (D-059; FORGE-00 approved the zoom 70 / 55° framing and the yard focus).
 - 2026-10-22 FORGE-04: FL-0147. The first view looks back at the keep from 20 studs before the throne. Step 1 counts the citizens at about 30 s and checks the bottom edge; step 4 keeps the walk camera's direction.
+
+## E23 — The citizens at work look alive (D-059, FL-0148, game-001)
+
+The owner's B22 review found the citizens at the start view "barely recognisable". Three things made it worse than their size:
+- Workers on the same field, tree or rock stood on one spot: three farmers read as one.
+- Their work swings were small and slow.
+- A citizen carrying goods home carried nothing you could see.
+
+Now:
+- Each worker stands at its own spot around its work (about 3.5 studs apart on the edge where it used to stop), facing it.
+- Each swing is a blow: the tool goes up slowly and comes down fast. Woodcutters and miners swing overhead, builders hammer from the shoulder, farmers raise the hoe and bend into the soil, and haulers bend down and lift.
+- A citizen carrying goods home holds the load in both hands: a basket of food, a bundle of logs, a stone block or a stack of gold bars (FORGE-02's `Kit.carried`, #312). The body bobs and leans back under the load.
+- A citizen that arrives at its work stands, faces it, then raises the tool for the first blow.
+
+How much gets made is unchanged (headless, 32 seeds; see the PR).
+
+Needs: nothing for steps 1–4 (Play Solo). The loads in step 3 need FORGE-02's #312 on main; before it, a carrying citizen just holds out empty arms, as today. Judge the motion and the spacing, not the citizens' looks (FORGE-02's pass).
+
+Steps
+1. Play Solo at the start view (E22 step 1) and wait about 30 s. Look at the farm, the woodcutters' trees and the miners' rocks:
+   - Workers on the same field, tree or rock stand apart, side by side around it. None stands inside another.
+   - Each faces its tree, rock or field.
+
+   Count the separate workers you can tell apart in view.
+
+   Screenshot **E23-1** at about 30 s, and compare it with E22-1 / your B22 screenshot.
+2. Watch a woodcutter and a miner for a few seconds from the start view: you can see the tool go up over the head and come down. A builder hammers, a farmer raises the hoe and bends, a hauler at a node bends and lifts. The tools never pass through a head. Write which of the five reads well at zoom 70 and which does not.
+3. With #312 on main: follow a citizen walking home with goods. It holds a load in both hands (food, wood, stone or gold, by colour), the body bobs, and the load disappears when it reaches the storehouse or keep. No load is ever left floating, stuck on a citizen that walks empty-handed, or on a citizen at work.
+4. Zoom in on a citizen arriving at its work (about zoom 40): it stops at its own spot, turns to face the work, then raises the tool before the first blow; it never starts mid-swing.
+5. On a phone (Device emulator, landscape): repeat step 1. Workers are small but separate. Screenshot **E23-2**.
+6. Performance: with the Microprofiler open at the start view (all four kingdoms in the match), the client frame shows no new spike from the citizens' poses. Write the frame time you see.
+
+Pass: steps 1, 2, 4 and 5 hold; 3 once #312 is on main; 6 with the number written. Copy every red line from Output.
+
+History:
+- 2026-10-22 FORGE-04: written (FL-0148, D-059).

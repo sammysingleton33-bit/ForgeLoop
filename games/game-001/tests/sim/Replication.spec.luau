@@ -133,3 +133,39 @@ describe("Kingdom/Layout.groundY (world plots)", function()
 		assert(ok, err)
 	end)
 end)
+
+describe("Sim/Replication: a worker faces its work (D-059 work slots)", function()
+	it("at work with faceX/faceZ it faces them; without, or once walking, it faces its last move as before", function()
+		local sim, k = F.kingdom()
+		local tracker = Replication.new()
+		local c = sim.citizens[k.citizenIds[1]]
+		local other = sim.citizens[k.citizenIds[2]]
+		tracker:frame(sim)
+		-- both walk east (+X): facing east is yaw -90 deg (the rig faces -Z at yaw 0)
+		c.x += 3
+		other.x += 3
+		local walked = byId(tracker:frame(sim).records)
+		expect(walked[c.id].yaw).toBeNear(math.atan2(-1, 0), 1e-9)
+		-- c arrives at its slot and works, its target to the north (-Z): yaw 0
+		c.phase, c.faceX, c.faceZ = "Work", c.x, c.z - 4
+		local working = byId(tracker:frame(sim).records)
+		expect(working[c.id].yaw).toBeNear(0, 1e-9)
+		expect(c.yaw).toBeNear(0, 1e-9)
+		-- the other works too, but has no face point: it keeps the way it walked in
+		other.phase = "Work"
+		expect(byId(tracker:frame(sim).records)[other.id].yaw).toBeNear(math.atan2(-1, 0), 1e-9)
+		-- its target to the west (-X): yaw +90 deg; then a face point on the worker itself changes nothing
+		c.faceX, c.faceZ = c.x - 4, c.z
+		expect(byId(tracker:frame(sim).records)[c.id].yaw).toBeNear(math.pi / 2, 1e-9)
+		c.faceX, c.faceZ = c.x, c.z
+		expect(byId(tracker:frame(sim).records)[c.id].yaw).toBeNear(math.pi / 2, 1e-9)
+		-- walking again: the face point is not used outside the Work phase
+		c.phase = "Go"
+		c.faceX, c.faceZ = c.x + 10, c.z
+		c.z += 3 -- south (+Z): yaw 180
+		expect(math.abs(byId(tracker:frame(sim).records)[c.id].yaw)).toBeNear(math.pi, 1e-9)
+		-- held in a conversation, the ruler's direction wins over the work target
+		c.phase, c.hold = "Work", { yaw = 1.25 }
+		expect(byId(tracker:frame(sim).records)[c.id].yaw).toBeNear(1.25, 1e-9)
+	end)
+end)

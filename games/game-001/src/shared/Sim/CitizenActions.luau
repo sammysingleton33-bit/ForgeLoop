@@ -15,11 +15,24 @@
 	`citizen.done = true` hands control back to CitizenBrain on the next tick. Movement is straight
 	line on the XZ plane at catalog.tuning.citizenSpeed (half speed while starving); the server host
 	can swap in pathfinding later without changing activities.
+	Work slots (D-059, FORGE-04 under a one-PR exception): citizens working the same node or building
+	(Gather, Farm, Build) stand apart instead of on one spot. Each takes a slot on the reach circle it
+	stopped at before (the target's radius), on the kingdom's side of the target (towards its centre),
+	turned by 0, +1, -1, +2, -2, ... steps of SLOT_SPACING studs of arc (at most SLOT_MAX_TURN a step, on a
+	small tree or rock),
+	and walks onto it (moveTo stops arriveRadius short; the last stretch is walked too). The slot index
+	is the lowest one free among the citizens on that target, scanned in sim.citizenOrder when the slot
+	is taken: deterministic, no randomness. It is kept while the target stays the same (a gatherer comes
+	back to its own spot) and freed on the first step with another target (or none). The worker faces
+	its target (citizen.faceX/faceZ, read by Sim/Replication). Slots change where a worker stands and its
+	walk to get there, never who works or how fast.
 
 	API
 		CitizenActions.step(sim, citizen, dt)
 		CitizenActions.moveTo(sim, citizen, x, z, radius, dt): boolean  -- true once within radius
 		CitizenActions.skill(sim, citizen, kind): number                -- work-rate multiplier
+		CitizenActions.workSpot(sim, citizen, x, z, radius): (number, number) -- its work slot (above)
+		CitizenActions.SLOT_SPACING, SLOT_MAX_TURN
 ]]
 
 local Nav = require("./Nav")
@@ -64,6 +77,56 @@ function CitizenActions.moveTo(sim: any, c: any, x: number, z: number, radius: n
 	end
 	c.x += (x - c.x) / d * stepLen
 	c.z += (z - c.z) / d * stepLen
+	return false
+end
+
+CitizenActions.SLOT_SPACING = 3.5 -- studs of arc between neighbouring slots: wider than a citizen
+CitizenActions.SLOT_MAX_TURN = math.rad(40) -- at most this turn a step, on a small target
+
+-- 0, 1, -1, 2, -2, ...: the slot's steps from the approach
+local function slotSteps(index: number): number
+	local k = math.ceil(index / 2)
+	return if index % 2 == 1 then k else -k
+end
+
+-- The citizen's work slot at its target (citizen.target: a node's id is a string, a building's a number, so the
+-- two never mix), centred on x, z, on the circle of `radius`. Taken once per target; see the header.
+function CitizenActions.workSpot(sim: any, c: any, x: number, z: number, radius: number): (number, number)
+	if c.slotTarget ~= c.target or c.slotX == nil then
+		local used = {}
+		for _, id in sim.citizenOrder do
+			local o = sim.citizens[id]
+			if o ~= nil and o ~= c and o.target == c.target and o.slotTarget == c.target then
+				used[o.slot] = true
+			end
+		end
+		local index = 0
+		while used[index] do
+			index += 1
+		end
+		-- every slot of a target is measured from one side, the kingdom's centre (+X for the keep itself)
+		local kingdom = sim.kingdoms[c.kingdomId]
+		local ax, az = kingdom.x - x, kingdom.z - z
+		local side = if ax * ax + az * az > 1e-6 then math.atan2(az, ax) else 0
+		local step = math.min(CitizenActions.SLOT_SPACING / radius, CitizenActions.SLOT_MAX_TURN)
+		local angle = side + slotSteps(index) * step
+		c.slot, c.slotTarget = index, c.target
+		c.slotX, c.slotZ = x + math.cos(angle) * radius, z + math.sin(angle) * radius
+		c.faceX, c.faceZ = x, z
+	end
+	return c.slotX, c.slotZ
+end
+
+-- The last stretch onto a work slot (moveTo stops arriveRadius short of it): true once standing on it.
+local function settle(sim: any, c: any, x: number, z: number, dt: number): boolean
+	local d = dist(c.x, c.z, x, z)
+	local speed = sim.catalog.tuning.citizenSpeed * (if c.hunger >= 1 then 0.5 else 1)
+	if d <= speed * dt then
+		c.x, c.z = x, z
+		return true
+	end
+	c.x += (x - c.x) / d * speed * dt
+	c.z += (z - c.z) / d * speed * dt
 	return false
 end
 
@@ -140,7 +203,8 @@ local function gather(sim: any, c: any, dt: number)
 		return
 	end
 	if c.phase == "Go" then
-		if CitizenActions.moveTo(sim, c, node.x, node.z, node.footprint + 1, dt) then
+		local sx, sz = CitizenActions.workSpot(sim, c, node.x, node.z, node.footprint + 1)
+		if CitizenActions.moveTo(sim, c, sx, sz, 0, dt) and settle(sim, c, sx, sz, dt) then
 			c.phase = "Work"
 		end
 		return
@@ -192,7 +256,8 @@ local function farm(sim: any, c: any, dt: number)
 		return
 	end
 	if c.phase == "Go" then
-		if CitizenActions.moveTo(sim, c, b.x, b.z, b.footprint, dt) then
+		local sx, sz = CitizenActions.workSpot(sim, c, b.x, b.z, b.footprint)
+		if CitizenActions.moveTo(sim, c, sx, sz, 0, dt) and settle(sim, c, sx, sz, dt) then
 			c.phase = "Work"
 		end
 		return
@@ -221,7 +286,8 @@ local function build(sim: any, c: any, dt: number)
 		return
 	end
 	if c.phase == "Go" then
-		if CitizenActions.moveTo(sim, c, b.x, b.z, b.footprint + 1, dt) then
+		local sx, sz = CitizenActions.workSpot(sim, c, b.x, b.z, b.footprint + 1)
+		if CitizenActions.moveTo(sim, c, sx, sz, 0, dt) and settle(sim, c, sx, sz, dt) then
 			c.phase = "Work"
 		end
 		return
@@ -337,6 +403,10 @@ function CitizenActions.step(sim: any, c: any, dt: number)
 	local action = ACTIONS[c.activity]
 	if action == nil then
 		error(`CitizenActions: unknown activity '{tostring(c.activity)}'`)
+	end
+	if c.slotTarget ~= nil and c.slotTarget ~= c.target then
+		-- left that work (another target, or none): its slot there is free for the next worker (D-059)
+		c.slot, c.slotTarget, c.slotX, c.slotZ, c.faceX, c.faceZ = nil, nil, nil, nil, nil, nil
 	end
 	action(sim, c, dt)
 end

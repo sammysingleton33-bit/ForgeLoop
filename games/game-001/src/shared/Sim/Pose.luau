@@ -21,9 +21,15 @@
 		                                           phase += dt * rate, so speed changes never jump
 		Pose.blend(from, to, alpha, out?)       -- per-joint CFrame:Lerp (e.g. falling into "dead")
 		Pose.workStyle(job): "chop" | "mine" | "hammer" | "harvest" | "generic"
+		Pose.BLOW[style] = { raise, strike }: the share of a work cycle each part of a blow takes (D-059)
 		Pose.JOINTS, Pose.LIMITS (max rotation per joint, degrees), Pose.WALK_REF_SPEED, Pose.STRIDE
-	Bounds: every rotation stays within Pose.LIMITS. Arms reach 150° only in "celebrate" (arms up);
-	every other joint and action stays within 90°. Torso lift stays within ±2 studs.
+	Work (D-059, FORGE-04 under a one-PR exception): each cycle is a blow that reads from the overview
+	camera at zoom 70: the tool rises slowly (BLOW[style][1] of the cycle), comes down fast (BLOW[style][2]),
+	then the body rests in the follow-through. Chop and pick go overhead (arms to 140-145 deg), the hammer
+	past the shoulder (120), the hoe up (105, below a hat brim) as the back straightens; the generic job bends and lifts a load.
+	Bounds: every rotation stays within Pose.LIMITS. Arms reach 150° only in "celebrate" (arms up) and
+	145° at the top of a work blow; every other joint and action stays within 90°. Torso lift stays within
+	±2 studs.
 	Celebrate: both arms up for rigs with nothing in the right fist (idle citizens) or a sack on the back
 	(hauler). Every other job holds the tool arm out from the body (55° + the pump) and tips the tool back and
 	out within the Tool joint's limit, so no tool goes through the head: tests/sim/PoseClearance.spec measures it
@@ -132,7 +138,8 @@ end
 local function carry(out: Joints, s: number, c2: number, speed: number)
 	local k = stride(speed)
 	local swing = 35 * k * s
-	out.Torso = torso(0, 0, 0.08 * k * (1 - c2) / 2)
+	-- D-059: the load bobs with each step (0.18 studs) and the body leans back under it, readable from the air
+	out.Torso = torso(-4 * k, 0, 0.18 * k * (1 - c2) / 2)
 	out.Head = IDENTITY
 	out.LeftArm = rx(70) * rz(10)
 	out.RightArm = rx(70) * rz(-10)
@@ -140,32 +147,67 @@ local function carry(out: Joints, s: number, c2: number, speed: number)
 	out.Tool = IDENTITY
 end
 
-local function work(out: Joints, style: string, s: number, c: number)
+-- D-059 (FORGE-04 under a one-PR exception): work swings that read from the overview camera (zoom 70). Each cycle
+-- is a blow: the tool rises slowly over the first RAISE of the cycle, comes down fast over STRIKE, then the body
+-- rests in the follow-through until the next raise. The tool goes overhead (chop, pick), up past the shoulder
+-- (hammer), or the body bends and lifts (harvest, generic).
+local function smoothstep(u: number): number
+	u = clamp01(u)
+	return u * u * (3 - 2 * u)
+end
+
+-- 0 (follow-through) .. 1 (raised) over one cycle: up over [0, raise), down over [raise, raise + strike), then 0
+local function blow(p: number, raise: number, strike: number): number
+	if p < raise then
+		return smoothstep(p / raise)
+	elseif p < raise + strike then
+		local u = (p - raise) / strike
+		return 1 - u * u -- falls faster and faster: the blow lands
+	end
+	return 0
+end
+
+-- style -> { raise, strike }: the share of a cycle each part takes
+Pose.BLOW = table.freeze({
+	chop = table.freeze({ 0.55, 0.15 }),
+	mine = table.freeze({ 0.55, 0.15 }),
+	hammer = table.freeze({ 0.5, 0.2 }),
+	harvest = table.freeze({ 0.6, 0.2 }),
+})
+local BLOW = Pose.BLOW
+
+local function work(out: Joints, style: string, p: number)
 	local lean, twist = 0, 0
 	if style == "chop" then
-		lean, twist = 5 + 5 * c, -10 * s
-		out.RightArm = rx(55 + 35 * c)
-		out.LeftArm = rx(40 + 25 * c)
-		out.Tool = rx(15 * c)
+		local h = blow(p, BLOW.chop[1], BLOW.chop[2])
+		lean, twist = 15 - 12 * h, -15 * h -- wound up and turned right, then into the cut
+		out.RightArm = rx(35 + 105 * h)
+		out.LeftArm = rx(30 + 90 * h)
+		out.Tool = rx(-10 + 20 * h)
 	elseif style == "mine" then
-		lean = 10 - 8 * c
-		out.RightArm = rx(60 + 30 * c)
-		out.LeftArm = rx(60 + 30 * c)
-		out.Tool = IDENTITY
+		local h = blow(p, BLOW.mine[1], BLOW.mine[2])
+		lean = 20 - 22 * h -- arches back with the pick overhead, then bends into the blow
+		out.RightArm = rx(30 + 115 * h)
+		out.LeftArm = rx(30 + 115 * h)
+		out.Tool = rx(10 - 10 * h)
 	elseif style == "hammer" then
-		lean = 8
-		out.RightArm = rx(50 + 30 * c)
-		out.LeftArm = rx(25)
-		out.Tool = rx(10 * c)
+		local h = blow(p, BLOW.hammer[1], BLOW.hammer[2])
+		lean = 12
+		out.RightArm = rx(40 + 80 * h)
+		out.LeftArm = rx(40)
+		out.Tool = rx(15 * h)
 	elseif style == "harvest" then
-		lean = 25 + 8 * s
-		out.RightArm = rx(45 + 15 * c)
-		out.LeftArm = rx(45 + 15 * c)
+		local h = blow(p, BLOW.harvest[1], BLOW.harvest[2])
+		lean = 30 - 22 * h -- the hoe raised as the back straightens, then down into the soil with a bend
+		out.RightArm = rx(45 + 60 * h) -- 105 degrees at the top: higher, the blade meets a farmer's hat brim
+		out.LeftArm = rx(40 + 70 * h)
 		out.Tool = IDENTITY
 	else
-		lean = 5
-		out.RightArm = rx(30 + 10 * s)
-		out.LeftArm = rx(30 - 10 * s)
+		-- bend and lift (a load picked up, raised to the chest)
+		local b = (1 - math.cos(TAU * p)) / 2
+		lean = 35 - 30 * b
+		out.RightArm = rx(35 + 50 * b)
+		out.LeftArm = rx(35 + 50 * b)
 		out.Tool = IDENTITY
 	end
 	out.Torso = torso(lean, twist, 0)
@@ -231,7 +273,7 @@ function Pose.sample(action: string, job: string, phase: number, speed: number, 
 	elseif action == "carry" then
 		carry(o, s, c2, speed)
 	elseif action == "work" then
-		work(o, Pose.workStyle(job), s, c)
+		work(o, Pose.workStyle(job), p)
 	elseif action == "fight" then
 		fight(o, s)
 	elseif action == "celebrate" then

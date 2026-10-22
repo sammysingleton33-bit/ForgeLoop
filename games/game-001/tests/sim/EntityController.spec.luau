@@ -958,3 +958,131 @@ describe("EntityController: frames, LOD and pick", function()
 		expect(h.env.mock.threadErrors).toEqual({})
 	end)
 end)
+
+describe("EntityController: the start citizens look alive (D-059)", function()
+	-- a stand-in for FORGE-02's Kit.carried(resource): a Model whose PrimaryPart is the load's pivot
+	local made = {}
+	local function fakeCarried(resource: string)
+		local model = Instance.new("Model")
+		model.Name = `Load_{resource}`
+		local part = Instance.new("Part")
+		part.Name = "Pivot"
+		part.CFrame = CFrame.new(0, -0.3, 0) -- like Kit.carried: the primary part is off the load's centre,
+		part.PivotOffset = part.CFrame:Inverse() -- and the pivot is the build origin
+		part.Parent = model
+		model.PrimaryPart = part
+		made[resource] = (made[resource] or 0) + 1
+		return model
+	end
+	local function loadsOf(model): { any }
+		local out = {}
+		for _, child in model:GetChildren() do
+			if child:IsA("Model") and string.sub(child.Name, 1, 5) == "Load_" then
+				table.insert(out, child)
+			end
+		end
+		return out
+	end
+	-- the server keeps sending the citizen's record (moving actions go out every snapshot)
+	local function play(h, seconds: number, extra: { [string]: any })
+		local steps = math.floor(seconds / 0.1 + 0.5)
+		for _ = 1, steps do
+			h.env.mock:advance(0.1)
+			snapshot(h, { record(1, 0, 0, extra) })
+			h.controller:step(0.1)
+		end
+	end
+
+	it("a carrying citizen holds Kit.carried(resource) at its Torso; it goes with the action, never pooled", function()
+		local carried = (Kit :: any).carried
+		table.clear(made);
+		(Kit :: any).carried = fakeCarried
+		local ok, err = pcall(function()
+			local h = start(setup({ full(1, 0, 0) }))
+			play(h, 0.5, { action = "carry", carrying = "wood" })
+			local model = h.controller:getModel(1)
+			local loads = loadsOf(model)
+			expect(#loads).toBe(1)
+			expect(loads[1].Name).toBe("Load_wood")
+			local weld = loads[1].PrimaryPart:FindFirstChild("CarryWeld")
+			assert(weld ~= nil, "welded")
+			local torso = nil
+			for _, d in model:GetDescendants() do
+				if d:IsA("Motor6D") and d.Name == "Torso" then
+					torso = d.Part1
+				end
+			end
+			expect(weld.Part0).toBe(torso)
+			expect((weld.C0.Position - Def.CARRY_OFFSET.Position).Magnitude).toBeLessThan(1e-4) -- float32 on the Weld
+			-- the load's pivot (not its primary part) lands at the hands: Part1 = Part0 * C0 * C1:Inverse()
+			local primary = loads[1].PrimaryPart
+			local pivot = weld.C0 * weld.C1:Inverse() * primary.PivotOffset
+			expect((pivot.Position - Def.CARRY_OFFSET.Position).Magnitude).toBeLessThan(1e-4)
+			expect(weld.C0.Position.Z < -1).toBe(true) -- in front of the chest, at the hands
+			-- the same load stays (no rebuild per frame); the template is made once per resource
+			play(h, 0.5, { action = "carry", carrying = "wood" })
+			expect(loadsOf(model)[1]).toBe(loads[1])
+			-- another resource: the old load goes, the new one comes
+			play(h, 0.5, { action = "carry", carrying = "stone" })
+			loads = loadsOf(model)
+			expect(#loads).toBe(1)
+			expect(loads[1].Name).toBe("Load_stone")
+			-- delivered: walking empty-handed, nothing held
+			play(h, 0.5, { action = "walk" })
+			expect(#loadsOf(model)).toBe(0)
+			-- at work the cargo fills, but nothing is held in the arms (the tool is)
+			play(h, 0.5, { action = "work", carrying = "wood" })
+			expect(#loadsOf(model)).toBe(0)
+			-- carrying again, then the citizen leaves: the rig goes back to the pool without its load
+			play(h, 0.5, { action = "carry", carrying = "wood" })
+			expect(#loadsOf(model)).toBe(1)
+			expect(made.wood).toBe(1)
+			events(h, { { type = "despawn", id = 1 } })
+			frame(h, 0.05)
+			expect(h.controller:getModel(1)).toBeNil()
+			expect(#loadsOf(model)).toBe(0)
+		end);
+		(Kit :: any).carried = carried
+		assert(ok, err)
+	end)
+
+	it("without Kit.carried a carrying citizen holds nothing and nothing fails", function()
+		local carried = (Kit :: any).carried;
+		(Kit :: any).carried = nil
+		local ok, err = pcall(function()
+			local h = start(setup({ full(1, 0, 0) }))
+			play(h, 0.5, { action = "carry", carrying = "food" })
+			expect(#loadsOf(h.controller:getModel(1))).toBe(0)
+			-- a Kit.carried that fails is asked once per resource, not again on every load
+			local calls = 0
+			local function failing()
+				calls += 1
+				error("no such load")
+			end
+			(Kit :: any).carried = failing
+			for _ = 1, 3 do
+				play(h, 0.3, { action = "carry", carrying = "stone" })
+				play(h, 0.3, { action = "walk" })
+			end
+			expect(calls).toBe(1)
+			expect(#loadsOf(h.controller:getModel(1))).toBe(0)
+		end);
+		(Kit :: any).carried = carried
+		assert(ok, err)
+	end)
+
+	it("a citizen that starts to work starts its blow from the beginning, not mid-swing", function()
+		local h = start(setup({ full(1, 0, 0, { job = "woodcutter" }) }))
+		play(h, 1.3, { action = "walk" })
+		local entity = h.controller._entities[1]
+		entity.phase = 0.7 -- mid-cycle, as a walk leaves it
+		play(h, 0.4, { action = "work" }) -- the work samples reach the render time (200 ms behind) on the way
+		-- at most the 0.2-0.3 s since the action turned to work, at the chop's rate: still raising the axe
+		expect(entity.phase).toBeLessThan(0.4 * Pose.rate("work", "woodcutter", 0) + 1e-6)
+		expect(entity.phase < Pose.BLOW.chop[1]).toBe(true)
+		-- and from there the blow goes on (it starts over only when the work starts)
+		local started = entity.phase
+		play(h, 0.2, { action = "work" })
+		expect(entity.phase).toBeNear(started + 0.2 * Pose.rate("work", "woodcutter", 0), 1e-6)
+	end)
+end)
