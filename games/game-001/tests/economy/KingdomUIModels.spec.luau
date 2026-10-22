@@ -153,7 +153,8 @@ describe("Text", function()
 		-- the server's own list: the Reasons line of FORGE-01's Build/Remotes.luau, read from source so
 		-- a code added there fails here until it is worded
 		local source = fs.readFile(T.root .. "/games/game-001/src/shared/Build/Remotes.luau")
-		local line = string.match(source, "Reasons:%s*([^%]]-)%]%]")
+		-- the line that starts with "Reasons:" (a remote's own doc may say "Reasons:" mid-line, #306's PlaceGate)
+		local line = string.match(source, "\n%s*Reasons:%s*([^%]]-)%]%]")
 		assert(line, "Build/Remotes.luau has no Reasons line")
 		-- "<codes>; PlaceSlot also <codes>.", parentheses explain a code (#89)
 		local build, slot = string.match((string.gsub(line, "%b()", "")), "^(.-);%s*PlaceSlot also(.*)$")

@@ -7,7 +7,9 @@
 	BuildModel.menu(store, { category, selected? }) -> View
 		View = { loading, category, tabs, rows: { Row }, selected: string?, detail: Detail? }
 		Row = { id (BuildingType), name, icon, category, built, ok, costs: { { currency, amount, short } } }
-	BuildModel.placeDetail(store, type, { slot?, pending?, turn? }?) -> Detail?
+	BuildModel.placeDetail(store, type, { slot?, pending?, turn?, cost? }?) -> Detail?
+		cost: a price bag in place of the level-1 price (the gate made from a wall piece: its price less the
+		wall's refund, FL-0129c slice 2); the costs, their shortfall and the CTA all read it
 		with a slot (G13.5 plot) the CTA reads "Build <name> here" and action is "slot"; when the server
 		takes a turn (UI/Turns, CONTRACTS v0.4-g9h) the detail also has
 		turn = { value, allowed: { integer }, label, canTurn }: value is opts.turn when it fits, else
@@ -122,7 +124,7 @@ end
 function BuildModel.placeDetail(
 	store: any,
 	buildingType: string,
-	opts: { slot: any?, pending: boolean?, turn: number? }?
+	opts: { slot: any?, pending: boolean?, turn: number?, cost: { [string]: number }? }?
 ): any
 	local info = Buildings.get(buildingType)
 	if info == nil then
@@ -130,6 +132,9 @@ function BuildModel.placeDetail(
 	end
 	local slot = if opts then opts.slot else nil
 	local entry = store:buildingCost(buildingType, 1)
+	if entry and opts and opts.cost then
+		entry = { cost = opts.cost, buildSeconds = entry.buildSeconds }
+	end
 	local have = store:balances()
 	local footprint = BuildModel.footprint(buildingType, 1)
 	local cta
@@ -233,8 +238,11 @@ function BuildModel.upgradeDetail(store: any, building: any, flags: { pending: b
 	}
 end
 
-local function row(store: any, info: any, have: { [string]: number }): any
+local function row(store: any, info: any, have: { [string]: number }, price: { [string]: number }?): any
 	local entry = store:buildingCost(info.type, 1)
+	if entry and price then
+		entry = { cost = price, buildSeconds = entry.buildSeconds }
+	end
 	local costs = {}
 	if entry then
 		for _, c in costRows(entry.cost, have) do
@@ -299,11 +307,16 @@ function BuildModel.plotMenu(store: any, input: { slot: any, selected: string?, 
 	}
 end
 
-function BuildModel.menu(store: any, input: { category: string, selected: string? }): any
+-- input.prices: { [type]: price bag } in place of a type's level-1 price, in its row and its detail.
+function BuildModel.menu(
+	store: any,
+	input: { category: string, selected: string?, prices: { [string]: { [string]: number } }? }
+): any
 	local have = store:balances()
+	local prices = input.prices or {}
 	local rows = {}
 	for _, info in Buildings.menu(input.category) do
-		table.insert(rows, row(store, info, have))
+		table.insert(rows, row(store, info, have, prices[info.type]))
 	end
 	local selected = pick(rows, input.selected)
 	return {
@@ -312,7 +325,7 @@ function BuildModel.menu(store: any, input: { category: string, selected: string
 		tabs = Buildings.CATEGORIES,
 		rows = rows,
 		selected = selected,
-		detail = if selected then BuildModel.placeDetail(store, selected) else nil,
+		detail = if selected then BuildModel.placeDetail(store, selected, { cost = prices[selected] }) else nil,
 	}
 end
 

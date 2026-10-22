@@ -39,6 +39,8 @@ local REASONS: { [string]: string } = {
 	unknown_building = "That building can't be built",
 	-- Build.PlaceLine (FL-0126 part 2 slice 1; FORGE-01's handoff 2026-10-22): the wall line
 	not_a_line_piece = "Only walls can be drawn as a line",
+	-- Build.PlaceGate (FORGE-01 #306)
+	not_a_wall = "Only a wall piece can become the gate",
 	too_short = "Move the far end out further",
 	too_long = `Too long: {(BuildingsConfig :: any).maxLineSegments or 12} pieces at most`,
 	-- Build.CanMove / Build.Move / Build.MoveToSlot (FL-0119, CONTRACTS G13.9 v0.4-g9j; a move reads them
@@ -76,9 +78,6 @@ local REASONS: { [string]: string } = {
 	newcomer_lock = "New rulers wait a little before war or peace",
 }
 
--- Build.PlaceSlot's own codes (FORGE-01 FL-0081, BuildingService.placeSlot; the Reasons line of
--- Build/Remotes.luau) in the plot's words. Its other refusals come from the simulation's placement and
--- read as in REASONS, except `blocked`: on a plot that means something stands in the footprint.
 -- A wall line is all or nothing (Build.PlaceLine): the reason is for one of its pieces, never says which.
 -- Short enough for the phone bar's status line (667 × 375).
 local LINE_REASONS: { [string]: string } = {
@@ -89,6 +88,24 @@ local LINE_REASONS: { [string]: string } = {
 	limit_reached = "Over your wall limit",
 }
 
+-- Build.PlaceGate (FORGE-01 #306; handoff 2026-10-22-forge-01-to-all-place-gate): one of my wall pieces
+-- becomes the gate. Short enough for the phone bar; the rest read as in REASONS.
+local GATE_REASONS: { [string]: string } = {
+	not_found = "That wall piece is gone",
+	not_owner = "That wall isn't yours",
+	not_a_wall = "Point at one of your wall pieces",
+	limit_reached = "Your kingdom has its gate already",
+	busy = "Not while that piece is upgrading",
+	-- the gate is 12 studs thick, the wall 8: it needs room on both sides
+	blocked = "No room for a gate there",
+	out_of_territory = "A gate there leaves your land",
+	out_of_bounds = "Too close to the map's edge",
+	cannot_afford = "Not enough, even with the refund",
+}
+
+-- Build.PlaceSlot's own codes (FORGE-01 FL-0081, BuildingService.placeSlot; the Reasons line of
+-- Build/Remotes.luau) in the plot's words. Its other refusals come from the simulation's placement and
+-- read as in REASONS, except `blocked`: on a plot that means something stands in the footprint.
 local SLOT_REASONS: { [string]: string } = {
 	unknown_slot = "This plot isn't yours",
 	slot_occupied = "This plot is already built on",
@@ -124,6 +141,9 @@ function Text.reason(reason: any, context: string?): string
 	end
 	if context == "move" and MOVE_REASONS[key] then
 		return MOVE_REASONS[key]
+	end
+	if context == "gate" and GATE_REASONS[key] then
+		return GATE_REASONS[key]
 	end
 	if context == "line" and LINE_REASONS[key] then
 		return LINE_REASONS[key]
