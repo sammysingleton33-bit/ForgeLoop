@@ -3,7 +3,8 @@
 	Harness — Crown Arena fairness harness (FL-0076, FORGE-05; design §9, CONTRACTS G12.3).
 
 	Monte Carlo duels between scripted duellists (Duellist) on a duel model with the G12.2 signatures
-	(DuelDouble until FORGE-01's DuelModel lands). Every setup passes CapsCheck before it duels, as
+	(the gate, FairnessGate.spec, runs FORGE-01's Arena/DuelModel with config Support; run.luau and the
+	harness's own specs run the local DuelDouble with the design numbers). Every setup passes CapsCheck before it duels, as
 	DuelService must run Caps.check. Each cell reports the win rate of side A with a 95 % Wilson
 	interval; the outcome bounds of G12.3 are then checked cell by cell.
 
