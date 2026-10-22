@@ -25,6 +25,7 @@ local serde = require("@lune/serde")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
+local StartView = require("./support/StartView")
 local LightingPreset = require("@game/ReplicatedStorage/Game/World/Lighting")
 
 local KINGDOM_COLORS = {
@@ -109,11 +110,35 @@ local function covers(o: OpReach, x: number, z: number): boolean
 	return true -- a disc (ball cap) or a cylinder: inside its radius, which the reach test above already settled
 end
 
+-- The ops are bucketed on a grid (BUCKET studs), each bucket holding the ops that reach it in plan order, so a point only tests
+-- its own bucket (the plan has thousands of ops; every heightfield point used to test them all).
+local BUCKET = 48
+local BUCKETS: { [number]: { OpReach } } = {}
+local function bucketKey(bx: number, bz: number): number
+	return bz * 4096 + bx
+end
+for _, o in OPS do
+	for bz = math.floor((o.cz - o.reach) / BUCKET), math.floor((o.cz + o.reach) / BUCKET) do
+		for bx = math.floor((o.cx - o.reach) / BUCKET), math.floor((o.cx + o.reach) / BUCKET) do
+			local key = bucketKey(bx, bz)
+			local list = BUCKETS[key]
+			if not list then
+				list = {}
+				BUCKETS[key] = list
+			end
+			table.insert(list, o)
+		end
+	end
+end
+
 local function surfaceMaterial(x: number, z: number, _h: number): string
 	local found = "Grass"
-	for _, o in OPS do
-		if covers(o, x, z) then
-			found = o.op.material
+	local list = BUCKETS[bucketKey(math.floor(x / BUCKET), math.floor(z / BUCKET))]
+	if list then
+		for _, o in list do
+			if covers(o, x, z) then
+				found = o.op.material
+			end
 		end
 	end
 	return found
@@ -430,7 +455,11 @@ local function dump()
 		plots = (function()
 			local out = {}
 			for k, plot in Layout.plots do
-				out[k] = { keep = cf12(plot.anchors.keep), spawn = cf12(plot.spawn) }
+				out[k] = {
+					keep = cf12(plot.anchors.keep),
+					spawn = cf12(plot.spawn),
+					throne = cf12(StartView.root(Kit, Layout, k)),
+				}
 			end
 			return out
 		end)(),

@@ -45,6 +45,7 @@
 ]]
 
 local Buildings = require("./Buildings") -- Kit.footprint (Kit itself requires Props, which requires this module)
+local WorldGround = require("./WorldGround") -- the ground cover, aprons, lanes and plazas of terrainOps (pure; takes our helpers as `api`)
 
 local WorldPlan = {}
 
@@ -245,16 +246,19 @@ function WorldPlan.terrainOps(layout: any, density: { [string]: number }?): { Op
 		cylinder("LeafyGrass", floor.x, fy - 1, floor.z, floor.r, 2.5, "forest_floor")
 	end
 
-	-- 4. variety patches on open ground
-	local rng = prng(911)
-	for _ = 1, 28 do
-		local px, pz = rng.range(mn.X + 40, mx.X - 40), rng.range(mn.Y + 40, mx.Y - 40)
-		local material = if rng.next() < 0.6 then "LeafyGrass" else "Ground"
-		local radius = if material == "Ground" then rng.range(6, 12) else rng.range(16, 34)
-		local py = WorldPlan.groundHeight(layout, px, pz)
-		if distToPolyline(px, pz, f.river.points) > f.river.width then
-			cylinder(material, px, py - 1, pz, radius, 2.4, "patch")
-		end
+	-- 4. ground cover: noise-driven patches over the open land (leafy meadow, bare and wet earth, ragged forest-floor rims), then
+	-- worn pads under the fields, the starting buildings and the work yards (Kit/WorldGround)
+	local api = {
+		groundHeight = WorldPlan.groundHeight,
+		distToPolyline = distToPolyline,
+		prng = prng,
+		hillBalls = hillBalls,
+	}
+	for _, op in WorldGround.cover(layout, api, floors) do
+		table.insert(ops, op)
+	end
+	for _, op in WorldGround.aprons(layout, api) do
+		table.insert(ops, op)
 	end
 
 	-- 5. farm fields (tilled soil)
@@ -268,34 +272,12 @@ function WorldPlan.terrainOps(layout: any, density: { [string]: number }?): { Op
 		)
 	end
 
-	-- 6. roads: short pieces that follow the ground, dirt with a cobbled plaza at the hub
-	for _, road in f.roads do
-		local pts = road.points
-		for i = 1, #pts - 1 do
-			local a, b = pts[i], pts[i + 1]
-			local len = (b - a).Magnitude
-			local n = math.max(1, math.ceil(len / 16))
-			for k = 0, n - 1 do
-				local t0, t1 = k / n, (k + 1) / n
-				local p0, p1 = a:Lerp(b, t0), a:Lerp(b, t1)
-				local mid = (p0 + p1) / 2
-				local my = WorldPlan.groundHeight(layout, mid.X, mid.Y)
-				local seg = p1 - p0
-				block(
-					"Ground",
-					along(mid.X, my - 0.9, mid.Y, seg.X, seg.Y),
-					Vector3.new(road.width, 2, seg.Magnitude + road.width * 0.5),
-					"road"
-				)
-			end
-		end
+	-- 6. roads and the plots' lanes (dirt, ragged edges, a worn centre on the roads), the hub plaza and each keep's court
+	for _, op in WorldGround.worn(layout, api) do
+		table.insert(ops, op)
 	end
-	local hubX, hubZ = f.roads[1].points[#f.roads[1].points].X, f.roads[1].points[#f.roads[1].points].Y
-	cylinder("Cobblestone", hubX, WorldPlan.groundHeight(layout, hubX, hubZ) - 0.9, hubZ, 14, 2, "plaza")
-	for _, kingdom in { "crimson", "azure", "emerald", "gold" } do
-		local plot = layout.plots[kingdom]
-		local yard = (plot.anchors.keep * CFrame.new(0, 0, -62)).Position -- the yard crossroads (Layout nav)
-		cylinder("Cobblestone", yard.X, gy - 0.9, yard.Z, 11, 2, "plaza")
+	for _, op in WorldGround.border(layout, api) do
+		table.insert(ops, op)
 	end
 
 	-- 7. river: sandy banks, carve, then water (surface 1.4 below ground)

@@ -6,6 +6,7 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 local D = require("./RulerDoubles")
+local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local CameraDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/RulerCameraController")
 
 local C = CameraDef.DEFAULTS
@@ -70,6 +71,16 @@ describe("RulerCameraController pure rules (FL-0053, FL-0090)", function()
 			expect(near(view.focus, Vector3.new(10, 3, -conversation.offset.Y))).toBe(true)
 			local edge = CameraDef.conversationView(Vector3.new(500, 3, 0), 0, conversation, bounds, 10)
 			expect(edge.focus.X).toBe(110) -- clamped to bounds + margin
+		end
+	)
+
+	it(
+		"startFocus() is `ahead` studs along the root's level facing; a root facing straight down keeps its place",
+		function()
+			local root = CFrame.lookAt(Vector3.new(0, 3, 0), Vector3.new(10, -2, 0)) -- facing +X, a little down
+			expect(near(CameraDef.startFocus(root, 40), Vector3.new(40, 3, 0), 1e-4)).toBe(true)
+			local down = CFrame.lookAt(Vector3.new(5, 3, 5), Vector3.new(5, -10, 5.000001))
+			expect(near(CameraDef.startFocus(down, 40), Vector3.new(5, 3, 5), 1e-3)).toBe(true)
 		end
 	)
 
@@ -163,24 +174,125 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		}
 	end)
 
-	it("starts in the overview over the throne; move and jump keys are sunk and the thumbstick hidden", function()
+	it(
+		"starts in the overview over the yard, looking back at the keep; move and jump keys are sunk, the thumbstick hidden",
+		function()
+			boot()
+			expect(controller.mode).toBe("overview")
+			expect(camera.CameraType).toBe(Enum.CameraType.Scriptable)
+			local root = registry:get("RulerController"):getRoot()
+			expect(controller:getFocus()).toBe(CameraDef.startFocus(root.CFrame, O.startAhead))
+			local ahead = (controller:getFocus() :: Vector3) - THRONE
+			local facing = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z).Unit
+			-- the yard, level: in front of the keep's door, short of the first houses (FL-0147; FORGE-07 #284 L2)
+			expect(ahead.Magnitude >= 15 and ahead.Magnitude <= 25 and math.abs(ahead.Y) < 1e-6).toBe(true)
+			expect(ahead.Unit:Dot(facing) > 0.999).toBe(true) -- out of the keep door, the way the ruler faces
+			-- and the camera looks back at the keep across the yard (FL-0147), not out over the keep's roof
+			local yaw = controller._target.yaw
+			local looking = Vector3.new(-math.sin(yaw), 0, -math.cos(yaw))
+			expect(looking:Dot(facing) < -0.999).toBe(true)
+			-- so W / up / a drag forward pans toward the keep, the way the camera looks (FORGE-00's FL-0147 check)
+			expect(CameraDef.panVector(Vector2.new(0, 1), yaw).Unit:Dot(facing) < -0.999).toBe(true)
+			expect(gui.TouchControlsEnabled).toBe(false)
+			local pan = actions.bound[CameraDef.PAN_ACTION]
+			local seat = actions.bound[CameraDef.SEAT_ACTION]
+			assert(pan and seat, "pan and seat actions bound")
+			expect(pan.priority).toBe(Enum.ContextActionPriority.High.Value)
+			expect(#pan.keys).toBe(8)
+			expect(seat.keys).toEqual({ Enum.KeyCode.Space, Enum.KeyCode.ButtonA })
+			expect(key(CameraDef.PAN_ACTION, Enum.KeyCode.W)).toBe(Enum.ContextActionResult.Sink)
+			key(CameraDef.PAN_ACTION, Enum.KeyCode.W, Enum.UserInputState.End)
+			expect(key(CameraDef.SEAT_ACTION, Enum.KeyCode.Space)).toBe(Enum.ContextActionResult.Sink)
+			settle()
+			local goal =
+				CameraDef.aerialCFrame(controller:getFocus() :: Vector3, controller._target.yaw, O.startZoom, O)
+			expect(near(camera.CFrame.Position, goal.Position, 0.05)).toBe(true)
+			expect(math.abs(camera.FieldOfView - O.fieldOfView) < 1e-3).toBe(true) -- the overview's own
+		end
+	)
+
+	it(
+		"the first view stands over the yard and looks at the keep, never above it (FL-0147, the real Kit keep)",
+		function()
+			-- the keep on a turned plot; the ruler sits on its Kit Seat "Throne" (the root a little above the seat)
+			local anchor = CFrame.new(-330, 0, -320) * CFrame.Angles(0, math.rad(-130), 0)
+			local keep = Kit.build("keep", 1, "complete", Kit.NEUTRAL_COLOR)
+			local pivot = keep.PrimaryPart.CFrame * keep.PrimaryPart.PivotOffset
+			local seat = keep:FindFirstChild("Throne", true)
+			assert(seat, "the Kit keep has its Throne")
+			local rel = pivot:ToObjectSpace(seat.CFrame)
+			local root = anchor * CFrame.new(rel.Position + Vector3.new(0, 2, 0)) * rel.Rotation
+			-- the keep's footprint: the farthest part corner from its centre, level
+			local radius = 0
+			for _, part in keep:GetDescendants() do
+				if part:IsA("BasePart") then
+					local local_ = pivot:ToObjectSpace(part.CFrame)
+					local half = part.Size / 2
+					for _, sx in { -1, 1 } do
+						for _, sz in { -1, 1 } do
+							for _, sy in { -1, 1 } do
+								local corner = local_ * Vector3.new(sx * half.X, sy * half.Y, sz * half.Z)
+								radius = math.max(radius, Vector3.new(corner.X, 0, corner.Z).Magnitude)
+							end
+						end
+					end
+				end
+			end
+			keep:Destroy()
+			expect(radius > 10 and radius < 30).toBe(true)
+			local centre = anchor.Position
+			local function view(ahead, turn)
+				local focus = CameraDef.startFocus(root, ahead)
+				local yaw = CameraDef.startYaw(root, turn) :: number
+				local cf = CameraDef.aerialCFrame(focus, yaw, O.startZoom, O)
+				local flat = Vector3.new(cf.Position.X - centre.X, 0, cf.Position.Z - centre.Z)
+				return cf, focus, flat.Magnitude
+			end
+			local cf, focus, away = view(O.startAhead, O.startTurn)
+			expect(away > radius + 20).toBe(true) -- not inside or above the keep: out over the yard
+			local toKeep = Vector3.new(centre.X - cf.Position.X, 0, centre.Z - cf.Position.Z)
+			local look = Vector3.new(cf.LookVector.X, 0, cf.LookVector.Z).Unit
+			expect(toKeep.Unit:Dot(look) > 0.99).toBe(true) -- the keep is straight ahead...
+			expect(
+				toKeep.Magnitude
+					> (Vector3.new(focus.X, 0, focus.Z) - Vector3.new(cf.Position.X, 0, cf.Position.Z)).Magnitude
+			).toBe(true) -- ...beyond the focus, so it stands in the upper half of the picture
+			-- the #284 start (40 ahead, looking the throne's way) put the camera over the keep: the check bites
+			local _, _, before = view(40, 0)
+			expect(before < radius).toBe(true)
+			-- a root facing straight down has no yaw (the overview's entry keeps the camera's)
+			expect(CameraDef.startYaw(CFrame.lookAt(Vector3.zero, Vector3.new(0, -1, 0)), 180)).toBeNil()
+		end
+	)
+
+	it("a ruler whose character comes after the start still gets the first view, looking back at the keep", function()
+		player.Character = nil
 		boot()
-		expect(controller.mode).toBe("overview")
-		expect(camera.CameraType).toBe(Enum.CameraType.Scriptable)
-		expect(controller:getFocus()).toBe(THRONE)
-		expect(gui.TouchControlsEnabled).toBe(false)
-		local pan = actions.bound[CameraDef.PAN_ACTION]
-		local seat = actions.bound[CameraDef.SEAT_ACTION]
-		assert(pan and seat, "pan and seat actions bound")
-		expect(pan.priority).toBe(Enum.ContextActionPriority.High.Value)
-		expect(#pan.keys).toBe(8)
-		expect(seat.keys).toEqual({ Enum.KeyCode.Space, Enum.KeyCode.ButtonA })
-		expect(key(CameraDef.PAN_ACTION, Enum.KeyCode.W)).toBe(Enum.ContextActionResult.Sink)
-		key(CameraDef.PAN_ACTION, Enum.KeyCode.W, Enum.UserInputState.End)
-		expect(key(CameraDef.SEAT_ACTION, Enum.KeyCode.Space)).toBe(Enum.ContextActionResult.Sink)
+		expect(controller:getFocus()).toBeNil()
+		local character = D.character(THRONE)
+		player.Character = character
+		player.CharacterAdded:Fire(character)
+		local root = registry:get("RulerController"):getRoot()
+		expect(controller:getFocus()).toBe(CameraDef.startFocus(root.CFrame, O.startAhead))
+		expect(math.abs(controller._target.yaw - (CameraDef.startYaw(root.CFrame, O.startTurn) :: number)) < 1e-9).toBe(
+			true
+		)
 		settle()
-		local goal = CameraDef.aerialCFrame(controller:getFocus() :: Vector3, controller._target.yaw, O.startZoom, O)
-		expect(near(camera.CFrame.Position, goal.Position, 0.05)).toBe(true)
+		local look = camera.CFrame.LookVector
+		expect(Vector3.new(look.X, 0, look.Z).Unit:Dot(Vector3.new(0, 0, 1)) > 0.999).toBe(true) -- back at the keep (+Z)
+	end)
+
+	it("the start view frames a citizen at about 6 % of the screen's height (the owner's B22 review)", function()
+		local pitch = math.rad(CameraDef.pitchFor(O.startZoom, O))
+		local function share(zoom, fieldOfView, degrees)
+			return 5.6 * math.cos(degrees) / (2 * zoom * math.tan(math.rad(fieldOfView) / 2)) -- a 5.6-stud citizen
+		end
+		local now = share(O.startZoom, O.fieldOfView, pitch)
+		expect(now > 0.05 and now < 0.07).toBe(true)
+		expect(now > 2.5 * share(120, 70, math.rad(CameraDef.pitchFor(120, O)))).toBe(true) -- B22's start: 2 %
+		expect(O.minZoom).toBe(40) -- the zoom limits are unchanged
+		expect(O.maxZoom).toBe(220)
+		expect(C.fieldOfView).toBe(70) -- walk mode and the duel keep Roblox's own
 	end)
 
 	it("WASD pans relative to the view at a speed that scales with the zoom", function()
@@ -241,7 +353,7 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		mouse("InputChanged", Enum.UserInputType.MouseMovement, 405, 300)
 		expect(controller:getFocus()).toBe(start) -- 5 px: still a tap
 		mouse("InputChanged", Enum.UserInputType.MouseMovement, 500, 300)
-		local studs = 100 * CameraDef.worldPerPixel(O.startZoom, C.fieldOfView, 720)
+		local studs = 100 * CameraDef.worldPerPixel(O.startZoom, O.fieldOfView, 720)
 		local moved = (controller:getFocus() :: Vector3) - start
 		expect(math.abs(moved.Magnitude - studs) < 1e-3).toBe(true)
 		-- the ground follows the pointer: dragging right moves the view left
@@ -371,6 +483,10 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		expect(player.CameraMaxZoomDistance).toBe(C.follow.maxZoom)
 		expect(C.follow.minZoom >= 8).toBe(true) -- never first person (smooth turning needs it)
 		expect(humanoid.CameraOffset).toBe(C.follow.shoulder)
+		expect(math.abs(camera.FieldOfView - C.fieldOfView) < 1e-3).toBe(true) -- Roblox's, not the overview's
+		expect(controller:setMode("overview")).toBe(true)
+		expect(math.abs(camera.FieldOfView - O.fieldOfView) < 1e-3).toBe(true)
+		expect(controller:setMode("follow")).toBe(true)
 		expect(controller:setMode("cinematic")).toBe(false)
 		expect(env.mock:hasLog("warn", "unknown camera mode 'cinematic'")).toBe(true)
 	end)
@@ -387,6 +503,8 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 		local goal =
 			CameraDef.aerialCFrame(controller:getFocus() :: Vector3, controller._target.yaw, controller._target.zoom, O)
 		expect(near(camera.CFrame.Position, goal.Position, 0.05)).toBe(true)
+		-- the walk view's direction, not the first view's (which looked back at the keep, +Z here): FL-0147
+		expect(math.abs(math.sin(controller._target.yaw)) < 1e-6 and math.cos(controller._target.yaw) > 0).toBe(true)
 	end)
 
 	it("V / gamepad Y / the touch View button toggles overview and walk mode", function()
@@ -1038,7 +1156,7 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 			local citizen = THRONE + Vector3.new(30, 0, -20)
 			local function fromTop(point)
 				local p = camera.CFrame:PointToObjectSpace(point)
-				local ndc = (p.Y / -p.Z) / math.tan(math.rad(C.fieldOfView / 2))
+				local ndc = (p.Y / -p.Z) / math.tan(math.rad(O.fieldOfView / 2))
 				return (1 - ndc) / 2
 			end
 			controller._opts.viewportWidth, controller._opts.viewportHeight = 750, 311 -- FORGE-03's phone

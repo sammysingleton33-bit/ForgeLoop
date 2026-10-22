@@ -24,7 +24,14 @@
 		- Pan: WASD / arrow keys, left-mouse drag, one-finger drag, or the left stick. Speed scales
 		  with the zoom, so the screen moves at the same rate whether close or far.
 		- Zoom: mouse wheel, pinch, or zoomBy(); overview.minZoom..maxZoom studs (≈ 40–220, G13.6)
-		  from the focus. The pitch follows the zoom: flatter close up, steeper far out.
+		  from the focus. The pitch follows the zoom: flatter close up, steeper far out. The view starts
+		  at overview.startZoom (70) with overview.fieldOfView (55°), so a citizen stands about 6 % of
+		  the screen's height (the owner's B22 review: at 120 and 70° one was 2 %, 8 pt on a phone).
+		  The first view (FL-0147) centres the yard overview.startAhead (20) studs in front of the
+		  ruler's throne and looks back across it at the keep's front (overview.startTurn, 180°), so
+		  the camera stands over the yard, not above the keep: the village and its working citizens
+		  fill the frame, the keep stands at the top. Later overview entries keep the camera's yaw.
+		  Walk mode and the duel keep Roblox's own field of view (fieldOfView, 70°).
 		- Rotate: Q / E, right-mouse drag, a two-finger twist, or the right stick. Q / E are not bound
 		  in build or edit mode: there FORGE-03's placement and move take Q (cancel) and R / Shift+R
 		  (turn the building), so the view turns with the right mouse button, a twist or the stick.
@@ -133,7 +140,7 @@ Def.ROTATE_KEYS = table.freeze({ [Enum.KeyCode.Q] = -1, [Enum.KeyCode.E] = 1 })
 Def.FALLBACK_BOUNDS = table.freeze({ min = Vector2.new(-1024, -1024), max = Vector2.new(1024, 1024) })
 
 Def.DEFAULTS = table.freeze({
-	fieldOfView = 70,
+	fieldOfView = 70, -- walk mode and the duel (Roblox's own default); the overview has its own
 	follow = table.freeze({
 		minZoom = 10,
 		maxZoom = 70,
@@ -142,7 +149,10 @@ Def.DEFAULTS = table.freeze({
 	overview = table.freeze({
 		minZoom = 40,
 		maxZoom = 220,
-		startZoom = 120,
+		startZoom = 70, -- 42.5° pitch (FORGE-00's 2026-10-19 approval; it was 120)
+		fieldOfView = 55, -- degrees, vertical (it was 70: the narrower view makes citizens read)
+		startAhead = 20, -- studs: the first view centres the yard in front of the throne (FL-0147; it was 40)
+		startTurn = 180, -- degrees from the throne's facing: the first view looks back at the keep (FL-0147)
 		minPitchDeg = 38, -- at minZoom
 		maxPitchDeg = 65, -- at maxZoom
 		zoomStep = 14, -- studs per wheel notch / zoomBy(1)
@@ -157,16 +167,18 @@ Def.DEFAULTS = table.freeze({
 		streamTimeoutSec = 2,
 	}),
 	transitionSec = 0.6,
-	-- conversation focus (G13.8): 25-35 studs from the citizen, the kingdom still visible around
+	-- conversation focus (G13.8): 25-35 studs from the citizen, the kingdom still visible around.
+	-- Tuned for the overview's 55° (it was 30 studs, 6 and 12 at 70°): at 35 the citizen stands where it
+	-- did, about 15 % taller on screen.
 	conversation = table.freeze({
-		zoom = 30,
-		offset = Vector2.new(0, -6), -- focus shift in screen studs (x right, y forward): the citizen above the centre
+		zoom = 35,
+		offset = Vector2.new(0, -5), -- focus shift in screen studs (x right, y forward): the citizen above the centre
 		-- phones (FORGE-03's measured FL-0099 stage tops at 750 x 311: 47 % with short answers, 29-30 %
 		-- with costed or long ones; the HUD stack ends at 26 %): the head goes just under the HUD. At
-		-- zoom 30 and 38° pitch, 12 studs put the head at 28-30 % and the feet at 37 %, so a short
-		-- conversation shows the whole citizen and a long one hides at most the body (the portrait
-		-- shows the face)
-		phoneOffset = Vector2.new(0, -12),
+		-- zoom 35, 38° pitch and 55°, 7.5 studs put the head at about 27 % and the feet at 39 %, so a
+		-- short conversation shows the whole citizen and a long one hides at most the body (the
+		-- portrait shows the face)
+		phoneOffset = Vector2.new(0, -7.5),
 		durationSec = 0.6,
 	}),
 	overviewInBuild = true,
@@ -221,6 +233,17 @@ end
 function Def.ease(t: number): number
 	local x = Def.clamp(t, 0, 1)
 	return x * x * (3 - 2 * x)
+end
+
+-- The first view's focus: `ahead` studs in front of the ruler on the throne (the keep's yard), on its
+-- level ground line, so the village and its citizens fill the centre rather than the keep's roof (D-059,
+-- FL-0147).
+function Def.startFocus(root: CFrame, ahead: number): Vector3
+	local look = Vector3.new(root.LookVector.X, 0, root.LookVector.Z)
+	if look.Magnitude < 1e-3 then
+		return root.Position
+	end
+	return root.Position + look.Unit * ahead
 end
 
 -- Pitch (degrees below the horizon) for a zoom distance: flatter close up, steeper far out.
@@ -321,6 +344,17 @@ local function yawOf(look: Vector3): number
 	return math.atan2(-flat.X, -flat.Z)
 end
 
+-- The first view's yaw (FL-0147): the seated ruler's level facing, turned `turn` degrees to the left
+-- (180: looking back across the yard at the keep's front, so the camera stands over the yard and not
+-- above the keep). Nil for a root facing straight up or down.
+function Def.startYaw(root: CFrame, turn: number): number?
+	local look = Vector3.new(root.LookVector.X, 0, root.LookVector.Z)
+	if look.Magnitude < 1e-3 then
+		return nil
+	end
+	return yawOf(look) + math.rad(turn)
+end
+
 -- The yaw that looks at a citizen's face, so the camera stands in front of them (G13.8 v0.4-g9e).
 -- No usable facing (nil, flat or NaN): `fallback`, the current yaw.
 function Def.conversationYaw(facing: any, fallback: number): number
@@ -411,6 +445,8 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?): any
 		_pinch = 1,
 		_twist = 0,
 		_target = { focus = nil, yaw = 0, zoom = config.overview.startZoom },
+		_startYaw = nil :: number?, -- the first view's yaw, until the overview's entry takes it (FL-0147)
+		_inOverview = false, -- the overview has been entered (_apply) at least once
 		_shown = nil,
 		_blendFrom = nil,
 		_blendT = 1,
@@ -486,10 +522,6 @@ function Controller:start()
 	self:_bindRender()
 	if self._camera == nil then
 		env.log("info", "RulerCameraController: no camera; camera modes are skipped")
-	else
-		pcall(function()
-			self._camera.FieldOfView = self._config.fieldOfView
-		end)
 	end
 	if self._actions == nil or self._userInput == nil then
 		env.log("info", "RulerCameraController: input services unavailable; camera keys and gestures are skipped")
@@ -1113,26 +1145,42 @@ function Controller:_setMode(mode: any): boolean
 	return true
 end
 
+-- The field of view for the current mode: the overview's own (overview.fieldOfView), else Roblox's.
+function Controller:_fieldOfView(): number
+	local overview = self._config.overview
+	if self.mode == "overview" and overview ~= nil and type(overview.fieldOfView) == "number" then
+		return overview.fieldOfView
+	end
+	return self._config.fieldOfView
+end
+
 function Controller:_apply()
 	local overview = self.mode == "overview"
 	self:_bindOverviewKeys(overview)
 	self:_setTouchControls(not overview)
 	local camera = self._camera
+	if camera ~= nil then
+		pcall(function()
+			camera.FieldOfView = self:_fieldOfView()
+		end)
+	end
 	if overview then
 		self._glide = nil -- a glide left from a conversation that ended in walk mode never replays
 		self._talking = nil
 		self._shots = nil
 		local root = self._ruler and self._ruler:getRoot()
 		if self._target.focus == nil and root ~= nil then
-			self:focusOn(root.CFrame.Position)
+			self:_startView(root.CFrame)
 		end
 		if camera ~= nil then
-			self._target.yaw = yawOf(camera.CFrame.LookVector)
+			self._target.yaw = self._startYaw or yawOf(camera.CFrame.LookVector) -- the first view's own
+			self._startYaw = nil
 			self._shown = nil
 			self._blendFrom = camera.CFrame
 			self._blendT = 0
 			camera.CameraType = Enum.CameraType.Scriptable
 		end
+		self._inOverview = true
 	else
 		self._blendFrom = nil
 		self._shots = nil -- leaving the overview ends a scripted pass
@@ -1175,9 +1223,26 @@ function Controller:_onCharacter(character: any)
 	end
 	local root = self._ruler and self._ruler:getRoot()
 	if root ~= nil and self._target.focus == nil then
-		self:focusOn(root.CFrame.Position) -- the throne: the first view is the player's own keep
+		self:_startView(root.CFrame)
 	end
 	self:_applyFollow()
+end
+
+-- The first overview view (FL-0147): the focus in the yard before the throne, the yaw looking back at the
+-- keep. Set before the overview is on screen (the first frame needs a focus), so it never turns in view: the
+-- overview's entry takes the yaw (_apply), or, when the character comes later, it is the target at once.
+function Controller:_startView(root: CFrame)
+	local overview = self._config.overview
+	self:focusOn(Def.startFocus(root, overview.startAhead or 0))
+	local yaw = Def.startYaw(root, overview.startTurn or 0)
+	if yaw == nil then
+		return
+	end
+	if self.mode == "overview" and self._inOverview then
+		self._target.yaw = yaw
+	else
+		self._startYaw = yaw
+	end
 end
 
 function Controller:_onInputMode(mode: string, previous: string)
@@ -1362,7 +1427,7 @@ end
 
 -- A screen-space drag of `pixels` (x right, y down) moves the ground with the pointer.
 function Controller:dragBy(pixels: Vector2)
-	local studsPerPixel = Def.worldPerPixel(self._target.zoom, self._config.fieldOfView, self:_viewportHeight())
+	local studsPerPixel = Def.worldPerPixel(self._target.zoom, self:_fieldOfView(), self:_viewportHeight())
 	self:panBy(Vector2.new(-pixels.X, pixels.Y) * studsPerPixel)
 end
 

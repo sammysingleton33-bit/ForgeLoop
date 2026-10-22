@@ -70,6 +70,39 @@ describe("Layout.reservedAreas: no-build areas (G13.9 v0.4-g9j)", function()
 		expect(found).toBe(true)
 	end)
 
+	it(
+		"keeps 3 studs of free ground around a crop field: no house is placed within 2.5 studs of one (the farm fences)",
+		function()
+			local sim = generate()
+			local def = sim.catalog.buildings.house
+			local refused, accepted = 0, 0
+			for _, field in WORLD.features.fields do
+				local cx, cz, yaw = field.center.X, field.center.Y, field.yaw
+				local hx, hz = field.size.X / 2, field.size.Y / 2
+				for _, identity in KingdomsConfig.identities do
+					local kingdom = sim.kingdoms[identity.id]
+					for _, clear in { 0.5, 1.5, 2.5 } do
+						for _, side in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
+							-- a house `clear` studs outside the field's edge, on one of its four sides, in the field's frame
+							local lx = side[1] * (hx + def.footprint + clear)
+							local lz = side[2] * (hz + def.footprint + clear)
+							local x = cx + lx * math.cos(yaw) + lz * math.sin(yaw)
+							local z = cz - lx * math.sin(yaw) + lz * math.cos(yaw)
+							local fits = sim:_geometry(kingdom, "house", x, z, yaw, nil)
+							if fits then
+								accepted += 1
+							else
+								refused += 1
+							end
+						end
+					end
+				end
+			end
+			expect(refused > 100).toBe(true) -- the probe covered the fields
+			expect(accepted).toBe(0) -- before the gap, 4 of these spots took a house (and the fence's collider ended up inside it)
+		end
+	)
+
 	it("covers the spawn point, the avenue and the cross street of every plot, and not the yard or the keep", function()
 		for _, identity in KingdomsConfig.identities do
 			local kid = identity.id
