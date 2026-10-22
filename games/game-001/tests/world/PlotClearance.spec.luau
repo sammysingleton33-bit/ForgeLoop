@@ -121,6 +121,16 @@ local function violations(items: { any }): { string }
 					)
 				end
 			end
+			-- the plots' village lanes (features.paths: ground only, not no-build roads) are kept clear like a road
+			for i, lane in Layout.features.paths or {} do
+				local gap = if natural then MARGIN else 0
+				if WorldPlan.distToPolyline(item.x, item.z, lane.points) < lane.width / 2 + r + gap then
+					table.insert(
+						bad,
+						`{item.assetId} ({item.feature}) at ({math.floor(item.x)}, {math.floor(item.z)}) near lane {i}`
+					)
+				end
+			end
 		end
 	end
 	return bad
@@ -131,7 +141,13 @@ local function itemsOf(placements: { any }): { any }
 	for _, p in placements do
 		table.insert(
 			out,
-			{ assetId = p.assetId, x = p.cframe.Position.X, z = p.cframe.Position.Z, feature = p.feature, scale = p.scale }
+			{
+				assetId = p.assetId,
+				x = p.cframe.Position.X,
+				z = p.cframe.Position.Z,
+				feature = p.feature,
+				scale = p.scale,
+			}
 		)
 	end
 	return out
@@ -247,12 +263,14 @@ describe("Plot clearance (user playtest, farm areas)", function()
 				return { assetId = id, cframe = CFrame.new(at), feature = feature, scale = scale }
 			end
 			local hx, hz = field.size.X / 2, field.size.Y / 2
-			for _, extra in {
-				onField(0, 0, "tree_oak_03", "forest"),
-				onField(hx + 4 + 5.2 - 1, 0, "bush_02", "bush"),
-				onField(0, -hz - 4 - 3.4 + 1, "plant_flowers_02", "flowers", 1.2),
-				onField(0, hz + 2, "rock_boulder_m_02", "rocks"),
-			} do
+			for _, extra in
+				{
+					onField(0, 0, "tree_oak_03", "forest"),
+					onField(hx + 4 + 5.2 - 1, 0, "bush_02", "bush"),
+					onField(0, -hz - 4 - 3.4 + 1, "plant_flowers_02", "flowers", 1.2),
+					onField(0, hz + 2, "rock_boulder_m_02", "rocks"),
+				}
+			do
 				table.insert(plan, extra)
 			end
 			local cleared = WorldPlan.clear(Layout, plan) -- clearance only, no trim
@@ -446,12 +464,12 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		for _, model in svc:getRoot().Props:GetChildren() do
 			local pos = model.PrimaryPart.CFrame.Position
 			table.insert(items, {
-			assetId = model.Name,
-			x = pos.X,
-			z = pos.Z,
-			feature = model:GetAttribute("Feature"),
-			scale = model:GetAttribute("Scale"), -- WorldService scales the built prop: the clearance reckoned with it
-		})
+				assetId = model.Name,
+				x = pos.X,
+				z = pos.Z,
+				feature = model:GetAttribute("Feature"),
+				scale = model:GetAttribute("Scale"), -- WorldService scales the built prop: the clearance reckoned with it
+			})
 		end
 		expect(#items).toBe(svc.stats.props)
 		expect(#items).toBeGreaterThan(100)

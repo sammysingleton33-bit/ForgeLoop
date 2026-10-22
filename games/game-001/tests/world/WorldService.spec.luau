@@ -388,29 +388,29 @@ describe("Dressing density knob (D-047)", function()
 		function()
 			-- re-pin only when the world itself changes on purpose: the generated plan, then the cleared plan
 			local plan = WorldPlan.plan(Layout, { crimson = true })
-			expect(#plan).toBe(618)
-			expect(fingerprint(plan)).toBe(1224127508) -- main d78d9cb's props, before the plot clearance and the trim; re-pinned for FL-0127 (three outposts: decor keeps radius + 14 off each, and the four road spurs; 618 placements before and after) together with FL-0072 (the Crown Arena's footprint is reserved ground: the generator keeps decor 4 studs off it, which re-seated 37 of 618 placements: 20 lone trees, 5 bushes, 12 rocks, as the PRNG stream shifts after the first rejected spot; forests, crops and plot dressing are unchanged) and before that for FL-0124: the plan keeps decor 9 studs off every world node, so moving the 28 nodes re-seated 12 of 645 placements (all flowers; no tree, bush or rock changed; farthest 51 studs from a moved node)
+			expect(#plan).toBe(510)
+			expect(fingerprint(plan)).toBe(2036169873) -- re-pinned for FORGE-02 visual pass 1 (nature in clumps: WorldPlan.generateNature grows stands, tree lines, groves, rock groups, bush clumps and flower drifts in place of the even scatter; 618 placements -> 510: stands keep their Layout counts at 0.8, lone trees, bushes and rocks are fewer and grouped; placements carry scale and tint, which this fingerprint leaves out: NatureClumps.spec pins those). Before that: main d78d9cb's props, re-pinned for FL-0127 (three outposts), FL-0072 (the arena's footprint) and FL-0124 (decor keeps 9 studs off every world node)
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
-			expect(#one).toBe(615)
-			expect(fingerprint(one)).toBe(1319973902)
+			expect(#one).toBe(510)
+			expect(fingerprint(one)).toBe(1209447030)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
-			expect(#all).toBe(642)
-			expect(fingerprint(all)).toBe(1544930042)
+			expect(#all).toBe(537)
+			expect(fingerprint(all)).toBe(1216474694)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
 			svc:start()
 			env.mock:advance(30)
 			expect(svc.stats.error).toBeNil()
-			expect(svc.stats.props).toBe(615)
+			expect(svc.stats.props).toBe(510)
 			-- the dressing, the arena counted apart: 8,271 props and nodes as drawn before FL-0136 phase 3 (8,309 on main with the outposts; the arena keep-out
 			-- re-seats decor) + 76 = the resource markers, 2 parts on each of the 38 nodes (tests/world/KitNodeMarker.spec). The placements themselves
 			-- are unchanged (the fingerprints above); with the imported meshes the world also gets the mesh-only dressing (KitEnvDressing.spec).
-			expect(svc.stats.parts - svc.stats.arenaParts).toBe(8347)
+			expect(svc.stats.parts - svc.stats.arenaParts).toBe(7388) -- 8,347 before the nature pass: the untrimmed valley is 959 parts lighter (fewer, better-placed trees)
 			-- the terrain too: one floor disc per stand, fitted to its trees (WorldPlan.forestFloors): never beyond the old full disc
 			-- (the stand's centre, 1.05 x its radius) and within 0.2 of the radius of the stand's centre
 			local forests = Layout.features.forests
@@ -554,7 +554,9 @@ describe("Dressing density knob (D-047)", function()
 		local trees = {}
 		for _, density in { "shipped", "full" } do
 			trees[density] = {}
-			for _, p in WorldPlan.props(Layout, { crimson = true }, if density == "full" then WorldPlan.FULL_DENSITY else nil) do
+			for _, p in
+				WorldPlan.props(Layout, { crimson = true }, if density == "full" then WorldPlan.FULL_DENSITY else nil)
+			do
 				if p.feature == "forest" then
 					table.insert(trees[density], Vector2.new(p.cframe.Position.X, p.cframe.Position.Z))
 				end

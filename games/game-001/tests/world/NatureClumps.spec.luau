@@ -165,13 +165,22 @@ local function violations(placements: { any }, scaleOf: ((any) -> number)?): { s
 			local r = if scaleOf then WorldPlan.footprintRadius(p.assetId) * scaleOf(p) else reach(p)
 			for _, rect in rects do
 				if rectDistance(rect, q.X, q.Z) < r + 4 then
-					table.insert(bad, `{p.assetId} ({p.feature}) at ({math.floor(q.X)}, {math.floor(q.Z)}) near reserved ground`)
+					table.insert(
+						bad,
+						`{p.assetId} ({p.feature}) at ({math.floor(q.X)}, {math.floor(q.Z)}) near reserved ground`
+					)
 					break
 				end
 			end
 			for _, road in Layout.features.roads do
 				if WorldPlan.distToPolyline(q.X, q.Z, road.points) < road.width / 2 + r + 4 then
 					table.insert(bad, `{p.assetId} ({p.feature}) at ({math.floor(q.X)}, {math.floor(q.Z)}) near a road`)
+					break
+				end
+			end
+			for _, lane in Layout.features.paths or {} do
+				if WorldPlan.distToPolyline(q.X, q.Z, lane.points) < lane.width / 2 + r + 4 then
+					table.insert(bad, `{p.assetId} ({p.feature}) at ({math.floor(q.X)}, {math.floor(q.Z)}) near a lane`)
 					break
 				end
 			end
@@ -366,54 +375,61 @@ describe("Every placement varies in rotation, size and foliage colour", function
 		expect(kinds).toBe(5)
 	end)
 
-	it("recolours green foliage only, within about 10 % in value, and leaves trunks, rocks and blossoms alone", function()
-		local leaf = Color3.fromRGB(106, 168, 62)
-		local warm, cool = WorldPlan.tintColor(leaf, 1), WorldPlan.tintColor(leaf, -1)
-		expect(warm.R).toBeGreaterThan(leaf.R)
-		expect(warm.B).toBeLessThan(leaf.B)
-		expect(cool.R).toBeLessThan(leaf.R)
-		expect(cool.B).toBeGreaterThan(leaf.B)
-		expect(math.abs(warm.G - leaf.G)).toBeLessThan(0.1)
-		expect(WorldPlan.tintColor(leaf, 0)).toBe(leaf)
-		local trunk, rock, bloom = Color3.fromRGB(110, 80, 52), Color3.fromRGB(128, 124, 118), Color3.fromRGB(217, 52, 58)
-		for _, c in { trunk, rock, bloom } do
-			expect(WorldPlan.tintColor(c, 1)).toBe(c)
-			expect(WorldPlan.tintColor(c, -1)).toBe(c)
-		end
-		-- a built tree keeps its part count and gains no part when tinted
-		local model = Kit.prop("tree_oak_03")
-		local before = partsOf("tree_oak_03")
-		WorldPlan.tintModel(model, 1)
-		local after = 0
-		local moved = 0
-		local reference = Kit.prop("tree_oak_03")
-		local refParts = {}
-		for _, d in reference:GetDescendants() do
-			if d:IsA("BasePart") then
-				table.insert(refParts, d)
+	it(
+		"recolours green foliage only, within about 10 % in value, and leaves trunks, rocks and blossoms alone",
+		function()
+			local leaf = Color3.fromRGB(106, 168, 62)
+			local warm, cool = WorldPlan.tintColor(leaf, 1), WorldPlan.tintColor(leaf, -1)
+			expect(warm.R).toBeGreaterThan(leaf.R)
+			expect(warm.B).toBeLessThan(leaf.B)
+			expect(cool.R).toBeLessThan(leaf.R)
+			expect(cool.B).toBeGreaterThan(leaf.B)
+			expect(math.abs(warm.G - leaf.G)).toBeLessThan(0.1)
+			expect(WorldPlan.tintColor(leaf, 0)).toBe(leaf)
+			local trunk, rock, bloom =
+				Color3.fromRGB(110, 80, 52), Color3.fromRGB(128, 124, 118), Color3.fromRGB(217, 52, 58)
+			for _, c in { trunk, rock, bloom } do
+				expect(WorldPlan.tintColor(c, 1)).toBe(c)
+				expect(WorldPlan.tintColor(c, -1)).toBe(c)
 			end
-		end
-		local i = 0
-		for _, d in model:GetDescendants() do
-			if d:IsA("BasePart") then
-				after += 1
-				i += 1
-				if d.Color ~= refParts[i].Color then
-					moved += 1
+			-- a built tree keeps its part count and gains no part when tinted
+			local model = Kit.prop("tree_oak_03")
+			local before = partsOf("tree_oak_03")
+			WorldPlan.tintModel(model, 1)
+			local after = 0
+			local moved = 0
+			local reference = Kit.prop("tree_oak_03")
+			local refParts = {}
+			for _, d in reference:GetDescendants() do
+				if d:IsA("BasePart") then
+					table.insert(refParts, d)
 				end
 			end
+			local i = 0
+			for _, d in model:GetDescendants() do
+				if d:IsA("BasePart") then
+					after += 1
+					i += 1
+					if d.Color ~= refParts[i].Color then
+						moved += 1
+					end
+				end
+			end
+			expect(after).toBe(before)
+			expect(moved).toBeGreaterThan(0)
 		end
-		expect(after).toBe(before)
-		expect(moved).toBeGreaterThan(0)
-	end)
+	)
 end)
 
 describe("Scaled footprints stay on the clearance's side of the margin", function()
-	it("keeps every natural placement its scaled footprint plus 4 studs off the plots' fields, buildings, slots, zones and roads", function()
-		for _, density in { FULL, nil } do
-			expect(table.concat(violations(WorldPlan.props(Layout, ALL, density)), "; ")).toBe("")
+	it(
+		"keeps every natural placement its scaled footprint plus 4 studs off the plots' fields, buildings, slots, zones and roads",
+		function()
+			for _, density in { FULL, nil } do
+				expect(table.concat(violations(WorldPlan.props(Layout, ALL, density)), "; ")).toBe("")
+			end
 		end
-	end)
+	)
 
 	it("needs no clearance: the generator's own nature is already legal (clear() changes none of it)", function()
 		local plan = WorldPlan.plan(Layout, ALL)
@@ -436,37 +452,42 @@ describe("Scaled footprints stay on the clearance's side of the margin", functio
 		end
 	end)
 
-	it("MUTANT: the same tree is kept at scale 1 and cleared at scale 1.25 when its canopy crosses the margin", function()
-		local r = WorldPlan.footprintRadius("tree_oak_01")
-		-- an oak whose canopy clears a field's margin at scale 1 by half a stud (and every other reserved area and road), found over
-		-- the 12 fields' four sides
-		local plain, big
-		for _, field in Layout.features.fields do
-			local cf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
-			for _, side in { { 0, -1 }, { 0, 1 }, { -1, 0 }, { 1, 0 } } do
-				local reachOut = if side[1] ~= 0 then field.size.X / 2 else field.size.Y / 2
-				local at = cf:PointToWorldSpace(Vector3.new(side[1] * (reachOut + r + 4.5), 0, side[2] * (reachOut + r + 4.5)))
-				local a = { assetId = "tree_oak_01", cframe = CFrame.new(at), feature = "lone_tree" }
-				local b = { assetId = "tree_oak_01", cframe = CFrame.new(at), feature = "lone_tree", scale = 1.25 }
-				if not plain and #violations({ a }) == 0 and #violations({ b }) == 1 then
-					plain, big = a, b
+	it(
+		"MUTANT: the same tree is kept at scale 1 and cleared at scale 1.25 when its canopy crosses the margin",
+		function()
+			local r = WorldPlan.footprintRadius("tree_oak_01")
+			-- an oak whose canopy clears a field's margin at scale 1 by half a stud (and every other reserved area and road), found over
+			-- the 12 fields' four sides
+			local plain, big
+			for _, field in Layout.features.fields do
+				local cf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
+				for _, side in { { 0, -1 }, { 0, 1 }, { -1, 0 }, { 1, 0 } } do
+					local reachOut = if side[1] ~= 0 then field.size.X / 2 else field.size.Y / 2
+					local at = cf:PointToWorldSpace(
+						Vector3.new(side[1] * (reachOut + r + 4.5), 0, side[2] * (reachOut + r + 4.5))
+					)
+					local a = { assetId = "tree_oak_01", cframe = CFrame.new(at), feature = "lone_tree" }
+					local b = { assetId = "tree_oak_01", cframe = CFrame.new(at), feature = "lone_tree", scale = 1.25 }
+					if not plain and #violations({ a }) == 0 and #violations({ b }) == 1 then
+						plain, big = a, b
+					end
 				end
 			end
+			expect(plain).never.toBeNil() -- the checker reckons with the scale: legal at 1, not at 1.25
+			plain, big = plain :: any, big :: any
+			local kept = WorldPlan.clear(Layout, { plain })
+			expect(#kept).toBe(1)
+			expect((kept[1].cframe.Position - plain.cframe.Position).Magnitude).toBeLessThan(1e-6)
+			local moved = WorldPlan.clear(Layout, { big })
+			-- the scaled tree is moved clear (within CLEAR.natureNudge) or removed, never left where it stands
+			expect(#moved <= 1).toBe(true)
+			for _, p in moved do
+				expect((p.cframe.Position - big.cframe.Position).Magnitude).toBeGreaterThan(0.5)
+				expect(p.scale).toBe(1.25)
+				expect(#violations({ p })).toBe(0)
+			end
 		end
-		expect(plain).never.toBeNil() -- the checker reckons with the scale: legal at 1, not at 1.25
-		plain, big = plain :: any, big :: any
-		local kept = WorldPlan.clear(Layout, { plain })
-		expect(#kept).toBe(1)
-		expect((kept[1].cframe.Position - plain.cframe.Position).Magnitude).toBeLessThan(1e-6)
-		local moved = WorldPlan.clear(Layout, { big })
-		-- the scaled tree is moved clear (within CLEAR.natureNudge) or removed, never left where it stands
-		expect(#moved <= 1).toBe(true)
-		for _, p in moved do
-			expect((p.cframe.Position - big.cframe.Position).Magnitude).toBeGreaterThan(0.5)
-			expect(p.scale).toBe(1.25)
-			expect(#violations({ p })).toBe(0)
-		end
-	end)
+	)
 end)
 
 describe("Rocks sit in groups at edges", function()
@@ -616,28 +637,62 @@ describe("Tree lines, groves, hedges and drifts", function()
 		expect(road).toBeGreaterThanOrEqual(6)
 	end)
 
-	it("dresses the start views: the fringe of every plot gets trees, bushes and flowers where the camera looks", function()
-		for _, k in KINGDOMS do
-			local spawn = Layout.plots[k].spawn.Position
-			local trees, low = 0, 0
-			for _, p in plan do
-				if NATURAL[p.feature] then
-					local q = p.cframe.Position
-					if WorldPlan.viewWeight(Layout, q.X, q.Z) >= 3 then
-						local near = (Vector2.new(q.X, q.Z) - Vector2.new(spawn.X, spawn.Z)).Magnitude < 260
-						if near then
-							if p.feature == "lone_tree" or p.feature == "forest" then
-								trees += 1
-							else
-								low += 1
+	it(
+		"dresses the start views: the fringe of every plot gets trees, bushes and flowers where the camera looks",
+		function()
+			for _, k in KINGDOMS do
+				local spawn = Layout.plots[k].spawn.Position
+				local trees, low = 0, 0
+				for _, p in plan do
+					if NATURAL[p.feature] then
+						local q = p.cframe.Position
+						if WorldPlan.viewWeight(Layout, q.X, q.Z) >= 3 then
+							local near = (Vector2.new(q.X, q.Z) - Vector2.new(spawn.X, spawn.Z)).Magnitude < 260
+							if near then
+								if p.feature == "lone_tree" or p.feature == "forest" then
+									trees += 1
+								else
+									low += 1
+								end
 							end
 						end
 					end
 				end
+				expect(trees).toBeGreaterThanOrEqual(6)
+				expect(low).toBeGreaterThanOrEqual(6)
 			end
-			expect(trees).toBeGreaterThanOrEqual(6)
-			expect(low).toBeGreaterThanOrEqual(6)
 		end
+	)
+
+	it("hedges the crop fields: bushes, flowers and birches stand along their outer sides", function()
+		local function near(list: { any }): number
+			local n = 0
+			for _, p in list do
+				if p.feature == "bush" or p.feature == "flowers" or p.feature == "lone_tree" then
+					local q = p.cframe.Position
+					for _, field in Layout.features.fields do
+						local cf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
+						if rectDistance({ cf = cf, half = field.size / 2 }, q.X, q.Z) < 24 then
+							n += 1
+							break
+						end
+					end
+				end
+			end
+			return n
+		end
+		-- measured: 63 placements within 24 studs of a field's edge (25 before the pass: the old scatter's flowers by the plots)
+		expect(near(plan)).toBeGreaterThanOrEqual(45)
+		local rng = WorldPlan._prng(2468)
+		local b = Layout.features.bounds
+		local scattered = {}
+		while #scattered < 90 do -- MUTANT: 90 bushes sown evenly over the valley are not by the fields
+			table.insert(scattered, {
+				feature = "bush",
+				cframe = CFrame.new(rng.range(b.min.X + 40, b.max.X - 40), 0, rng.range(b.min.Y + 40, b.max.Y - 40)),
+			})
+		end
+		expect(near(scattered)).toBeLessThan(25)
 	end)
 
 	it("weights the camera's ground: the start view 3, the zoomed-out view 1.6, elsewhere 0.35", function()
@@ -656,16 +711,19 @@ describe("The same world every time, and no part more than before (D-047)", func
 		expect(fingerprint(a)).toBe(fingerprint(b))
 	end)
 
-	it("costs no more parts at the shipped density than the scatter it replaces (4,762 of trees, bushes, rocks and flowers)", function()
-		local parts = 0
-		for _, p in WorldPlan.props(Layout, { crimson = true }) do
-			if NATURAL[p.feature] then
-				parts += partsOf(p.assetId)
+	it(
+		"costs no more parts at the shipped density than the scatter it replaces (4,762 of trees, bushes, rocks and flowers; 4,443 now)",
+		function()
+			local parts = 0
+			for _, p in WorldPlan.props(Layout, { crimson = true }) do
+				if NATURAL[p.feature] then
+					parts += partsOf(p.assetId)
+				end
 			end
+			-- measured on the starting tree (forest 3,177 + lone trees 526 + bushes 450 + rocks 330 + flowers 279)
+			expect(parts).toBeLessThanOrEqual(4762)
 		end
-		-- measured on the starting tree (forest 3,177 + lone trees 526 + bushes 450 + rocks 330 + flowers 279)
-		expect(parts).toBeLessThanOrEqual(4762)
-	end)
+	)
 end)
 
 describe("WorldService scales and tints what the plan says", function()

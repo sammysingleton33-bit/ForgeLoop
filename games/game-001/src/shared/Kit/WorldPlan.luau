@@ -6,21 +6,26 @@
 
 	API
 		WorldPlan.terrainOps(layout, density?) -> { Op } -- in execution order (forest floors follow the trim)
-		WorldPlan.forestFloors(layout, density?) -> { { x, z, r } } -- each forest stand's leafy floor circle
+		WorldPlan.forestFloors(layout, density?) -> { { x, z, r } } -- each forest stand's leafy floor circle, fitted to its trees
 		WorldPlan.props(layout, dressed: { [string]: boolean }?, density: { forest: number?, props: number? }?)
 			-> { Placement }                           -- trim(clear(plan(...)), density)
-		WorldPlan.plan(layout, dressed?) -> { Placement }  -- the generated dressing, before clearance
+		WorldPlan.plan(layout, dressed?) -> { Placement }  -- the generated dressing, before clearance: the nature is grown in clumps
+		                                                   -- (generateNature, below), already legal under clear()
 		WorldPlan.clear(layout, plan) -> { Placement }     -- drops dressing on the plots' reserved ground (CLEAR)
 		WorldPlan.reservedRects(layout), WorldPlan.rectDistance(rect, x, z), WorldPlan.footprintRadius(assetId)
 		WorldPlan.trim(layout, plan, density?) -> { Placement }   -- the density pass props() ends with
 		WorldPlan.density(layout, override?) -> { forest, props } -- effective knob values, clamped to 0..1
 		WorldPlan.unseen(layout, x, z) -> number                  -- trim score (studs; 0 = never trimmed)
 		WorldPlan.showcase(layout, x, z) -> boolean               -- the plot showcase: never thinned
+		WorldPlan.viewWeight(layout, x, z) -> number      -- how much a ground point matters to the ruler camera: 3 start view, 1.6 zoomed out, 0.35
+		WorldPlan.tintColor(color, tint), WorldPlan.tintModel(model, tint) -- the foliage colour shift a placement carries
 		WorldPlan.groundHeight(layout, x, z) -> number  -- analytic surface height (studs)
 		WorldPlan.voxels(op) -> number                   -- 4-stud voxels an op touches (frame budget)
 	Op = { kind: "Block" | "Ball" | "Cylinder", material: string, cframe: CFrame, size: Vector3?,
 	       radius: number?, height: number?, feature: string }
-	Placement = { assetId: string, cframe: CFrame, feature: string }
+	Placement = { assetId: string, cframe: CFrame, feature: string, scale: number?, tint: number? }
+		scale: size against the asset's own (nil = 1; WorldService scales the built prop about its pivot, the clearance and the trim reckon with
+		it); tint: foliage colour shift -1..1 in steps of 0.5 (nil = 0).
 	Dressing density (D-047, FL-0116): the knob is world/Layout `features.density` ({ forest, props }, the share
 	of each kind kept; WorldPlan.FULL_DENSITY = 1 / 1 rebuilds the valley exactly as plan() + clear() make it).
 	trim() removes, per kind, the least-seen share: farthest from the plot frames, approach roads and heartland
@@ -30,7 +35,8 @@
 	thinned stand by stand, radially (the outermost trees first, all around), and only the stands that neither
 	reach the showcase nor sit in view; each thinned stand's ground disc follows it (forestFloors).
 	Plot clearance (user playtest 2026-10-13): no tree, bush, rock or flower within CLEAR.margin (4) studs of a
-	farm field, a starting building's largest Kit footprint, a build slot, a plot build zone or a road, measured
+	farm field, a starting building's largest Kit footprint, a build slot, a plot build zone, a road or a village lane
+	(`features.paths`: ground only, not a no-build road; the same rule as a road), measured
 	with each prop's footprint and canopy radius (CLEAR.radius). Blocked trees, bushes and flowers move to the
 	nearest legal spot within CLEAR.natureNudge studs instead of going; boulders against a trunk or bush go.
 	Hand-placed kingdom dressing that sits inside a building, slot or field moves too (CLEAR.nudge,
@@ -107,6 +113,25 @@ local function distToPolyline(px: number, pz: number, pts: { Vector2 }): number
 	return best
 end
 WorldPlan.distToPolyline = distToPolyline
+
+-- distToPolyline(...) < limit, with a cached bounding box of the line to turn most far-off points away without walking its segments
+-- (the clearance asks this of every road and lane for every candidate the generator tries)
+local boxCache: { [any]: { number } } = setmetatable({}, { __mode = "k" }) :: any
+local function polyWithin(pts: { Vector2 }, x: number, z: number, limit: number): boolean
+	local box = boxCache[pts]
+	if not box then
+		box = { math.huge, -math.huge, math.huge, -math.huge }
+		for _, p in pts do
+			box[1], box[2] = math.min(box[1], p.X), math.max(box[2], p.X)
+			box[3], box[4] = math.min(box[3], p.Y), math.max(box[4], p.Y)
+		end
+		boxCache[pts] = box
+	end
+	if x < box[1] - limit or x > box[2] + limit or z < box[3] - limit or z > box[4] + limit then
+		return false
+	end
+	return distToPolyline(x, z, pts) < limit
+end
 
 -- CFrame at (x, y, z) whose local +Z runs along (dx, dz).
 local function along(x: number, y: number, z: number, dx: number, dz: number): CFrame
@@ -381,7 +406,12 @@ local function staticClearance(layout: any): (number, number, number) -> boolean
 			return false
 		end
 		for _, road in f.roads do
-			if distToPolyline(x, z, road.points) < road.width / 2 + 3 + r then
+			if polyWithin(road.points, x, z, road.width / 2 + 3 + r) then
+				return false
+			end
+		end
+		for _, lane in f.paths or {} do
+			if polyWithin(lane.points, x, z, lane.width / 2 + 3 + r) then
 				return false
 			end
 		end
@@ -422,7 +452,7 @@ WorldPlan.CLEAR = table.freeze({
 		farm_haystack = 4.4,
 	}),
 	fallbackRadius = 15, -- an asset family missing from `radius`
-	nudge = 8, -- hand-placed dressing on reserved ground moves to the nearest legal spot within this many studs
+	nudge = 14, -- hand-placed dressing on reserved ground moves to the nearest legal spot within this many studs (8 until the village lanes: the crimson cart sits on one)
 	wallGap = 1.5, -- ... and keeps this much open ground between its outline and a building or slot wall
 	natureNudge = 12, -- blocked trees, bushes and flowers move to the nearest legal spot within this many studs
 	trunk = 3, -- a boulder keeps its outline this far from a tree trunk (the plan spaces props by scatter radii)
@@ -489,7 +519,11 @@ local function blocked(layout: any, rects: { any }, natural: boolean, r: number,
 	for _, rect in rects do
 		if natural or rect.kind ~= "zone" then
 			local m = if natural or rect.kind == "field" then margin else WorldPlan.CLEAR.wallGap
-			if WorldPlan.rectDistance(rect, x, z) < r + m then
+			-- a rectangle lies within hypot(half) of its centre: farther than that plus r + m it cannot block (skips the CFrame maths)
+			local centre = rect.cf.Position
+			local reach = r + m + math.sqrt(rect.half.X * rect.half.X + rect.half.Y * rect.half.Y)
+			local dx, dz = x - centre.X, z - centre.Z
+			if dx * dx + dz * dz < reach * reach and WorldPlan.rectDistance(rect, x, z) < r + m then
 				return true
 			end
 		end
@@ -500,7 +534,13 @@ local function blocked(layout: any, rects: { any }, natural: boolean, r: number,
 	end
 	local m = if natural then margin else 0
 	for _, road in layout.features.roads do
-		if distToPolyline(x, z, road.points) < road.width / 2 + r + m then
+		if polyWithin(road.points, x, z, road.width / 2 + r + m) then
+			return true
+		end
+	end
+	-- the plots' village lanes (features.paths: ground only, not no-build roads): the same rule as a road
+	for _, lane in layout.features.paths or {} do
+		if polyWithin(lane.points, x, z, lane.width / 2 + r + m) then
 			return true
 		end
 	end
@@ -835,12 +875,17 @@ local function pickWeighted(rng: any, list: { { any } }): any
 	return list[#list][1]
 end
 
-local ROCK_CLASSES = { "s", "m", "l" }
 -- Nature that plan() hands out is bounded by these: see the header of this section.
 WorldPlan.NATURE = table.freeze({
 	scale = table.freeze({ lo = 0.86, hi = 1.24 }), -- trees and bushes: a placement's size against the asset's own
-	rockScale = table.freeze({ s = table.freeze({ 1.0, 1.4 }), m = table.freeze({ 0.9, 1.25 }), l = table.freeze({ 0.82, 1.12 }) }),
+	rockScale = table.freeze({
+		s = table.freeze({ 1.0, 1.4 }),
+		m = table.freeze({ 0.9, 1.25 }),
+		l = table.freeze({ 0.82, 1.12 }),
+	}),
+	fringeSeeds = 4, -- groves and hedges on the fringe of each plot
 	openGroves = 8, -- loose groves across the open land
+	fieldHedge = 0.45, -- chance that an outer side of a crop field gets a hedge
 	standShare = 0.8, -- of a Layout stand's `count` the generator plants (the D-047 part budget decides; dense cores read as a forest with fewer)
 	tintSteps = 2, -- tint is a multiple of 1/tintSteps in -1..1 (5 steps): WorldPlan.tintColor shifts foliage by it
 })
@@ -977,7 +1022,10 @@ local function generateNature(layout: any): { Placement }
 		local first = pickWeighted(rng, { { "l", 0.3 }, { "m", 0.45 }, { "s", 0.25 } })
 		local placed, anchorF = 0, 0
 		for i = 1, count do
-			local class = if i == 1 then first elseif first == "l" then pickWeighted(rng, { { "m", 0.5 }, { "s", 0.5 } }) else "s"
+			local class = if i == 1
+				then first
+				elseif first == "l" then pickWeighted(rng, { { "m", 0.5 }, { "s", 0.5 } })
+				else "s"
 			local range = N.rockScale[class]
 			local id = rockId(rng, class)
 			for attempt = 1, 8 do
@@ -985,10 +1033,10 @@ local function generateNature(layout: any): { Placement }
 				if i == 1 and attempt > 1 then
 					px, pz = x + rng.range(-5, 5), z + rng.range(-5, 5)
 				elseif i > 1 then
-					local along = rng.range(-1, 1)
+					local lengthwise = rng.range(-1, 1)
 					local across = rng.range(-0.6, 0.6)
 					local reach = 0.62 * (anchorF + WorldPlan.footprintRadius(id) * range[1]) + rng.range(0, 5)
-					px, pz = x + (dx * along - dz * across) * reach, z + (dz * along + dx * across) * reach
+					px, pz = x + (dx * lengthwise - dz * across) * reach, z + (dz * lengthwise + dx * across) * reach
 				end
 				local fr = try(rng, id, "rock", px, pz, "rocks", 0, range[1], range[2], false)
 				if fr then
@@ -1064,7 +1112,15 @@ local function generateNature(layout: any): { Placement }
 				table.insert(mix, { sp, if sp == lead then 0.7 else 0.3 / (#species - 1) })
 			end
 		end
-		local function grow(cx: number, cz: number, sigma: number, count: number, k2: number, weights: { { any } }, maxR: number)
+		local function grow(
+			cx: number,
+			cz: number,
+			sigma: number,
+			count: number,
+			k2: number,
+			weights: { { any } },
+			maxR: number
+		)
 			local placed, tries = 0, 0
 			while placed < count and tries < count * 30 do
 				tries += 1
@@ -1091,7 +1147,10 @@ local function generateNature(layout: any): { Placement }
 			local d = math.min(rng.range(0.42, 0.62) * R, 0.78 * R - (core - c).Magnitude)
 			local sx, sz = core.X + math.cos(a) * d, core.Y + math.sin(a) * d
 			local dominant = species[rng.int(1, #species)]
-			local satMix = { { dominant, 0.85 }, { if #species == 1 then "tree_birch" else species[1 + rng.int(0, #species - 1)], 0.15 } }
+			local satMix = {
+				{ dominant, 0.85 },
+				{ if #species == 1 then "tree_birch" else species[1 + rng.int(0, #species - 1)], 0.15 },
+			}
 			local each = math.floor(rest / satellites)
 			local share = if i < satellites then each else rest - each * (satellites - 1)
 			grow(sx, sz, rng.range(0.085, 0.12) * R, share, 0.52, satMix, 0.93 * R)
@@ -1150,7 +1209,12 @@ local function generateNature(layout: any): { Placement }
 						local off = (f.river.width / 2 + 10 + 6 + rng.range(0, 9)) * side
 						local x, z = px - tz * off, pz + tx * off
 						if rng.next() > 0.18 then
-							local sp = pickWeighted(rng, if birchy then { { "tree_birch", 0.6 }, { "tree_oak", 0.4 } } else { { "tree_oak", 0.6 }, { "tree_birch", 0.4 } })
+							local sp = pickWeighted(
+								rng,
+								if birchy
+									then { { "tree_birch", 0.6 }, { "tree_oak", 0.4 } }
+									else { { "tree_oak", 0.6 }, { "tree_birch", 0.4 } }
+							)
 							tryTree(rng, sp, x, z, "lone_tree", 0.62)
 						end
 						if rng.next() < 0.45 then
@@ -1240,6 +1304,11 @@ local function generateNature(layout: any): { Placement }
 		for ki, kingdom in KINGDOM_ORDER do
 			local keep = keeps[ki]
 			local sites = {}
+			-- the start view's far edge: trees just beyond it show their crowns along the top of the frame (a backdrop), so sites in
+			-- that band count 1.7 times as much
+			local spawn = layout.plots[kingdom].spawn.Position
+			local frame = groundPolygon(spawn, WorldPlan.VIEW.default.zoom, WorldPlan.VIEW.default.fov)
+			local farZ = frame[1].Y
 			for _ = 1, 160 do
 				local a, d = rng.range(0, TWO_PI), rng.range(60, 290)
 				local x, z = keep.X + math.cos(a) * d, keep.Z + math.sin(a) * d
@@ -1248,12 +1317,19 @@ local function generateNature(layout: any): { Placement }
 					reserved = math.min(reserved, WorldPlan.rectDistance(rect, x, z))
 				end
 				if reserved <= 52 and legal("tree", 8, x, z, 0.62) then
-					table.insert(sites, { x = x, z = z, w = WorldPlan.viewWeight(layout, x, z) * (1 + (30 - math.min(reserved, 30)) / 30) })
+					local backdrop = z <= farZ + 40 and z >= farZ - 110 and math.abs(x - spawn.X) <= 180
+					table.insert(sites, {
+						x = x,
+						z = z,
+						w = WorldPlan.viewWeight(layout, x, z)
+							* (1 + (30 - math.min(reserved, 30)) / 30)
+							* (if backdrop then 1.7 else 1),
+					})
 				end
 			end
 			local taken = 0
 			for _, site in ranked(rng, sites) do
-				if taken >= 3 then
+				if taken >= N.fringeSeeds then
 					break
 				end
 				local near = false
@@ -1266,7 +1342,7 @@ local function generateNature(layout: any): { Placement }
 					taken += 1
 					table.insert(fringeSeeds, { x = site.x, z = site.z })
 					if rng.next() < 0.75 then
-						grove(rng, site.x, site.z, rng.int(4, 7))
+						grove(rng, site.x, site.z, rng.int(3, 6))
 					else
 						-- a hedge: a line of bushes with a small tree here and there
 						local a = rng.range(0, math.pi)
@@ -1308,7 +1384,11 @@ local function generateNature(layout: any): { Placement }
 				for _, road in f.roads do
 					edge = math.min(edge, distToPolyline(x, z, road.points) - road.width / 2)
 				end
-				table.insert(sites, { x = x, z = z, w = (if WorldPlan.viewWeight(layout, x, z) > 1 then 1.4 else 1) * (if edge < 70 then 1.8 else 1) })
+				table.insert(sites, {
+					x = x,
+					z = z,
+					w = (if WorldPlan.viewWeight(layout, x, z) > 1 then 1.4 else 1) * (if edge < 70 then 1.8 else 1),
+				})
 			end
 		end
 		local taken = 0
@@ -1352,7 +1432,9 @@ local function generateNature(layout: any): { Placement }
 					local dx, dz = math.cos(a), math.sin(a)
 					local best, bestP = nil, -math.huge
 					for _, t in list do
-						local p = (t.x - mx) * dx + (t.z - mz) * dz - 0.35 * math.abs(-(t.x - mx) * dz + (t.z - mz) * dx)
+						local p = (t.x - mx) * dx
+							+ (t.z - mz) * dz
+							- 0.35 * math.abs(-(t.x - mx) * dz + (t.z - mz) * dx)
 						if p > bestP then
 							best, bestP = t, p
 						end
@@ -1377,7 +1459,14 @@ local function generateNature(layout: any): { Placement }
 				dx, dz = dx / len, dz / len
 				local a = math.atan2(dz, dx) + rng.range(-0.9, 0.9)
 				local ex, ez = math.cos(a), math.sin(a)
-				rockGroup(rng, b.x + ex * cap * rng.range(0.9, 1.02), b.z + ez * cap * rng.range(0.9, 1.02), rng.int(2, 5), -ez, ex)
+				rockGroup(
+					rng,
+					b.x + ex * cap * rng.range(0.9, 1.02),
+					b.z + ez * cap * rng.range(0.9, 1.02),
+					rng.int(2, 5),
+					-ez,
+					ex
+				)
 			end
 		end
 		-- river banks
@@ -1390,7 +1479,10 @@ local function generateNature(layout: any): { Placement }
 				local px, pz, tx, tz = pointAt(pts, cum, d)
 				local side = if rng.next() < 0.5 then 1 else -1
 				local off = (f.river.width / 2 + 11 + rng.range(2, 8)) * side
-				table.insert(sites, { x = px - tz * off, z = pz + tx * off, w = WorldPlan.viewWeight(layout, px, pz), tx = tx, tz = tz })
+				table.insert(
+					sites,
+					{ x = px - tz * off, z = pz + tx * off, w = WorldPlan.viewWeight(layout, px, pz), tx = tx, tz = tz }
+				)
 			end
 			local groups = 0
 			for _, site in ranked(rng, sites) do
@@ -1415,7 +1507,16 @@ local function generateNature(layout: any): { Placement }
 							if out2.Magnitude > 0.05 then
 								out2 = out2.Unit
 								local reach = road.width / 2 + 4 + 12
-								if rockGroup(rng, pts[i].X + out2.X * reach, pts[i].Y + out2.Y * reach, rng.int(2, 4), d1.X, d1.Y) > 0 then
+								if
+									rockGroup(
+										rng,
+										pts[i].X + out2.X * reach,
+										pts[i].Y + out2.Y * reach,
+										rng.int(2, 4),
+										d1.X,
+										d1.Y
+									) > 0
+								then
 									groups += 1
 								end
 							end
@@ -1428,7 +1529,14 @@ local function generateNature(layout: any): { Placement }
 		for i = 1, #fringeSeeds, 2 do
 			local seed = fringeSeeds[i]
 			local a = rng.range(0, TWO_PI)
-			rockGroup(rng, seed.x + math.cos(a) * 14, seed.z + math.sin(a) * 14, rng.int(2, 3), -math.sin(a), math.cos(a))
+			rockGroup(
+				rng,
+				seed.x + math.cos(a) * 14,
+				seed.z + math.sin(a) * 14,
+				rng.int(2, 3),
+				-math.sin(a),
+				math.cos(a)
+			)
 		end
 	end
 
@@ -1466,7 +1574,11 @@ local function generateNature(layout: any): { Placement }
 			for _, corner in { { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 } } do
 				if rng.next() < 0.3 then
 					local out3 = cf:PointToWorldSpace(
-						Vector3.new(corner[1] * (field.size.X / 2 + 9.5 + rng.range(0, 5)), 0, corner[2] * (field.size.Y / 2 + 9.5 + rng.range(0, 5)))
+						Vector3.new(
+							corner[1] * (field.size.X / 2 + 9.5 + rng.range(0, 5)),
+							0,
+							corner[2] * (field.size.Y / 2 + 9.5 + rng.range(0, 5))
+						)
 					)
 					clump(rng, out3.X, out3.Z, 2, 2.8, false)
 				end
@@ -1488,6 +1600,59 @@ local function generateNature(layout: any): { Placement }
 		end
 	end
 
+	-- ---- 6b. field hedges: a ragged line of bushes (a birch now and then, a tuft of flowers) along the outer sides of the crop fields,
+	-- the sides that face away from the keep and from a neighbouring field (the sides the field fences take), outside the margin
+	do
+		local rng = prng(5750)
+		for _, field in f.fields do
+			local cf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
+			local keep = nearestKeep(field.center.X, field.center.Y)
+			local toKeep = Vector3.new(keep.X - field.center.X, 0, keep.Z - field.center.Y).Unit
+			for _, side in
+				{
+					{ Vector3.new(1, 0, 0), field.size.X / 2, field.size.Y },
+					{ Vector3.new(-1, 0, 0), field.size.X / 2, field.size.Y },
+					{ Vector3.new(0, 0, 1), field.size.Y / 2, field.size.X },
+					{ Vector3.new(0, 0, -1), field.size.Y / 2, field.size.X },
+				}
+			do
+				local normal = cf:VectorToWorldSpace(side[1])
+				local mid = cf.Position + normal * (side[2] + 10)
+				local beside = false
+				for _, other in f.fields do
+					if
+						other ~= field
+						and (Vector2.new(other.center.X, other.center.Y) - Vector2.new(mid.X, mid.Z)).Magnitude
+							< other.size.Magnitude / 2 + 12
+					then
+						beside = true
+					end
+				end
+				if normal:Dot(toKeep) <= 0.35 and not beside and rng.next() < N.fieldHedge then
+					local tangent = Vector3.new(-normal.Z, 0, normal.X)
+					local len = side[3] * 0.8
+					local s = -len / 2
+					while s <= len / 2 do
+						local roll = rng.next()
+						local offset = if roll < 0.72
+							then 9.2 + 1.5 + rng.range(0, 2.5)
+							elseif roll < 0.88 then 7.4 + 1
+							else 12.5 + 1.5 + rng.range(0, 2)
+						local at = cf.Position + normal * (side[2] + offset) + tangent * s
+						if roll < 0.72 then
+							tryBush(rng, at.X, at.Z)
+						elseif roll < 0.88 then
+							tryFlower(rng, at.X, at.Z)
+						else
+							tryTree(rng, "tree_birch", at.X, at.Z, "lone_tree", 0.62)
+						end
+						s += rng.range(9, 13)
+					end
+				end
+			end
+		end
+	end
+
 	-- ---- 7. flower drifts: field corners, road verges, stand fringes
 	do
 		local rng = prng(5800)
@@ -1496,7 +1661,11 @@ local function generateNature(layout: any): { Placement }
 			if rng.next() < 0.8 then
 				local cx, cz = if rng.next() < 0.5 then 1 else -1, if rng.next() < 0.5 then 1 else -1
 				local at = cf:PointToWorldSpace(
-					Vector3.new(cx * (field.size.X / 2 + 8.5 + rng.range(0, 4)), 0, cz * (field.size.Y / 2 + 8.5 + rng.range(0, 4)))
+					Vector3.new(
+						cx * (field.size.X / 2 + 8.5 + rng.range(0, 4)),
+						0,
+						cz * (field.size.Y / 2 + 8.5 + rng.range(0, 4))
+					)
 				)
 				clump(rng, at.X, at.Z, rng.int(3, 4), 3, true)
 			end
@@ -1773,6 +1942,7 @@ WorldPlan.TRIM = table.freeze({
 	outpostRadius = 70, -- the neutral outposts (FL-0127): studs around each; never thinned (a full heartland radius
 	-- around three more objectives kept ~630 more parts and would eat the D-047 headroom)
 	spurBand = 20, -- road spurs to the outposts (marked `spur` in the layout): studs either side; never thinned
+	laneBand = 20, -- the plots' village lanes (features.paths): studs either side; never thinned
 	arenaReach = 60, -- the Crown Arena (FL-0072): studs around its footprint that are never thinned
 	jitter = 90, -- studs of deterministic noise on the score, so thinning fades in instead of cutting a line
 	standSpread = 1.6, -- a forest stand loses at most this times the forest cut (0.75 -> 40 %), so none goes bald
@@ -1843,6 +2013,9 @@ function WorldPlan.unseen(layout: any, x: number, z: number): number
 	for _, road in layout.features.roads do
 		attention =
 			math.min(attention, distToPolyline(x, z, road.points) - (if road.spur then t.spurBand else t.roadBand))
+	end
+	for _, lane in layout.features.paths or {} do
+		attention = math.min(attention, distToPolyline(x, z, lane.points) - t.laneBand)
 	end
 	for _, o in layout.objectives do
 		local p = o.cframe.Position
