@@ -205,7 +205,23 @@ describe("Arena/SupportModel: offers", function()
 		}, "loyal")
 		expect(#twice).toBe(1)
 		expect(twice[1].citizenName).toBe("A")
-		expect(twice[1].effect).toBe("Their first two heavy attacks are shown 0.15 s earlier")
+		expect(twice[1].effect).toBe("Their first 2 heavy attacks are telegraphed sooner")
+	end)
+
+	it("the Called Warning covers 2 heavy attacks pledged and 3 empowered, in the text and the modifier", function()
+		local function warn(power)
+			local mods = SupportModel.modifiers("loyal", { { trigger = "calledWarning", power = power } })
+			for _, m in mods do
+				if m.kind == "telegraph" then
+					return m
+				end
+			end
+			return nil
+		end
+		expect(warn("pledged").uses).toBe(2)
+		expect(warn("empowered").uses).toBe(3)
+		local offers = SupportModel.offers({ { role = "captain", loyalty = 95, alive = true, name = "A" } }, "loyal")
+		expect(offers[1].effect).toBe("Their first 3 heavy attacks are telegraphed sooner")
 	end)
 
 	it("the Crowd Rally is offered to Adoring only, without a citizen; slots follow the tier", function()

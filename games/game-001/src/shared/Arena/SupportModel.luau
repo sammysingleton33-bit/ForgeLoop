@@ -133,15 +133,23 @@ function SupportModel.trend(samples: { Sample }, ruler: { now: number }, config:
 	return recent - before
 end
 
-local function format(text: string, magnitude: number, isSeconds: boolean?): string
-	local shown = if isSeconds
-		then string.format("%.2f", magnitude)
-		else string.format("%d %%", math.floor(magnitude * 100 + 0.5))
-	return (
-		string.gsub(text, "{magnitude}", function()
-			return shown -- a function: a "%" in the text is not a capture reference
-		end)
-	)
+-- A perk's `uses` is one number or per tier ({ pledged, empowered }).
+local function usesOf(perk: any, power: string): number?
+	local uses = perk.uses
+	if type(uses) == "table" then
+		return uses[power]
+	end
+	return uses
+end
+
+local function format(text: string, magnitude: number, uses: number?): string
+	local shown = string.format("%d %%", math.floor(magnitude * 100 + 0.5))
+	local text2 = string.gsub(text, "{magnitude}", function()
+		return shown -- a function: a "%" in the text is not a capture reference
+	end)
+	return (string.gsub(text2, "{uses}", function()
+		return tostring(uses or 1)
+	end))
 end
 
 function SupportModel.offers(keyCitizens: { KeyCitizen }, tier: SupportTier, config: any?): ({ TriggerOffer }, number)
@@ -171,7 +179,7 @@ function SupportModel.offers(keyCitizens: { KeyCitizen }, tier: SupportTier, con
 				loyalty = citizen.loyalty,
 				power = power,
 				condition = perk.when,
-				effect = format(perk.effect, perk[power], perk.kind == "telegraph"),
+				effect = format(perk.effect, perk[power], usesOf(perk, power)),
 			})
 		end
 	end
@@ -223,7 +231,7 @@ local function perkModifiers(trigger: string, power: string, cfg: any): { Modifi
 				source = source,
 				kind = "telegraph",
 				lead = magnitude,
-				uses = perk.uses,
+				uses = usesOf(perk, power),
 				duration = perk.duration,
 				condition = perk.condition,
 			},
