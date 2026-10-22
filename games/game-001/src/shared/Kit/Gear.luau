@@ -41,12 +41,15 @@
 	carry pose (arms forward, hands about 2.6 studs apart, chest height) about its centre: +Y up, front -Z; at most 2.6 wide (between
 	the hands), 1.2 tall and 1.2 deep (it starts in front of the chest). The attacher (EntityController, FORGE-01's, under FORGE-04's
 	exception) places the pivot on the Torso at CFrame.new(0, 0, -1.2) (the hands' midpoint is (0, 0.02, -1.17) in the Torso frame),
-	shows it only while the citizen carries that resource and removes it otherwise. Colours match the resource markers
-	(Props.NODE_MARKER_COLORS: stone ice white, gold yellow, wood orange, food red-pink) so a load reads like its node.
-		food    a wicker basket with a rim, a red apple and a golden loaf (4 parts)
-		wood    a bundle of three logs (the top one paler) tied with a rope band (4 parts)
-		stone   a pale block with a darker block and a chip on it (3 parts)
-		gold    a stepped stack of three gold bars (3 parts)
+	shows it only while the citizen carries that resource and removes it otherwise. A load is the resource's own goods in its own
+	colours, in the family of its node's marker (Props.NODE_MARKER_COLORS: stone ice white, gold yellow, wood orange, food red-pink)
+	so it reads like its node, not the marker's glow colour copied onto the goods: the stone is pale grey-white, the gold yellow, the
+	logs brown (orange is the marker's glow, not a log's), and only the food carries its marker's red-pink exactly (the apple).
+	The key colour (the part with the most volume) is the basket's tan, the logs' bark brown, the stone's ice white and the bars' gold.
+		food    a tan wicker basket with a darker rim, a red-pink apple (the food marker's colour) and a golden loaf (4 parts)
+		wood    a bundle of three brown logs (the top one paler) tied with a pale rope band (4 parts)
+		stone   a pale grey-white block with a darker grey block and a chip on it (3 parts)
+		gold    a stepped stack of three yellow gold bars (the top one lighter) (3 parts)
 	Attributes: KitCarried = the resource, KitPiece = "Carried".
 
 	Weapon = a Tool with a Handle (the grip, at the origin), no scripts, RequiresHandle, not droppable. Modelled in grip space (the
