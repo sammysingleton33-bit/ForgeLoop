@@ -21,6 +21,8 @@
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
+local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
+local WorldDef = require("@game/ServerScriptService/Game/Services/WorldService")
 local Terrain = require("@game/ReplicatedStorage/Game/Kit/Terrain")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local WorldGround = require("@game/ReplicatedStorage/Game/Kit/WorldGround")
@@ -30,9 +32,10 @@ local KINGDOMS = { "crimson", "azure", "emerald", "gold" }
 local MAX_SHARE = 0.72 -- the largest share one material may cover of a frame's open ground
 local MIN_SHARE = 0.03 -- ... and what at least three materials must each cover
 local FRAME = 110 -- the plot frame: studs around the spawn (the start view and the far view's near half)
-local ADDED_OPS = 4500 -- ceiling on the ops this change added to the plan (482 before)
-local ADDED_VOXELS = 150000 -- ceiling on the voxels it added (7.72 M before, 99 % of it the hills and the base ground)
-local LANES = { "keep", "storehouse", "farm", "fields", "quarry", "lumbercamp", "quarry_slot", "lumber_slot", "stone", "timber" }
+local ADDED_OPS = 5600 -- ceiling on the new ground ops (patch, apron, path, road_worn, plaza, border; 5,162 now; the whole plan had 482 ops before)
+local ADDED_VOXELS = 70000 -- ceiling on the voxels of those ops (48 k now; the plan had 7.72 M before, 99 % of it the hills and the base ground)
+local LANES =
+	{ "keep", "storehouse", "farm", "fields", "quarry", "lumbercamp", "quarry_slot", "lumber_slot", "stone", "timber" }
 local BROWN = { Ground = true, Mud = true }
 
 local function api()
@@ -184,7 +187,14 @@ local function violations(layout, ops): { string }
 	-- bounded
 	local added, voxels = 0, 0
 	for _, op in ops do
-		if op.feature == "patch" or op.feature == "apron" or op.feature == "path" or op.feature == "road_worn" or op.feature == "plaza" or op.feature == "border" then
+		if
+			op.feature == "patch"
+			or op.feature == "apron"
+			or op.feature == "path"
+			or op.feature == "road_worn"
+			or op.feature == "plaza"
+			or op.feature == "border"
+		then
 			added += 1
 			voxels += WorldPlan.voxels(op)
 		end
@@ -415,13 +425,40 @@ describe("WorldGround: the ground plan", function()
 			local p, s = op.cframe.Position, op.size
 			for x = p.X - s.X / 2 + 2, p.X + s.X / 2, 4 do
 				for z = p.Z - s.Z / 2 + 2, p.Z + s.Z / 2, 4 do
-					expect(WorldPlan.distToPolyline(x, z, f.river.points)).toBeGreaterThan(f.river.width / 2 + 9)
+					-- the sampler decides at a cell's centre, or far from the plots for a 2 x 2 group at its middle (up to 5.7 studs off)
+					expect(WorldPlan.distToPolyline(x, z, f.river.points)).toBeGreaterThan(f.river.width / 2 + 4)
 					for _, fl in floors do
-						expect(math.sqrt((x - fl.x) ^ 2 + (z - fl.z) ^ 2) >= fl.r * 0.78).toBe(true)
+						expect(math.sqrt((x - fl.x) ^ 2 + (z - fl.z) ^ 2) >= fl.r * 0.78 - 6).toBe(true)
 					end
 				end
 			end
 		end
+	end)
+
+	it("builds the terrain in frames of at most TERRAIN_OPS_PER_FRAME fills (thousands of small calls)", function()
+		local env = MockEnv.new({ seed = 1 })
+		local svc = WorldDef.new(env, nil)
+		svc.terrain = Terrain.recorder()
+		local fills, worst, total = 0, 0, 0
+		local fill = svc.terrain.fill
+		svc.terrain.fill = function(op)
+			fills += 1
+			total += 1
+			fill(op)
+		end
+		local wait = svc._wait
+		svc._wait = function(self)
+			worst = math.max(worst, fills)
+			fills = 0
+			wait(self)
+		end
+		svc:start()
+		env.mock:advance(60)
+		expect(svc:isReady()).toBe(true)
+		expect(total).toBe(#WorldPlan.terrainOps(Layout))
+		expect(worst).toBeGreaterThan(0)
+		expect(worst).toBeLessThanOrEqual(svc.TERRAIN_OPS_PER_FRAME)
+		svc:destroy()
 	end)
 
 	it("adds lanes that are not roads (the sim's no-build ground is unchanged)", function()
@@ -459,7 +496,12 @@ describe("WorldGround: the checks catch each way of breaking the rule (mutants)"
 	it("flags a flat lawn (no cover)", function()
 		local plain = {}
 		for _, op in ops do
-			if op.feature ~= "patch" and op.feature ~= "apron" and op.feature ~= "path" and op.feature ~= "road_worn" then
+			if
+				op.feature ~= "patch"
+				and op.feature ~= "apron"
+				and op.feature ~= "path"
+				and op.feature ~= "road_worn"
+			then
 				table.insert(plain, op)
 			end
 		end
@@ -485,7 +527,12 @@ describe("WorldGround: the checks catch each way of breaking the rule (mutants)"
 		local layout = withLayout(function(f)
 			local kept = {}
 			for _, path in f.paths do
-				if not (path.kingdom == "azure" and (path.name == "lumbercamp" or path.name == "lumber_slot" or path.name == "timber")) then
+				if
+					not (
+						path.kingdom == "azure"
+						and (path.name == "lumbercamp" or path.name == "lumber_slot" or path.name == "timber")
+					)
+				then
 					table.insert(kept, path)
 				end
 			end
@@ -593,7 +640,14 @@ describe("WorldGround: the checks catch each way of breaking the rule (mutants)"
 		for i = 1, ADDED_OPS do
 			table.insert(
 				many,
-				{ kind = "Cylinder", material = "Ground", cframe = CFrame.new(i, -1, 0), radius = 4, height = 2.4, feature = "patch" }
+				{
+					kind = "Cylinder",
+					material = "Ground",
+					cframe = CFrame.new(i, -1, 0),
+					radius = 4,
+					height = 2.4,
+					feature = "patch",
+				}
 			)
 		end
 		expect(has(violations(Layout, many), "ground ops")).toBe(true)

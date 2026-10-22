@@ -40,17 +40,17 @@ export type Api = {
 export type Lane = { width: number, points: { Vector2 }, kind: string }
 
 local CELL = 4 -- one terrain voxel
-local COARSE_BELOW = 0.45 -- view weight under which the cover is sampled on 8-stud cells (far from every plot)
+local COARSE_BELOW = 0.7 -- view weight under which the cover is sampled on 8-stud cells (far from every plot)
 
 -- Tunables (the spec reads them): the noise scales (studs per noise unit) and the thresholds, near a plot and far from every plot.
 WorldGround.COVER = table.freeze({
 	fullRadius = 250, -- studs from a plot spawn inside which the ground is as varied as it gets
 	farRadius = 560, -- ... and beyond which it is at its sparsest
-	leafy = table.freeze({ scale = 75, near = 0.69, far = 0.93 }), -- LeafyGrass where the tone noise passes the threshold
-	clump = table.freeze({ scale = 26, near = 0.8, far = 0.97 }), -- ... and in smaller clumps
-	bare = table.freeze({ scale = 34, near = 0.82, far = 0.95 }), -- Ground
-	wet = table.freeze({ scale = 20, near = 0.7, far = 0.9 }), -- Mud inside the bare earth
-	greenMargin = 5, -- studs of green kept beside a field edge or a lane
+	leafy = table.freeze({ scale = 80, near = 0.72, far = 0.97 }), -- LeafyGrass where the tone noise passes the threshold
+	clump = table.freeze({ scale = 32, near = 0.84, far = 0.99 }), -- ... and in smaller clumps
+	bare = table.freeze({ scale = 44, near = 0.8, far = 0.98 }), -- Ground
+	wet = table.freeze({ scale = 24, near = 0.78, far = 0.95 }), -- Mud inside the bare earth
+	greenMargin = 7, -- studs of green kept beside a field edge or a lane (a cell is 4 studs: its edge stays 5 or more off)
 })
 
 -- ---------------------------------------------------------------- noise
@@ -89,7 +89,9 @@ local function sampler(seed: number, detail: number): (number, number) -> number
 		return top + (bottom - top) * fz
 	end
 	return function(x: number, z: number): number
-		local v = if detail > 0 then value(x, z) * (1 - detail) + value(x * 2.3 + 17, z * 2.3 + 5) * detail else value(x, z)
+		local v = if detail > 0
+			then value(x, z) * (1 - detail) + value(x * 2.3 + 17, z * 2.3 + 5) * detail
+			else value(x, z)
 		return math.clamp((v - 0.5) * (if detail > 0 then 1.55 else 1.35) + 0.5, 0, 1)
 	end
 end
@@ -220,10 +222,16 @@ local function greenCells(layout: any, x0: number, z0: number, nx: number, nz: n
 	for _, field in layout.features.fields do
 		local cf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
 		local reach = field.size.Magnitude / 2 + margin
-		mark(field.center.X - reach, field.center.X + reach, field.center.Y - reach, field.center.Y + reach, function(x, z)
-			local p = cf:PointToObjectSpace(Vector3.new(x, 0, z))
-			return math.abs(p.X) <= field.size.X / 2 + margin and math.abs(p.Z) <= field.size.Y / 2 + margin
-		end)
+		mark(
+			field.center.X - reach,
+			field.center.X + reach,
+			field.center.Y - reach,
+			field.center.Y + reach,
+			function(x, z)
+				local p = cf:PointToObjectSpace(Vector3.new(x, 0, z))
+				return math.abs(p.X) <= field.size.X / 2 + margin and math.abs(p.Z) <= field.size.Y / 2 + margin
+			end
+		)
 	end
 	for _, lane in WorldGround.lanes(layout) do
 		local reach = lane.width / 2 + margin
@@ -257,42 +265,53 @@ local function coverSampler(
 	local f = layout.features
 	local spawns = plotAnchors(layout)
 	local hub = if layout.objectives[1] then layout.objectives[1].cframe.Position else nil
-	local toneAt, clumpAt, bareAt, wetAt, rimAt = sampler(11, 0), sampler(5, 0.3), sampler(23, 0.3), sampler(37, 0.3), sampler(71, 0.3)
+	local toneAt, clumpAt, bareAt, wetAt, rimAt =
+		sampler(11, 0), sampler(5, 0), sampler(23, 0.15), sampler(37, 0), sampler(71, 0)
 	local function weight(x: number, z: number): number
 		return viewWeight(spawns, hub, x, z)
 	end
+	local warpA, warpB = sampler(101, 0), sampler(103, 0)
 	return function(x: number, z: number, green: boolean): string?
 		local far = 1 - viewWeight(spawns, hub, x, z)
+		-- the noise is read through a slow warp, so no edge follows the lattice
+		local wx, wz = x + (warpA(x / 55, z / 55) - 0.5) * 46, z + (warpB(x / 55 + 9, z / 55 - 4) - 0.5) * 46
 		local mat = "Grass"
 		if
-			toneAt(x / c.leafy.scale, z / c.leafy.scale) > c.leafy.near + (c.leafy.far - c.leafy.near) * far
-			or clumpAt(x / c.clump.scale, z / c.clump.scale) > c.clump.near + (c.clump.far - c.clump.near) * far
+			toneAt(wx / c.leafy.scale, wz / c.leafy.scale) > c.leafy.near + (c.leafy.far - c.leafy.near) * far
+			or clumpAt(wx / c.clump.scale, wz / c.clump.scale) > c.clump.near + (c.clump.far - c.clump.near) * far
 		then
 			mat = "LeafyGrass"
 		end
-		if not green and bareAt(x / c.bare.scale, z / c.bare.scale) > c.bare.near + (c.bare.far - c.bare.near) * far then
+		if
+			not green
+			and bareAt(wx / c.bare.scale, wz / c.bare.scale) > c.bare.near + (c.bare.far - c.bare.near) * far
+		then
 			mat = "Ground"
-			if wetAt(x / c.wet.scale, z / c.wet.scale) > c.wet.near + (c.wet.far - c.wet.near) * far then
+			if wetAt(wx / c.wet.scale, wz / c.wet.scale) > c.wet.near + (c.wet.far - c.wet.near) * far then
 				mat = "Mud"
 			end
 		end
 		-- forest floors: leave the disc alone, eat a ragged rim of it back to grass and feather leafy ground out beyond it
+		local keepGrass = false
 		for _, fl in floors do
 			local d2 = (x - fl.x) ^ 2 + (z - fl.z) ^ 2
 			if d2 < (fl.r + 18) ^ 2 then
 				local d = math.sqrt(d2)
-				local rim = rimAt(x / 14, z / 14)
+				local rim = rimAt(x / 22, z / 22)
 				if d < fl.r * 0.78 then
 					return nil
 				elseif d <= fl.r then
 					local t = (d - fl.r * 0.78) / (fl.r * 0.22)
-					return if rim < 0.15 + 0.55 * t then "Grass" else nil
+					if rim >= 0.15 + 0.55 * t then
+						return nil
+					end
+					mat, keepGrass = "Grass", true -- painted over the floor's leafy ground
 				elseif mat == "Grass" and rim < 0.62 * (1 - (d - fl.r) / 18) then
 					mat = "LeafyGrass"
 				end
 			end
 		end
-		if mat == "Grass" then
+		if mat == "Grass" and not keepGrass then
 			return nil
 		end
 		-- not on a hill, not at the river, inside the bounds
@@ -308,7 +327,8 @@ local function coverSampler(
 			return nil
 		end
 		return mat
-	end, weight
+	end,
+		weight
 end
 
 -- Where each hill rises above the flat ground: discs (centre, squared radius), grown 8 studs so a slope's foot stays green.
@@ -384,7 +404,10 @@ function WorldGround.cover(layout: any, api: Api, floors: { any }): { Op }
 				if weightAt(gx, gz) < COARSE_BELOW then
 					local cached = coarseRow[i0]
 					if cached == nil then
-						local anyGreen = green[j0 * nx + i0] or green[j0 * nx + i0 + 1] or green[(j0 + 1) * nx + i0] or green[(j0 + 1) * nx + i0 + 1]
+						local anyGreen = green[j0 * nx + i0]
+							or green[j0 * nx + i0 + 1]
+							or green[(j0 + 1) * nx + i0]
+							or green[(j0 + 1) * nx + i0 + 1]
 						cached = material(gx, gz, anyGreen == true) or false
 						coarseRow[i0] = cached
 					end
@@ -436,11 +459,11 @@ function WorldGround.aprons(layout: any, api: Api): { Op }
 		local keep = plot.anchors.keep
 		-- the starting buildings sit in worn ground: a dirt pad turned with each, bigger than its footprint
 		local pads = { -- anchor, footprint half x, half z (Buildings.footprint), margin
-			{ "keep", 23, 23, 3 },
-			{ "storehouse", 13, 10, 4 },
-			{ "farm", 20, 16, 4 },
-			{ "lumbercamp", 11, 9, 6 },
-			{ "quarry", 11, 10, 6 },
+			{ "keep", 23, 23, 0 },
+			{ "storehouse", 13, 10, 3 },
+			{ "farm", 20, 16, 3 },
+			{ "lumbercamp", 11, 9, 5 },
+			{ "quarry", 11, 10, 5 },
 		}
 		for _, pad in pads do
 			local anchor = plot.anchors[pad[1]]
@@ -499,7 +522,13 @@ local function trail(B: any, rng: any, lane: Lane)
 					local p0, p1 = a:Lerp(b, k / n), a:Lerp(b, (k + 1) / n)
 					local seg = p1 - p0
 					local mid = (p0 + p1) / 2
-					B.slab("Mud", along(mid.X, 0, mid.Y, seg.X, seg.Y), 3.6, seg.Magnitude * rng.range(0.55, 0.95), "road_worn")
+					B.slab(
+						"Mud",
+						along(mid.X, 0, mid.Y, seg.X, seg.Y),
+						3.6,
+						seg.Magnitude * rng.range(0.55, 0.95),
+						"road_worn"
+					)
 				end
 			end
 		end
@@ -529,10 +558,10 @@ function WorldGround.worn(layout: any, api: Api): { Op }
 	for _, kingdom in KINGDOMS do
 		local keep = layout.plots[kingdom].anchors.keep
 		local court = localCF(keep, 0, -46)
-		rrect(B, rng, "Rock", court, 39, 45, 9, "plaza") -- a darker kerb all round
-		rrect(B, rng, "Cobblestone", court, 33, 39, 8, "plaza")
+		rrect(B, rng, "Rock", court, 33, 39, 8, "plaza") -- a darker kerb all round
+		rrect(B, rng, "Cobblestone", court, 28, 34, 7, "plaza")
 		for i = 1, 6 do
-			local p = (court * CFrame.new(rng.range(-10, 10), 0, rng.range(-14, 14))).Position
+			local p = (court * CFrame.new(rng.range(-8, 8), 0, rng.range(-12, 12))).Position
 			B.disc(if i % 3 == 0 then "Slate" else "Rock", p.X, p.Z, rng.range(1.8, 3.2), "plaza")
 		end
 	end
