@@ -27,7 +27,7 @@ ArenaHud.__index = ArenaHud
 
 ArenaHud.TOP = table.freeze({ desktop = 60, phone = 52 })
 ArenaHud.WIDTH = 980
-ArenaHud.CLOCK = table.freeze({ desktop = 84, phone = 56 })
+ArenaHud.CLOCK = table.freeze({ desktop = 84, phone = 68 }) -- phone: "Sudden death" at 8 px needs 68 (D-059 arena pass; 56 cut it)
 
 -- The strip's height: name row, HP, stamina, perks, gaps and padding.
 function ArenaHud.height(m: any): number
@@ -259,14 +259,16 @@ function ArenaHud:render(model: any, m: any)
 		xAlign = "Center",
 		extra = { Name = "Time", Size = UDim2.new(1, 0, 0, if phone then 20 else 26), LayoutOrder = 1, Parent = clock },
 	})
-	Style.text({
-		text = if model.suddenDeath then "Sudden death" else "Duel",
+	local note = Style.text({
+		text = model.note or (if model.suddenDeath then "Sudden death" else "Duel"),
 		size = if phone then 8 else 10,
-		color = Theme.color(if model.suddenDeath then "gules" else "textSecondary"),
+		color = Theme.color(if model.ended then "gold300" elseif model.suddenDeath then "gules" else "textSecondary"),
 		weight = Enum.FontWeight.Bold,
 		xAlign = "Center",
-		extra = { Name = "Note", Size = UDim2.new(1, 0, 0, 12), LayoutOrder = 2, Parent = clock },
+		extra = { Name = "Note", Size = UDim2.new(1, -4, 0, 12), LayoutOrder = 2, Parent = clock, TextScaled = true },
 	})
+	-- a long winner's name ("Thornwood wins") shrinks to the box instead of being cut (D-059 arena pass)
+	Create("UITextSizeConstraint", { MaxTextSize = if phone then 8 else 10, MinTextSize = 6, Parent = note })
 	-- the control hints (the champion, keyboard or gamepad; ArenaHudController decides when): one line under the
 	-- strip. Never on touch, so a phone's strip bottom (y 122) stays clear of FORGE-04's captions (from y 135).
 	if model.hints then

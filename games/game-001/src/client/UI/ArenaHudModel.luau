@@ -16,7 +16,9 @@
 		ArenaHudModel.reset(track)        a new duel (a different pair of duellists)
 		ArenaHudModel.hints(controls, kind) -> string?   the control hint line (keyboard / gamepad; nil on touch)
 		ArenaHudModel.view(track, arena, lookup, userId, now) -> View?   nil unless the stage is "duel"
-			View = { clock?, urgent, suddenDeath, ended?, left: Side, right: Side, mine }
+			View = { clock?, note, urgent, suddenDeath, ended?, left: Side, right: Side, mine }
+			Once the duel has ended (D-059 arena pass) the clock box says how ("KO", "Time", "Forfeit", "Draw") and
+			`note` names the winner ("You win", "You lost", "Frostmere wins"), instead of a clock still running into the crowning.
 			Side = { side, name, kingdomName, color, tier { name, color }, hp (0..1), hpText ("72%"),
 			         stamina (0..1)?, low (hp ≤ LOW), triggers: { { id, name, icon, state = "armed" | "active" |
 			         "spent" } } }
@@ -34,6 +36,9 @@ local ArenaHudModel = {}
 ArenaHudModel.ACTIVE_SEC = 6 -- a fired trigger glows this long (the longest G12.3 trigger lasts 8 s)
 ArenaHudModel.LOW = 0.25
 ArenaHudModel.URGENT_SEC = 15
+-- How a duel ended, in the clock box (DuelModel / DuelRunner `ended` reasons).
+ArenaHudModel.ENDED =
+	table.freeze({ ko = "KO", timeCap = "Time", hardCap = "Time", forfeit = "Forfeit", draw = "Draw" })
 ArenaHudModel.PASSIVE = table.freeze({ fineWares = true }) -- a whole-duel bonus: shown active from the start
 
 -- The part of a view that needs a rebuild when it changes (names, tiers, perk states, sudden death, whether stamina
@@ -188,14 +193,35 @@ function ArenaHudModel.view(track: any, arena: any, lookup: any, userId: number?
 	local leftSide = mine or "a"
 	local rightSide = other(leftSide)
 	local secondsLeft = if type(arena.endsAt) == "number" then math.max(0, arena.endsAt - now) else nil
+	local left = sideView(track, leftSide, arena[leftSide], lookup or {}, now)
+	local right = sideView(track, rightSide, arena[rightSide], lookup or {}, now)
+	local ended = track.ended
+	if ended then
+		local winner = if ended.winner == leftSide then left elseif ended.winner == rightSide then right else nil
+		return {
+			mine = mine ~= nil,
+			clock = ArenaHudModel.ENDED[ended.reason] or (if winner then "Won" else "Draw"),
+			-- short: the clock box is 84 px wide (56 on a phone)
+			note = if winner == nil
+				then "No winner"
+				elseif mine ~= nil then (if ended.winner == mine then "You win" else "You lost")
+				else `{winner.kingdomName} wins`,
+			urgent = false,
+			suddenDeath = track.suddenDeath,
+			ended = ended,
+			left = left,
+			right = right,
+		}
+	end
 	return {
 		mine = mine ~= nil,
 		clock = if secondsLeft then Format.clock(secondsLeft) else nil,
+		note = if track.suddenDeath then "Sudden death" else "Duel",
 		urgent = secondsLeft ~= nil and secondsLeft <= ArenaHudModel.URGENT_SEC,
 		suddenDeath = track.suddenDeath,
-		ended = track.ended,
-		left = sideView(track, leftSide, arena[leftSide], lookup or {}, now),
-		right = sideView(track, rightSide, arena[rightSide], lookup or {}, now),
+		ended = ended,
+		left = left,
+		right = right,
 	}
 end
 

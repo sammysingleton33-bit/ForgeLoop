@@ -41,6 +41,8 @@
 		hud:notify({ title, body?, kind? })
 		hud:setArenaFocus(on)               the Crown Arena takes the screen: kingdom HUD, menus and phase bar
 		                                    off (ArenaHudController, FL-0073)
+		hud:setArenaState(state?)           the ArenaState (ArenaHudController): while a stage runs, the phase pill
+		                                    reads "Crown Arena", the stage and its clock (HudModel.timer)
 		hud:hasRemote(name) -> boolean      the server declared this remote (ReplicatedStorage
 		                                    .ForgeRemotes.<Area>.<Action> exists; never yields)
 		hud:setSheet(menu, on?)             this menu is a wide sheet on phones (the conversation):
@@ -411,6 +413,12 @@ end
 -- RemoteService creates every declared remote at server start, before any player can tap.
 -- The Crown Arena takes the screen (FL-0073, ArenaHudController): while on, the kingdom HUD, its menus and the
 -- phase bar are off (the arena HUD has its own clock); off brings them back.
+-- The Crown Arena's state (ArenaHudController passes every ArenaState): the phase pill names the arena's stage
+-- instead of Endgame's spent clock (HudModel.timer).
+function KingdomHudController:setArenaState(state: any)
+	self.arenaState = if type(state) == "table" then state else nil
+end
+
 function KingdomHudController:setArenaFocus(on: boolean)
 	if self.arenaFocus == (on == true) then
 		return
@@ -1225,7 +1233,7 @@ function KingdomHudController:_tick()
 	if not self._mounted or self.view == nil then
 		return
 	end
-	self.view:refreshTimer(HudModel.timer(self.store.match, self._env.serverTimeNow()), self:metrics())
+	self.view:refreshTimer(HudModel.timer(self.store.match, self._env.serverTimeNow(), self.arenaState), self:metrics())
 	-- the Rivals tab's countdowns (offers, truces, grace) tick: patched in place by RivalsList.paint
 	if self.state.menu == "kingdom" and self.state.panel.tab == "rivals" then
 		self:render()

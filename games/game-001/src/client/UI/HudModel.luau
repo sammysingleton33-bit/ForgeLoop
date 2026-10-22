@@ -91,9 +91,29 @@ HudModel.PHASES = table.freeze({ "Founding", "Expansion", "Conflict", "Endgame",
 -- What the next phase opens, said beside its name (D-053 (2): war from Conflict on).
 HudModel.NEXT_NOTE = table.freeze({ Conflict = "war opens" })
 
-function HudModel.timer(match: any, now: number): any
+-- While the Crown Arena runs the match waits in Endgame with its clock at 0 (CONTRACTS G3: getEndsAt answers
+-- the current time until arenaEnded), so the pill would read "Endgame 0:00 left, next Results" through the
+-- whole arena. With an ArenaState in a running stage it names the arena, the stage and the stage's own clock.
+HudModel.ARENA_STAGES = table.freeze({
+	vote = "Choosing champions",
+	loadout = "Champions arm",
+	intro = "Champions enter",
+	duel = "The duel",
+	crowning = "Crowning",
+})
+
+function HudModel.timer(match: any, now: number, arena: any?): any
 	if match == nil then
 		return nil
+	end
+	local stage = if type(arena) == "table" then HudModel.ARENA_STAGES[arena.stage] else nil
+	if stage and match.phase ~= "Results" and match.phase ~= "Lobby" then
+		local endsAt = arena.endsAt
+		return {
+			phase = "Crown Arena",
+			clock = if type(endsAt) == "number" then Format.clock(endsAt - now) else nil,
+			label = stage,
+		}
 	end
 	local phase = Text.phase(match.phase)
 	if match.endsAt then

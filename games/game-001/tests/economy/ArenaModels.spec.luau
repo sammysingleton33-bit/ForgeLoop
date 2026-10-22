@@ -168,6 +168,34 @@ describe("UI/ArenaIntroModel (FL-0073)", function()
 end)
 
 describe("UI/ArenaHudModel (FL-0073)", function()
+	it(
+		"says how the duel ended and who won, instead of a clock running into the crowning (D-059 arena pass)",
+		function()
+			local st = arena("duel", { endsAt = 40 })
+			local function endedView(userId, winner, reason)
+				local track = ArenaHudModel.new()
+				ArenaHudModel.view(track, st, LOOKUP, userId, 0)
+				ArenaHudModel.apply(track, { t = 5, kind = "ended", side = winner, data = { reason = reason } }, 5)
+				return ArenaHudModel.view(track, st, LOOKUP, userId, 5)
+			end
+			local won = endedView(1, "a", "ko")
+			expect(won.clock).toBe("KO")
+			expect(won.note).toBe("You win")
+			expect(won.urgent).toBe(false)
+			expect(endedView(1, "b", "timeCap").clock).toBe("Time")
+			expect(endedView(1, "b", "timeCap").note).toBe("You lost")
+			local watched = endedView(99, "b", "forfeit") -- a spectator: the winner's kingdom
+			expect(watched.clock).toBe("Forfeit")
+			expect(watched.note).toBe(`{watched.right.kingdomName} wins`)
+			local draw = endedView(1, "draw", "draw")
+			expect(draw.clock).toBe("Draw")
+			expect(draw.note).toBe("No winner")
+			local running = ArenaHudModel.view(ArenaHudModel.new(), st, LOOKUP, 1, 0)
+			expect(running.clock).toBe("0:40")
+			expect(running.note).toBe("Duel")
+		end
+	)
+
 	it("hits, snapshots and stamina-out move the bars; triggers go armed → active → spent", function()
 		local st = arena("duel")
 		st.a.triggers = { "reforge", "fieldRemedy" }

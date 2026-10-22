@@ -3,14 +3,17 @@
 	ArenaIntroController (FORGE-03, game-001 client, FL-0073) — the two-sided versus card while the arena stage is
 	"intro" (design crown-arena.md §7): both champions, their support tier and score, the top three reasons, the
 	loadout and the chosen perks. UI/ArenaIntroCard over UI/ArenaIntroModel, on the modal layer, for everyone (the
-	champions and the watching rulers). FORGE-04's intro camera passes over the stands behind it.
+	champions and the watching rulers). FORGE-04's intro camera passes over the stands behind it, then settles on the
+	ring for its last shot (config Crowd.intro.ringSec): the card steps aside for that shot, so the champions in the
+	ring are not hidden behind it (D-059 arena pass; it covered the whole ring at 1920 x 1080).
 
 	Depends on KingdomHudController (modal layer, layout) and ArenaHudController (state, lookup).
-	API (specs and scenes)   intro.view   intro:model()   ArenaIntroController.POLL_SEC
+	API (specs and scenes)   intro.view   intro:model()   ArenaIntroController.POLL_SEC   .RING_SEC
 ]]
 
 local ArenaIntroCard = require("../UI/ArenaIntroCard")
 local ArenaIntroModel = require("../UI/ArenaIntroModel")
+local Crowd = require("@game/ReplicatedStorage/Forge/Config/Crowd")
 local Signature = require("../UI/Signature")
 
 local ArenaIntroController = {}
@@ -19,6 +22,8 @@ ArenaIntroController.__index = ArenaIntroController
 local Def = { name = "ArenaIntroController", dependencies = { "KingdomHudController", "ArenaHudController" } }
 
 ArenaIntroController.POLL_SEC = 0.5 -- the countdown
+-- The intro's last seconds belong to the ring shot (FORGE-04's CrowdStageController): no card over the champions.
+ArenaIntroController.RING_SEC = (Crowd :: any).intro and (Crowd :: any).intro.ringSec or 4
 
 function Def.new(env: any, registry: any)
 	return setmetatable({
@@ -72,7 +77,14 @@ function ArenaIntroController:destroy()
 end
 
 function ArenaIntroController:model(): any
-	return ArenaIntroModel.view(self.arena.state, self.arena:lookup(), self.arena:userId(), self._env.serverTimeNow())
+	local st = self.arena.state
+	local now = self._env.serverTimeNow()
+	if type(st) == "table" and st.stage == "intro" and type(st.endsAt) == "number" then
+		if st.endsAt - now <= ArenaIntroController.RING_SEC then
+			return nil -- the ring shot: the card steps aside
+		end
+	end
+	return ArenaIntroModel.view(st, self.arena:lookup(), self.arena:userId(), now)
 end
 
 function ArenaIntroController:render(metrics: any?)
