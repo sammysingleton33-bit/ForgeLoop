@@ -706,9 +706,14 @@ end
 -- turned 180 degrees): the lane network, the fields' sides and the work areas, and the land beyond them out to the horizon edge. The
 -- fully zoomed-out view looks along the throne's facing and sees the stands and tree lines as the composition. A WEIGHT for where
 -- nature clumps, never a rule. (blender/scripts/render_world.py and tests/world/support/StartView.luau hold the same maths.)
+-- These numbers are COPIES of the controller's (RulerCameraController.DEFAULTS.overview: default = startZoom, fieldOfView, startAhead and
+-- startTurn == 180 as `back`; far.zoom = maxZoom; pitch = Def.pitchFor's ramp: minZoom/maxZoom/minPitchDeg/maxPitchDeg); NatureClumps.spec
+-- compares them field by field, so a change to the start view fails there until they follow it. far.ahead and far.back, aspect, near, reach
+-- and throne have no counterpart in the controller.
 WorldPlan.VIEW = table.freeze({
 	default = table.freeze({ zoom = 70, fov = 55, ahead = 20, back = true }),
 	far = table.freeze({ zoom = 220, fov = 55, ahead = 40, back = false }),
+	pitch = table.freeze({ minZoom = 40, maxZoom = 220, minDeg = 38, maxDeg = 65 }), -- degrees below the horizon, linear in the zoom
 	aspect = 16 / 9,
 	near = 30, -- studs round the start view's ground that still count as in it
 	reach = 900, -- rays that never reach the ground stop here
@@ -731,7 +736,9 @@ local function groundPoint(
 	local facing = Vector3.new(look.X, 0, look.Z).Unit
 	local focus = keep:PointToWorldSpace(V.throne) + facing * view.ahead
 	local flat = if view.back then -facing else facing -- the way the camera looks, on the ground
-	local pitch = math.rad(38 + (65 - 38) * (view.zoom - 40) / (220 - 40))
+	local ramp = V.pitch
+	local pitch =
+		math.rad(ramp.minDeg + (ramp.maxDeg - ramp.minDeg) * (view.zoom - ramp.minZoom) / (ramp.maxZoom - ramp.minZoom))
 	local sp, cp = math.sin(pitch), math.cos(pitch)
 	local pos = focus - flat * (view.zoom * cp) + Vector3.new(0, view.zoom * sp, 0)
 	local forward = flat * cp + Vector3.new(0, -sp, 0)

@@ -23,12 +23,71 @@ local Terrain = require("@game/ReplicatedStorage/Game/Kit/Terrain")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 local StartView = require("./support/StartView")
+local CameraDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/RulerCameraController")
 
 local ALL = { crimson = true, azure = true, emerald = true, gold = true }
 local KINGDOMS = { "crimson", "azure", "emerald", "gold" }
 local NATURAL = { forest = true, lone_tree = true, bush = true, rocks = true, flowers = true }
 local FULL = WorldPlan.FULL_DENSITY
 local forests = Layout.features.forests
+
+-- The ruler's start view, read from the controller (RulerCameraController.DEFAULTS.overview): the numbers WorldPlan.VIEW copies and the
+-- start camera the coverage measure below stands at. StartView.START (support/StartView, #313) is this same table once #313 is on main:
+-- read that instead then.
+local OVERVIEW = CameraDef.DEFAULTS.overview
+local START = {
+	zoom = OVERVIEW.startZoom,
+	fov = OVERVIEW.fieldOfView,
+	pitch = CameraDef.pitchFor(OVERVIEW.startZoom, OVERVIEW), -- degrees below the horizon
+	ahead = OVERVIEW.startAhead,
+	turn = OVERVIEW.startTurn, -- degrees from the throne's facing; 180 = looking back at the keep
+}
+
+-- WorldPlan.VIEW against the controller's overview, field by field. Returns what differs (empty = the copies agree).
+--   VIEW.default.zoom  = overview.startZoom     studs from the camera to its focus at the start
+--   VIEW.default.fov   = overview.fieldOfView   vertical degrees (the overview has one FOV)
+--   VIEW.default.ahead = overview.startAhead    studs from the throne to the focus, along the throne's facing
+--   VIEW.default.back  = overview.startTurn     a boolean in WorldPlan (looks back at the keep), degrees in the controller: 180 is true,
+--                                               0 is false, any other turn is a problem (WorldPlan cannot say it)
+--   VIEW.far.zoom      = overview.maxZoom       the fully zoomed-out view
+--   VIEW.far.fov       = overview.fieldOfView
+--   VIEW.pitch         = minZoom / maxZoom / minPitchDeg / maxPitchDeg, the ramp Def.pitchFor evaluates (checked at the ramp's numbers
+--                        and by value at four zooms)
+-- NO counterpart in the controller: VIEW.far.ahead and VIEW.far.back (the zoomed-out view is wherever the player pans and turns it; 40 and
+-- along the facing are what the world preview and the nature weights assume), VIEW.aspect (the screen), VIEW.near and VIEW.reach (how
+-- WorldPlan weighs the ground), VIEW.throne (the Kit keep's seat; support/StartView.root measures it).
+local function viewProblems(view: any, overview: any): { string }
+	local out: { string } = {}
+	local function same(name: string, mine: number, theirs: number)
+		if math.abs(mine - theirs) > 1e-9 then
+			table.insert(out, `VIEW.{name} is {mine}, the controller's is {theirs}`)
+		end
+	end
+	same("default.zoom", view.default.zoom, overview.startZoom)
+	same("default.fov", view.default.fov, overview.fieldOfView)
+	same("default.ahead", view.default.ahead, overview.startAhead or 40)
+	local turn = overview.startTurn or 0
+	if turn ~= 0 and turn ~= 180 then
+		table.insert(out, `the controller's start turn is {turn}: VIEW.default.back can only say 0 or 180`)
+	elseif view.default.back ~= (turn == 180) then
+		table.insert(out, `VIEW.default.back is {view.default.back}, the controller's start turn is {turn}`)
+	end
+	same("far.zoom", view.far.zoom, overview.maxZoom)
+	same("far.fov", view.far.fov, overview.fieldOfView)
+	same("pitch.minZoom", view.pitch.minZoom, overview.minZoom)
+	same("pitch.maxZoom", view.pitch.maxZoom, overview.maxZoom)
+	same("pitch.minDeg", view.pitch.minDeg, overview.minPitchDeg)
+	same("pitch.maxDeg", view.pitch.maxDeg, overview.maxPitchDeg)
+	for _, zoom in { overview.minZoom, START.zoom, 150, overview.maxZoom } do
+		local ramp = view.pitch
+		same(
+			`pitch at zoom {zoom}`,
+			ramp.minDeg + (ramp.maxDeg - ramp.minDeg) * (zoom - ramp.minZoom) / (ramp.maxZoom - ramp.minZoom),
+			CameraDef.pitchFor(zoom, overview)
+		)
+	end
+	return out
+end
 
 local function planFull(): { any }
 	return WorldPlan.props(Layout, ALL, FULL)
@@ -700,21 +759,20 @@ describe("Tree lines, groves, hedges and drifts", function()
 	end)
 
 	-- How many of the start view's 9 screen cells (3 columns x 3 rows, the bottom tenth left out) show at least one natural placement.
-	-- The camera maths is the spec's own (FL-0147: the camera stands in the yard and looks back toward the keep, zoom 70, FOV 55,
-	-- ahead 20), with the real throne seat of the Kit keep (support/StartView) rather than WorldPlan's constant; a placement counts by
-	-- where its middle (a tree's canopy height, a bush's, a rock's) lands on the screen.
+	-- The camera maths is the spec's own (FL-0147: the camera stands in the yard and looks back toward the keep), at the controller's start
+	-- view (START: zoom 70, FOV 55, ahead 20, turn 180), with the real throne seat of the Kit keep (support/StartView) rather than
+	-- WorldPlan's constant; a placement counts by where its middle (a tree's canopy height, a bush's, a rock's) lands on the screen.
 	local function coverage(list: { any }, kingdom: string): number
 		local root = StartView.root(Kit, Layout, kingdom)
-		local look = root.LookVector
-		local facing = Vector3.new(look.X, 0, look.Z).Unit
-		local focus = root.Position + facing * 20
-		local flat = -facing
-		local pitch = math.rad(42.5)
-		local position = focus - flat * (70 * math.cos(pitch)) + Vector3.new(0, 70 * math.sin(pitch), 0)
+		local focus = CameraDef.startFocus(root, START.ahead)
+		local yaw = CameraDef.startYaw(root, START.turn) :: number
+		local flat = Vector3.new(-math.sin(yaw), 0, -math.cos(yaw)) -- the way the camera looks, on the ground
+		local pitch = math.rad(START.pitch)
+		local position = focus - flat * (START.zoom * math.cos(pitch)) + Vector3.new(0, START.zoom * math.sin(pitch), 0)
 		local forward = flat * math.cos(pitch) + Vector3.new(0, -math.sin(pitch), 0)
 		local right = flat:Cross(Vector3.yAxis)
 		local up = right:Cross(forward)
-		local ty = math.tan(math.rad(55 / 2))
+		local ty = math.tan(math.rad(START.fov / 2))
 		local tx = ty * 16 / 9
 		local MIDDLE = { forest = 10, lone_tree = 10, bush = 2, rocks = 2, flowers = 1 }
 		local cells = {}
@@ -779,6 +837,132 @@ describe("Tree lines, groves, hedges and drifts", function()
 			expect(weightAt(250, 20)).toBe(0.35) -- off to the side: no camera of the plot sees it
 		end
 	end)
+
+	it(
+		"copies the controller's start view: WorldPlan.VIEW agrees with RulerCameraController.DEFAULTS.overview, field by field",
+		function()
+			local problems = viewProblems(WorldPlan.VIEW, OVERVIEW)
+			if #problems > 0 then
+				error(
+					`{table.concat(problems, "; ")}. WorldPlan.VIEW is a copy of the controller's start view: change it with the controller, `
+						.. "and re-pin the weights (NatureClumps) and the renders that follow it."
+				)
+			end
+			-- the numbers the coverage measure stands at are the same ones
+			expect(START.zoom).toBe(WorldPlan.VIEW.default.zoom)
+			expect(START.fov).toBe(WorldPlan.VIEW.default.fov)
+			expect(START.ahead).toBe(WorldPlan.VIEW.default.ahead)
+			expect(START.turn == 180).toBe(WorldPlan.VIEW.default.back)
+			expect(START.pitch).toBeNear(42.5, 1e-9) -- Def.pitchFor(70): 38 + 27 x 30 / 180 (the FORGE-00-approved 42.5 degrees)
+		end
+	)
+
+	it(
+		"MUTANT: a VIEW number that drifts from the controller (or a controller that moved on) is caught, field by field",
+		function()
+			local function viewWith(change: (any) -> ()): any
+				local copy = {
+					default = table.clone(WorldPlan.VIEW.default),
+					far = table.clone(WorldPlan.VIEW.far),
+					pitch = table.clone(WorldPlan.VIEW.pitch),
+				}
+				change(copy)
+				return copy
+			end
+			local function mentions(problems: { string }, what: string): boolean
+				for _, line in problems do
+					if string.find(line, what, 1, true) then
+						return true
+					end
+				end
+				return false
+			end
+			expect(#viewProblems(viewWith(function(_) end), OVERVIEW)).toBe(0) -- an untouched copy agrees
+			expect(mentions(
+				viewProblems(
+					viewWith(function(v)
+						v.default.zoom = 71
+					end),
+					OVERVIEW
+				),
+				"default.zoom"
+			)).toBe(true)
+			expect(mentions(
+				viewProblems(
+					viewWith(function(v)
+						v.default.fov = 70
+					end),
+					OVERVIEW
+				),
+				"default.fov"
+			)).toBe(true)
+			expect(mentions(
+				viewProblems(
+					viewWith(function(v)
+						v.default.ahead = 40
+					end),
+					OVERVIEW
+				),
+				"default.ahead"
+			)).toBe(true)
+			expect(mentions(
+				viewProblems(
+					viewWith(function(v)
+						v.default.back = false
+					end),
+					OVERVIEW
+				),
+				"default.back"
+			)).toBe(true)
+			expect(mentions(
+				viewProblems(
+					viewWith(function(v)
+						v.far.zoom = 200
+					end),
+					OVERVIEW
+				),
+				"far.zoom"
+			)).toBe(true)
+			expect(mentions(
+				viewProblems(
+					viewWith(function(v)
+						v.far.fov = 70
+					end),
+					OVERVIEW
+				),
+				"far.fov"
+			)).toBe(true)
+			expect(mentions(
+				viewProblems(
+					viewWith(function(v)
+						v.pitch.minDeg = 40
+					end),
+					OVERVIEW
+				),
+				"pitch.minDeg"
+			)).toBe(true)
+			expect(mentions(
+				viewProblems(
+					viewWith(function(v)
+						v.pitch.maxDeg = 60
+					end),
+					OVERVIEW
+				),
+				"pitch at zoom"
+			)).toBe(true)
+			-- the other direction: the controller moves the start view on and the copy stays
+			local function overviewWith(key: string, value: number): any
+				local copy = table.clone(OVERVIEW)
+				copy[key] = value
+				return copy
+			end
+			expect(mentions(viewProblems(WorldPlan.VIEW, overviewWith("startZoom", 120)), "default.zoom")).toBe(true)
+			expect(mentions(viewProblems(WorldPlan.VIEW, overviewWith("startAhead", 40)), "default.ahead")).toBe(true)
+			expect(mentions(viewProblems(WorldPlan.VIEW, overviewWith("startTurn", 0)), "default.back")).toBe(true)
+			expect(mentions(viewProblems(WorldPlan.VIEW, overviewWith("startTurn", 90)), "start turn is 90")).toBe(true)
+			expect(mentions(viewProblems(WorldPlan.VIEW, overviewWith("minPitchDeg", 30)), "pitch")).toBe(true)
+		end
+	)
 end)
 
 describe("The same world every time, and no part more than before (D-047)", function()

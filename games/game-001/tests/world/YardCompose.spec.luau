@@ -41,6 +41,7 @@ local Terrain = require("@game/ReplicatedStorage/Game/Kit/Terrain")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 local StartView = require("./support/StartView")
+local CameraDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/RulerCameraController")
 
 local KINGDOMS = { "crimson", "azure", "emerald", "gold" }
 local COLOUR = { crimson = "red", azure = "blue", emerald = "green", gold = "yellow" }
@@ -48,6 +49,17 @@ local ALL = { crimson = true, azure = true, emerald = true, gold = true }
 local FULL = WorldPlan.FULL_DENSITY
 local NATURAL = { forest = true, lone_tree = true, bush = true, rocks = true, flowers = true }
 local Y = WorldPlan.YARD
+
+-- The ruler's start view, read from the controller (RulerCameraController.DEFAULTS.overview), for the picture test below. StartView.START
+-- (support/StartView, #313) is this same table once #313 is on main: read that instead then.
+local OVERVIEW = CameraDef.DEFAULTS.overview
+local START = {
+	zoom = OVERVIEW.startZoom,
+	fov = OVERVIEW.fieldOfView,
+	pitch = CameraDef.pitchFor(OVERVIEW.startZoom, OVERVIEW), -- degrees below the horizon
+	ahead = OVERVIEW.startAhead,
+	turn = OVERVIEW.startTurn, -- degrees from the throne's facing; 180 = looking back at the keep
+}
 
 local BUDGET = 70 -- parts a dressed kingdom's yard may cost (the brief; D-047)
 local NAV_GAP = 2 -- studs between a nav edge and a piece's footprint (the coordinator's rule: a walker's reach is 3)
@@ -971,18 +983,19 @@ describe("The composed start yard (FORGE-02 visual pass 1b)", function()
 
 	it("is inside the start camera's picture, the axial pieces in its lower half", function()
 		for _, k in KINGDOMS do
-			-- the camera of the start view (zoom 70, FOV 55, ahead 20, pitch 42.5, looking back across the yard)
+			-- the camera of the start view (the controller's: zoom 70, FOV 55, ahead 20, pitch 42.5, turn 180: looking back across the yard)
 			local root = StartView.root(Kit, Layout, k)
-			local look = root.LookVector
-			local facing = Vector3.new(look.X, 0, look.Z).Unit
-			local focus = root.Position + facing * 20
-			local flat = -facing
-			local pitch = math.rad(42.5)
-			local position = focus - flat * (70 * math.cos(pitch)) + Vector3.new(0, 70 * math.sin(pitch), 0)
+			local focus = CameraDef.startFocus(root, START.ahead)
+			local yaw = CameraDef.startYaw(root, START.turn) :: number
+			local flat = Vector3.new(-math.sin(yaw), 0, -math.cos(yaw)) -- the way the camera looks, on the ground
+			local pitch = math.rad(START.pitch)
+			local position = focus
+				- flat * (START.zoom * math.cos(pitch))
+				+ Vector3.new(0, START.zoom * math.sin(pitch), 0)
 			local forward = flat * math.cos(pitch) + Vector3.new(0, -math.sin(pitch), 0)
 			local right = flat:Cross(Vector3.yAxis)
 			local up = right:Cross(forward)
-			local ty = math.tan(math.rad(55 / 2))
+			local ty = math.tan(math.rad(START.fov / 2))
 			local tx = ty * 16 / 9
 			local rows = rowsOf(k)
 			for i, piece in yardOf(planAll, k) do
