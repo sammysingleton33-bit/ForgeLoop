@@ -2008,14 +2008,14 @@ function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placeme
 				place(string.format("prop_banner_%s_%02d", banner, 1 + (i % 2)), p.X, p.Z, "dressing", yaw)
 			end
 			for i, off in
-				{ Vector3.new(-30, 0, -10), Vector3.new(-30, 0, 6), Vector3.new(30, 0, -14), Vector3.new(-76, 0, 2) }
+				{ Vector3.new(-30, 0, -10), Vector3.new(-30, 0, 6), Vector3.new(30, 0, -14), Vector3.new(-50, 0, 10) }
 			do
 				local p = (keep * CFrame.new(off)).Position
 				local id = if i == 3
 					then "farm_haystack_01"
 					elseif i == 4 then "prop_cart_02"
 					else assetId("prop_goods", i)
-				place(id, p.X, p.Z, "dressing") -- hand-placed clear of slots, nav and roads (spec)
+				place(id, p.X, p.Z, "dressing") -- hand-placed clear of slots, nav and roads (spec); the cart stands at (-50, 10), where clear() leaves it (the old (-76, 2) was nudged 13 studs onto a nav edge)
 			end
 			-- the start yard: the market square the start camera looks across (WorldPlan.yard)
 			for _, p in WorldPlan.yard(layout, kingdom) do

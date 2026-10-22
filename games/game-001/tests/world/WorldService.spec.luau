@@ -393,18 +393,18 @@ describe("Dressing density knob (D-047)", function()
 			-- re-pin only when the world itself changes on purpose: the generated plan, then the cleared plan
 			local plan = WorldPlan.plan(Layout, { crimson = true })
 			expect(#plan).toBe(465)
-			expect(fingerprint(plan)).toBe(2128916079) -- re-pinned for FORGE-02 visual pass 1b (the composed start yard, WorldPlan.yard, replaces the old yard's well and 8 scattered props of 1: 10 pieces for 9, the same 66 parts a kingdom, new places, ids and colours, feature "yard"; YardCompose.spec pins them) and before that for visual pass 1 (nature in clumps: WorldPlan.generateNature grows stands, tree lines, groves, rock groups, bush clumps and flower drifts in place of the even scatter; 618 placements -> 464: stands keep 0.7 of their Layout counts, lone trees, bushes and rocks are fewer and grouped; placements carry scale and tint, which this fingerprint leaves out: NatureClumps.spec pins those). Before that: main d78d9cb's props, re-pinned for FL-0127 (three outposts), FL-0072 (the arena's footprint) and FL-0124 (decor keeps 9 studs off every world node)
+			expect(fingerprint(plan)).toBe(1555172240) -- re-pinned for the dressing cart's move (it moves from (-76, 2) to (-50, 10) in the keep's frame: the old spot was nudged 13 studs onto a nav edge by the lane clearance), before that for FORGE-02 visual pass 1b (the composed start yard, WorldPlan.yard, replaces the old yard's well and 8 scattered props of 1: 10 pieces for 9, the same 66 parts a kingdom, new places, ids and colours, feature "yard"; YardCompose.spec pins them) and before that for visual pass 1 (nature in clumps: WorldPlan.generateNature grows stands, tree lines, groves, rock groups, bush clumps and flower drifts in place of the even scatter; 618 placements -> 464: stands keep 0.7 of their Layout counts, lone trees, bushes and rocks are fewer and grouped; placements carry scale and tint, which this fingerprint leaves out: NatureClumps.spec pins those). Before that: main d78d9cb's props, re-pinned for FL-0127 (three outposts), FL-0072 (the arena's footprint) and FL-0124 (decor keeps 9 studs off every world node)
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
 			expect(#one).toBe(465)
-			expect(fingerprint(one)).toBe(682453024)
+			expect(fingerprint(one)).toBe(1161564826)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
 			expect(#all).toBe(519)
-			expect(fingerprint(all)).toBe(1685515301)
+			expect(fingerprint(all)).toBe(1205346038)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
 			svc.dressed = { crimson = true } -- the service dresses all four now (DRESSED): this pin is the crimson-only world, as before
