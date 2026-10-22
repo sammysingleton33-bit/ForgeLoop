@@ -35,6 +35,7 @@ ROWS = [
     ("ended keeps the clock", M, "\tif ended then\n", "\tif false then\n", "ArenaModels", "says how the duel ended"),
     ("ended reason ignored", M, "clock = ArenaHudModel.ENDED[ended.reason] or", "clock = nil or", "ArenaModels",
      "says how the duel ended"),
+    ("hard cap unnamed", M, "hardCap = \"Time\", ", "", "ArenaModels", "says how the duel ended"),
     ("you win / you lost swapped", M, "(if ended.winner == mine then \"You win\" else \"You lost\")",
      "(if ended.winner ~= mine then \"You win\" else \"You lost\")", "ArenaModels", "says how the duel ended"),
     ("card over the ring", I, "\t\t\treturn nil -- the ring shot: the card steps aside", "\t\t\tlocal _ = 0", "ArenaPhase",
