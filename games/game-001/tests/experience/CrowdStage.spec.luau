@@ -170,6 +170,10 @@ describe("CrowdStageController (FL-0074 part 2b: the arena intro, music and stin
 		expect(looksAt(shots[2], CENTRE)).toBe(true)
 		expect(looksAt(shots[3], STAND_A)).toBe(true)
 		expect(shots[1].zoom).toBe(Crowd.intro.standZoom)
+		-- at the overview's field of view each shot frames what 55 and 80 studs did at 70° (D-059)
+		local fov = math.rad(CameraDef.DEFAULTS.overview.fieldOfView) / 2
+		expect(math.abs(Crowd.intro.standZoom * math.tan(fov) - 55 * math.tan(math.rad(35))) < 1).toBe(true)
+		expect(math.abs(Crowd.intro.ringZoom * math.tan(fov) - 80 * math.tan(math.rad(35))) < 1).toBe(true)
 		expect(shots[3].zoom).toBe(Crowd.intro.ringZoom)
 		local total = 0
 		for _, shot in shots do
