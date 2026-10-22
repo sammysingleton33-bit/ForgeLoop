@@ -30,17 +30,17 @@
 		farmer      Detail1 strawcrown (kingdom-red crown over the straw brim, Head)   Detail2 hoeblade (steel wedge, Tool)
 		woodcutter  Detail1 pompom (kingdom-red, on the beanie, Head)                  Detail2 axehead (bearded steel, Tool)
 		miner       Detail1 pickhead (iron tine, Tool)                                 Detail2 pickpoint (the other tine, Tool): a drooped arch
-		builder     Detail1 visor (with the cream drum: a hard hat, Head)              Detail2 mallet (wood head, Tool)
+		builder     Detail1 visor (with the white drum: a hard hat, Head)              Detail2 mallet (wood head, Tool)
 		hauler      Detail1 strap (kingdom-red, across the chest)                      Detail2 tie (the sack's neck); both Tool
 		soldier     Detail1 spearhead (pale steel)                                     Detail2 pennant (kingdom-red); both Tool
 		governor    Detail1 velvetcap (kingdom-red, over the crown disc, Head)         Detail2 orb (gold, on the staff, Tool)
 
 	Job silhouettes (citizen art pass after the first Studio playtest). Each working job reads without colour:
 		farmer      wide straw hat (flat disc 3.1), long hoe with a steel blade, lean body   KitHeadwear "strawhat"
-		woodcutter  small charcoal knit beanie (a ball sitting high), axe with a bearded steel head, stocky   "knitcap"
+		woodcutter  small ink-dark knit beanie (a ball sitting high), axe with a bearded steel head, stocky   "knitcap"
 		miner       small dark iron pot (1.9), pick with two drooped iron tines on a 5.4 handle (an arch, not a T), stocky   "hardhat"
-		builder     cream hard hat (a drum with a visor detail, sits on the head), wooden mallet, broad  "buildercap"
-		hauler      no job hat (hair shows), big burlap sack low on the back, broad
+		builder     white hard hat (a drum with a visor detail, sits on the head), wooden mallet, broad  "buildercap"
+		hauler      no job hat (hair shows), big pale flour sack low on the back, broad
 		idle        hair, nothing carried, lean; the free 9th part is a headband or scarf (Accessory, KitAccessory)
 	The job also owns an outfit accent: the trousers (colour, KitAccent = job) and the outfit's fixed neutral
 	panel (the torso or the sleeves, whichever the outfit does not tint or leave bare) take the job's colour, so
@@ -138,13 +138,14 @@ Character.DETAIL_ATTRIBUTE = "KitDetail" -- true on every detail part, so the cl
 local STEEL = Color3.fromRGB(176, 182, 192)
 local STEEL_DARK = Color3.fromRGB(84, 90, 100)
 local BLADE = Color3.fromRGB(138, 146, 158)
-local BURLAP = Color3.fromRGB(146, 108, 70) -- sack: a darker sackcloth (L .46)
+local BURLAP = Color3.fromRGB(226, 216, 190) -- the hauler's sack: a pale flour sack (the old brown sackcloth was the colour of the fields and roads: dE 3 from "Ground")
 local LINEN = Color3.fromRGB(226, 214, 186)
 local LEATHER = Color3.fromRGB(120, 78, 46)
-local STRAW = Color3.fromRGB(200, 156, 64) -- farmer's hat: straw (L .62; palette L .58-.67)
-local KNIT = Color3.fromRGB(52, 58, 70) -- woodcutter's cap: charcoal wool (neutral, so it never reads as a kingdom)
-local HARDHAT = Color3.fromRGB(168, 104, 34) -- miner's iron pot: dark burnt ochre (L .44; palette L .38-.44)
-local COIF = Color3.fromRGB(240, 214, 160) -- builder's cloth cap: warm cream (L .85; palette L .83-.87)
+local VEST = Color3.fromRGB(44, 96, 120) -- the citizens' vest: a dyed teal (the leather brown it had is the fields' colour)
+local STRAW = Color3.fromRGB(224, 184, 72) -- farmer's hat: golden straw (L .72; palette L .70-.78; dE 43 from the fields)
+local KNIT = Color3.fromRGB(34, 38, 52) -- woodcutter's cap: ink-dark wool (L .15; neutral, so it never reads as a kingdom)
+local HARDHAT = Color3.fromRGB(214, 98, 28) -- miner's iron pot: safety orange (L .46; palette L .40-.53; the old ochre was the fields' colour)
+local COIF = Color3.fromRGB(250, 244, 228) -- builder's hard hat: near white (L .96; palette L .93-.96)
 local ASH = Color3.fromRGB(214, 190, 146) -- spear shaft: pale ash, visible against grass and soldiers' steel
 local WOOD_PALE = Color3.fromRGB(198, 152, 104) -- hammer handle
 local ERMINE = Color3.fromRGB(242, 238, 228)
@@ -252,7 +253,7 @@ local HAIR_STYLES: { HairStyle } = {
 }
 
 -- Job headwear (Hair slot, welded to the Head): one bold silhouette per working job, none in a hair colour (the
--- woodcutter's beanie is the only ball, in charcoal; hair balls are brown, black, blond, ginger, grey or flaxen). Heads: top 5.44, face clear below y = +0.33 (head-centre frame). A hat sits ON
+-- woodcutter's beanie is the only ball, in ink-dark wool; hair balls are brown, black, blond, ginger, grey or flaxen). Heads: top 5.44, face clear below y = +0.33 (head-centre frame). A hat sits ON
 -- the head (clearance rules in the Kit spec): the head enters it by at most 0.4 above its lower face, and no
 -- skin shows through its top or sides (every head point above the hat's lower face is inside the hat).
 local JOB_HATS: { [string]: PartSpec } = {
@@ -262,40 +263,40 @@ local JOB_HATS: { [string]: PartSpec } = {
 		shape = Enum.PartType.Cylinder,
 		size = Vector3.new(0.42, 3.1, 3.1),
 		color = STRAW,
-		palette = { STRAW, Color3.fromRGB(214, 170, 60), Color3.fromRGB(178, 146, 92) },
+		palette = { STRAW, Color3.fromRGB(232, 200, 96), Color3.fromRGB(214, 178, 80) },
 		material = Enum.Material.Fabric,
 		offset = CFrame.new(0, 0.62, 0) * UPRIGHT,
 	},
 	woodcutter = { -- knit beanie: a small dark ball sitting high on the head (the old wedge slab was oversized and read
 		-- as a chimney). Its rim runs above the eyes (the covered cap starts 0.4 above the head centre) and meets the
-		-- head at a clean angle (53°, spec); it is charcoal against hair's browns and blacks
+		-- head at a clean angle (53°, spec); it is ink-dark against hair's browns and blacks
 		name = "knitcap",
 		class = "Part",
 		shape = Enum.PartType.Ball,
 		size = Vector3.new(1.5, 1.5, 1.5),
 		color = KNIT,
-		palette = { KNIT, Color3.fromRGB(40, 52, 84), Color3.fromRGB(44, 64, 50) },
+		palette = { KNIT, Color3.fromRGB(30, 44, 82), Color3.fromRGB(30, 52, 44) },
 		material = Enum.Material.Fabric,
 		offset = CFrame.new(0, 0.7, 0.05),
 	},
-	miner = { -- squat iron hat with a rim wider than the head, ochre and glossy: a pot on the head
+	miner = { -- squat iron hat with a rim wider than the head, safety orange and glossy: a pot on the head
 		name = "hardhat",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
 		size = Vector3.new(0.7, 1.9, 1.9),
 		color = HARDHAT,
-		palette = { HARDHAT, Color3.fromRGB(160, 84, 40), Color3.fromRGB(140, 106, 40) },
+		palette = { HARDHAT, Color3.fromRGB(222, 120, 24), Color3.fromRGB(196, 82, 30) },
 		material = Enum.Material.Metal,
 		offset = CFrame.new(0, 0.79, 0) * UPRIGHT, -- base 0.44; 1.9 across against the farmer's 3.1
 	},
-	builder = { -- cream hard hat crown: a squat drum sitting ON the head (base 0.44 above the head centre); its visor
+	builder = { -- white hard hat crown: a squat drum sitting ON the head (base 0.44 above the head centre); its visor
 		-- is a head detail part (HEAD_DETAILS.builder), so with it the hat reads as a hard hat, not a paper cap
 		name = "buildercap",
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
 		size = Vector3.new(0.75, 1.8, 1.8),
 		color = COIF,
-		palette = { COIF, Color3.fromRGB(246, 224, 140), Color3.fromRGB(244, 208, 170) },
+		palette = { COIF, Color3.fromRGB(255, 238, 176), Color3.fromRGB(244, 240, 214) },
 		material = Enum.Material.SmoothPlastic,
 		offset = CFrame.new(0, 0.815, 0) * UPRIGHT,
 	},
@@ -431,12 +432,12 @@ type Outfit = { name: string, torso: Paint, sleeves: Paint, legs: Paint, legMate
 
 -- The kingdom colour (a number = KitTint) is on the torso, the sleeves or both, so it reads from above.
 local OUTFITS: { Outfit } = {
-	{ name = "tunic", torso = 0.8, sleeves = LINEN, legs = Color3.fromRGB(110, 86, 60) }, -- 1 default
-	{ name = "sleeveless", torso = 0.85, sleeves = "skin", legs = Color3.fromRGB(78, 58, 40) },
-	{ name = "vest", torso = LEATHER, sleeves = 0.8, legs = Color3.fromRGB(88, 90, 98) },
-	{ name = "apron", torso = C.canvas, sleeves = 0.72, legs = Color3.fromRGB(104, 70, 44) },
+	{ name = "tunic", torso = 0.8, sleeves = LINEN, legs = Color3.fromRGB(58, 66, 104) }, -- 1 default
+	{ name = "sleeveless", torso = 0.85, sleeves = "skin", legs = Color3.fromRGB(74, 56, 84) },
+	{ name = "vest", torso = VEST, sleeves = 0.8, legs = Color3.fromRGB(88, 90, 98) },
+	{ name = "apron", torso = C.canvas, sleeves = 0.72, legs = Color3.fromRGB(46, 84, 92) },
 	{ name = "robe", torso = 0.66, sleeves = 0.66, legs = 0.5 },
-	{ name = "jerkin", torso = 1, sleeves = Color3.fromRGB(72, 62, 54), legs = Color3.fromRGB(150, 128, 96) },
+	{ name = "jerkin", torso = 1, sleeves = Color3.fromRGB(64, 68, 92), legs = Color3.fromRGB(104, 120, 168) },
 }
 
 local SOLDIER_OUTFIT: Outfit =
@@ -581,51 +582,56 @@ type JobStyle = {
 	panels: { Color3 }?, -- three panel colours of one value band (hair colour picks one; `panel` is the first)
 	legsSet: { Color3 }?, -- likewise for the trousers
 }
+-- Aerial colour rules (citizen readability pass, 2026-10-19): the ground a citizen stands on is green grass, brown fields and roads
+-- and grey cobble (world/Lighting.luau terrainColors), all of middling value, so a brown or olive job colour is invisible on it
+-- (the old hauler's sackcloth panel and sack were dE 2-4 from "Ground" in CIELAB, the idle trousers dE 0 from "Mud"). Every hat,
+-- panel, trouser and sack colour below keeps dE >= 32 from Grass, LeafyGrass and Ground and >= 22 from Mud and Cobblestone, in every
+-- dyed variant (tests/world/KitCitizenAerial.spec); blue, orange, white, gold and ink are the hues the ground has none of.
 local JOBS: { [string]: JobStyle } = {
 	idle = { width = 1.9 },
-	farmer = { -- light: cream shirt or apron, olive trousers, straw hat
+	farmer = { -- light: cream shirt or apron, blue trousers, golden straw hat
 		width = 1.95,
 		tool = "hoe",
 		hat = JOB_HATS.farmer,
 		panel = Color3.fromRGB(232, 222, 190),
-		legs = Color3.fromRGB(98, 104, 58),
-		panels = { Color3.fromRGB(232, 222, 190), Color3.fromRGB(214, 224, 196), Color3.fromRGB(236, 214, 176) },
-		legsSet = { Color3.fromRGB(98, 104, 58), Color3.fromRGB(86, 108, 66), Color3.fromRGB(84, 100, 84) },
+		legs = Color3.fromRGB(62, 84, 128),
+		panels = { Color3.fromRGB(232, 222, 190), Color3.fromRGB(214, 224, 196), Color3.fromRGB(242, 226, 196) },
+		legsSet = { Color3.fromRGB(62, 84, 128), Color3.fromRGB(82, 86, 130), Color3.fromRGB(54, 88, 108) },
 	},
-	woodcutter = { -- dark: umber leather, black-brown trousers, charcoal beanie, bright steel axe
+	woodcutter = { -- dark: slate flannel, ink trousers, ink beanie, bright steel axe
 		width = 2.3,
 		tool = "axe",
 		hat = JOB_HATS.woodcutter,
-		panel = Color3.fromRGB(96, 66, 46),
-		legs = Color3.fromRGB(58, 42, 32),
-		panels = { Color3.fromRGB(96, 66, 46), Color3.fromRGB(84, 70, 66), Color3.fromRGB(110, 66, 44) },
-		legsSet = { Color3.fromRGB(58, 42, 32), Color3.fromRGB(50, 46, 48), Color3.fromRGB(70, 40, 36) },
+		panel = Color3.fromRGB(70, 84, 102),
+		legs = Color3.fromRGB(44, 36, 50),
+		panels = { Color3.fromRGB(70, 84, 102), Color3.fromRGB(82, 76, 100), Color3.fromRGB(62, 92, 100) },
+		legsSet = { Color3.fromRGB(44, 36, 50), Color3.fromRGB(38, 40, 48), Color3.fromRGB(50, 34, 42) },
 	},
-	miner = { -- cool grey: soot panel, coal trousers, dark ochre pot
+	miner = { -- cool: steel-blue panel, slate trousers, safety-orange pot
 		width = 2.2,
 		tool = "pick",
 		hat = JOB_HATS.miner,
-		panel = Color3.fromRGB(122, 126, 136),
-		legs = Color3.fromRGB(70, 68, 72),
-		panels = { Color3.fromRGB(122, 126, 136), Color3.fromRGB(132, 124, 116), Color3.fromRGB(110, 122, 140) },
-		legsSet = { Color3.fromRGB(70, 68, 72), Color3.fromRGB(62, 70, 84), Color3.fromRGB(74, 76, 64) },
+		panel = Color3.fromRGB(132, 148, 176),
+		legs = Color3.fromRGB(70, 74, 86),
+		panels = { Color3.fromRGB(132, 148, 176), Color3.fromRGB(146, 140, 172), Color3.fromRGB(116, 142, 182) },
+		legsSet = { Color3.fromRGB(70, 74, 86), Color3.fromRGB(64, 70, 88), Color3.fromRGB(76, 76, 92) },
 	},
-	builder = { -- tan canvas, dusty navy trousers, cream cap
+	builder = { -- hi-vis orange canvas, deep blue trousers, white hard hat
 		width = 2.3,
 		tool = "hammer",
 		hat = JOB_HATS.builder,
-		panel = Color3.fromRGB(196, 158, 104),
-		legs = Color3.fromRGB(52, 62, 94),
-		panels = { Color3.fromRGB(196, 158, 104), Color3.fromRGB(186, 170, 120), Color3.fromRGB(206, 160, 90) },
-		legsSet = { Color3.fromRGB(52, 62, 94), Color3.fromRGB(60, 58, 100), Color3.fromRGB(84, 84, 100) },
+		panel = Color3.fromRGB(236, 132, 36),
+		legs = Color3.fromRGB(40, 52, 102),
+		panels = { Color3.fromRGB(236, 132, 36), Color3.fromRGB(230, 146, 44), Color3.fromRGB(240, 120, 48) },
+		legsSet = { Color3.fromRGB(40, 52, 102), Color3.fromRGB(48, 50, 104), Color3.fromRGB(64, 70, 108) },
 	},
-	hauler = { -- sackcloth panel and russet trousers; keeps the look's hair (the sack is the signature)
+	hauler = { -- blue smock and plum trousers under the pale flour sack; keeps the look's hair (the sack is the signature)
 		width = 2.3,
 		tool = "sack",
-		panel = Color3.fromRGB(156, 118, 80),
-		legs = Color3.fromRGB(112, 68, 42),
-		panels = { Color3.fromRGB(156, 118, 80), Color3.fromRGB(146, 122, 92), Color3.fromRGB(164, 112, 76) },
-		legsSet = { Color3.fromRGB(112, 68, 42), Color3.fromRGB(96, 72, 52), Color3.fromRGB(122, 76, 50) },
+		panel = Color3.fromRGB(66, 112, 168),
+		legs = Color3.fromRGB(92, 52, 72),
+		panels = { Color3.fromRGB(66, 112, 168), Color3.fromRGB(60, 120, 150), Color3.fromRGB(84, 104, 170) },
+		legsSet = { Color3.fromRGB(92, 52, 72), Color3.fromRGB(84, 56, 76), Color3.fromRGB(98, 50, 66) },
 	},
 }
 Character.JOB_HEADWEAR = table.freeze((function()
