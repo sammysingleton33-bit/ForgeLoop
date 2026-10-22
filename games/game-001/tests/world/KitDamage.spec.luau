@@ -20,6 +20,10 @@
 	  3. burning    the Burning attribute and the model's top are untouched (FORGE-04's Burning look reads both), every mark
 	                stays inside the model;
 	  4. recolour   Kit.setKingdomColor works on damaged models and on the parts waiting for a repair;
+	  4b. order     Kit.build numbers every part of a model (the part attribute KitOrder: unique integers 1..n), the damage
+	                walks that order (reversing the numbers changes which parts are chosen), and float noise on the parts
+	                (1e-4, what a turn or a move leaves) does not change a choice the numbers decide (without them it does:
+	                keep L1 and L3, barracks L4 and granary L2 at state 1 change);
 	  5. mutants    the key rules above are caught when broken.
 ]]
 
@@ -1045,6 +1049,185 @@ CHECKS.level = function()
 	return out
 end
 
+-- ------------------------------------------------------------------ 8. order: the KitOrder part attribute
+
+-- Kit.build numbers the model's parts (the Root excepted) in the order the damage walks them: the part attribute KitOrder. A
+-- choice between two equally distant parts then never depends on float noise from a turn or a move, nor on the order a repair
+-- left the children in. Without the attribute the walk falls back to a key of name, position (rounded to 0.01) and size, which
+-- a part at a rounding edge can flip.
+local ORDER_BUILDS: { { any } } = {}
+for _, bt in Kit.BUILDING_TYPES do
+	table.insert(ORDER_BUILDS, { bt, MAX_LEVEL[bt] or 2, "crimson" })
+end
+for _, e in
+	{
+		{ "wall", 1, "azure" },
+		{ "wall", 2, "azure" },
+		{ "gate", 1, "emerald" },
+		{ "gate", 2, "gold" },
+		{ "keep", 1, "crimson" },
+	}
+do
+	table.insert(ORDER_BUILDS, e)
+end
+-- { type, level, kingdom, Damage }: at state 1 the first five choose differently when the numbers are not read (measured on 168
+-- combinations: type x state x two kingdoms); the last two are the wall and the gate at other states
+local ORDER_NOISE: { { any } } = {
+	{ "keep", 3, "crimson", 0.3 },
+	{ "keep", 1, "crimson", 0.3 },
+	{ "barracks", 4, "crimson", 0.3 },
+	{ "granary", 2, "crimson", 0.3 },
+	{ "granary", 2, "azure", 0.3 },
+	{ "wall", 2, "crimson", 0.55 },
+	{ "gate", 2, "crimson", 0.8 },
+}
+-- types whose damage depends on the order: reversing the numbers changes the parts chosen at some state
+local ORDER_READ: { { any } } = {
+	{ "wall", 2 },
+	{ "gate", 2 },
+	{ "house", 2 },
+	{ "keep", 3 },
+	{ "watchtower", 2 },
+}
+
+local function bodyParts(m: Model): { BasePart }
+	local list: { BasePart } = {}
+	for _, p in m:GetChildren() do
+		if p:IsA("BasePart") and p ~= m.PrimaryPart and p:GetAttribute("KitDamage") ~= true then
+			table.insert(list, p)
+		end
+	end
+	return list
+end
+
+type Outcome = { kept: string, extras: { { any } } }
+
+-- builds the model, names every part (SpecId), runs `prepare`, damages it, and returns which of its own parts are left and where
+-- the damage parts lie (in the model's frame)
+local function outcome(bt: string, lv: number, hue: string, d: number, prepare: ((Model, { BasePart }) -> ())?): Outcome
+	local m = Kit.build(bt, lv, "complete", CANON[hue])
+	local list = bodyParts(m)
+	for i, p in list do
+		p:SetAttribute("SpecId", i)
+	end
+	if prepare then
+		prepare(m, list)
+	end
+	m:SetAttribute("Damage", d)
+	Kit.applyDamage(m)
+	local inv = pivotOf(m):Inverse()
+	local kept: { number } = {}
+	local extra: { { any } } = {}
+	for _, p in m:GetChildren() do
+		if p:IsA("BasePart") and p ~= m.PrimaryPart then
+			if p:GetAttribute("KitDamage") == true then
+				local c = inv * p.CFrame.Position
+				table.insert(extra, { `{p.Name}|{p:GetAttribute("KitDamageKind")}`, c.X, c.Y, c.Z })
+			else
+				table.insert(kept, (p:GetAttribute("SpecId") or -1) :: number)
+			end
+		end
+	end
+	table.sort(kept)
+	table.sort(extra, function(a, b)
+		if a[1] ~= b[1] then
+			return a[1] < b[1]
+		elseif a[2] ~= b[2] then
+			return a[2] < b[2]
+		end
+		return a[3] < b[3]
+	end)
+	return { kept = table.concat(kept, ","), extras = extra }
+end
+
+-- nil when both left the same parts and made the same damage parts (within 0.002), else what differs
+local function outcomeDiff(a: Outcome, b: Outcome): string?
+	if a.kept ~= b.kept then
+		return "different parts left standing"
+	elseif #a.extras ~= #b.extras then
+		return `{#a.extras} damage parts here, {#b.extras} there`
+	end
+	for i, x in a.extras do
+		local y = b.extras[i]
+		if x[1] ~= y[1] then
+			return `damage parts differ: {x[1]} / {y[1]}`
+		end
+		for j = 2, 4 do
+			if math.abs(x[j] - y[j]) > 0.002 then
+				return `{x[1]} lies at a different place`
+			end
+		end
+	end
+	return nil
+end
+
+CHECKS.order = function()
+	local out: { string } = {}
+	-- 1. every part but the Root carries its own place in the walk: an integer 1..n, each once
+	for _, e in ORDER_BUILDS do
+		local tag = `{e[1]} L{e[2]} {e[3]}`
+		local m = Kit.build(e[1], e[2], "complete", CANON[e[3]])
+		local list = bodyParts(m)
+		local seen: { [number]: boolean } = {}
+		for _, p in list do
+			local n = p:GetAttribute("KitOrder")
+			if type(n) ~= "number" or n ~= math.floor(n) or n < 1 or n > #list then
+				table.insert(out, `{tag}: {p.Name} has KitOrder {n}, want an integer 1..{#list}`)
+				break
+			elseif seen[n] then
+				table.insert(out, `{tag}: KitOrder {n} is on two parts`)
+				break
+			end
+			seen[n] = true
+		end
+	end
+	-- 2. float noise on the parts (what a turn or a move leaves) does not change a choice
+	for _, e in ORDER_NOISE do
+		local bt, lv, hue, d = e[1], e[2], e[3], e[4]
+		local calm = outcome(bt, lv, hue, d)
+		local noisy = outcome(bt, lv, hue, d, function(_, list)
+			for i, p in list do
+				p.CFrame = p.CFrame
+					+ Vector3.new(
+						math.sin(i * 12.9898) * 1e-4,
+						math.sin(i * 78.233 + 1) * 1e-4,
+						math.sin(i * 37.719 + 2) * 1e-4
+					)
+			end
+		end)
+		local why = outcomeDiff(calm, noisy)
+		if why then
+			table.insert(out, `{bt} L{lv} {hue} Damage {d}: nudging the parts by 1e-4 changes the damage ({why})`)
+		end
+	end
+	-- 3. the damage walks the numbers: reversing them changes which parts are chosen (at some state, for each of these types)
+	for _, e in ORDER_READ do
+		local changed = false
+		for _, d in { 0.3, 0.55, 0.8, 0.97 } do
+			local same = outcome(e[1], e[2], "crimson", d)
+			local reversed = outcome(e[1], e[2], "crimson", d, function(_, list)
+				for _, p in list do
+					local n = p:GetAttribute("KitOrder")
+					if type(n) == "number" then
+						p:SetAttribute("KitOrder", #list + 1 - n)
+					end
+				end
+			end)
+			if outcomeDiff(same, reversed) then
+				changed = true
+				break
+			end
+		end
+		if not changed then
+			table.insert(
+				out,
+				`{e[1]} L{e[2]}: reversing KitOrder changes no choice at any state (the numbers are not read)`
+			)
+		end
+	end
+	return out
+end
+
 -- ------------------------------------------------------------------ the spec
 
 local function expectClean(list: { string })
@@ -1063,6 +1246,12 @@ describe("Damage states (FL-0128)", function()
 	it("damages a level the Kit does not have like the level it really is", function()
 		expectClean(CHECKS.level())
 	end)
+	it(
+		"walks the parts in the order Kit.build numbered them (KitOrder), whatever float noise a turn or a move leaves",
+		function()
+			expectClean(CHECKS.order())
+		end
+	)
 end)
 
 -- ------------------------------------------------------------------ mutants
@@ -1074,6 +1263,7 @@ describe("Damage mutants are caught", function()
 		setKingdomColor = Kit.setKingdomColor,
 		stashed = Damage.stashed,
 		frameOf = Damage.frameOf,
+		orderAttribute = Damage.ORDER_ATTRIBUTE,
 	}
 	local function restore()
 		Kit.build = original.build
@@ -1081,6 +1271,7 @@ describe("Damage mutants are caught", function()
 		Kit.setKingdomColor = original.setKingdomColor
 		Damage.stashed = original.stashed
 		Damage.frameOf = original.frameOf
+		Damage.ORDER_ATTRIBUTE = original.orderAttribute
 	end
 	local function caught(name: string, by: string, mutate: () -> ())
 		it(`catches: {name} (by {by})`, function()
@@ -1096,7 +1287,7 @@ describe("Damage mutants are caught", function()
 		end)
 	end
 	it("passes unmutated (the baseline)", function()
-		for _, name in { "damage", "level" } do
+		for _, name in { "damage", "level", "order" } do
 			expectClean(CHECKS[name]())
 		end
 		expectClean(CHECKS.frames(true))
@@ -1470,4 +1661,33 @@ describe("Damage mutants are caught", function()
 			end
 		end
 	)
+
+	-- the order rules: Kit.build numbers the parts and the damage walks the numbers
+	caught("Kit.build does not number the parts (no KitOrder)", "order", function()
+		Kit.build = function(...)
+			local m = original.build(...)
+			for _, p in m:GetChildren() do
+				p:SetAttribute("KitOrder", nil)
+			end
+			return m
+		end
+	end)
+	caught("every part is number 1 (KitOrder is not a walk order)", "order", function()
+		Kit.build = function(...)
+			local m = original.build(...)
+			for _, p in m:GetChildren() do
+				if p:GetAttribute("KitOrder") ~= nil then
+					p:SetAttribute("KitOrder", 1)
+				end
+			end
+			return m
+		end
+	end)
+	caught("the damage ignores KitOrder and walks the position keys (float noise flips a choice)", "order", function()
+		Kit.applyDamage = function(m)
+			Damage.ORDER_ATTRIBUTE = "KitOrderIgnored"
+			original.applyDamage(m)
+			Damage.ORDER_ATTRIBUTE = original.orderAttribute
+		end
+	end)
 end)

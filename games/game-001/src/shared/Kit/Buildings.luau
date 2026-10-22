@@ -25,8 +25,9 @@
 	WorldService props and region markers. The caps are ceilings, not targets: every model at its cap would
 	sum to ≈ 23.6k, so new detail goes where it reads (roofs, doors, banners), never into hidden faces.
 	With the FL-0128 war kit the all-built worst case (every kingdom at its top levels, wall L3 x 12 and the gate at
-	L3) measures 26,326 of the D-047 ceiling 27,000: WorldService 6,869 + four kingdoms 19,121 (Emberhold 4,693,
-	Frostmere 4,807, Thornwood 4,896, Sunspire 4,725) + three neutral towers 336 (tests/world/KitCeiling.spec.luau).
+	L3) measures 26,402 of the D-047 ceiling 27,000: WorldService 6,945 (with the 76 node-marker parts of FL-0136 phase 3) +
+	four kingdoms 19,121 (Emberhold 4,693, Frostmere 4,807, Thornwood 4,896, Sunspire 4,725) + three neutral towers 336
+	(tests/world/KitCeiling.spec.luau prints the line; it is the number).
 	If a later change goes over, cap the wall segments per kingdom in config before thinning the art.
 
 		type        cap   measured (min–max over levels, variants, the 4 + 2 FORGE-01 kingdom colours, neutral)
@@ -1911,7 +1912,8 @@ BUILDERS.gate = function(ctx, level, color, style, fp)
 	)
 	if lv == 3 then
 		-- the portcullis is a grille in the point of the arch above the leaves: short bars that follow the arch, a cross
-		-- bar ties them; raised 7 studs it is hidden inside the lintel (the opening is clear when the gate is open)
+		-- bar ties them; raised 7 studs it is hidden inside the lintel (the passage under the arch is clear when the gate is open; the
+		-- Tympanum behind the bars stays, as it does at every level)
 		local lift = CFrame.new(0, 7, 0)
 		local barBottom = 9.7 -- just above the leaves
 		for _, bx in { -4.0, -2.4, -0.8, 0.8, 2.4, 4.0 } do

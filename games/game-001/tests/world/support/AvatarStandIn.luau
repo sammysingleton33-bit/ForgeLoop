@@ -1,8 +1,15 @@
 --[[
 	Stand-in R15 and R6 avatars for the Kit gear specs and the arena preview dump (FL-0072, FORGE-02): blocky limbs and the
 	attachment names Roblox rigs carry (HatAttachment, BodyFrontAttachment, BodyBackAttachment, LeftCollarAttachment,
-	RightCollarAttachment, RightGripAttachment), at approximate positions. This is NOT a Studio check: it follows the
-	Roblox attachment reference; nobody has seen the gear on a real rig yet.
+	RightCollarAttachment, RightGripAttachment, LeftGripAttachment), at approximate positions. This is NOT a Studio check: it
+	follows the Roblox attachment reference; nobody has seen the gear on a real rig yet (a real R6 "Left Arm" carrying
+	LeftGripAttachment is UNVERIFIED too).
+
+	The right arm points forward (an equipped Tool's pose) and its grip attachment has the identity orientation: that is the grip
+	frame (+Y up, -Z forward, +X right) a real hand's grip attachment has when the arm points forward. The left arm HANGS by
+	default (the armour specs' silhouettes), and its LeftGripAttachment carries the real hand's turn (Rx(-90) from the hanging
+	arm's frame), so a shield modelled in the grip frame faces down under the fist there; Avatar.build(rigType, at, { guard = true })
+	raises the left arm forward like the right (the duel's guard pose), where the left grip frame is the same grip frame.
 
 	Avatar.wear(accessory, avatar) does what Humanoid:AddAccessory does: Handle.CFrame = body attachment (world) *
 	accessory attachment:Inverse(), the welded parts follow. Avatar.hold(tool, avatar) puts a Tool's Handle in the right
@@ -15,6 +22,8 @@ export type Avatar = {
 	attachments: { [string]: Attachment },
 	parts: { [string]: BasePart },
 	hand: Vector3, -- where the right fist is when the arm points forward
+	leftHand: Vector3, -- where the left grip attachment is (the bottom of the hanging arm, or the fist when raised)
+	guard: boolean, -- the left arm is raised forward
 }
 
 local Avatar = {}
@@ -23,7 +32,8 @@ local SKIN = Color3.fromRGB(242, 201, 160)
 local CLOTH = Color3.fromRGB(204, 194, 174) -- a linen shirt: dark plate and brown leather both read against it
 local TROUSERS = Color3.fromRGB(122, 106, 86)
 
-function Avatar.build(rigType: string, at: CFrame?): Avatar
+function Avatar.build(rigType: string, at: CFrame?, opts: { guard: boolean? }?): Avatar
+	local guard = opts ~= nil and opts.guard == true
 	local origin = at or CFrame.new()
 	local m = Instance.new("Model")
 	m.Name = rigType
@@ -42,14 +52,16 @@ function Avatar.build(rigType: string, at: CFrame?): Avatar
 		end
 		return p
 	end
-	local function att(p: Part, name: string, at_: Vector3)
+	local function att(p: Part, name: string, at_: Vector3, turn: CFrame?)
 		local a = Instance.new("Attachment")
 		a.Name = name
-		a.CFrame = CFrame.new(at_)
+		a.CFrame = CFrame.new(at_) * (turn or CFrame.new())
 		a.Parent = p
 		atts[name] = a
 	end
 	local hand: Vector3
+	local leftHand: Vector3
+	local hangTurn = CFrame.Angles(-math.pi / 2, 0, 0) -- a hanging arm's grip attachment: the grip frame turned down with the arm
 	if rigType == "R15" then
 		part("LeftLeg", nil, Vector3.new(0.95, 2.0, 1), Vector3.new(-0.5, 1.0, 0), TROUSERS)
 		part("RightLeg", nil, Vector3.new(0.95, 2.0, 1), Vector3.new(0.5, 1.0, 0), TROUSERS)
@@ -57,7 +69,15 @@ function Avatar.build(rigType: string, at: CFrame?): Avatar
 		local upper = part("UpperTorso", "torso", Vector3.new(2, 1.6, 1), Vector3.new(0, 3.2, 0))
 		local head = part("Head", "head", Vector3.new(1.2, 1.2, 1.2), Vector3.new(0, 4.6, 0), SKIN)
 		head.Shape = Enum.PartType.Ball -- R15 heads are rounded; a box would poke out of a cap
-		part("LeftArm", "leftArm", Vector3.new(0.95, 2.0, 0.95), Vector3.new(-1.5, 3.1, 0), CLOTH)
+		if guard then -- the left arm points forward too, like the right
+			local larm = part("LeftArm", "leftArm", Vector3.new(0.95, 0.95, 2.0), Vector3.new(-1.5, 3.9, -1.0), CLOTH)
+			att(larm, "LeftGripAttachment", Vector3.new(0, 0, -1.0))
+			leftHand = Vector3.new(-1.5, 3.9, -2.0)
+		else
+			local larm = part("LeftArm", "leftArm", Vector3.new(0.95, 2.0, 0.95), Vector3.new(-1.5, 3.1, 0), CLOTH)
+			att(larm, "LeftGripAttachment", Vector3.new(0, -1.0, 0), hangTurn)
+			leftHand = Vector3.new(-1.5, 2.1, 0)
+		end
 		-- the right arm points forward (an equipped Tool's pose): shoulder at (1.5, 3.9), hand 2 studs ahead
 		local arm = part("RightArm", "rightArm", Vector3.new(0.95, 0.95, 2.0), Vector3.new(1.5, 3.9, -1.0), CLOTH)
 		att(upper, "BodyBackAttachment", Vector3.new(0, 0.2, 0.5))
@@ -72,7 +92,15 @@ function Avatar.build(rigType: string, at: CFrame?): Avatar
 		part("RightLeg", nil, Vector3.new(1, 2, 1), Vector3.new(0.5, 1, 0), TROUSERS)
 		local torso = part("Torso", "torso", Vector3.new(2, 2, 1), Vector3.new(0, 3, 0))
 		local head = part("Head", "head", Vector3.new(2, 1, 1), Vector3.new(0, 4.5, 0), SKIN)
-		part("Left Arm", "leftArm", Vector3.new(1, 2, 1), Vector3.new(-1.5, 3, 0), CLOTH)
+		if guard then
+			local larm = part("Left Arm", "leftArm", Vector3.new(1, 1, 2), Vector3.new(-1.5, 3.5, -1.0), CLOTH)
+			att(larm, "LeftGripAttachment", Vector3.new(0, 0, -1.0))
+			leftHand = Vector3.new(-1.5, 3.5, -2.0)
+		else
+			local larm = part("Left Arm", "leftArm", Vector3.new(1, 2, 1), Vector3.new(-1.5, 3, 0), CLOTH)
+			att(larm, "LeftGripAttachment", Vector3.new(0, -1.0, 0), hangTurn)
+			leftHand = Vector3.new(-1.5, 2.0, 0)
+		end
 		local arm = part("Right Arm", "rightArm", Vector3.new(1, 1, 2), Vector3.new(1.5, 3.5, -1.0), CLOTH)
 		att(torso, "BodyBackAttachment", Vector3.new(0, 0, 0.5))
 		att(torso, "BodyFrontAttachment", Vector3.new(0, 0, -0.5))
@@ -82,7 +110,15 @@ function Avatar.build(rigType: string, at: CFrame?): Avatar
 		att(arm, "RightGripAttachment", Vector3.new(0, 0, -1.0))
 		hand = Vector3.new(1.5, 3.5, -2.0)
 	end
-	return { rigType = rigType, model = m, attachments = atts, parts = byRole, hand = origin:PointToWorldSpace(hand) }
+	return {
+		rigType = rigType,
+		model = m,
+		attachments = atts,
+		parts = byRole,
+		hand = origin:PointToWorldSpace(hand),
+		leftHand = origin:PointToWorldSpace(leftHand),
+		guard = guard,
+	}
 end
 
 -- Humanoid:AddAccessory: returns the body attachment name it used (nil when the avatar has none of the accessory's).
