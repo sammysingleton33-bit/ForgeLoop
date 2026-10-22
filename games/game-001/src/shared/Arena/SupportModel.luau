@@ -142,13 +142,15 @@ local function usesOf(perk: any, power: string): number?
 	return uses
 end
 
+local NUMBER_WORDS = { "one", "two", "three", "four", "five" }
+
 local function format(text: string, magnitude: number, uses: number?): string
 	local shown = string.format("%d %%", math.floor(magnitude * 100 + 0.5))
 	local text2 = string.gsub(text, "{magnitude}", function()
 		return shown -- a function: a "%" in the text is not a capture reference
 	end)
 	return (string.gsub(text2, "{uses}", function()
-		return tostring(uses or 1)
+		return NUMBER_WORDS[uses or 1] or tostring(uses)
 	end))
 end
 
