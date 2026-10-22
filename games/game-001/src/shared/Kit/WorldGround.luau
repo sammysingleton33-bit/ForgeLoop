@@ -486,7 +486,8 @@ function WorldGround.aprons(layout: any, api: Api): { Op }
 end
 
 -- One lane: pieces of about 10 studs that follow the ground, each a little wider, narrower or off-centre than the last, ragged
--- fringe discs on the edges, rounded joints; roads add a worn darker strip down the middle.
+-- fringe discs on the edges, rounded joints. (No worn darker strip down the middle: a strip narrower than a voxel (4 studs) turns into
+-- scattered dark diamonds, so the roads stay one colour.)
 local function trail(B: any, rng: any, lane: Lane)
 	local pts, width = lane.points, lane.width
 	local feature = lane.kind
@@ -511,27 +512,6 @@ local function trail(B: any, rng: any, lane: Lane)
 	end
 	for i = 2, #pts - 1 do
 		B.disc("Ground", pts[i].X, pts[i].Y, width * 0.56, feature)
-	end
-	if lane.kind == "road" and width >= 10 then
-		for i = 1, #pts - 1 do
-			local a, b = pts[i], pts[i + 1]
-			local len = (b - a).Magnitude
-			local n = math.max(1, math.ceil(len / 14))
-			for k = 0, n - 1 do
-				if rng.next() < 0.72 then
-					local p0, p1 = a:Lerp(b, k / n), a:Lerp(b, (k + 1) / n)
-					local seg = p1 - p0
-					local mid = (p0 + p1) / 2
-					B.slab(
-						"Mud",
-						along(mid.X, 0, mid.Y, seg.X, seg.Y),
-						3.6,
-						seg.Magnitude * rng.range(0.55, 0.95),
-						"road_worn"
-					)
-				end
-			end
-		end
 	end
 end
 
@@ -558,12 +538,9 @@ function WorldGround.worn(layout: any, api: Api): { Op }
 	for _, kingdom in KINGDOMS do
 		local keep = layout.plots[kingdom].anchors.keep
 		local court = localCF(keep, 0, -46)
-		rrect(B, rng, "Rock", court, 33, 39, 8, "plaza") -- a darker kerb all round
+		rrect(B, rng, "Rock", court, 36, 42, 9, "plaza") -- a darker kerb all round
 		rrect(B, rng, "Cobblestone", court, 28, 34, 7, "plaza")
-		for i = 1, 6 do
-			local p = (court * CFrame.new(rng.range(-8, 8), 0, rng.range(-12, 12))).Position
-			B.disc(if i % 3 == 0 then "Slate" else "Rock", p.X, p.Z, rng.range(1.8, 3.2), "plaza")
-		end
+		blob(B, rng, "Rock", court.Position.X, court.Position.Z, 11, 4, "plaza") -- the worn middle, a little darker than the paving
 	end
 	return ops
 end

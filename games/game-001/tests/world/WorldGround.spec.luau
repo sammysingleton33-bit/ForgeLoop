@@ -32,7 +32,7 @@ local KINGDOMS = { "crimson", "azure", "emerald", "gold" }
 local MAX_SHARE = 0.72 -- the largest share one material may cover of a frame's open ground
 local MIN_SHARE = 0.03 -- ... and what at least three materials must each cover
 local FRAME = 110 -- the plot frame: studs around the spawn (the start view and the far view's near half)
-local ADDED_OPS = 5600 -- ceiling on the new ground ops (patch, apron, path, road_worn, plaza, border; 5,162 now; the whole plan had 482 ops before)
+local ADDED_OPS = 5600 -- ceiling on the new ground ops (patch, apron, path, plaza, border; the whole plan had 482 ops before)
 local ADDED_VOXELS = 70000 -- ceiling on the voxels of those ops (48 k now; the plan had 7.72 M before, 99 % of it the hills and the base ground)
 local LANES =
 	{ "keep", "storehouse", "farm", "fields", "quarry", "lumbercamp", "quarry_slot", "lumber_slot", "stone", "timber" }
@@ -191,7 +191,6 @@ local function violations(layout, ops): { string }
 			op.feature == "patch"
 			or op.feature == "apron"
 			or op.feature == "path"
-			or op.feature == "road_worn"
 			or op.feature == "plaza"
 			or op.feature == "border"
 		then
@@ -496,12 +495,7 @@ describe("WorldGround: the checks catch each way of breaking the rule (mutants)"
 	it("flags a flat lawn (no cover)", function()
 		local plain = {}
 		for _, op in ops do
-			if
-				op.feature ~= "patch"
-				and op.feature ~= "apron"
-				and op.feature ~= "path"
-				and op.feature ~= "road_worn"
-			then
+			if op.feature ~= "patch" and op.feature ~= "apron" and op.feature ~= "path" then
 				table.insert(plain, op)
 			end
 		end
