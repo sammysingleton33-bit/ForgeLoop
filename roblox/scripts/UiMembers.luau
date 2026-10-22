@@ -11,15 +11,24 @@
 
 	A property write is flagged only when its name is read-only or not scriptable on a class in scope (GUI classes, UI
 	components and the client services in SCOPE_CLASSES) and freely writable on no class at all: the scan does not
-	know the receiver's class, so a name writable anywhere (Shape on a Part, Transparency on a UIStroke) passes. Same write shapes as PluginProps:
-	`obj.X = v`, `obj["X"] = v` and a table key `X = v` (Create property tables).
-	One-letter names are not flagged (data tables `{ A = ..., B = ... }` and module fields `Parts.C`).
-	Not seen (limits): event names (the database has no events), beta-flag members (listed like any other), a key
-	held in a variable. A line whose comment contains `member-ok` is skipped (give the reason after it).
+	know the receiver's class, so a name writable anywhere (Shape on a Part, Transparency on a UIStroke) passes.
+	Lines come from PluginProps.lex (one lexer for both scanners): comments, long strings and string contents are not
+	code, so a `--` inside a string and a write inside a block comment are both handled. Write shapes: `obj.X = v`,
+	`obj["X"] = v`, rawset(obj, "X", v) and a table key `X = v` (Create property tables).
+	Limits:
+	  - one-letter names are not flagged (data tables `{ A = ..., B = ... }` and module fields `Parts.C`);
+	  - the blocked set holds names that are plausible data-table or children-table keys (Content, Terrain, Plugin,
+	    Resolution, LocalPlayer, IsLoaded, HasFocus, ...): such a line takes a `member-ok` waiver, and more will as
+	    code lands (FORGE-05's L3 on #291);
+	  - not seen: event names (the database has no events), beta-flag members (listed like any other), a key held in
+	    a variable or built by concatenation.
+	A line whose comment contains `member-ok` is skipped (give the reason after it).
 
 	UiMembers.index(db) -> Index                    built once from the reflection database
 	UiMembers.scan(source, index) -> { { line, kind ("write" | "signal" | "enum"), name } }
 ]]
+
+local PluginProps = require("./PluginProps")
 
 local UiMembers = {}
 
@@ -81,21 +90,15 @@ function UiMembers.index(db: any): Index
 	return { blocked = blocked, properties = properties, enums = enums }
 end
 
--- The code part of a line: no `--` comment (strings are kept; a `--` inside a string is rare in this codebase).
-local function code(line: string): string
-	local at = string.find(line, "--", 1, true)
-	return if at then string.sub(line, 1, at - 1) else line
-end
-
 function UiMembers.scan(source: string, index: Index): { { line: number, kind: string, name: string } }
+	-- PluginProps' lexer (one lexer for both scanners): `code` has comments, long strings and short-string contents
+	-- removed; `kept` keeps short-string contents (for ["X"], rawset and GetPropertyChangedSignal("X")).
 	local hits = {}
-	local n = 0
-	for line in string.gmatch(source .. "\n", "(.-)\n") do
-		n += 1
-		if string.find(line, "member-ok", 1, true) then
+	for n, line in PluginProps.lex(source) do
+		if string.find(line.comment, "member-ok", 1, true) then
 			continue
 		end
-		local c = code(line)
+		local c, kept = line.code, line.kept
 		local seen = {}
 		local function hit(kind: string, name: string)
 			if not seen[kind .. name] then
@@ -103,23 +106,25 @@ function UiMembers.scan(source: string, index: Index): { { line: number, kind: s
 				table.insert(hits, { line = n, kind = kind, name = name })
 			end
 		end
-		for _, pattern in { "%.%s*(%u[%w_]*)%s*=[^=]", "%[%s*[\"'](%u[%w_]*)[\"']%s*%]%s*=[^=]" } do
-			for name in string.gmatch(c .. " ", pattern) do
-				if index.blocked[name] then
-					hit("write", name)
-				end
-			end
-		end
-		local lead = string.match(c .. " ", "^%s*(%u[%w_]*)%s*=[^=]") -- a constructor line `X = v,` (gmatch cannot anchor)
-		if lead and index.blocked[lead] then
-			hit("write", lead)
-		end
-		for name in string.gmatch(c, "[{,]%s*(%u[%w_]*)%s*=[^=]") do
-			if index.blocked[name] then
+		local function write(name: string?)
+			if name and index.blocked[name] then
 				hit("write", name)
 			end
 		end
-		for name in string.gmatch(c, "GetPropertyChangedSignal%(%s*[\"']([%w_]+)[\"']%s*%)") do
+		for name in string.gmatch(c .. " ", "%.%s*(%u[%w_]*)%s*=[^=]") do
+			write(name)
+		end
+		for name in string.gmatch(kept .. " ", "%[%s*[\"'`](%u[%w_]*)[\"'`]%s*%]%s*=[^=]") do
+			write(name)
+		end
+		for name in string.gmatch(kept, "rawset%s*%(.-,%s*[\"'`](%u[%w_]*)[\"'`]%s*,") do
+			write(name)
+		end
+		write(string.match(c .. " ", "^%s*(%u[%w_]*)%s*=[^=]")) -- a constructor line `X = v,` (gmatch cannot anchor)
+		for name in string.gmatch(c, "[{,]%s*(%u[%w_]*)%s*=[^=]") do
+			write(name)
+		end
+		for name in string.gmatch(kept, "GetPropertyChangedSignal%(%s*[\"'`]([%w_]+)[\"'`]%s*%)") do
 			if not index.properties[name] then
 				hit("signal", name)
 			end

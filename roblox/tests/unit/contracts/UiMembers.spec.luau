@@ -42,6 +42,13 @@ describe("scripts/UiMembers", function()
 		expect(hits("local f = Enum.FontWeight.Bold")).toEqual({})
 	end)
 
+	it("lexes like PluginProps: a -- inside a string, block comments, rawset (FORGE-05 M1 and L1 on #291)", function()
+		expect(hits('label.Text = "a -- b"; frame.AbsoluteSize = v')).toEqual({ "1:write:AbsoluteSize" })
+		expect(hits("--[[\n\tframe.AbsoluteSize = v\n]]\nlocal x = 1")).toEqual({})
+		expect(hits('rawset(frame, "AbsoluteSize", v)')).toEqual({ "1:write:AbsoluteSize" })
+		expect(hits('print("Enum.FontWeight.Boldest")')).toEqual({}) -- string contents are not code
+	end)
+
 	it("skips a line that carries member-ok", function()
 		expect(hits("frame.AbsoluteSize = v -- member-ok: a plain table, not an Instance")).toEqual({})
 	end)
