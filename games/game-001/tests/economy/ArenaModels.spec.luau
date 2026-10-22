@@ -183,6 +183,7 @@ describe("UI/ArenaHudModel (FL-0073)", function()
 			expect(won.note).toBe("You win")
 			expect(won.urgent).toBe(false)
 			expect(endedView(1, "b", "timeCap").clock).toBe("Time")
+			expect(endedView(1, "draw", "hardCap").clock).toBe("Time") -- the hard cap is always a draw, named as time (FORGE-07 L1 on #324)
 			expect(endedView(1, "b", "timeCap").note).toBe("You lost")
 			local watched = endedView(99, "b", "forfeit") -- a spectator: the winner's kingdom
 			expect(watched.clock).toBe("Forfeit")

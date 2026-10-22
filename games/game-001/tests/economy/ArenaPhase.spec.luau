@@ -11,6 +11,7 @@ local ArenaHudModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/
 local ArenaVote = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaVote")
 local ArenaHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ArenaHudController")
 local ArenaIntroDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ArenaIntroController")
+local ArenaQualifyModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaQualifyModel")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 local DuelDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/DuelController")
 local HudModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/HudModel")
@@ -58,7 +59,7 @@ describe("HudModel.timer: the Crown Arena's stage", function()
 		local match = { phase = "Endgame", endsAt = 160 }
 		expect(HudModel.timer(match, 100, nil).phase).toBe(HudModel.timer(match, 100).phase)
 		expect(HudModel.timer(match, 100, { stage = "done" }).label).toBe("left")
-		expect(HudModel.timer(match, 100, { stage = "qualify" }).label).toBe("left")
+		expect(HudModel.timer(match, 100, { stage = "qualify" }).label).toBe("Kingdoms qualify") -- FORGE-01's coming stage
 		local results = HudModel.timer({ phase = "Results", endsAt = 130 }, 100, { stage = "crowning", endsAt = 110 })
 		expect(results.phase).never.toBe("Crown Arena")
 	end)
@@ -206,5 +207,64 @@ describe("Duel HUD: the note shrinks to its box", function()
 		expect(limit).never.toBeNil()
 		expect(limit.MaxTextSize).toBe(8)
 		expect(ArenaHud.CLOCK.phone >= 68).toBe(true) -- "Sudden death" at 8 px (56 cut it)
+	end)
+end)
+
+describe("Crown Arena: the qualify banner (FORGE-01's qualify stage)", function()
+	it("names both qualifiers, better Crown Points first, with the frozen points; nothing in other stages", function()
+		local lookup = {
+			kingdom = function(id)
+				return ({
+					crimson = { id = "crimson", name = "Emberhold" },
+					azure = { id = "azure", name = "Frostmere" },
+				})[id]
+			end,
+		}
+		local st = {
+			stage = "qualify",
+			endsAt = 105,
+			qualifiers = { "azure", "crimson" },
+			qualifierPoints = { azure = 30, crimson = 22 },
+		}
+		local v = ArenaQualifyModel.view(st, lookup, "crimson", 100)
+		expect(v.left.name).toBe("Frostmere")
+		expect(v.left.points).toBe(30)
+		expect(v.right.name).toBe("Emberhold")
+		expect(v.right.mine).toBe(true)
+		expect(v.left.mine).toBe(false)
+		expect(v.note).toBe("Your kingdom fights for the crown")
+		expect(v.clock).toBe("0:05")
+		expect(ArenaQualifyModel.view(st, lookup, "emerald", 100).note).toBe("Two kingdoms fight for the crown")
+		local vote = table.clone(st)
+		vote.stage = "vote"
+		expect(ArenaQualifyModel.view(vote, lookup, "crimson", 100)).toBeNil()
+		local one = table.clone(st)
+		one.qualifiers = { "azure" } -- a coronation never sends qualify; a lone qualifier draws nothing either way
+		expect(ArenaQualifyModel.view(one, lookup, "crimson", 100)).toBeNil()
+	end)
+
+	it("shows the banner to every player during qualify, beside the kingdom HUD, and removes it at the vote", function()
+		world = arenaWorld()
+		local now = world.env.serverTimeNow()
+		world.arenaServer:setState({
+			stage = "qualify",
+			endsAt = now + 5,
+			qualifiers = { "azure", "crimson" },
+			qualifierPoints = { azure = 30, crimson = 22 },
+		})
+		world:advance(0.6)
+		local banner = world.intro.qualify and world.intro.qualify.instance
+		expect(banner).never.toBeNil()
+		local left, right = find(banner, "Side_left"), find(banner, "Side_right")
+		expect(find(left, "Name").Text).toBe("Frostmere") -- side a: the better Crown Points
+		expect(find(left, "Points").Text).toBe("30 Crown Points")
+		expect(find(right, "Name").Text).toBe("Emberhold")
+		expect(find(right, "Points").Text).toBe("22 Crown Points")
+		expect(find(banner, "Note").Text).toBe("Your kingdom fights for the crown")
+		expect(world.hud.arenaFocus).never.toBe(true) -- the kingdom HUD stays for the five seconds
+		expect(find(find(world.hud.guis.topbar, "Timer"), "Label").Text).toBe("Kingdoms qualify")
+		world.arenaServer:setState({ stage = "vote", endsAt = world.env.serverTimeNow() + 9 })
+		world:advance(0.6)
+		expect(world.intro.qualify.instance).toBeNil()
 	end)
 end)
