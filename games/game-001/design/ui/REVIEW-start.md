@@ -1,10 +1,12 @@
 # D-059 HUD pass at the start frame
 
 The kingdom HUD at a match's first second (Founding 0:01, the starting treasury, nothing built), laid over
-FORGE-02's start-frame render (`render_world.py`, FL-0147 camera: zoom 70, FOV 55, ahead 20, looking back at the
+FORGE-02's start-frame render (`render_world.py` on FORGE-02's `forge/02-blender-visual-yard` branch, the #307 yard:
+its stalls, hedges and cart are not on main until #303 and #307 land; FL-0147 camera: zoom 70, FOV 55, ahead 20, looking back at the
 keep). Scenes `start` and `start-card-docked` (`scenes/_start.luau`), rendered with `--backdrop=none`;
 composites in `screenshots/d059-start/` (desktop 1920×1080 shown at 1280×720; phone-wide 750×311 shown at 2×).
 All judged by eye on the composites. A composite is not Studio: the real top bar, fonts and lighting can differ.
+`phone-wide` has no insets (the `phone` device's are 47/47/0/21), so no composite tests a notch or home bar.
 
 ## Verdict
 
@@ -28,8 +30,16 @@ Nothing in the HUD needed a cheap fix at this frame. The pass adds the tooling t
 1. **Onboarding card placement (FORGE-04, `OnboardingController`, `CARD_TOP = 72`, top centre).** At the start
    frame it lands on the keep, the one building the camera frames. `start-card-docked` shows the card docked bottom
    centre (16 px up): on desktop the keep, door, cross and stalls are all clear; on phone the door and cross are
-   clear, the stall roofs are not. Proposal: dock it bottom centre, and on short screens (height < 400) cut it to
-   one body line. Handoff `production/handoffs/2026-10-22-forge-03-to-forge-04-start-card.md`.
+   clear, the stall roofs are not. **The dock is not a clean fix (FORGE-07 M1 on #314):** the card stays up through
+   step 3 `BuildOnPlot`, which opens the placement bar, and docked bottom centre it covers that bar: on desktop
+   Rotate and Cancel and the left 31 px of Place, with its Skip button over Cancel; on phone-wide all three
+   buttons, with Skip over 88 × 32 px of Place's 92 × 44, so a phone player who taps Place hits Skip tutorial. On
+   a 750 × 311 phone the build menu also loses its lower 241 × 88 px under the card wherever it sits (top today as
+   well). So the proposal needs a step-3 rule, not only a position: for example dock for steps 1 and 2 and keep
+   the top for step 3, or lift the docked card above the bar (bar top 989 px desktop, 251 px phone-wide) while
+   the bar is up, and on a phone hide or shrink the card while the build menu is open. A docked card also drops
+   the toast reserve (`OnboardingController` `_reserve(CARD_RESERVE)`, 168 px, pinned by its spec and row
+   FL-0027). FORGE-04's choice. Handoff `production/handoffs/2026-10-22-forge-03-to-forge-04-start-card.md`.
 2. **Onboarding card styling (FORGE-04).** Gotham on a flat brown panel with a thin grey stroke; every other HUD
    surface uses the kit's ink gradient, gold stroke and Montserrat (`Style`, `Theme`). It reads as a debug panel.
 3. **Phase pill over the keep (FORGE-03 + FORGE-04 camera).** It is centred in the top bar's free space
