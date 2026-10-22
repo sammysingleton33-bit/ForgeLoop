@@ -22,7 +22,7 @@ local IDLE = "gold" -- the kingdom played by an idle player
 local ENDGAME = 20 + 480 + 720 + 900 -- match seconds when Endgame begins (Lobby 20, Founding 480, Expansion 720, Conflict 900)
 
 -- roles with a standing building and a living key citizen, and of those the ones loyal enough to offer a perk
-local function coverage(sim: any, k: any): (number, number)
+local function coverage(sim: any, k: any): (number, number, number)
 	local standing: { [string]: boolean } = {}
 	for _, bid in k.buildingIds do
 		local b = sim.buildings[bid]
@@ -30,12 +30,15 @@ local function coverage(sim: any, k: any): (number, number)
 			standing[b.kind] = true
 		end
 	end
-	local roles, perks = 0, 0
+	local roles, perks, topLoyalty = 0, 0, 0
 	local seen: { [string]: boolean } = {}
 	for _, cid in k.citizenIds do
 		local c = sim.citizens[cid]
 		local role = if c and c.alive and c.profile then c.profile.keyRole else nil
 		local def = if role then Support.roles[role] else nil
+		if def then
+			topLoyalty = math.max(topLoyalty, c.loyalty or 50) -- any living key citizen, building or not
+		end
 		if def and not seen[role] and standing[def.building] then
 			seen[role] = true
 			roles += 1
@@ -44,7 +47,7 @@ local function coverage(sim: any, k: any): (number, number)
 			end
 		end
 	end
-	return roles, perks
+	return roles, perks, topLoyalty
 end
 
 describe("SupportCoverage: key citizens in the real match (FL-0149)", function()
@@ -52,6 +55,7 @@ describe("SupportCoverage: key citizens in the real match (FL-0149)", function()
 		"AI governors build support buildings: at least two roles per kingdom on average; an idle player has none",
 		function()
 			local aiRoles, aiPerks, aiKingdoms = 0, 0, 0
+			local topLoyalty = 0 -- the highest loyalty any AI kingdom's key citizen reached (a perk is offered from 80)
 			local idleRoles = 0
 			local lines = {}
 			for _, seed in SEEDS do
@@ -72,7 +76,7 @@ describe("SupportCoverage: key citizens in the real match (FL-0149)", function()
 				for _, kid in sim.kingdomOrder do
 					local k = sim.kingdoms[kid]
 					if k.alive then
-						local roles, perks = coverage(sim, k)
+						local roles, perks, top = coverage(sim, k)
 						if kid == IDLE then
 							idleRoles += roles
 							table.insert(parts, `{kid}(idle player):{roles}r/{perks}p`)
@@ -80,6 +84,7 @@ describe("SupportCoverage: key citizens in the real match (FL-0149)", function()
 							aiRoles += roles
 							aiPerks += perks
 							aiKingdoms += 1
+							topLoyalty = math.max(topLoyalty, top)
 							table.insert(parts, `{kid}:{roles}r/{perks}p`)
 						end
 					else
@@ -92,7 +97,9 @@ describe("SupportCoverage: key citizens in the real match (FL-0149)", function()
 				`SupportCoverage: AI kingdoms standing {aiKingdoms}, roles per kingdom {string.format(
 					"%.2f",
 					aiRoles / math.max(aiKingdoms, 1)
-				)}, perks per kingdom {string.format("%.2f", aiPerks / math.max(aiKingdoms, 1))}; idle player roles {idleRoles}\n  {table.concat(
+				)}, perks per kingdom {string.format("%.2f", aiPerks / math.max(aiKingdoms, 1))}, highest AI key-citizen loyalty {math.floor(
+					topLoyalty
+				)} (perk from {Support.offer.pledgedLoyalty}); idle player roles {idleRoles}\n  {table.concat(
 					lines,
 					"\n  "
 				)}`
