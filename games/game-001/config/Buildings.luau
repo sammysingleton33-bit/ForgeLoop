@@ -163,6 +163,7 @@ return {
 			footprint = 4,
 			placeable = true,
 			dropoff = false,
+			maxCount = 12, -- wall segments per kingdom: the D-047 part ceiling counts 12 (Kit/Buildings header, KitCeiling)
 			levels = {
 				{ hp = 900 },
 				{ hp = 1600 },
@@ -175,6 +176,7 @@ return {
 			footprint = 6,
 			placeable = true,
 			dropoff = false,
+			maxCount = 1, -- one gate per kingdom: the D-047 part ceiling counts one
 			levels = {
 				{ hp = 1200 },
 				{ hp = 2000 },
