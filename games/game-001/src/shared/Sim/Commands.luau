@@ -19,6 +19,7 @@
 
 	Commands (args)                         result on success
 		PlaceBuilding(kind, x, z, yaw?)      { buildingId }        -- yaw: facing in radians (default: towards the keep)
+		PlaceBuildingLine(kind, fx, fz, tx, tz)   { buildingIds }   -- FL-0126: a wall line, all or nothing (Simulation:placeLine)
 		UpgradeBuilding(buildingId)          { buildingId, level }
 		CancelConstruction(buildingId)       { buildingId }
 		MoveBuilding(buildingId, x, z, yaw, slotId?)   { buildingId }  -- G13.9: in place, free; slotId set or cleared
@@ -100,6 +101,18 @@ register("PlaceBuilding", function(sim, kingdom, by, kind, x, z, yaw)
 		return false, err
 	end
 	return true, nil, { buildingId = building.id }
+end)
+
+-- CONTRACTS G13.5 (FL-0126 part 2): a straight wall of segments between two points, all or nothing
+register("PlaceBuildingLine", function(sim, kingdom, by, kind, fx, fz, tx, tz)
+	if not isId(kind) or not finite(fx) or not finite(fz) or not finite(tx) or not finite(tz) then
+		return false, "invalid_args"
+	end
+	local ids, err = sim:placeLine(kingdom, kind, fx, fz, tx, tz, by)
+	if ids == nil then
+		return false, err
+	end
+	return true, nil, { buildingIds = ids }
 end)
 
 -- CONTRACTS G13.9: one atomic, in-place move; slotId is set (or cleared) in the same command

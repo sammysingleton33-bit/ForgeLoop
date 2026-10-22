@@ -123,6 +123,60 @@ afterEach(function()
 end)
 
 describe("BuildingService (G6, G8)", function()
+	it(
+		"Build.PlaceLine lays a wall line all or nothing, charges per piece, and refuses what is not a wall line",
+		function()
+			local env, _, match, treasury = boot()
+			local p1 = env.mock.players:add({ userId = 1 })
+			env.mock:advance(0.5)
+			local sim = match.host.match.sim
+			local k = sim.kingdoms.crimson
+			local length = sim.catalog.buildings.wall.placeSize.X
+			local keep = sim.buildings[k.keepId]
+			local before = treasury:get("crimson")
+			local ids = nil
+			-- the first of a few lines north of the keep, where the node and the roads leave room
+			for _, dz in { -90, -70, -50, 50, 70, 90, -110, 110, -30, 30 } do
+				for _, dx in { -48, 40, -100 } do
+					env.mock:advance(1) -- the remote allows a burst of 2, then 1 a second
+					local from = Vector3.new(keep.x + dx, 0, keep.z + dz)
+					local to = Vector3.new(keep.x + dx + 2 * length, 0, keep.z + dz + 16) -- a slope, so the far end matters
+					local got, why = invoke(env, p1, "Build.PlaceLine", "wall", from, to)
+					if got ~= nil then
+						ids = got
+						break
+					end
+					expect(type(why)).toBe("string")
+				end
+				if ids ~= nil then
+					break
+				end
+			end
+			assert(ids, "one of the lines fits")
+			expect(#ids).toBe(2)
+			local after = treasury:get("crimson")
+			for res, amount in assert(Costs.building("wall", 1)).cost do
+				expect(before[res] - after[res]).toBe(amount * 2)
+			end
+			expect(sim.buildings[ids[1]].kind).toBe("wall")
+			expect(sim.buildings[ids[2]].z > sim.buildings[ids[1]].z).toBe(true) -- the line climbs towards `to`
+			expect(sim.buildings[ids[1]].placedBy).toBe(1)
+			local here = Vector3.new(keep.x - 48, 0, keep.z)
+			env.mock:advance(2)
+			expect({ invoke(env, p1, "Build.PlaceLine", "wall", here, here) }).toEqual({ nil, "too_short" })
+			env.mock:advance(2)
+			expect({ invoke(env, p1, "Build.PlaceLine", "farm", here, here + Vector3.new(length, 0, 0)) }).toEqual({
+				nil,
+				"not_a_line_piece",
+			})
+			local far = Vector3.new(keep.x + 900, 0, keep.z + 900)
+			env.mock:advance(2)
+			local farReason =
+				select(2, invoke(env, p1, "Build.PlaceLine", "wall", far, far + Vector3.new(length, 0, 0)))
+			expect(farReason == "out_of_territory" or farReason == "out_of_bounds").toBe(true)
+		end
+	)
+
 	it("CanPlace and Place agree; Place charges Costs once, sets placedBy and faces by rot", function()
 		local env, _, match, treasury = boot()
 		local p1 = env.mock.players:add({ userId = 1 })
