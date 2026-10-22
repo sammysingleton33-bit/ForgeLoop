@@ -60,7 +60,8 @@
 	pyramid; a gate's caps stand in its middle and never fall, so its two roofs stay identical). Never removed: banners, emblems,
 	crests, doors, windows, thrones or the kingdom caps outside the collapsed corner.
 	Marks are BROKEN STONE, not stickers (the FL-0128 defect round B). They lie on the FRONT face (-Z) of the walls the player sees,
-	wholly inside the wall block they sit on (so nothing overhangs a silhouette) and below the model's top, picked on the
+	inside the wall block's face outline in x and y (so nothing overhangs a silhouette sideways or above; in z they stand proud of the
+	face, a few hundredths to about half a stud) and below the model's top, picked on the
 	outermost upright wall block at a spread of points and only where nothing (a turret, a porch, a banner, a step) stands in
 	front of it; a mark that finds no such site goes on the biggest wall. Every mark is the supporting wall's OWN stone, shaded,
 	and tinted when the wall is (so a recolour follows): the spec KitDamage keeps each inside a band of the wall's value, never
@@ -628,7 +629,8 @@ function Damage.apply(model: Model)
 
 	-- 3. breaches: broken stone, not stickers. Pale-ish patches of the wall's OWN stone (a shadowed recess a shade under the
 	-- wall, stone-coloured chips round its rim, a hairline crack or two), on the FRONT face (-Z of the model's own frame) of the
-	-- walls the player sees and wholly inside the wall block they sit on, so nothing overhangs a silhouette. Sites are found on
+	-- walls the player sees and inside the wall block's face outline in x and y (standing proud of the face in z, by a few hundredths
+	-- to about half a stud), so nothing overhangs a silhouette. Sites are found on
 	-- the outermost wall block at a spread of points (a facade that hides the biggest wall does not hide the mark); a site the
 	-- walls do not offer falls back to the biggest wall. Colours are the supporting wall's own, shaded (and tinted when the
 	-- wall is, so a recolour follows): never black, never Neon. The L1 palisade has no wall block: its marks are spread over its
@@ -712,7 +714,7 @@ function Damage.apply(model: Model)
 
 		-- the L1 palisade: logs and posts. The supports are the logs still standing and the two posts, left to right in the
 		-- model's frame; each mark takes the next free one from a stride across them, so the marks are spread over the palisade
-		-- (never all on one post), each sits wholly inside its log or post and below its top.
+		-- (never all on one post), each sits inside its log or post in x and y (proud of it in z) and below its top.
 		local supports: { Box } = {}
 		if #walls == 0 then
 			for _, b in boxes do
