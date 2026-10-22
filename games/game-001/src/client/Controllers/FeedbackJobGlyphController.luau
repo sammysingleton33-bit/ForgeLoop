@@ -1,6 +1,6 @@
 --!strict
 --[[
-	CitizenGlyphController (game-001, FORGE-04, D-059 B22.4 prototype): a small job icon over each citizen
+	FeedbackJobGlyphController (game-001, FORGE-04, D-059 B22.4 prototype): a small job icon over each citizen
 	in the overview, so the start view tells a farmer from a miner. FORGE-02's blind reviews named 2 of 5
 	jobs from the rigs alone (#317), even with the rig drawn bigger.
 
@@ -24,15 +24,15 @@
 	  job-coloured disc with a dark ring. Meaning is never colour alone: each job has its own glyph.
 	Pooled: GUIs are reused, never more than MAX_SHOWN exist, and a released rig gives its GUI back.
 
-		CitizenGlyphController:refresh()     -- re-pick and redraw (Heartbeat calls it every POLL_SEC)
-		CitizenGlyphController:shown() -> { [entityId]: BillboardGui }   -- what is drawn now (specs)
+		FeedbackJobGlyphController:refresh()     -- re-pick and redraw (Heartbeat calls it every POLL_SEC)
+		FeedbackJobGlyphController:shown() -> { [entityId]: BillboardGui }   -- what is drawn now (specs)
 ]]
 
 local EntityControllerDef = require("./EntityController")
 local ScreenLayout = require("../UI/Layout")
 
 local Def = {
-	name = "CitizenGlyphController",
+	name = "FeedbackJobGlyphController",
 	dependencies = {},
 }
 

@@ -1,4 +1,4 @@
--- D-059 B22.4 prototype: job icons over citizens in the overview (CitizenGlyphController, FORGE-04).
+-- D-059 B22.4 prototype: job icons over citizens in the overview (FeedbackJobGlyphController, FORGE-04).
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect, beforeEach = T.describe, T.it, T.expect, T.beforeEach
 
@@ -7,9 +7,9 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local Signal = require("@game/ReplicatedStorage/Forge/Core/Signal")
 local Schema = require("@game/ReplicatedStorage/Forge/Experience/Schema")
-local GlyphDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/CitizenGlyphController")
+local GlyphDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/FeedbackJobGlyphController")
 
-describe("CitizenGlyphController (D-059 B22.4 prototype)", function()
+describe("FeedbackJobGlyphController (D-059 B22.4 prototype)", function()
 	local env, entities, world, controller
 	local settingValues, camera, input, conversation, bubbleOf
 	local origin, zoom, screenMaxX, phone
@@ -93,7 +93,7 @@ describe("CitizenGlyphController (D-059 B22.4 prototype)", function()
 				},
 			}),
 			{
-				name = "CitizenGlyphController",
+				name = "FeedbackJobGlyphController",
 				dependencies = {},
 				new = function(e, r)
 					return GlyphDef.create(e, r, {
@@ -113,7 +113,7 @@ describe("CitizenGlyphController (D-059 B22.4 prototype)", function()
 				end,
 			},
 		})
-		controller = registry:get("CitizenGlyphController")
+		controller = registry:get("FeedbackJobGlyphController")
 	end)
 
 	it("is off by default: the jobGlyphs setting starts false and draws nothing", function()
