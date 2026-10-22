@@ -554,6 +554,8 @@ describe("DuelRunner: AI hands and the end", function()
 		local allowed = {
 			hit = true,
 			heavyWindup = true,
+			lightWindup = true,
+			dodgeStart = true,
 			parry = true,
 			stagger = true,
 			staminaOut = true,
@@ -570,7 +572,52 @@ describe("DuelRunner: AI hands and the end", function()
 			expect(windup.data.impactIn > 0).toBe(true)
 			expect(windup.data.impactAt).toBeNil()
 		end
+		for _, windup in ofKind(events, "lightWindup") do
+			expect(windup.data.impactIn > 0).toBe(true)
+			expect(windup.data.impactAt).toBeNil()
+		end
+		for _, hit in ofKind(events, "hit") do
+			expect(type(hit.data.blocked)).toBe("boolean")
+		end
+		for _, dodge in ofKind(events, "dodgeStart") do
+			expect(dodge.data).toBeNil()
+		end
 	end)
+
+	it(
+		"relays the cues FL-0141 animates from: a light swing's wind-up, a dodge's start, and whether a hit was guarded",
+		function()
+			local runner = newRunner(human(1), human(2))
+			local clock = { t = 0 }
+			runner:step(0)
+			run(runner, clock, math.ceil(3 / TICK)) -- 3 s in: an absolute impact time would be over 3
+			runner:act(1, "light", clock.t)
+			runner:act(2, "dodge", clock.t)
+			local events = run(runner, clock, math.ceil(2 / TICK))
+			local light = ofKind(events, "lightWindup")
+			expect(#light).toBe(1)
+			expect(light[1].side).toBe("a")
+			expect(light[1].data.impactIn > 0 and light[1].data.impactIn < 1).toBe(true) -- seconds from now, not a clock time
+			expect(light[1].t > 3).toBe(true)
+			local dodges = ofKind(events, "dodgeStart")
+			expect(#dodges).toBe(1)
+			expect(dodges[1].side).toBe("b")
+			expect(dodges[1].data).toBeNil()
+			-- b dodged, so a's swing found no one: no hit
+			expect(#ofKind(events, "hit")).toBe(0)
+			-- a guarded hit says so
+			local guarded = newRunner(human(1), human(2))
+			local c2 = { t = 0 }
+			guarded:step(0)
+			guarded:act(2, "block", 0)
+			guarded:step(0.1)
+			guarded:act(1, "light", 0.1)
+			local later = run(guarded, c2, math.ceil(2 / TICK))
+			local hits = ofKind(later, "hit")
+			expect(#hits).toBe(1)
+			expect(hits[1].data.blocked).toBe(true)
+		end
+	)
 
 	it("a fired trigger is relayed by id with the citizen behind it, and the Crowd Rally has no citizen", function()
 		local fires = {
