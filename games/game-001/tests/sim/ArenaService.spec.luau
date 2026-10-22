@@ -110,12 +110,16 @@ local function fakeKit(env: any, log: { any }): any
 		p.Parent = parent
 		return p
 	end
+	-- Kit/Gear.luau builds an armour piece's Attachment as the inverse of its Handle's CFrame: the Handle is offset and
+	-- tilted, the Attachment names the point on the body the piece fits.
+	local ARMOUR_HANDLE = CFrame.new(0.3, 0.2, -0.1) * CFrame.Angles(0, 0, math.rad(8))
 	local function accessory(name: string, attachment: string): any
 		local a = env.newInstance("Accessory")
 		a.Name = name
-		local handle = part("Handle", Vector3.new(1, 1, 1), CFrame.new(), a)
+		local handle = part("Handle", Vector3.new(1, 1, 1), ARMOUR_HANDLE, a)
 		local att = env.newInstance("Attachment")
 		att.Name = attachment
+		att.CFrame = ARMOUR_HANDLE:Inverse()
 		att.Parent = handle
 		return a
 	end
@@ -149,7 +153,13 @@ local function fakeKit(env: any, log: { any }): any
 	end
 	function kit.armour(name: string, color: Color3): { any }
 		table.insert(log, { what = "armour", armour = name, color = color })
-		return { accessory("Helm", "HatAttachment"), accessory("Plate", "BodyFrontAttachment") }
+		return {
+			accessory("Helm", "HatAttachment"),
+			accessory("Plate", "BodyFrontAttachment"),
+			accessory("Cape", "BodyBackAttachment"),
+			accessory("PauldronL", "LeftCollarAttachment"),
+			accessory("PauldronR", "RightCollarAttachment"),
+		}
 	end
 	function kit.shield(color: Color3): any
 		table.insert(log, { what = "shield", color = color })
@@ -1000,9 +1010,13 @@ describe("ArenaService: the champions' bodies, gear and venue (FL-0140)", functi
 			* WEAPON_HANDLE:Inverse()
 			* Vector3.new(0, WEAPON_REACH, 0)
 		local reach = tip - hand
-		-- at the plain Grip rest: the blade stands up from the hand, square to the arm (FORGE-04's wrist poses start here)
-		expect(reach.Y > 1).toBe(true) -- above the hand
-		expect(math.abs(reach.X) < 0.5 and math.abs(reach.Z) < 0.5).toBe(true) -- not out to the side, not slanted
+		-- the weld sits on the hand point of the arm: its end, not the shoulder end
+		local anchored = (held.CFrame * weld.C0).Position
+		expect((anchored - hand).Magnitude < 1e-3).toBe(true)
+		-- at rest the blade points forward (-Z), level: the hand's grip turn is in the weld, and FORGE-04's wrist poses
+		-- (Feedback/DuelPoses: "the weapon's elevation is about the arm's swing") lift it from there
+		expect(reach.Z < -(WEAPON_REACH - 0.5)).toBe(true)
+		expect(math.abs(reach.Y) < 0.5 and math.abs(reach.X) < 0.5).toBe(true)
 		-- the rig's own held item is gone: its part is invisible, its details (the orb) destroyed, its joint still works
 		expect(held.Transparency).toBe(1)
 		expect(world.figure:FindFirstChild("Orb", true)).toBeNil()
@@ -1011,18 +1025,31 @@ describe("ArenaService: the champions' bodies, gear and venue (FL-0140)", functi
 		expect(joint.Part1).toBe(held)
 	end)
 
-	it("puts the armour on the body parts it names: the helm on top of the head, the plate on the chest", function()
-		local world = soloOnVenue()
-		local head, torso = world.figure:FindFirstChild("Head", true), world.figure:FindFirstChild("Torso", true)
-		local function worldOf(accessoryName: string): Vector3
-			local handle = world.figure:FindFirstChild(accessoryName, true):FindFirstChild("Handle")
-			local w = handle:FindFirstChildOfClass("Weld")
-			return w.Part0.CFrame * w.C0 * w.C1:Inverse() * Vector3.new(0, 0, 0)
+	it(
+		"puts the armour where its Attachment names: helm on the head top, plate on the chest, cape on the back, pauldrons at the collar",
+		function()
+			local world = soloOnVenue()
+			local head, torso = world.figure:FindFirstChild("Head", true), world.figure:FindFirstChild("Torso", true)
+			-- the world position of the point the piece's Attachment names, through the weld: the Handle sits where the weld
+			-- puts it, the Attachment is on the Handle
+			local function pointOf(accessoryName: string): Vector3
+				local handle = world.figure:FindFirstChild(accessoryName, true):FindFirstChild("Handle")
+				local w = handle:FindFirstChildOfClass("Weld")
+				local attachment = handle:FindFirstChildOfClass("Attachment")
+				return (w.Part0.CFrame * w.C0 * w.C1:Inverse() * attachment.CFrame).Position
+			end
+			local topOfHead = head.CFrame.Position + Vector3.new(0, head.Size.Y / 2, 0)
+			local function near(a: Vector3, b: Vector3): boolean
+				return (a - b).Magnitude < 1e-3
+			end
+			expect(near(pointOf("Helm"), topOfHead)).toBe(true) -- the top, not the bottom
+			local chest = torso.CFrame.Position
+			expect(near(pointOf("Plate"), chest + Vector3.new(0, 0, -torso.Size.Z / 2))).toBe(true) -- the front (-Z)
+			expect(near(pointOf("Cape"), chest + Vector3.new(0, 0, torso.Size.Z / 2))).toBe(true) -- the back (+Z)
+			expect(near(pointOf("PauldronL"), chest + Vector3.new(-torso.Size.X / 2, torso.Size.Y / 2, 0))).toBe(true)
+			expect(near(pointOf("PauldronR"), chest + Vector3.new(torso.Size.X / 2, torso.Size.Y / 2, 0))).toBe(true)
 		end
-		expect(math.abs(worldOf("Helm").Y - (head.CFrame.Position.Y + head.Size.Y / 2)) < 1e-3).toBe(true) -- the top, not the bottom
-		expect(math.abs(worldOf("Plate").Z - (torso.CFrame.Position.Z - torso.Size.Z / 2)) < 1e-3).toBe(true) -- the front (-Z)
-		expect(math.abs(worldOf("Plate").Y - torso.CFrame.Position.Y) < 1e-3).toBe(true)
-	end)
+	)
 
 	it("lets a stall of the server's clock move the AI figure no further than maxCatchup", function()
 		local world = soloOnVenue()
@@ -1232,6 +1259,24 @@ describe("ArenaService: the champions' bodies, gear and venue (FL-0140)", functi
 				expect(entry.what == "shield").toBe(false) -- a spear champion with a grip attachment gets no shield either
 			end
 		end)
+	end)
+
+	it("asks the Kit for the AI champion's own loadout, apart from the human's", function()
+		local world = boot({ 1 })
+		world.arena.config.ai = { weapon = "spear", armour = "heavy", skill = 0.5 } -- unlike the human's defaults
+		reachSolo(world)
+		advanceTo(world, "intro")
+		local weapons, armours = {}, {}
+		for _, entry in logged(world, "weapon") do
+			weapons[entry.weapon] = true
+		end
+		for _, entry in logged(world, "armour") do
+			armours[entry.armour] = true
+		end
+		expect(weapons.spear).toBe(true)
+		expect(armours.heavy).toBe(true)
+		expect(weapons[world.arena.config.defaultWeapon]).toBe(true) -- and the human got theirs
+		expect(armours[world.arena.config.defaultArmour]).toBe(true)
 	end)
 
 	it("puts the loadout's weapon and armour on a human champion, in the kingdom's colour", function()

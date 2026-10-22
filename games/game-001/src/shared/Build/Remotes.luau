@@ -6,6 +6,12 @@
 	Client -> server (validated, rate-limited per player; no CFrame crosses the wire)
 		Build.CanPlace(type, position: Vector3, rot: integer(0,3)) -> (boolean, reason?)   ghost tint
 		Build.Place(type, position, rot) -> (buildingId?, reason?)    charges through the treasury; placedBy
+		Build.PlaceLine("wall", from: Vector3, to: Vector3) -> ({ buildingId }?, reason?)   FL-0126 part 2: a straight wall of
+		                                 Kit segments from `from` to `to` (y ignored): both ends snap to the 4-stud grid, the length is
+		                                 split into round(length / 32) pieces (at least one, at most 12), laid end to end and facing the
+		                                 line. All or nothing: every segment passes the Place rules (blocked, out_of_territory,
+		                                 out_of_bounds, ...) and the kingdom affords all of them, or nothing is built or charged.
+		                                 Extra reasons: not_a_line_piece (only "wall"), too_short (under one grid step), too_long.
 		Build.Upgrade(buildingId) -> (boolean, reason?)
 		Build.GetBuildings() -> { Building }                           every standing building (G2 views)
 		Build.PlaceSlot(slotId: string(1,32), type, turn: integer(0,3)?) -> (buildingId?, reason?)   G13.5:
@@ -56,6 +62,12 @@ local PLACEMENT = { Validate.enum(Types.BUILDING_TYPES), Validate.vector3(4000),
 return {
 	{ name = "Build.CanPlace", kind = "function", args = PLACEMENT, rate = { burst = 10, perSecond = 10 } },
 	{ name = "Build.Place", kind = "function", args = PLACEMENT, rate = { burst = 4, perSecond = 2 } },
+	{
+		name = "Build.PlaceLine",
+		kind = "function",
+		args = { Validate.enum(Types.BUILDING_TYPES), Validate.vector3(4000), Validate.vector3(4000) },
+		rate = { burst = 2, perSecond = 1 },
+	},
 	{
 		name = "Build.Upgrade",
 		kind = "function",
