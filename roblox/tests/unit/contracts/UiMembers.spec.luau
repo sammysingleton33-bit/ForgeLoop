@@ -32,6 +32,11 @@ describe("scripts/UiMembers", function()
 		expect(hits("local FRAME = { A = 1, B = 2 }\nParts.C = C")).toEqual({}) -- one-letter names
 	end)
 
+	it("keeps Camera in scope: a write to the read-only ViewportSize is flagged (FORGE-07 L1 on #291)", function()
+		expect(hits("workspace.CurrentCamera.ViewportSize = v")).toEqual({ "1:write:ViewportSize" })
+		expect(hits("camera.NearPlaneZ = 0.1")).toEqual({ "1:write:NearPlaneZ" })
+	end)
+
 	it("flags GetPropertyChangedSignal of a property no class has, and passes a real one", function()
 		expect(hits('x:GetPropertyChangedSignal("AbsoluteSise")')).toEqual({ "1:signal:AbsoluteSise" })
 		expect(hits('x:GetPropertyChangedSignal("AbsoluteSize")')).toEqual({})
