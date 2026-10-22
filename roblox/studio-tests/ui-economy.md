@@ -498,5 +498,22 @@ Desktop window and the phone emulator, one client, the starting treasury (walls 
 7. Phone emulator (667 × 375): the bar and its status line fit (no "…" in the status); the pieces are visible from
    the aerial camera.
 
+## U34 — Build: the gate from a wall piece (FL-0129c slice 2; FORGE-01's Build.PlaceGate, #306)
+Desktop window and the phone emulator, one client, a kingdom with a few wall pieces (draw a line with U33 first).
+1. Build → Military → Gate: the list row and the detail show the gate's price less half a wall piece's (40 wood,
+   20 stone with config today), and Place is on with 40 wood and 20 stone in the treasury. Place: the bar reads
+   "Gate: pick a wall piece", has no Turn button, "✕ Point at one of your wall pieces", and Make gate is off.
+2. Aim at one of your wall pieces, including one on a slant: the bar reads "Gate here" and "Half the wall's price
+   comes back"; a gate ghost (thicker than the wall) stands exactly on that piece, turned as it is. Move along the
+   line: the ghost jumps piece to piece. Move off the wall: the ghost goes and the bar says to point at a piece.
+3. Tap Make gate: a toast "Gate placed", build mode ends, the piece is replaced in place by a gate site facing the
+   same way, and the treasury drops by the net price (wood 40, stone 20: 30 spent, 10 back).
+4. Place a gate again and aim at another piece: "✕ Your kingdom has its gate already", Make gate off.
+5. A piece hard against a building or the territory edge (the gate needs 2 more studs each side): Make gate shows
+   "✕ No room for a gate there" (or "A gate there leaves your land") with an error toast; nothing is charged and
+   the wall stays.
+6. Cancel (X, or Q) at any step: the ghost goes and build mode ends. With the remote off (older server), the gate
+   places as one spot at its full price, as before.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.

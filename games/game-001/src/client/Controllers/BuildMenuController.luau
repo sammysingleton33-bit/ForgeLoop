@@ -62,6 +62,7 @@ local BuildMenu = require("../UI/BuildMenu")
 local Buildings = require("../UI/Buildings")
 local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
 local DragInput = require("../UI/DragInput")
+local GatePick = require("../UI/GatePick")
 local Ghost = require("../UI/Ghost")
 local Placement = require("../UI/Placement")
 local PlacementBar = require("../UI/PlacementBar")
@@ -84,6 +85,11 @@ BuildMenuController.MOVE_COOLDOWN = 10 -- seconds, when config Buildings has no 
 -- served picks two ends instead of one spot.
 BuildMenuController.LINE_TYPE = "wall"
 BuildMenuController.LINE = "Build.PlaceLine"
+
+-- The gate (FL-0129c slice 2; FORGE-01's Build.PlaceGate, FL-0126 part 2 slice 2): placing a gate while the remote is
+-- served picks one of my wall pieces, which becomes the gate in place (half the wall's price comes back).
+BuildMenuController.GATE_TYPE = "gate"
+BuildMenuController.GATE = "Build.PlaceGate"
 
 -- Used when Kit has no footprint for a type (never for the G2 types; a guard, not a rule).
 BuildMenuController.FALLBACK_FOOTPRINT = Vector2.new(16, 16)
@@ -271,7 +277,8 @@ function BuildMenuController:_setMode(mode: string): boolean
 end
 
 function BuildMenuController:startPlacement(buildingType: string)
-	local detail = BuildModel.placeDetail(self.hud.store, buildingType)
+	local prices = self:_gatePrices() or {}
+	local detail = BuildModel.placeDetail(self.hud.store, buildingType, { cost = prices[buildingType] })
 	if detail == nil or detail.cta.state ~= "ready" then
 		return
 	end
@@ -293,6 +300,9 @@ function BuildMenuController:startPlacement(buildingType: string)
 	if buildingType == BuildMenuController.LINE_TYPE and self.hud:hasRemote(BuildMenuController.LINE) then
 		-- first the start (one piece, checked like any spot), then the far end: { from, plan, ghosts }
 		self.placing.line = { from = nil :: Vector3?, plan = nil :: any, ghosts = {} :: { any } }
+	elseif buildingType == BuildMenuController.GATE_TYPE and self.hud:hasRemote(BuildMenuController.GATE) then
+		-- point at one of my wall pieces: { wall = row? }
+		self.placing.gate = { wall = nil :: any }
 	end
 	self.ghost = Ghost.new(self._env)
 	if self.hud.state.menu == "build" then
@@ -316,6 +326,16 @@ function BuildMenuController:_refreshGhost()
 		self:_refreshLineGhosts()
 		return
 	end
+	if p.gate then
+		local wall = p.gate.wall
+		if wall then
+			self.ghost:show(p.footprint, wall.cframe, nil) -- the gate where the piece stands, facing as it does
+			self.ghost:tint(p.status)
+		else
+			self.ghost:hide()
+		end
+		return
+	end
 	local slot = p.move and p.move.slot
 	if slot then
 		local turn = p.move.turn
@@ -336,6 +356,10 @@ function BuildMenuController:aimAt(position: Vector3)
 	end
 	if p.line and p.line.from then
 		self:_aimLine(position)
+		return
+	end
+	if p.gate then
+		self:_aimGate(position)
 		return
 	end
 	if p.line then
@@ -395,8 +419,8 @@ function BuildMenuController:rotate(step: number?)
 	if p == nil or p.busy then
 		return
 	end
-	if p.line then
-		return -- a wall line faces along itself: no Turn
+	if p.line or p.gate then
+		return -- a wall line faces along itself, a gate as its wall piece: no Turn
 	end
 	local back = step == -1
 	local slot = p.move and p.move.slot
@@ -703,6 +727,10 @@ function BuildMenuController:confirm()
 		self:_confirmLine()
 		return
 	end
+	if p.gate then
+		self:_confirmGate()
+		return
+	end
 	local hud = self.hud
 	local move = p.move
 	local slot = move and move.slot
@@ -771,6 +799,105 @@ function BuildMenuController:_stop()
 	self.placing = nil
 	self:_setMode("explore")
 	self.hud:setPlacing(false)
+end
+
+-- ------------------------------------------------------------------ the gate (FL-0129c slice 2)
+
+-- While Build.PlaceGate is served a gate is only ever made from a wall piece: its level-1 price less the wall's
+-- refund (what the treasury must hold; the server checks balance + refund >= price). The menu row, the detail's
+-- CTA and the bar all read it. nil when the remote is not served (a gate then places as one spot, full price).
+function BuildMenuController:_gatePrices(): { [string]: { [string]: number } }?
+	if not self.hud:hasRemote(BuildMenuController.GATE) then
+		return nil
+	end
+	local store = self.hud.store
+	local gate = store:buildingCost(BuildMenuController.GATE_TYPE, 1)
+	local wall = store:buildingCost(BuildMenuController.LINE_TYPE, 1)
+	if gate == nil or wall == nil then
+		return nil
+	end
+	local split = GatePick.cost(gate.cost, wall.cost, BuildingsConfig.cancelRefund or 0.5)
+	return { [BuildMenuController.GATE_TYPE] = split.net }
+end
+
+function BuildMenuController:_gateCosts(): { any }
+	local prices = self:_gatePrices()
+	local detail = BuildModel.placeDetail(
+		self.hud.store,
+		BuildMenuController.GATE_TYPE,
+		{ cost = if prices then prices[BuildMenuController.GATE_TYPE] else nil }
+	)
+	local out = {}
+	for _, c in if detail then detail.costs else {} do
+		table.insert(out, { currency = c.currency, amount = c.amount, short = c.short })
+	end
+	return out
+end
+
+-- The aim moved: the wall piece under it (UI/GatePick), and what the client can tell before Make gate: one gate per
+-- kingdom and the price less the wall's refund. Whether the thicker gate fits there is the server's call.
+function BuildMenuController:_aimGate(position: Vector3)
+	local p = self.placing
+	local store = self.hud.store
+	local rows = store:myBuildings()
+	local wall = GatePick.wallAt(rows, position, BuildModel.footprint(BuildMenuController.LINE_TYPE, 1))
+	local key = if wall then `gate|{wall.id}` else "gate|none"
+	if key == p.key then
+		return
+	end
+	p.key = key
+	p.gate.wall = wall
+	p.position = if wall then wall.cframe.Position else Placement.snap(position)
+	p.status, p.reason = "ok", nil
+	local def = BuildingsConfig.buildings and BuildingsConfig.buildings.gate
+	if wall == nil then
+		p.status, p.reason = "bad", Text.reason("not_a_wall", "gate")
+	elseif def and def.maxCount and GatePick.gates(rows) >= def.maxCount then
+		p.status, p.reason = "bad", Text.reason("limit_reached", "gate")
+	else
+		for _, c in self:_gateCosts() do
+			if c.short then
+				p.status, p.reason = "bad", Text.reason("cannot_afford", "gate")
+			end
+		end
+	end
+	self._checker:cancel()
+	self:_refreshGhost()
+	self.hud:render()
+end
+
+function BuildMenuController:_confirmGate()
+	local p = self.placing
+	local wall = p.gate.wall
+	if wall == nil then
+		return
+	end
+	local hud = self.hud
+	p.busy = true
+	hud:render()
+	self._env.spawn(function()
+		local called, gateId, reason = pcall(function()
+			return hud.remotes:invoke(BuildMenuController.GATE, wall.id)
+		end)
+		if self.placing ~= p then
+			return -- cancelled while waiting
+		end
+		p.busy = false
+		if called and gateId ~= nil and reason == nil then
+			hud:notify({
+				kind = "success",
+				title = "Gate placed",
+				body = "The wall piece comes down. Builders are on their way",
+			})
+			self:_stop()
+		else
+			local text = Text.reason(if called then reason else nil, "gate")
+			p.status, p.reason = "bad", text
+			self:_refreshGhost()
+			hud:notify({ kind = "error", title = "Couldn't place the gate", body = text })
+			hud:render()
+		end
+	end)
 end
 
 -- ------------------------------------------------------------------ the wall line (FL-0129c)
@@ -900,7 +1027,10 @@ function BuildMenuController:render(metrics: any)
 	self.menu = self.menu or BuildMenu.new(hud.roots.menus)
 	self.bar = self.bar or PlacementBar.new(hud.roots.hud)
 	if hud.state.menu == "build" then
-		local view = BuildModel.menu(hud.store, { category = self.state.category, selected = self.state.selected })
+		local view = BuildModel.menu(
+			hud.store,
+			{ category = self.state.category, selected = self.state.selected, prices = self:_gatePrices() }
+		)
 		self.menu:render(view, metrics, {
 			phoneView = self.state.phoneView,
 			onCategory = function(id)
@@ -937,6 +1067,10 @@ function BuildMenuController:render(metrics: any)
 		if line and line.from then
 			costs = self:_lineCosts(count)
 		end
+		local gate = p.gate
+		if gate then
+			costs = self:_gateCosts()
+		end
 		local lineName = if line == nil
 			then nil
 			elseif line.from == nil then "Wall line: the start"
@@ -944,19 +1078,26 @@ function BuildMenuController:render(metrics: any)
 			else `Wall line · {count} pieces`
 		self.bar:render(
 			{
-				name = lineName or (if p.move then `Move {p.name}` else p.name),
-				confirm = if line
-					then (if line.from then "Build wall" else "Set start")
+				name = lineName
+					or (if gate == nil then nil elseif gate.wall then "Gate here" else "Gate: pick a wall piece")
+					or (if p.move then `Move {p.name}` else p.name),
+				confirm = if gate
+					then "Make gate"
+					elseif line then (if line.from then "Build wall" else "Set start")
 					elseif p.move then "Move here"
 					else nil,
 				clickVerb = if p.move then "moves" else nil,
-				noTurn = line ~= nil,
-				hint = if line == nil
-					then nil
+				noTurn = line ~= nil or gate ~= nil,
+				hint = if gate
+					then "Point at one of your wall pieces · Click makes it the gate · Q cancels"
+					elseif line == nil then nil
 					elseif line.from then "Move the mouse to the far end · Click builds the wall · Q cancels"
 					else "Move the mouse to one end · Click sets it · Q cancels",
-				okText = if line
-					then (if line.from then "Builds in one go: all pieces or none" else "✓ Start here")
+				okText = if gate
+					then "Half the wall's price comes back"
+					elseif line then (if line.from
+						then "Builds in one go: all pieces or none"
+						else "✓ Start here")
 					elseif slot then `✓ {Turns.label(p.move.turn)}`
 					else nil, -- the plot outline shows the snap
 				icon = if info then info.icon else "build",
