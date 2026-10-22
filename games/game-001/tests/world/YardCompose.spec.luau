@@ -18,6 +18,8 @@
 	  * every piece stands on legal ground by the footprint it draws (not by a circle): off the lanes, the roads (the avenue's court-covered
 	    stretch apart), the slots, the buildings and the fields, clear of the focal pair's ring, overlapping no other piece, no tree, bush,
 	    rock or flower stands on it, and every axial piece is inside the start camera's picture;
+	  * it stands on FLAT ground: WorldPlan.groundHeight over the yard's rectangle (keep frame x -45..45, z -100..-25) is the ground level,
+	    in every kingdom (the footprints, the hedge rows, the court and the specs' camera maths all assume it);
 	  * it is axial: the focal pair, the stalls and the hedge rows mirror each other about the avenue's axis, the stalls face the focal
 	    piece above them;
 	  * it is deterministic, identical in every kingdom's own frame (the canopy and pennant colour apart), and WorldPlan.clear and the trim
@@ -491,6 +493,68 @@ local function axialProblems(rows: { any }): { string }
 	return bad
 end
 
+-- the yard's flat ground: WorldPlan.groundHeight sampled every YARD_STEP studs over the yard's rectangle in the keep's frame, and at the
+-- middle of each yard row (the haystack stands at x = 46, a little outside the grid), against Layout.features.groundY
+local YARD_X, YARD_Z, YARD_STEP = 45, { -100, -25 }, 5
+local FLAT_TOL = 0.05
+local FLAT_HINT = "The yard is composed on flat ground: its footprints, the hedge rows (one height for a whole 12-stud row), the court and the "
+	.. "specs' camera maths assume a plane at groundY, while WorldPlan.yard only stands each piece at the ground height of its middle. "
+	.. "If this fails, a hill or the river now reaches the yard: move it, or make the yard sit its pieces, rows and court on "
+	.. "WorldPlan.groundHeight (and the footprint and camera maths with it)."
+
+local function groundProblems(kingdom: string, height: (number, number) -> number): { string }
+	local keep = Layout.plots[kingdom].anchors.keep
+	local flat = Layout.features.groundY or 0
+	local points: { Vector2 } = {}
+	for x = -YARD_X, YARD_X, YARD_STEP do
+		for z = YARD_Z[1], YARD_Z[2], YARD_STEP do
+			table.insert(points, Vector2.new(x, z))
+		end
+	end
+	for _, row in WorldPlan.yardRows(COLOUR[kingdom]) do
+		table.insert(points, Vector2.new(row.x, row.z))
+	end
+	local bad = {}
+	for _, at in points do
+		local w = keep:PointToWorldSpace(Vector3.new(at.X, 0, at.Y))
+		local h = height(w.X, w.Z)
+		if math.abs(h - flat) > FLAT_TOL then
+			table.insert(bad, `{kingdom} ground at keep-frame ({at.X}, {at.Y}) is {h}, not {flat}`)
+		end
+	end
+	return bad
+end
+
+-- ... and the pieces stand on it (the height WorldPlan.yard gives each is that of its middle)
+local function pieceHeightProblems(kingdom: string, pieces: { Piece }): { string }
+	local flat = Layout.features.groundY or 0
+	local bad = {}
+	for _, piece in pieces do
+		local y = piece.cframe.Position.Y
+		if math.abs(y - flat) > FLAT_TOL then
+			table.insert(bad, `{kingdom} {piece.assetId} stands at y = {y}, not {flat}`)
+		end
+	end
+	return bad
+end
+
+local function groundHeightOf(x: number, z: number): number
+	return WorldPlan.groundHeight(Layout, x, z)
+end
+
+-- a ground with a swell of `lift` studs under the keep-frame box x in [-45, 45], z in [-100, -25] (or the part of it with x >= fromX)
+local function swelled(kingdom: string, lift: number, fromX: number?): (number, number) -> number
+	local keep = Layout.plots[kingdom].anchors.keep
+	return function(x: number, z: number): number
+		local at = keep:PointToObjectSpace(Vector3.new(x, 0, z))
+		local under = math.abs(at.X) <= YARD_X
+			and at.X >= (fromX or -YARD_X)
+			and at.Z >= YARD_Z[1]
+			and at.Z <= YARD_Z[2]
+		return groundHeightOf(x, z) + (if under then lift else 0)
+	end
+end
+
 local function rowsOf(kingdom: string): { any }
 	return WorldPlan.yardRows(COLOUR[kingdom])
 end
@@ -765,6 +829,40 @@ describe("The composed start yard (FORGE-02 visual pass 1b)", function()
 			expect(#legalityProblems("crimson", with("crimson", pieces, hedge, 20, -82))).toBeGreaterThan(0) -- on a build slot
 			expect(#openGroundProblems("crimson", with("crimson", pieces, hedge, 8, -48))).toBeGreaterThan(0) -- against a stall
 			expect(#legalityProblems("crimson", with("crimson", pieces, cart, 30, -60))).toBeGreaterThan(0) -- on the cross street
+		end
+	)
+
+	it(
+		"stands on flat ground in every kingdom: the ground height over the yard's rectangle is the ground level",
+		function()
+			for _, k in KINGDOMS do
+				local bad = groundProblems(k, groundHeightOf)
+				if #bad > 0 then
+					error(`{#bad} points, e.g. {table.concat(bad, "; ", 1, math.min(#bad, 3))}. {FLAT_HINT}`)
+				end
+				local high = pieceHeightProblems(k, yardOf(planAll, k))
+				if #high > 0 then
+					error(`{table.concat(high, "; ")}. {FLAT_HINT}`)
+				end
+			end
+		end
+	)
+
+	it(
+		"MUTANT: a swell under the yard (the whole of it, a corner of it or a barely visible one) and a raised piece are caught",
+		function()
+			for _, k in KINGDOMS do
+				expect(#groundProblems(k, swelled(k, 2))).toBeGreaterThan(0) -- the ground +2 inside the rectangle
+				expect(#groundProblems(k, swelled(k, 2, 30))).toBeGreaterThan(0) -- under the cart's corner alone
+				expect(#groundProblems(k, swelled(k, 0.1))).toBeGreaterThan(0) -- just over the tolerance
+				expect(#groundProblems(k, swelled(k, 0.04))).toBe(0) -- under it: the tolerance is a tolerance, not a trip wire
+				local pieces = table.clone(yardOf(planAll, k))
+				expect(#pieceHeightProblems(k, pieces)).toBe(0)
+				local raised = table.clone(pieces[1])
+				raised.cframe = raised.cframe + Vector3.new(0, 2, 0)
+				pieces[1] = raised
+				expect(#pieceHeightProblems(k, pieces)).toBeGreaterThan(0)
+			end
 		end
 	)
 
