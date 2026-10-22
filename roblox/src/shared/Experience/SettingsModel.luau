@@ -38,7 +38,7 @@ SettingsModel.SECTIONS = table.freeze({
 	table.freeze({
 		id = "play",
 		title = "Gameplay",
-		keys = table.freeze({ "showHints", "citizenBarks", "notifications" }),
+		keys = table.freeze({ "showHints", "citizenBarks", "jobGlyphs", "notifications" }),
 	}),
 })
 
@@ -53,6 +53,7 @@ SettingsModel.LABEL = table.freeze({
 	effectsQuality = "Effects quality",
 	showHints = "Hints",
 	citizenBarks = "Citizen chatter",
+	jobGlyphs = "Job icons over citizens",
 	notifications = "Notifications",
 })
 

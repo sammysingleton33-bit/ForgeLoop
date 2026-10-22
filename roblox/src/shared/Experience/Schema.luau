@@ -49,6 +49,9 @@ Schema.SETTINGS = table.freeze({
 	cameraShake = table.freeze({ kind = "boolean", default = true }),
 	showHints = table.freeze({ kind = "boolean", default = true }),
 	citizenBarks = table.freeze({ kind = "boolean", default = true }),
+	-- D-059 B22.4 prototype: a job icon over each citizen in the overview (game-001 CitizenGlyphController);
+	-- off until the owner chooses between a closer start camera and job icons (FORGE-00, 22 Oct)
+	jobGlyphs = table.freeze({ kind = "boolean", default = false }),
 	notifications = table.freeze({ kind = "enum", default = "all", options = table.freeze({ "all", "important" }) }),
 	-- FL-0103: "reduced" halves every effect's particles (VFXController), for slower devices
 	effectsQuality = table.freeze({ kind = "enum", default = "full", options = table.freeze({ "full", "reduced" }) }),

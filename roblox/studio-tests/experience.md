@@ -792,3 +792,22 @@ Pass: steps 1–5 hold (6 when an arena runs). Write what you think of the close
 History:
 - 2026-10-19 FORGE-04: written (D-059; FORGE-00 approved the zoom 70 / 55° framing and the yard focus).
 - 2026-10-22 FORGE-04: FL-0147. The first view looks back at the keep from 20 studs before the throne. Step 1 counts the citizens at about 30 s and checks the bottom edge; step 4 keeps the walk camera's direction.
+
+## E24 — Job icons over citizens (D-059 B22.4 prototype, game-001)
+
+A prototype behind a setting, **off by default** until the owner chooses between a closer start camera and job icons. `CitizenGlyphController` draws a round icon over each citizen in the overview. Placeholder art: wheat (farmer, yellow), axe (woodcutter, green), pick (miner, grey), hammer (builder, orange), box (hauler, tan).
+
+1. Play Solo. Open Settings → Gameplay: "Job icons over citizens" is **Off**. With it off, no icon shows anywhere. Turn it **On**.
+2. At the start view (zoom 70), each citizen near the yard has its job's icon about two studs above its head. A citizen with a request or reaction bubble shows the bubble instead. Can you name each citizen's job from the icon alone? Write how many of the five jobs you could name. Screenshot **E24-2**.
+3. Zoom in slowly: the icons fade from about 55 studs and are gone at the closest zoom (40). Zoom back out: they return.
+4. Press V (walk mode): no icons. Back in the overview, start a conversation with a citizen: no icons while it is open. In the Crown Arena duel: none.
+5. Pan so a building stands between the camera and a citizen: the roof hides the citizen and its icon together (icons are not drawn on top).
+6. Tap or click a citizen right under its icon: the citizen is selected (the icon takes no input).
+7. Device emulator, a phone held sideways (about 750 × 311): the icons are smaller (20 px) and still readable. Note where they overlap (a farm's workers). Screenshot **E24-7**.
+8. A busy kingdom (50 or more citizens in view): at most 50 icons, the ones nearest the view's centre. In the MicroProfiler, `CitizenGlyphController` costs well under a millisecond a frame.
+9. Turn the setting off: every icon goes at once.
+
+Pass: steps 1–9 hold. Write which you would rather have: these icons, or a closer start camera.
+
+History:
+- 2026-10-22 FORGE-04: written (D-059 B22.4 prototype; FORGE-00: off by default until the owner answers).
