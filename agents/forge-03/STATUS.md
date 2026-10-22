@@ -5,11 +5,11 @@ _Maintained by the worker. Keep it short and current._
 | Field | Value |
 |---|---|
 | Session branch | `forge/03-ui-economy` (cloud session); one PR branch per task: `forge/03-ui-economy-<task>`; Crownfall: `forge/03-ui-economy-crownfall` |
-| Open PRs | FL-0073d support meter + breakdown (`forge/03-ui-economy-support`, 2026-10-19). Merged this week: #185, #188, #192, #210, #214, #215. |
-| Current task | FL-0073 (BUILDING) against SupportModel on main (CONTRACTS v0.4-g11e), three PRs, all dark until FORGE-01 serves the remotes: (d) support meter + breakdown, in PR; (e) citizen-card perk previews + petitions (`Kingdom.FulfilPetition`); (f) Results recap: five moments, triggers fired, crowd outcome. Later: FL-0129c wall tool + Gate after FL-0126 part 2 |
+| Open PRs | #308 wall line (FL-0129c, stacked on #301); D-059 start-frame HUD pass (`forge/03-ui-economy-start-hud`, 2026-10-22). |
+| Current task | D-059 HUD pass at the start frame: HUD clear of keep door, cross and citizens; FORGE-04's onboarding card covers the keep (handoff). B22 HUD P0 (FL-0144) waits on the owner's Studio Output. |
 | Last verified check | support branch: full Lune suite 2115/0 (136 files), SupportUI 20/0, mutations FL-0073-support.py (see PR), selene 0/0, stylua clean, phone-audit 0 issues; renders looked at (desktop + phone-se) |
-| Blockers | none; the meter shows nothing until FORGE-01 declares `Kingdom.Support` / `Kingdom.GetSupport` (SupportService, FL-0071) |
-| Needs from others | FORGE-01: SupportService serving Kingdom.Support / GetSupport (SupportView G12.1) and Kingdom.FulfilPetition; `role` / `petition` on CitizenService:inspect. FORGE-05: review the FL-0073d PR. User: Studio U24, U25 once served. |
+| Blockers | FL-0144: no root cause without the owner's Studio Output |
+| Needs from others | FORGE-04: onboarding card placement/styling at the start frame (handoff 2026-10-22). FORGE-01: merge #301 so #308 can retarget. User: Studio Output for B22; U32, U33. |
 
 ## Estimate to VS-1 (FORGE-03 rows, unverified, hours of FORGE-03 work)
 | Item | Hours | Notes |
