@@ -12,6 +12,8 @@
 	  warm sun), EnvironmentDiffuseScale 0.55 -> 0.65, ExposureCompensation 0.1 -> 0.15, ShadowSoftness 0.25 -> 0.3;
 	  Atmosphere Density 0.28 -> 0.32, Offset 0.12 -> 0.16, Color (199,214,235) -> (208,214,226), Decay (106,126,160) -> (112,128,166),
 	  Haze 1.4 -> 1.8; ColorCorrection Contrast 0.08 -> 0.12, Saturation 0.14 -> 0.10, TintColor (255,250,240) -> (255,248,236).
+	terrainColors were retuned with the ground pass (#296): Kit/WorldGround lays the LeafyGrass, Ground, Mud and Cobblestone patches,
+	lanes and plazas with them (the colours stay in this file, WorldService applies them), so change them together with WorldGround.
 	Tuned in a Blender PREVIEW of the real world at the default camera (blender/scripts/render_world.py): the preview approximates sun
 	height, colour, fill, haze and grade, not Roblox's own lighting. UNVERIFIED in Studio; the checks are in the PR that carries it.
 

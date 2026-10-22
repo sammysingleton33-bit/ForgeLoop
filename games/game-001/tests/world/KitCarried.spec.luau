@@ -6,7 +6,8 @@
 	  2. fit        centred on the pivot (within 0.15 studs), at most 2.6 wide, 1.2 tall and 1.2 deep (between the hands, in front of the
 	                chest), nothing behind the chest plane (z <= 0.6);
 	  3. read       the four loads have clearly different key colours (the part with the most volume) and each stays inside its
-	                resource's colour family (food red/gold basket, wood brown, stone pale grey, gold yellow), so a load reads like its node;
+	                resource's colour family (food a light warm wicker basket that carries its marker's red-pink apple, wood dark brown,
+	                stone pale grey, gold yellow), so a load reads like its node;
 	  4. api        deterministic, an unknown resource errors, Kit.carried and Kit.CARRIED are exported;
 	  5. mutants    each rule fails when broken.
 ]]
@@ -16,6 +17,7 @@ local describe, it, expect = T.describe, T.it, T.expect
 
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local Gear = require("@game/ReplicatedStorage/Game/Kit/Gear")
+local Props = require("@game/ReplicatedStorage/Game/Kit/Props")
 
 local function bodyParts(model: Model): { BasePart }
 	local out = {}
@@ -146,6 +148,20 @@ local function colourProblems(models: { [string]: Model }): { string }
 	if not (w.R > w.G and w.G > w.B and lum(w) < 0.5) then
 		table.insert(out, "wood is not brown")
 	end
+	-- food: a warm, light wicker basket (the key colour: tan, R > G > B, clearly saturated, lighter than the logs' dark brown, so food
+	-- and wood stay apart even where the distance rule above would pass them), and the food marker's own red-pink somewhere in the load
+	-- (the apple; the other loads wear their goods' colours, only the food shares its marker's exactly)
+	local f = keys.food
+	if not (f.R > f.G and f.G > f.B and f.R - f.B > 0.2 and lum(f) >= 0.5 and lum(f) < 0.8) then
+		table.insert(out, "food is not a warm, light wicker basket")
+	end
+	local marker, red = Props.NODE_MARKER_COLORS.food, false
+	for _, p in bodyParts(models.food) do
+		red = red or distance(p.Color, marker) < 60
+	end
+	if not red then
+		table.insert(out, "food carries no part in its marker's red-pink")
+	end
 	return out
 end
 
@@ -253,6 +269,30 @@ describe("Kit.carried mutants are caught", function()
 		if #problems("wood", m) == 0 then
 			error("mutant not caught: no PrimaryPart")
 		end
+	end)
+	-- the food rule alone: each mutant keeps the four key colours apart (so the distance rule passes) and trips only the food message
+	local function foodMutant(name: string, message: string, mutate: (Model) -> ())
+		it(`catches: {name} (read)`, function()
+			local models = all()
+			mutate(models.food)
+			local list = colourProblems(models)
+			if #list ~= 1 or not string.find(list[1], message, 1, true) then
+				error(`mutant not caught by the food rule: {name}: got [{table.concat(list, "; ")}]`)
+			end
+		end)
+	end
+	foodMutant("a green basket", "food is not a warm, light wicker basket", function(m)
+		(m:FindFirstChild("Basket") :: BasePart).Color = Color3.fromRGB(90, 150, 70)
+	end)
+	foodMutant("a dark-brown basket like the logs", "food is not a warm, light wicker basket", function(m)
+		-- far enough from the bark (122, 78, 44) for the distance rule to pass: R > G > B and saturated, but not light
+		(m:FindFirstChild("Basket") :: BasePart).Color = Color3.fromRGB(70, 36, 8)
+	end)
+	foodMutant("a pale grey basket", "food is not a warm, light wicker basket", function(m)
+		(m:FindFirstChild("Basket") :: BasePart).Color = Color3.fromRGB(176, 176, 176)
+	end)
+	foodMutant("an apple that is not red-pink", "food carries no part in its marker's red-pink", function(m)
+		(m:FindFirstChild("Apple") :: BasePart).Color = Color3.fromRGB(70, 130, 200)
 	end)
 	it("catches: two loads with the same colour (read)", function()
 		local models = all()

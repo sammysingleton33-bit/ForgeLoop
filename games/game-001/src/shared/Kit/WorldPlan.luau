@@ -706,9 +706,14 @@ end
 -- turned 180 degrees): the lane network, the fields' sides and the work areas, and the land beyond them out to the horizon edge. The
 -- fully zoomed-out view looks along the throne's facing and sees the stands and tree lines as the composition. A WEIGHT for where
 -- nature clumps, never a rule. (blender/scripts/render_world.py and tests/world/support/StartView.luau hold the same maths.)
+-- These numbers are COPIES of the controller's (RulerCameraController.DEFAULTS.overview: default = startZoom, fieldOfView, startAhead and
+-- startTurn == 180 as `back`; far.zoom = maxZoom; pitch = Def.pitchFor's ramp: minZoom/maxZoom/minPitchDeg/maxPitchDeg); NatureClumps.spec
+-- compares them field by field, so a change to the start view fails there until they follow it. far.ahead and far.back, aspect, near, reach
+-- and throne have no counterpart in the controller.
 WorldPlan.VIEW = table.freeze({
 	default = table.freeze({ zoom = 70, fov = 55, ahead = 20, back = true }),
 	far = table.freeze({ zoom = 220, fov = 55, ahead = 40, back = false }),
+	pitch = table.freeze({ minZoom = 40, maxZoom = 220, minDeg = 38, maxDeg = 65 }), -- degrees below the horizon, linear in the zoom
 	aspect = 16 / 9,
 	near = 30, -- studs round the start view's ground that still count as in it
 	reach = 900, -- rays that never reach the ground stop here
@@ -731,7 +736,9 @@ local function groundPoint(
 	local facing = Vector3.new(look.X, 0, look.Z).Unit
 	local focus = keep:PointToWorldSpace(V.throne) + facing * view.ahead
 	local flat = if view.back then -facing else facing -- the way the camera looks, on the ground
-	local pitch = math.rad(38 + (65 - 38) * (view.zoom - 40) / (220 - 40))
+	local ramp = V.pitch
+	local pitch =
+		math.rad(ramp.minDeg + (ramp.maxDeg - ramp.minDeg) * (view.zoom - ramp.minZoom) / (ramp.maxZoom - ramp.minZoom))
 	local sp, cp = math.sin(pitch), math.cos(pitch)
 	local pos = focus - flat * (view.zoom * cp) + Vector3.new(0, view.zoom * sp, 0)
 	local forward = flat * cp + Vector3.new(0, -sp, 0)
@@ -1989,7 +1996,8 @@ function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placeme
 		table.insert(out, p)
 	end
 
-	-- dressing for fully dressed kingdoms (VS-1: one dressed plot, the others blocked out)
+	-- dressing for the dressed kingdoms (`dressed`; WorldService dresses all four since FORGE-00's decision of 2026-10-22, VS-1 dressed
+	-- crimson alone and left the others blocked out)
 	local function place(id: string, x: number, z: number, feature: string, yaw: number?)
 		local y = WorldPlan.groundHeight(layout, x, z)
 		local cf = CFrame.new(x, y, z) * CFrame.Angles(0, yaw or rng.range(0, 2 * math.pi), 0)
@@ -2040,7 +2048,7 @@ end
 --   * cabbage variants: a cabbage field takes farm_field_cabbage_01..03 by its kingdom (it was always _03);
 --   * fences (farm_fence_NN) along the outside of each plot's crop fields: the back and flank sides, never the side that faces the
 --     keep or a neighbouring field, and a segment is dropped (never nudged) when it would touch a slot, a building, a build zone,
---     a road, the river or the arena.
+--     a road, a worn lane, the river or the arena.
 -- (Rock cliffs on the mountain rim were placed in the first round of phase 3 and dropped by FORGE-00; rock_cliff_01/02 are on the bench.)
 WorldPlan.MESH_DRESSING = table.freeze({
 	cabbageIds = table.freeze({ "farm_field_cabbage_01", "farm_field_cabbage_02", "farm_field_cabbage_03" }),
@@ -2062,6 +2070,13 @@ local function fenceSegmentLegal(layout: any, rects: { any }, x: number, z: numb
 	end
 	for _, road in f.roads do
 		if distToPolyline(x, z, road.points) < road.width / 2 + hw + 1 then
+			return false
+		end
+	end
+	-- the plots' worn lanes (features.paths; the ground only, drawn by WorldGround): a fence stands beside them, never across them, with
+	-- the same clearance as a road
+	for _, lane in f.paths do
+		if distToPolyline(x, z, lane.points) < lane.width / 2 + hw + 1 then
 			return false
 		end
 	end
