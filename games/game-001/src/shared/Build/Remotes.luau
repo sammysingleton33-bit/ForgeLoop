@@ -6,6 +6,11 @@
 	Client -> server (validated, rate-limited per player; no CFrame crosses the wire)
 		Build.CanPlace(type, position: Vector3, rot: integer(0,3)) -> (boolean, reason?)   ghost tint
 		Build.Place(type, position, rot) -> (buildingId?, reason?)    charges through the treasury; placedBy
+		Build.PlaceGate(wallId) -> (gateId?, reason?)   FL-0126 part 2: one of the player's kingdom's wall pieces becomes a gate, in
+		                                 place and facing the same way: the wall goes (half its level-1 price comes back, as on a cancelled
+		                                 site), the gate is a new site charged its level-1 price. One gate per kingdom (limit_reached). Reasons:
+		                                 not_found, not_owner, not_a_wall, limit_reached, busy (the wall is being upgraded), under_attack,
+		                                 blocked / out_of_territory (the gate is thicker than the wall), cannot_afford, match_not_active.
 		Build.PlaceLine("wall", from: Vector3, to: Vector3) -> ({ buildingId }?, reason?)   FL-0126 part 2: a straight wall of
 		                                 Kit segments from `from` to `to` (y ignored): both ends snap to the 4-stud grid, the length is
 		                                 split into round(length / 32) pieces (at least one, at most 12), laid end to end and facing the
@@ -62,6 +67,12 @@ local PLACEMENT = { Validate.enum(Types.BUILDING_TYPES), Validate.vector3(4000),
 return {
 	{ name = "Build.CanPlace", kind = "function", args = PLACEMENT, rate = { burst = 10, perSecond = 10 } },
 	{ name = "Build.Place", kind = "function", args = PLACEMENT, rate = { burst = 4, perSecond = 2 } },
+	{
+		name = "Build.PlaceGate",
+		kind = "function",
+		args = { BUILDING_ID },
+		rate = { burst = 2, perSecond = 1 },
+	},
 	{
 		name = "Build.PlaceLine",
 		kind = "function",

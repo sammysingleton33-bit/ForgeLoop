@@ -123,6 +123,46 @@ afterEach(function()
 end)
 
 describe("BuildingService (G6, G8)", function()
+	it("Build.PlaceGate turns one of the player's wall pieces into a gate and charges the gate", function()
+		local env, _, match, treasury = boot()
+		local p1 = env.mock.players:add({ userId = 1 })
+		env.mock:advance(0.5)
+		local sim = match.host.match.sim
+		local k = sim.kingdoms.crimson
+		local keep = sim.buildings[k.keepId]
+		local length = sim.catalog.buildings.wall.placeSize.X
+		local ids = nil
+		for _, dz in { -90, -70, -50, 50, 70, 90, -110, 110, -30, 30 } do
+			for _, dx in { -48, 40, -100 } do
+				ids = sim:placeLine(k, "wall", keep.x + dx, keep.z + dz, keep.x + dx + length, keep.z + dz)
+				if ids ~= nil then
+					break
+				end
+			end
+			if ids ~= nil then
+				break
+			end
+		end
+		assert(ids, "one of the lines fits")
+		local wall = sim.buildings[ids[1]]
+		local before = treasury:get("crimson")
+		local gateId, why = invoke(env, p1, "Build.PlaceGate", ids[1])
+		expect(why).toBeNil()
+		expect(sim.buildings[gateId].kind).toBe("gate")
+		expect(sim.buildings[gateId].x).toBe(wall.x)
+		expect(sim.buildings[gateId].placedBy).toBe(1)
+		expect(sim.buildings[ids[1]]).toBeNil()
+		local after = treasury:get("crimson")
+		local price = assert(Costs.building("gate", 1)).cost
+		local back = assert(Costs.building("wall", 1)).cost
+		for res, amount in price do
+			local refund = math.floor((back[res] or 0) * sim.catalog.tuning.cancelRefund)
+			expect(before[res] - after[res]).toBe(amount - refund)
+		end
+		env.mock:advance(2)
+		expect({ invoke(env, p1, "Build.PlaceGate", k.keepId) }).toEqual({ nil, "not_a_wall" })
+	end)
+
 	it(
 		"Build.PlaceLine lays a wall line all or nothing, charges per piece, and refuses what is not a wall line",
 		function()
