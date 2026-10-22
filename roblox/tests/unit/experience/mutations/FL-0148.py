@@ -66,7 +66,8 @@ M = [
  # (b) swings: Sim/Pose
  ("FL-0148", P, 'out.RightArm = rx(35 + 105 * h)', 'out.RightArm = rx(35 + 55 * h)', SP, BLOWS, "game"),
  ("FL-0148", P, 'out.RightArm = rx(30 + 110 * h)', 'out.RightArm = rx(30 + 60 * h)', SP, BLOWS, "game"),
- ("FL-0148", P, 'out.Tool = rx(10 - 45 * h)', 'out.Tool = rx(10 + 40 * h)', "world/KitCharacter", "keeps every part welded to the tool clear of the head", "game"),
+ # the pick's forward tip clears #317's (on main) bigger miner hat: tipped only 10 degrees, it meets the hat
+ ("FL-0148", P, 'out.Tool = rx(10 - 45 * h)', 'out.Tool = rx(10 - 10 * h)', "world/KitCharacter", "keeps every part welded to the tool clear of the head", "game"),
  ("FL-0148", P, 'out.Tool = rx(10 - 45 * h)', 'out.Tool = rx(10 - 30 * h)', SP, TIPS, "game"),
  ("FL-0148", P, 'out.Tool = rx(-15 * h)', 'out.Tool = rx(15 * h)', SP, TIPS, "game"),
  ("FL-0148", P, 'out.RightArm = rx(40 + 80 * h)', 'out.RightArm = rx(40 + 40 * h)', SP, BLOWS, "game"),
