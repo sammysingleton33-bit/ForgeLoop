@@ -76,7 +76,9 @@ describe("Sim/Pose", function()
 							if angle > Pose.LIMITS[joint] + 1e-3 then
 								error(`{action}/{job} {joint}: {angle}° > {Pose.LIMITS[joint]}°`)
 							end
-							if action ~= "celebrate" and angle > 90 + 1e-3 then
+							-- the arms go above 90° only to cheer, and to raise a tool for a work blow (D-059)
+							local raisedArm = action == "work" and (joint == "RightArm" or joint == "LeftArm")
+							if action ~= "celebrate" and not raisedArm and angle > 90 + 1e-3 then
 								error(`{action}/{job} {joint}: {angle}° > 90° outside celebrate`)
 							end
 							expect(cf.Position.Magnitude).toBeLessThanOrEqual(2)
@@ -171,14 +173,81 @@ describe("Sim/Pose", function()
 		local chop = Pose.sample("work", "woodcutter", 0.5, 0)
 		local harvest = Pose.sample("work", "farmer", 0.5, 0)
 		expect(near(chop.RightArm, harvest.RightArm, 1e-3)).toBe(false)
-		-- harvesting bends forward: the torso's top tips toward -Z
-		expect(harvest.Torso.UpVector.Z).toBeLessThan(-0.2)
+		-- harvesting bends forward into the soil after the blow: the torso's top tips toward -Z
+		local bent = Pose.sample("work", "farmer", 0.9, 0)
+		expect(bent.Torso.UpVector.Z).toBeLessThan(-0.2)
+	end)
+
+	it("works in blows that read from the air: a slow raise, a fast strike, then the follow-through (D-059)", function()
+		local function arm(job: string, phase: number): number
+			return angleOf(Pose.sample("work", job, phase, 0).RightArm)
+		end
+		local STEPS = 200
+		-- { job, the arm's top at least, its travel a blow at least }: the hoe stops at 105 degrees, below the hat brim
+		for _, case in
+			{ { "woodcutter", 135, 100 }, { "miner", 135, 105 }, { "builder", 115, 75 }, { "farmer", 100, 55 } }
+		do
+			local job, top, travel = case[1], case[2], case[3]
+			local high, low, highAt = -math.huge, math.huge, 0
+			local up, down = 0, 0 -- the steepest rise and fall per step: the strike is faster than the raise
+			local last = arm(job, 0)
+			for i = 1, STEPS do
+				local a = arm(job, i / STEPS)
+				if a > high then
+					high, highAt = a, i / STEPS
+				end
+				low = math.min(low, a)
+				up, down = math.max(up, a - last), math.max(down, last - a)
+				last = a
+			end
+			assert(high >= top, `{job}: the tool arm only reaches {high}°`)
+			assert(high - low >= travel, `{job}: the arm travels only {high - low}° a blow`)
+			assert(down > 2 * up, `{job}: the strike ({down}°/step) is not faster than the raise ({up}°/step)`)
+			-- the follow-through: the arm rests low for the last part of the cycle
+			assert(highAt < 0.75, `{job}: raised at {highAt} of the cycle`)
+			expect(math.abs(arm(job, 0.85) - low)).toBeLessThan(1e-6)
+		end
+		-- the generic job (a hauler at a node) bends and lifts: down at the start of a cycle, up at its middle
+		local lift = Pose.sample("work", "hauler", 0.5, 0)
+		local stoop = Pose.sample("work", "hauler", 0, 0)
+		expect(angleOf(lift.RightArm) - angleOf(stoop.RightArm)).toBeGreaterThan(40)
+		expect(stoop.Torso.UpVector.Z).toBeLessThan(-0.5)
+		-- the pose is continuous across the cycle's end
+		for _, job in { "woodcutter", "miner", "builder", "farmer", "hauler" } do
+			local a, b = Pose.sample("work", job, 0.9999, 0), Pose.sample("work", job, 0, 0)
+			expect(near(a.RightArm, b.RightArm, 1e-2)).toBe(true)
+			expect(near(a.Torso, b.Torso, 1e-2)).toBe(true)
+		end
+	end)
+
+	it("tips the pick and the hammer forward at the top of a blow, clear of a hat at FORGE-02's #317 sizes", function()
+		-- the signed turn of an rx joint: CFrame.Angles(a, 0, 0) looks along (0, sin a, -cos a)
+		local function rxAngle(cf: CFrame): number
+			return math.deg(math.atan2(cf.LookVector.Y, -cf.LookVector.Z))
+		end
+		local miner = Pose.sample("work", "miner", Pose.BLOW.mine[1], 0) -- the top of the raise
+		expect(angleOf(miner.RightArm)).toBeNear(140, 1e-3)
+		expect(rxAngle(miner.Tool)).toBeNear(-35, 1e-3)
+		local builder = Pose.sample("work", "builder", Pose.BLOW.hammer[1], 0)
+		expect(angleOf(builder.RightArm)).toBeNear(120, 1e-3)
+		expect(rxAngle(builder.Tool)).toBeNear(-15, 1e-3)
+		local farmer = Pose.sample("work", "farmer", Pose.BLOW.harvest[1], 0)
+		expect(angleOf(farmer.RightArm)).toBeNear(105, 1e-3) -- the hoe below the straw hat's brim
 	end)
 
 	it("carries with both arms forward, raises the arms to celebrate and lies down dead", function()
 		local carry = Pose.sample("carry", "hauler", 0, 8)
 		expect(angleOf(carry.LeftArm)).toBeGreaterThan(60)
 		expect(carry.LeftArm.LookVector.Y).toBeGreaterThan(0.8) -- arm forward: its front points up
+		-- D-059: at a walk the load bobs (0.18 studs a step) and the body leans back under it
+		local low, high = math.huge, -math.huge
+		for _, phase in PHASES do
+			local y = Pose.sample("carry", "hauler", phase, 12).Torso.Position.Y
+			low, high = math.min(low, y), math.max(high, y)
+		end
+		expect(high - low).toBeNear(0.18, 0.005)
+		-- the top tips back 4 degrees under the load
+		expect(Pose.sample("carry", "hauler", 0, 12).Torso.UpVector.Z).toBeNear(math.sin(math.rad(4)), 1e-3)
 		local cheer = Pose.sample("celebrate", "farmer", 0.4, 0)
 		expect(angleOf(cheer.LeftArm)).toBeGreaterThan(120)
 		expect(cheer.LeftArm.UpVector.Y).toBeLessThan(-0.5) -- the arm hangs from its top: up flips when raised

@@ -23,7 +23,8 @@
 		soldier  attacked within the last second: fight · moved since the last frame: walk · else idle
 	Facing (yaw, radians, Roblox CFrame.Angles(0, yaw, 0) convention): the direction of the last move;
 	unchanged while standing still; a citizen held in a conversation faces the ruler (citizen.hold.yaw,
-	G13.8).
+	G13.8); a citizen at work faces its target (citizen.faceX/faceZ, set by Sim/CitizenActions with its
+	work slot, D-059), so a worker beside its node or building faces it, not the way it walked in.
 ]]
 
 local Types = require("../Kingdom/Types")
@@ -132,6 +133,11 @@ function Replication:frame(sim: any, groundY: number?): { records: { any }, iden
 		end
 		if e.hold and e.hold.yaw then
 			yaw = e.hold.yaw -- held in a conversation: facing the ruler (G13.8)
+		elseif e.phase == "Work" and e.faceX ~= nil and e.faceZ ~= nil then
+			local fx, fz = e.faceX - e.x, e.faceZ - e.z -- at work: facing the target (D-059 work slots)
+			if fx * fx + fz * fz > 1e-4 then
+				yaw = math.atan2(-fx, -fz)
+			end
 		end
 		local y = flat
 		if surface then

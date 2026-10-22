@@ -129,6 +129,10 @@ describe("Feedback/Bubbles:requests (FL-0115 B16)", function()
 end)
 
 describe("CitizenBubbleIndicatorController (FL-0115 B16)", function()
+	it("aims at the bubble where CitizenBubbleController draws it, over the scaled rig (D-059)", function()
+		expect(IndicatorDef.HEIGHT).toBe(BubbleDef.HEIGHT)
+	end)
+
 	local env, registry, controller, requests, focused, selected, input, talk, userInput, playerGui, keysDown, camera
 
 	local function boot(withBubbles, hud)

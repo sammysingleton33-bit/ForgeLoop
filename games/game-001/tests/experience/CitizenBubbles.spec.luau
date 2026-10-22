@@ -11,6 +11,7 @@ local Vfx = require("@game/ReplicatedStorage/Forge/Config/Vfx")
 local Bubbles = require("@game/ReplicatedStorage/Game/Feedback/Bubbles")
 local Consequences = require("@game/ReplicatedStorage/Game/Content/Consequences")
 local BubbleDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/CitizenBubbleController")
+local EntityController = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/EntityController")
 local InputModeDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/InputModeController")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
 
@@ -288,6 +289,13 @@ describe("config Vfx.luau cues (FL-0091)", function()
 end)
 
 describe("CitizenBubbleController (FL-0091)", function()
+	it(
+		"sits the bubble as far above the drawn citizen as at the Kit size: 3.2 studs x the rig's scale (D-059)",
+		function()
+			expect(BubbleDef.HEIGHT).toBeNear(3.2 * EntityController.RIG_SCALE, 1e-9)
+		end
+	)
+
 	local env, entities, played, effects, stopped, poses, settingsValues, world, controller
 
 	-- A rendered rig. `hidden` = unparented, as EntityController's LOD leaves a far rig.

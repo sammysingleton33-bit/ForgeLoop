@@ -27,7 +27,7 @@ M = [
  ("FL-0090", C2+"RulerCameraController.luau", 'if self.mode == "overview" and overview ~= nil and type(overview.fieldOfView) == "number" then', 'if overview ~= nil and type(overview.fieldOfView) == "number" then', "RulerCamera", "follow (walk mode) stands the ruler up", "game"),
  ("FL-0090", C2+"RulerCameraController.luau", 'Def.worldPerPixel(self._target.zoom, self:_fieldOfView(), self:_viewportHeight())', 'Def.worldPerPixel(self._target.zoom, self._config.fieldOfView, self:_viewportHeight())', "RulerCamera", "left-drag pans the ground", "game"),
  ("FL-0090", C2+"RulerCameraController.luau", 'zoom = 35,', 'zoom = 30,', "RulerCamera", "on a phone the citizen's head", "game"),
- ("FL-0090", C2+"RulerCameraController.luau", 'phoneOffset = Vector2.new(0, -7.5),', 'phoneOffset = Vector2.new(0, -12),', "RulerCamera", "on a phone the citizen's head", "game"),
+ ("FL-0090", C2+"RulerCameraController.luau", 'phoneOffset = Vector2.new(0, -3.8),', 'phoneOffset = Vector2.new(0, -12),', "RulerCamera", "on a phone the citizen's head", "game"),
  ("FL-0090", G+"config/Crowd.luau", 'standZoom = 74, ringZoom = 108,', 'standZoom = 55, ringZoom = 80,', "CrowdStage", "the intro: one horn", "game"),
  # D-059: the first view centres the yard in front of the keep (FORGE-00)
  ("FL-0090", C2+"RulerCameraController.luau", 'startAhead = 20, -- studs', 'startAhead = 0, -- studs', "RulerCamera", "starts in the overview over the yard", "game"),

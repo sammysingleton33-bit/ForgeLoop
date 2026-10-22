@@ -1,6 +1,7 @@
 --[[
 	Sim/Pose × Kit.character: a posed tool never goes through the head (B17: "tools clip the head in the
-	keep-level-2 cheer", the polished jobs of #138 were held on it).
+	keep-level-2 cheer", the polished jobs of #138 were held on it), and a work blow keeps it out of the torso
+	and legs (D-059: the swings go overhead).
 
 	Forward kinematics as the engine does it (Part1 = Part0 * C0 * Transform * C1:Inverse()), a rig built by
 	Kit.character for each kind and job, every action sampled over its whole cycle. The tool means the Tool
@@ -21,6 +22,8 @@ local Pose = require("@game/ReplicatedStorage/Game/Sim/Pose")
 local CRIMSON = Color3.fromRGB(190, 40, 50)
 local STEPS = 40 -- samples per cycle
 local MIN_CLEARANCE = 0.1 -- studs of free space a posed tool must keep from the head
+local MIN_BODY = 0.05 -- studs a work blow's tool keeps from the torso and legs (D-059)
+local MIN_ARM = 0.2 -- studs a work blow's arms keep from the head and the headwear (D-059; FORGE-07 #316 L3)
 
 -- { kind, job } of every rig that holds a tool in the right fist. The hauler's sack is not one: it hangs from the
 -- torso at the shoulder blade and its box overlaps the head's in every action (a fixed Kit proportion, -0.70).
@@ -285,6 +288,61 @@ local function worst(kind: string, job: string, action: string): (number, number
 	return lowHead, lowHat
 end
 
+-- The smallest clearance between the tool assembly and the body below the shoulders (the Torso and both legs; the
+-- arms hold the tool and are left out) over one action's cycle (math.huge without a tool). D-059.
+local BODY = { "Torso", "LeftLeg", "RightLeg" }
+local function worstBody(kind: string, job: string, action: string): number
+	local rig = Kit.character(kind, job, CRIMSON, nil, if kind == "soldier" then "crimson" else nil) :: Model
+	local tool = rig:FindFirstChild("Tool") :: BasePart?
+	if tool == nil then
+		return math.huge
+	end
+	local toolParts = assembly(rig, tool)
+	local low = math.huge
+	local joints: { [string]: CFrame } = {}
+	for i = 0, STEPS - 1 do
+		Pose.sample(
+			action,
+			job,
+			i / STEPS,
+			if action == "walk" or action == "carry" or action == "flee" then 12 else 0,
+			joints
+		)
+		local world = posed(rig, joints)
+		for _, name in BODY do
+			local body = rig:FindFirstChild(name) :: BasePart?
+			if body ~= nil then
+				for _, t in toolParts do
+					low = math.min(low, clearance(t, world[t], body, world[body]))
+				end
+			end
+		end
+	end
+	return low
+end
+-- The smallest clearance between either arm and the head assembly (the Head and its headwear) over one action's
+-- cycle: the raised arms of a work blow pass beside the head (D-059; FORGE-07 #316 L3).
+local function worstArms(kind: string, job: string, action: string): number
+	local rig = Kit.character(kind, job, CRIMSON, nil, if kind == "soldier" then "crimson" else nil) :: Model
+	local head = rig:FindFirstChild("Head") :: BasePart
+	local headParts = assembly(rig, head)
+	local low = math.huge
+	local joints: { [string]: CFrame } = {}
+	for i = 0, STEPS - 1 do
+		Pose.sample(action, job, i / STEPS, 0, joints)
+		local world = posed(rig, joints)
+		for _, name in { "LeftArm", "RightArm" } do
+			local arm = rig:FindFirstChild(name) :: BasePart?
+			if arm ~= nil then
+				for _, h in headParts do
+					low = math.min(low, clearance(arm, world[arm], h, world[h]))
+				end
+			end
+		end
+	end
+	return low
+end
+
 -- What a pose must keep from the headwear: MIN_CLEARANCE, or no less than the rig's own rest pose has. A
 -- tool that already stands in its hat at rest (Kit proportions, FORGE-02's) is no pose's doing; a pose must
 -- not push it any deeper.
@@ -442,6 +500,30 @@ describe("Sim/Pose × Kit.character: a posed tool keeps clear of the head", func
 	it("celebrate: every tool keeps clear of the head, and no closer to the headwear than at rest", function()
 		for _, rig in RIGS do
 			check(rig, "celebrate")
+		end
+	end)
+
+	it("a work blow keeps every tool out of the torso and the legs (D-059: the swings go overhead now)", function()
+		for _, rig in RIGS do
+			local kind, job = rig[1], rig[2]
+			local floor = math.min(MIN_BODY, worstBody(kind, job, "idle")) -- a tool resting on the body is Kit's
+			local low = worstBody(kind, job, "work")
+			if low < floor - 1e-6 then
+				error(`{kind}/{job} work: {string.format("%.2f", low)} studs between tool and body, below {floor}`)
+			end
+		end
+	end)
+
+	it("a work blow keeps both arms beside the head and the hat, never in them (FORGE-07 #316 L3)", function()
+		for _, rig in RIGS do
+			local kind, job = rig[1], rig[2]
+			local floor = math.min(MIN_ARM, worstArms(kind, job, "idle"))
+			local low = worstArms(kind, job, "work")
+			if low < floor - 1e-6 then
+				error(
+					`{kind}/{job} work: {string.format("%.2f", low)} studs between an arm and the head, below {floor}`
+				)
+			end
 		end
 	end)
 
