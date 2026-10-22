@@ -260,9 +260,9 @@ function ArenaHud:render(model: any, m: any)
 		extra = { Name = "Time", Size = UDim2.new(1, 0, 0, if phone then 20 else 26), LayoutOrder = 1, Parent = clock },
 	})
 	Style.text({
-		text = if model.suddenDeath then "Sudden death" else "Duel",
+		text = model.note or (if model.suddenDeath then "Sudden death" else "Duel"),
 		size = if phone then 8 else 10,
-		color = Theme.color(if model.suddenDeath then "gules" else "textSecondary"),
+		color = Theme.color(if model.ended then "gold300" elseif model.suddenDeath then "gules" else "textSecondary"),
 		weight = Enum.FontWeight.Bold,
 		xAlign = "Center",
 		extra = { Name = "Note", Size = UDim2.new(1, 0, 0, 12), LayoutOrder = 2, Parent = clock },

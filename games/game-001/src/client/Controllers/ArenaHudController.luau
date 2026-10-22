@@ -23,6 +23,7 @@
 		arena:setState(state)   arena:setSupport(view)   arena:onEvents(batch)   arena:fetchSupport()
 		arena:lookup() -> { kingdom(id), name(userId) }   arena:userId()   arena:focus() -> boolean
 		arena:inputKind() -> "keyboard" | "gamepad" | "touch"
+		arena:crownToast(state) -> { kind, title, body }?   the toast the crowning shows (who takes the crown)
 		ArenaHudController.POLL_SEC   .FOCUS   .HINT_SEC   .HINT_AGAIN_SEC   .INPUT
 ]]
 
@@ -187,8 +188,55 @@ function ArenaHudController:setState(state: any)
 	if stage == "loadout" and before ~= "loadout" then
 		self:fetchSupport() -- the offers and slots as they stand when the pick starts
 	end
+	if type(self.hud.setArenaState) == "function" then
+		self.hud:setArenaState(self.state) -- the phase pill names the arena's stage
+	end
+	if stage == "crowning" and before ~= "crowning" then
+		self:_announceCrown()
+	end
 	self.changed:fire(self.state)
 	self:render()
+end
+
+-- The crowning (D-059 arena pass): its 15 s showed no word of who won until Results. One toast names the
+-- kingdom that takes the crown, the winner's own kingdom in the achievement accent. A draw names nobody (FORGE-04's
+-- match-end line says it).
+function ArenaHudController:crownToast(state: any): any?
+	if type(state) ~= "table" then
+		return nil
+	end
+	local kingdomId = state.coronation
+	local byDuel = false
+	if kingdomId == nil and type(state.winner) == "number" then
+		for _, key in { "a", "b" } do
+			local d = state[key]
+			if type(d) == "table" and d.userId == state.winner then
+				kingdomId, byDuel = d.kingdom, true
+			end
+		end
+	end
+	if kingdomId == nil then
+		return nil
+	end
+	local kingdom = self.hud.store:kingdom(kingdomId)
+	local name = if kingdom and kingdom.name then kingdom.name else tostring(kingdomId)
+	local mine = self.hud.store:mine()
+	local ours = mine ~= nil and mine.id == kingdomId
+	return {
+		kind = if ours then "achievement" else "info",
+		title = `{name} takes the crown`,
+		body = if not byDuel
+			then "Crowned without a duel"
+			elseif ours then "Your champion won the duel"
+			else "Their champion won the duel",
+	}
+end
+
+function ArenaHudController:_announceCrown()
+	local toast = self:crownToast(self.state)
+	if toast and type(self.hud.notify) == "function" then
+		self.hud:notify(toast)
+	end
 end
 
 function ArenaHudController:setSupport(view: any)
