@@ -258,6 +258,49 @@ describe("DuelPoses: Arena.Events → each champion's animation (FL-0141)", func
 	end)
 
 	it(
+		"a worn left-hand shield makes a one-handed champion's style shield; two hands, or none worn, keep theirs",
+		function()
+			local cases = {
+				{ "swordShield", false, "slash" }, -- the shield rides the weapon (Kit.weapon's default form)
+				{ "swordShield", true, "shield" },
+				{ "mace", false, "slash" }, -- the mace's off hand is empty
+				{ "mace", true, "shield" },
+				{ "greatsword", true, "twoHand" },
+				{ "spear", true, "thrust" },
+				{ nil, true, "shield" }, -- no snapshot yet
+				{ nil, nil, "slash" },
+				{ "bow", true, "shield" },
+			}
+			for _, case in cases do
+				expect(DuelPoses.styleFor(case[1], case[2])).toBe(case[3])
+			end
+			-- the track: what is worn and the snapshot's weapon, in either order
+			local duel = DuelPoses.newDuel()
+			local a = duel.a
+			a:setShield(true)
+			expect(a.style).toBe("shield")
+			duel:onEvent(snapshot("idle"), NOW)
+			expect(a.style).toBe("shield") -- swordShield, worn on the left
+			duel:onEvent(
+				{ kind = "snapshot", side = "a", data = { a = { state = "idle", weapon = "greatsword" } } },
+				NOW
+			)
+			expect(a.style).toBe("twoHand")
+			a:setShield(false)
+			expect(a.style).toBe("twoHand")
+			duel:onEvent(snapshot("idle"), NOW)
+			expect(a.style).toBe("slash")
+			a:setShield(true)
+			expect(a.style).toBe("shield")
+			a:setShield(true) -- unchanged: nothing to do
+			expect(a.style).toBe("shield")
+			duel:reset() -- a new pair: the body's gear is the controller's to set again
+			expect(a.leftShield).toBe(true)
+			expect(duel.b.leftShield).toBe(false)
+		end
+	)
+
+	it(
 		"your own press plays at once with the weapon's windup; the server's state confirms it, never restarts it",
 		function()
 			local duel = DuelPoses.newDuel()
@@ -516,7 +559,7 @@ describe("DuelPoses: Arena.Events → each champion's animation (FL-0141)", func
 		}
 		local checked = 0
 		for _, name in names do
-			for _, style in { "slash", "twoHand", "thrust" } do
+			for _, style in { "slash", "twoHand", "thrust", "shield" } do
 				for _, dir in { -1, 1 } do
 					for _, key in DuelPoses.keys(name, style, nil, dir) :: any do
 						for joint, v in key.pose do
@@ -539,40 +582,45 @@ describe("DuelPoses: Arena.Events → each champion's animation (FL-0141)", func
 	end)
 
 	it("crossfades: no joint jumps more than 25° between two 60 Hz frames through a whole exchange", function()
-		local duel = DuelPoses.newDuel()
-		duel:start(NOW)
-		local script = {
-			{ 0.1, snapshot("windup", "block") },
-			{ 0.3, { kind = "hit", side = "a", data = { heavy = false } } },
-			{ 0.9, { kind = "heavyWindup", side = "b", data = { impactIn = 0.8, warned = 0.25 } } }, -- the fastest raise
-			{ 1.0, snapshot("dodge", "windup") },
-			{ 1.7, { kind = "hit", side = "b", data = { heavy = true } } },
-			{ 2.4, { kind = "stagger", side = "a" } },
-			{ 3.6, { kind = "ended", side = "b", data = { reason = "ko" } } },
-		}
-		local i = 1
-		local prev = { a = {}, b = {} }
-		local worst = 0
-		local out = { a = { weight = 0, body = 0 }, b = { weight = 0, body = 0 } }
-		for frame = 0, 60 * 6 do
-			local t = NOW + frame / 60
-			while script[i] ~= nil and NOW + script[i][1] <= t do
-				duel:onEvent(script[i][2], t)
-				i += 1
-			end
-			for _, side in { "a", "b" } do
-				duel[side]:sample(t, out[side])
-				for joint, cf in out[side].pose do
-					local last = prev[side][joint]
-					if last ~= nil then
-						local _, turned = (last:Inverse() * cf):ToAxisAngle()
-						worst = math.max(worst, math.deg(turned))
+		for _, shield in { false, true } do -- the slash, then the shield style (a left-hand shield)
+			local duel = DuelPoses.newDuel()
+			duel.a:setShield(shield)
+			duel.b:setShield(shield)
+			duel:start(NOW)
+			local script = {
+				{ 0.1, snapshot("windup", "block") },
+				{ 0.3, { kind = "hit", side = "a", data = { heavy = false } } },
+				{ 0.9, { kind = "heavyWindup", side = "b", data = { impactIn = 0.8, warned = 0.25 } } }, -- the fastest raise
+				{ 1.0, snapshot("dodge", "windup") },
+				{ 1.7, { kind = "hit", side = "b", data = { heavy = true } } },
+				{ 2.4, { kind = "stagger", side = "a" } },
+				{ 3.6, { kind = "ended", side = "b", data = { reason = "ko" } } },
+			}
+			local i = 1
+			local prev = { a = {}, b = {} }
+			local worst = 0
+			local out = { a = { weight = 0, body = 0 }, b = { weight = 0, body = 0 } }
+			for frame = 0, 60 * 6 do
+				local t = NOW + frame / 60
+				while script[i] ~= nil and NOW + script[i][1] <= t do
+					duel:onEvent(script[i][2], t)
+					i += 1
+				end
+				for _, side in { "a", "b" } do
+					duel[side]:sample(t, out[side])
+					for joint, cf in out[side].pose do
+						local last = prev[side][joint]
+						if last ~= nil then
+							local _, turned = (last:Inverse() * cf):ToAxisAngle()
+							worst = math.max(worst, math.deg(turned))
+						end
+						prev[side][joint] = cf
 					end
-					prev[side][joint] = cf
 				end
 			end
+			assert(worst <= 25, `shield {shield}: a joint turned {worst}° in one frame`)
+			expect(duel.a.style).toBe(if shield then "shield" else "slash")
 		end
-		expect(worst <= 25).toBe(true)
 	end)
 
 	it(
@@ -748,6 +796,11 @@ local function solve(model)
 		elseif d:IsA("AnimationConstraint") then
 			local a0, a1 = d.Attachment0, d.Attachment1
 			table.insert(joints, { p0 = a0.Parent, p1 = a1.Parent, c0 = a0.CFrame, c1 = a1.CFrame, t = d.Transform })
+		elseif d:IsA("Weld") then -- the gear (Figures' welds)
+			table.insert(joints, { p0 = d.Part0, p1 = d.Part1, c0 = d.C0, c1 = d.C1, t = CFrame.new() })
+		elseif d:IsA("WeldConstraint") and d.Part0 ~= nil and d.Part1 ~= nil then -- a Kit model's parts
+			local rel = d.Part0.CFrame:Inverse() * d.Part1.CFrame
+			table.insert(joints, { p0 = d.Part0, p1 = d.Part1, c0 = rel, c1 = CFrame.new(), t = CFrame.new() })
 		end
 	end
 	for _ = 1, #joints do
@@ -934,4 +987,198 @@ describe("DuelRig: the same pose on a Kit rig, an R15 avatar (Motor6D or Animati
 		expect(math.abs(kitTorso.Transform.Position.Y + 1.1) < 1e-4).toBe(true)
 		expect(math.abs(find(avatar, "Root").Transform.Position.Y + 1.1 * 2 / 2.2) < 1e-4).toBe(true)
 	end)
+end)
+
+-- The AI figure's gear as FORGE-01 is asked to wire it (FL-0141 follow-up 3): Figures' weapon weld (its own
+-- weapon off the Tool part; the Handle at the fist, C1 = Grip) with #297's turned rest, so the blade stands
+-- upright when the arm points forward, for Kit.weapon("swordShield", c, { shield = false }); and Kit.shield
+-- on the left fist at the same turned rest, its LeftGripAttachment as C1 (the left hand's grip frame).
+local TURN = CFrame.Angles(-math.pi / 2, 0, 0)
+local RED = Color3.fromRGB(190, 40, 50)
+local function weldTo(p0, p1, c0, c1)
+	local w = roblox.Instance.new("Weld")
+	w.Part0, w.Part1, w.C0, w.C1 = p0, p1, c0, c1
+	w.Parent = p0
+	return w
+end
+local function shieldFigure(): (any, any)
+	local model = Kit.character("governor", "idle", RED)
+	local toolPart, right, left = find(model, "Tool"), find(model, "RightArm"), find(model, "LeftArm")
+	for _, d in model:GetDescendants() do -- the governor's staff goes (Figures.stripOwnWeapon)
+		if (d:IsA("Weld") or d:IsA("WeldConstraint")) and d.Part0 == toolPart and d.Part1 ~= nil then
+			d.Part1:Destroy()
+		end
+	end
+	toolPart.Transparency = 1
+	local sword = Kit.weapon("swordShield", RED, { shield = false })
+	local atFist = right.CFrame * CFrame.new(0, -right.Size.Y / 2, 0) * TURN
+	weldTo(toolPart, sword:FindFirstChild("Handle"), toolPart.CFrame:Inverse() * atFist, sword.Grip)
+	sword.Parent = model
+	local shield = Kit.shield(RED)
+	local handle = shield:FindFirstChild("Handle")
+	local atLeft = left.CFrame * CFrame.new(0, -left.Size.Y / 2, 0) * TURN
+	local grip =
+		weldTo(left, handle, left.CFrame:Inverse() * atLeft, handle:FindFirstChild("LeftGripAttachment").CFrame)
+	shield.Parent = model
+	return model, grip
+end
+
+-- The shield's facing (the left grip's LookVector): its turn (degrees sideways from straight at the
+-- opponent, -Z) and tilt (+ face up); blade points through the shield's disc; shield points (centre and
+-- rim) inside the body.
+local function shieldCheck(model, grip, world)
+	local look = (world[grip.Part0] * grip.C0).LookVector
+	local turn = math.deg(math.atan2(-look.X, -look.Z))
+	local tilt = math.deg(math.asin(look.Y))
+	local face = world[find(model, "ShieldFace")]
+	local through = 0
+	for _, d in model:FindFirstChildWhichIsA("Tool"):GetDescendants() do
+		if d:IsA("BasePart") and d.Name ~= "Handle" then
+			for y = -0.5, 0.5, 0.1 do
+				for x = -0.5, 0.5, 0.5 do
+					local l =
+						face:PointToObjectSpace(world[d]:PointToWorldSpace(Vector3.new(x * d.Size.X, y * d.Size.Y, 0)))
+					if math.abs(l.X) < 0.2 and math.sqrt(l.Y * l.Y + l.Z * l.Z) < 1.2 then
+						through += 1
+					end
+				end
+			end
+		end
+	end
+	local inside = 0
+	local points = { face.Position }
+	for k = 0, 11 do
+		local a = k * math.pi / 6
+		table.insert(points, face:PointToWorldSpace(Vector3.new(0, 1.1 * math.cos(a), 1.1 * math.sin(a))))
+	end
+	for _, name in { "Torso", "Head", "RightArm", "LeftLeg", "RightLeg" } do
+		local body = find(model, name)
+		for _, w in points do
+			local l = world[body]:PointToObjectSpace(w)
+			local half = body.Size / 2
+			if
+				if name == "Head"
+					then l.Magnitude < half.X
+					else math.abs(l.X) < half.X and math.abs(l.Y) < half.Y and math.abs(l.Z) < half.Z
+			then
+				inside += 1
+			end
+		end
+	end
+	return turn, tilt, through, inside
+end
+
+describe("the shield style: Kit.shield on the left hand faces the opponent (FL-0141 follow-up 3)", function()
+	it("a worn Kit.shield is the left hand's; the sword-and-shield Tool, a hat or nothing is not", function()
+		local model = Kit.character("governor", "idle", RED)
+		expect(DuelRig.leftShield(model)).toBe(false)
+		local tool = Kit.weapon("swordShield", RED) -- the shield on the weapon (KitShield on a Tool)
+		tool.Parent = model
+		expect(tool:GetAttribute("KitShield") ~= nil).toBe(true)
+		expect(DuelRig.leftShield(model)).toBe(false)
+		local hat = roblox.Instance.new("Accessory")
+		hat.Parent = model
+		expect(DuelRig.leftShield(model)).toBe(false)
+		local shield = Kit.shield(RED)
+		shield.Parent = model -- an avatar's AddAccessory
+		expect(DuelRig.leftShield(model)).toBe(true)
+		shield.Parent = find(model, "LeftArm") -- the AI figure may keep it under a part
+		expect(DuelRig.leftShield(model)).toBe(true)
+		shield.Parent = nil
+		expect(DuelRig.leftShield(model)).toBe(false)
+		expect(DuelRig.leftShield(nil)).toBe(false)
+	end)
+
+	it(
+		"the shield style is the slash with the shield arm up: the sword arm, the body and the legs are the slash's",
+		function()
+			local names = {
+				"ready",
+				"block",
+				"light",
+				"heavy",
+				"guardHit",
+				"parry",
+				"dodge",
+				"flinch",
+				"stagger",
+				"ko",
+				"victory",
+				"winded",
+			}
+			local raised = 0
+			for _, name in names do
+				for _, dir in { -1, 1 } do
+					local shield = DuelPoses.keys(name, "shield", nil, dir) :: any
+					local slash = DuelPoses.keys(name, "slash", nil, dir) :: any
+					expect(#shield).toBe(#slash)
+					for i, key in shield do
+						expect(key.t).toBe(slash[i].t)
+						for _, joint in DuelPoses.JOINTS do
+							local a, b = key.pose[joint] or {}, slash[i].pose[joint] or {}
+							if joint ~= "LeftArm" then
+								for k = 1, 6 do
+									assert((a[k] or 0) == (b[k] or 0), `{name} key {i}: {joint} differs from the slash`)
+								end
+							elseif (a[1] or 0) ~= (b[1] or 0) or (a[3] or 0) ~= (b[3] or 0) then
+								raised += 1
+							end
+						end
+					end
+				end
+			end
+			expect(raised > 20).toBe(true)
+			-- the mace (and a shield on the weapon) keeps the slash's left arm
+			expect((DuelPoses.keys("ready", "slash") :: any)[1].pose.LeftArm[1]).toBe(65)
+		end
+	)
+
+	it(
+		"through the stance, the guard and every swing the shield faces the opponent, about level, clear of the blade and body",
+		function()
+			-- each animation from the ready stance (as in a duel), every 60 Hz frame, on the AI figure
+			local runs =
+				{ { "block" }, { "guardHit" }, { "light" }, { "heavy" }, { "parry" }, { "dodge" }, { "dodge", 2 } }
+			local function sweep(style)
+				local worst = { turn = 0, tilt = 0, through = 0, inside = 0 }
+				for _, anim in runs do
+					local model, grip = shieldFigure()
+					local rig = DuelRig.scan(model) :: any
+					local track = DuelPoses.newTrack()
+					track:setShield(style == "shield")
+					track.active = true
+					local out = { weight = 0, body = 0 }
+					local t = NOW - 0.5
+					while t < NOW do
+						track:sample(t, out, false)
+						t += 1 / 60
+					end
+					for _ = 1, anim[2] or 1 do -- a second dodge goes the other way
+						track:play(anim[1], NOW)
+					end
+					local length = track._anim.length
+					t = NOW - 2 / 60
+					while t <= NOW + length + 0.15 do
+						track:sample(t, out, false)
+						DuelRig.apply(rig, out)
+						local turn, tilt, through, inside = shieldCheck(model, grip, solve(model))
+						worst.turn = math.max(worst.turn, math.abs(turn))
+						worst.tilt = math.max(worst.tilt, math.abs(tilt))
+						worst.through = math.max(worst.through, through)
+						worst.inside = math.max(worst.inside, inside)
+						t += 1 / 60
+					end
+				end
+				return worst
+			end
+			local up = sweep("shield")
+			assert(up.turn <= 10, `the shield turned {up.turn}° away from the opponent`)
+			assert(up.tilt <= 15, `the shield tilted {up.tilt}°`) -- the stance's 13° down, a guard jolt's 13° up
+			expect(up.through).toBe(0) -- the blade never passes through it
+			expect(up.inside).toBe(0) -- nor it through the body
+			-- the slash's own left arm (the mace's empty hand) would swing a worn shield away: why the style exists
+			local slash = sweep("slash")
+			assert(slash.turn > 60 and slash.tilt > 30, `slash: {slash.turn}° turned, {slash.tilt}° tilted`)
+		end
+	)
 end)
