@@ -15,13 +15,19 @@
 		Loader.sort(definitions) -> { Definition }
 			dependency order (Kahn), ties broken by name. Errors name the problem: duplicate name,
 			missing dependency, or the exact cycle ("A -> B -> A").
-		Loader.load(env, definitions) -> Registry
+		Loader.load(env, definitions, options?) -> Registry
 			sort, then new() for every definition in order, then start() in the same order.
+			options.isolate = true (the client, Main.client; FORGE-00 2026-10-19, interfaces §3 migration note):
+			every new() and start() runs on its own; a failure (error, yield, nil) is logged at error level
+			with the definition's name, that definition is marked failed, and the boot carries on. A
+			definition whose declared dependency failed is skipped with its own error line ("skipped:
+			dependency X failed") and never runs against a half-built peer. registry.failed lists the
+			failures by name. Without the option (the server) one failure stops the boot, as before.
 		Loader.discoverAll(folders, requireModule?) -> { Definition }
 			discover() over several folders (framework Forge tree + game Game tree, D-022); a name
 			defined in two folders is an error naming both folders.
-		Loader.boot(env, folders?, requireModule?) -> Registry  -- discover + load. `folders` is one
-			Folder, a list of Folders, or nil (no services).
+		Loader.boot(env, folders?, requireModule?, options?) -> Registry  -- discover + load. `folders` is
+			one Folder, a list of Folders, or nil (no services). `options` as for load.
 
 	Registry
 		registry:get(name)  -> instance; errors if `name` is not loaded. During new(), only declared
@@ -47,9 +53,16 @@ export type Registry = {
 	find: (self: Registry, name: string) -> any,
 	destroy: (self: Registry) -> (),
 	order: { string },
+	failed: { [string]: string },
 }
 
+export type LoadOptions = { isolate: boolean? }
+
 local Loader = {}
+
+-- The client's options (Main.client boots with them through Loader.bootClient; the Boot spec loads the same
+-- way through Loader.loadClient, so the two cannot drift apart).
+Loader.CLIENT_OPTIONS = table.freeze({ isolate = true }) :: LoadOptions
 
 local function describeList(names: { string }): string
 	if #names == 0 then
@@ -222,18 +235,24 @@ function Loader.sort(definitions: { Definition }): { Definition }
 	return ordered
 end
 
-function Loader.load(env: any, definitions: { Definition }): Registry
+function Loader.load(env: any, definitions: { Definition }, options: LoadOptions?): Registry
 	local ordered = Loader.sort(definitions)
+	-- (type-checked: a caller that forwards a multi-return, as the specs do, may put a number here)
+	local isolate = type(options) == "table" and options.isolate == true
 	local instances: { [string]: any } = {}
 	local order: { string } = {}
+	local failed: { [string]: string } = {}
 	local known: { [string]: boolean } = {}
 	for _, definition in ordered do
 		known[definition.name] = true
 	end
 	local constructing: Definition? = nil
 
-	local registry = { order = order }
+	local registry = { order = order, failed = failed }
 	function registry.get(_self: any, name: string): any
+		if failed[name] ~= nil then
+			error(`Loader: service '{name}' failed to boot ({failed[name]})`, 2)
+		end
 		local instance = instances[name]
 		if instance ~= nil then
 			if constructing and not table.find(constructing.dependencies or {}, name) then
@@ -252,6 +271,9 @@ function Loader.load(env: any, definitions: { Definition }): Registry
 	function registry.find(_self: any, name: string): any
 		if constructing then
 			error(`Loader: {constructing.name}.new() called registry:find('{name}'); call find in start() or later`, 2)
+		end
+		if failed[name] ~= nil then
+			return nil -- constructed but never started, or skipped: absent to its peers (it is still destroyed)
 		end
 		return instances[name]
 	end
@@ -277,29 +299,62 @@ function Loader.load(env: any, definitions: { Definition }): Registry
 		end
 	end
 
+	-- A failure stops the boot (the server), or, when isolating (the client), is logged with the name and
+	-- marks that definition failed so its dependents are skipped.
+	local function fail(name: string, message: string)
+		if not isolate then
+			error(message, 0)
+		end
+		failed[name] = message
+		env.log("error", message, { controller = name })
+	end
+	-- The first declared dependency that failed, if any (a dependent never runs against a half-built peer).
+	local function failedDependency(definition: Definition): string?
+		for _, dep in definition.dependencies or {} do
+			if failed[dep] ~= nil then
+				return dep
+			end
+		end
+		return nil
+	end
+
 	for _, definition in ordered do
+		local name = definition.name
+		local dep = failedDependency(definition)
+		if dep ~= nil then
+			fail(name, `Loader: {name} skipped: dependency {dep} failed`)
+			continue
+		end
 		constructing = definition
 		local thread = coroutine.create(definition.new)
 		local ok, result = coroutine.resume(thread, env, registry)
 		constructing = nil
 		if not ok then
-			error(`Loader: {definition.name}.new() failed: {debug.traceback(thread, tostring(result))}`, 0)
+			fail(name, `Loader: {name}.new() failed: {debug.traceback(thread, tostring(result))}`)
+		elseif coroutine.status(thread) ~= "dead" then
+			fail(name, `Loader: {name}.new() yielded; new() must not yield (interfaces §3)`)
+		elseif result == nil then
+			fail(name, `Loader: {name}.new() returned nil`)
+		else
+			instances[name] = result
+			table.insert(order, name)
 		end
-		if coroutine.status(thread) ~= "dead" then
-			error(`Loader: {definition.name}.new() yielded; new() must not yield (interfaces §3)`, 0)
-		end
-		if result == nil then
-			error(`Loader: {definition.name}.new() returned nil`, 0)
-		end
-		instances[definition.name] = result
-		table.insert(order, definition.name)
 	end
-	for _, name in order do
+	for _, definition in ordered do
+		local name = definition.name
 		local instance = instances[name]
+		if instance == nil or failed[name] ~= nil then
+			continue
+		end
+		local dep = failedDependency(definition)
+		if dep ~= nil then
+			fail(name, `Loader: {name} skipped: dependency {dep} failed`)
+			continue
+		end
 		if type(instance) == "table" and type(instance.start) == "function" then
 			local ok, err = pcall(instance.start, instance)
 			if not ok then
-				error(`Loader: {name}:start() failed: {tostring(err)}`, 0)
+				fail(name, `Loader: {name}:start() failed: {tostring(err)}`)
 			end
 		end
 	end
@@ -326,9 +381,18 @@ function Loader.discoverAll(folders: { any }, requireModule: ((any) -> any)?): {
 	return definitions
 end
 
-function Loader.boot(env: any, folders: any?, requireModule: ((any) -> any)?): Registry
+function Loader.boot(env: any, folders: any?, requireModule: ((any) -> any)?, options: LoadOptions?): Registry
 	local list: { any } = if folders == nil then {} elseif type(folders) == "table" then folders else { folders }
-	return Loader.load(env, Loader.discoverAll(list, requireModule))
+	return Loader.load(env, Loader.discoverAll(list, requireModule), options)
+end
+
+-- The client: Loader.load / Loader.boot with CLIENT_OPTIONS (start isolation).
+function Loader.loadClient(env: any, definitions: { Definition }): Registry
+	return Loader.load(env, definitions, Loader.CLIENT_OPTIONS)
+end
+
+function Loader.bootClient(env: any, folders: any?, requireModule: ((any) -> any)?): Registry
+	return Loader.boot(env, folders, requireModule, Loader.CLIENT_OPTIONS)
 end
 
 return Loader
