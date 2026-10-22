@@ -249,7 +249,8 @@ local function importEnvKit(world, settings)
 		mesh.CastShadow = true
 		mesh.Transparency = 0
 		-- the physics shape of the Body: set here (the command bar has plugin rights) in the open place; scripts cannot manipulate it at
-		-- runtime, so the Kit does not, and the API dump lists it as not saved: it is not in the saved .rbxm and nothing relies on it
+		-- runtime, so the Kit does not, and the API dump lists it as not saved: a saved place is expected (unverified) to show Default;
+		-- the Body is CanQuery true, so raycasts hit whichever shape it has (see Kit/EnvMesh)
 		mesh.CollisionFidelity = Enum.CollisionFidelity.Hull
 		mesh.Parent = model
 		model.PrimaryPart = rootPart

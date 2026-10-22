@@ -298,7 +298,8 @@ local function importCitizenKit(world, settings)
 				end
 				piece.Name = id
 				-- the physics shape: set here (the command bar has plugin rights) in the open place; scripts cannot manipulate it at runtime, so
-				-- the Kit does not, and the API dump lists it as not saved: it is not in the saved .rbxm and nothing relies on it
+				-- the Kit does not, and the API dump lists it as not saved: a saved place is expected (unverified) to show Default (the
+				-- pieces are CanCollide and CanQuery false, so nothing should depend on it)
 				if piece:IsA("MeshPart") then
 					piece.CollisionFidelity = Enum.CollisionFidelity.Box
 				end
