@@ -410,7 +410,7 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032, D-048)", function(
 	end)
 
 	it("stands about 5.5 studs tall with the feet on y = 0 (tool and headwear excluded), for every look", function()
-		each(function(_, _, rig)
+		each(function(kind, job, rig)
 			local body = {}
 			local crest = crestOf(rig)
 			for _, p in parts(rig) do
@@ -420,7 +420,8 @@ describe("Kit.character rig (CONTRACTS G4, G10, D-026, D-032, D-048)", function(
 			end
 			local mn, mx = modelBounds(body)
 			expect(mn.Y).toBeNear(0, 1e-3)
-			expect(mx.Y).toBeNear(5.5, 0.25)
+			-- a citizen's head is drawn Character.HEAD_SCALE times bigger and sits NECK_LIFT higher (silhouette pass 2): 5.97
+			expect(mx.Y).toBeNear(if Character.styleOf(kind, job) == "citizen" then 5.97 else 5.5, 0.25)
 			expect(mx.X - mn.X).toBeLessThan(4.5)
 			if crest then -- rises clearly above the helm, still under the spear tip
 				local _, top = bounds(crest)
@@ -816,7 +817,7 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 		expect(rows.miner.kind).toBe("Part/Cylinder")
 		expect(rows.builder.kind).toBe("Part/Cylinder")
 		-- the woodcutter's beanie is the only ball: small, and never in a hair colour (every variant)
-		expect(rows.woodcutter.width).toBeLessThanOrEqual(1.6)
+		expect(rows.woodcutter.width).toBeLessThanOrEqual(1.6 * Kit.CHARACTER_HEAD_SCALE + 0.01) -- 1.5 across before the silhouette pass
 		for hair = 1, R.hair do
 			local c = child(Kit.character("citizen", "woodcutter", AZURE, lookOf(hair)), "Hair").Color
 			for _, h in Kit.LOOK_PALETTES.hairColor do
@@ -824,7 +825,7 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 			end
 		end
 		-- the miner's pot is clearly smaller and darker than the farmer's disc
-		expect(rows.miner.width).toBeLessThanOrEqual(rows.farmer.width * 0.65)
+		expect(rows.miner.width).toBeLessThanOrEqual(rows.farmer.width * 0.75) -- 0.65 before the silhouette pass (the straw disc grew 1.1 x, the pot 1.3 x)
 		expect(rows.miner.hi).toBeLessThan(rows.farmer.lo - 0.1)
 	end)
 
@@ -999,7 +1000,7 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 				local handle, heads = tool(job)
 				expect(primitive(handle)).toBe("Part/Cylinder")
 				expect(handle.Size.X).toBeGreaterThanOrEqual(want.handle) -- the cylinder's length is its X
-				expect(handle.Size.Y).toBeLessThanOrEqual(0.45)
+				expect(handle.Size.Y).toBeLessThanOrEqual(0.45 * Kit.CHARACTER_TOOL_SCALE + 0.01) -- slim before the silhouette pass
 				expect(#heads).toBe(want.tines or 1)
 				expect(primitive(heads[1])).toBe(want.head)
 				expect(
@@ -1231,7 +1232,7 @@ describe("Kit.character clearance: hats sit on the head, the sack and tools clea
 		-- low and behind: its top just above the shoulders (3.9), so from the front it is a bag behind the body, not
 		-- a bun beside the head
 		local sackTop, sackBottom = pos(sack).Y + r, pos(sack).Y - r
-		expect(sackTop).toBeLessThanOrEqual(4.3)
+		expect(sackTop).toBeLessThanOrEqual(4.5) -- 4.3 before the sack grew SACK_SCALE x (3.1 across): still under the head's middle
 		expect(sackBottom).toBeGreaterThanOrEqual(1.3)
 		expect(minHead).toBeGreaterThanOrEqual(0.1) -- through walking, working, carrying, fighting, fleeing
 		expect(minArm).toBeGreaterThanOrEqual(0.03) -- the swinging arms never enter the sack
@@ -1702,10 +1703,10 @@ describe("Kit.character individuals, idle accessories, governor and low crest (a
 							local lo, hi = bounds(acc)
 							local rel = pos(head).Y
 							if kind == "headband" then
-								expect(lo.Y).toBeGreaterThanOrEqual(rel + 0.28)
-								expect(hi.Y).toBeLessThanOrEqual(rel + 0.62)
+								expect(lo.Y).toBeGreaterThanOrEqual(rel + 0.28 * Kit.CHARACTER_HEAD_SCALE)
+								expect(hi.Y).toBeLessThanOrEqual(rel + 0.62 * Kit.CHARACTER_HEAD_SCALE)
 							else
-								expect(hi.Y).toBeLessThanOrEqual(rel - 0.4)
+								expect(hi.Y).toBeLessThanOrEqual(rel - 0.4 * Kit.CHARACTER_HEAD_SCALE)
 							end
 						end
 					end
@@ -2149,10 +2150,10 @@ describe("Kit.character individuals, idle accessories, governor and low crest (a
 							local lo, hi = bounds(acc)
 							local rel = pos(head).Y
 							if kind == "headband" then
-								expect(lo.Y).toBeGreaterThanOrEqual(rel + 0.28)
-								expect(hi.Y).toBeLessThanOrEqual(rel + 0.62)
+								expect(lo.Y).toBeGreaterThanOrEqual(rel + 0.28 * Kit.CHARACTER_HEAD_SCALE)
+								expect(hi.Y).toBeLessThanOrEqual(rel + 0.62 * Kit.CHARACTER_HEAD_SCALE)
 							else
-								expect(hi.Y).toBeLessThanOrEqual(rel - 0.4)
+								expect(hi.Y).toBeLessThanOrEqual(rel - 0.4 * Kit.CHARACTER_HEAD_SCALE)
 							end
 						end
 					end

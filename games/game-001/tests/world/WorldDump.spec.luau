@@ -6,7 +6,7 @@
 
 	The surface materials are read from WorldPlan.terrainOps themselves (the last op that covers a point decides, as in the game), so
 	a new terrain feature shows in the preview without a second copy of its rules. Placements carry `scale` (nature size variation) and tinted foliage is dumped as its own asset ("<id>@t<n>"). The dump also carries the world/Lighting preset
-	(`lighting`) for the preview's sun, haze and colour grade, and citizens at work around the plots (FORGE_WORLD_CITIZENS=12, the default, is the start of a kingdom
+	(`lighting`) for the preview's sun, haze and colour grade, and citizens at work around the plots (FORGE_WORLD_CITIZENS=sim, the default, is the sim's real start (30 s, seed 11: support/StartCitizens); 12 is the start of a kingdom as a ring set
 	(config/Kingdoms.luau: farmer 3, woodcutter 3, miner 2, builder 2, hauler 2); 40 is a mid-game kingdom; 0 leaves them out) so the views at the default gameplay camera show how readable they are. FORGE_WORLD_STEP=<studs> sets the heightfield grid
 	(6 by default; 3 for the camera views). FORGE_WORLD_DRESSED=all | crimson | crimson,azure | none picks the dressed kingdoms (default: what WorldService
 	dresses, all four since 2026-10-22; `crimson` is the world of VS-1, the before of that decision).
@@ -30,6 +30,7 @@ local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 local StartView = require("./support/StartView")
 local LightingPreset = require("@game/ReplicatedStorage/Game/World/Lighting")
+local StartCitizens = require("./support/StartCitizens")
 
 local KINGDOM_COLORS = {
 	crimson = Color3.fromRGB(190, 40, 50),
@@ -205,6 +206,25 @@ local CITIZEN_SETS = {
 	},
 }
 
+-- The real start: FORGE-04's sim, seed 11, 30 s after the start (support/StartCitizens): every row is a citizen on its work slot or
+-- walking the navigation graph, at the sim's own position and yaw (farmers stand in the farm's fields, woodcutters at the trees, ...
+-- so no clearance search is wanted: a part-footprint test puts 9 of 52 rows "inside" the farms, which is where farmers work). Poses
+-- stay the rest pose (the job's tool in the fist); "carry" rows (gold's hauler only) are drawn as "walk" until Kit.carried lands.
+local function citizensFromSim(kingdom: string, color: Color3, assets: any, placements: any)
+	for _, row in StartCitizens.rows() do
+		if row[1] == kingdom then
+			local job: string = row[2]
+			local id = `citizen_{job}_{kingdom}`
+			if not assets[id] then
+				assets[id] = partsOf(Kit.character("citizen", job, color))
+			end
+			local x, z = row[3], row[4]
+			local cf = CFrame.new(x, WorldPlan.groundHeight(Layout, x, z), z) * CFrame.Angles(0, row[5], 0)
+			table.insert(placements, { assetId = id, cframe = cf12(cf), feature = "citizen" })
+		end
+	end
+end
+
 local function citizensAround(set: string, kingdom: string, color: Color3, assets: any, placements: any)
 	local plot = Layout.plots[kingdom]
 	local n = 0
@@ -284,8 +304,12 @@ local function dump()
 			)
 		end
 	end
-	local citizenSet = process.env.FORGE_WORLD_CITIZENS or "12"
-	if CITIZEN_SETS[citizenSet] then
+	local citizenSet = process.env.FORGE_WORLD_CITIZENS or "sim"
+	if citizenSet == "sim" then
+		for kingdom, color in KINGDOM_COLORS do
+			citizensFromSim(kingdom, color, assets, placements)
+		end
+	elseif CITIZEN_SETS[citizenSet] then
 		for kingdom, color in KINGDOM_COLORS do
 			citizensAround(citizenSet, kingdom, color, assets, placements)
 		end
@@ -383,6 +407,23 @@ describe("World preview dump", function()
 		if out and out ~= "" then
 			fs.writeFile(out, serde.encode("json", d, false))
 			print(`world dump: {#d.placements} placements, {nAssets} assets, {hf.nx}x{hf.nz} heightfield -> {out}`)
+		end
+	end)
+	it("stands the sim's citizens (13 per kingdom, the five citizen jobs) at its own positions", function()
+		local d = dump()
+		if process.env.FORGE_WORLD_CITIZENS ~= nil and process.env.FORGE_WORLD_CITIZENS ~= "sim" then
+			return
+		end
+		local perKingdom, jobs = {}, { farmer = true, woodcutter = true, miner = true, builder = true, hauler = true }
+		for _, p in d.placements do
+			if p.feature == "citizen" then
+				local job, kingdom = string.match(p.assetId, "^citizen_(%a+)_(%a+)$")
+				expect(jobs[job]).toBe(true)
+				perKingdom[kingdom] = (perKingdom[kingdom] or 0) + 1
+			end
+		end
+		for _, kingdom in { "crimson", "azure", "emerald", "gold" } do
+			expect(perKingdom[kingdom]).toBe(13)
 		end
 	end)
 end)
