@@ -8,13 +8,15 @@ views, so the layout, terrain, props and starting buildings can be reviewed befo
 Writes blender/previews/world_<view>.jpg (<= 250 KB). Terrain colours match world/Lighting.luau
 terrainColors; Roblox Terrain smoothing/textures and Lighting (Future, Atmosphere) are approximated.
 
-Default-camera views (the visual upgrade, D-019). They stand where the ruler's camera stands (RulerCameraController overview, focus =
-the yard 40 studs in front of the seated ruler's throne (Def.startFocus), looking along the throne's facing, 16:9, vertical field of view
-as listed; the pitch follows the zoom linearly from 38 degrees at zoom 40 to 65 at zoom 220):
-  default_<kingdom>        the START view approved by FORGE-00 on 2026-10-19: zoom 70, FOV 55, pitch 42.5   (kingdom: crimson azure emerald gold)
+Default-camera views (the visual upgrade, D-019). They stand where the ruler's camera stands (RulerCameraController overview, FL-0147:
+focus = the yard `startAhead` (20) studs in front of the seated ruler's throne (Def.startFocus), looking along the throne's facing turned
+`startTurn` (180) degrees, i.e. back across the yard at the keep; 16:9, vertical field of view as listed; the pitch follows the zoom
+linearly from 38 degrees at zoom 40 to 65 at zoom 220). ahead and turn come from the dump's `start` (WorldDump reads them from the
+controller's DEFAULTS, so the preview follows the game); without it the FL-0147 numbers above are used:
+  default_<kingdom>        the START view (FORGE-00, 2026-10-19; FL-0147 framing): zoom 70, FOV 55, pitch 42.5   (kingdom: crimson azure emerald gold)
   default_phone_<kingdom>  the same camera at 750 x 311
-  far_<kingdom>            players zoom out: zoom 220, FOV 55, pitch 65 (the composition has to hold here too)
-  legacy_<kingdom>         the camera of the B22 build the owner played: zoom 120, FOV 70, pitch 50
+  far_<kingdom>            players zoom out: zoom 220, FOV 55, pitch 65, same focus and yaw (the composition has to hold here too)
+  legacy_<kingdom>         the camera of the B22 build the owner played: zoom 120, FOV 70, pitch 50, focus on the throne, looking out along its facing
 These views light the scene from the world/Lighting.luau preset in the dump (`lighting`): sun height from ClockTime
 and GeographicLatitude (a sun path at the equinox), sun colour from ColorShift_Top, strength from Brightness, the sky fill from
 OutdoorAmbient, the haze from Atmosphere, and the ColorCorrection grade applied after the render. It is a PREVIEW approximation
@@ -22,16 +24,18 @@ OutdoorAmbient, the haze from Atmosphere, and the ColorCorrection grade applied 
 which way a change moves the picture, not how Studio draws it.
   --camera SPEC    a free camera, view name `custom_<kingdom>` (kingdoms crimson azure emerald gold), for framing studies (FL-0147).
                    SPEC is `key=value` pairs separated by `;`:
+                     (an omitted key is the start view's: so --camera "zoom=220" is the far view, --camera "fov=70" the start view at 70 degrees)
                      zoom=70       studs from the focus (the pitch follows the zoom linearly unless pitch= is given)
                      fov=55        vertical field of view, degrees
                      pitch=42.5    degrees below the horizon
-                     ahead=40      studs ahead of the seated ruler's root, along the throne's facing, where the focus lies (the real start: 40)
+                     ahead=20      studs ahead of the seated ruler's root, along the throne's facing, where the focus lies (the real start: 20)
                      focus=X,Y,Z   a world point instead; or focus=anchor:NAME (keep, storehouse, farm, lumbercamp, quarry, ...) for a
                                    building anchor of the plot; ahead is then ignored
-                     yaw=throne    the direction the camera looks: `throne` (the throne's facing, the real start), `throne+180` (back across
-                                   the yard toward the keep), `throne-90`, or a world yaw in degrees (0 looks toward -Z, 90 toward -X)
+                     yaw=throne+180  the direction the camera looks: `throne` (the throne's facing), `throne+180` (back across the yard toward
+                                   the keep: the real start), `throne+90` (turned to the left, as Def.startYaw), or a world yaw in degrees
+                                   (0 looks toward -Z, 90 toward -X)
                      w=1600;h=900  the picture size
-                   e.g. --views custom_crimson --camera "zoom=70;fov=55;ahead=70": the camera numbers are printed so a study can be redone.
+                   e.g. --views custom_crimson --camera "zoom=70;fov=55;ahead=70;yaw=throne": the camera numbers are printed so a study can be redone.
   --tag NAME       suffix of the output files (before / after pairs): world_default_crimson_<tag>.jpg
   --out-dir DIR    where the JPEGs go (default blender/previews)
 """
@@ -169,10 +173,10 @@ def views(data):
 
 
 # RulerCameraController overview: pitch 38 deg at minZoom 40 up to 65 at maxZoom 220 (Def.pitchFor); the field of view is one value
-CAMERAS = {  # name: (zoom studs, vertical FOV degrees, studs ahead of the throne the focus lies)
-    "default": (70.0, 55.0, 40.0),   # the new start view (FORGE-00, 2026-10-19): pitch 42.5, the yard in front of the keep
-    "far": (220.0, 55.0, 40.0),      # fully zoomed out
-    "legacy": (120.0, 70.0, 0.0),    # the B22 build's start view: pitch 50, focus on the throne
+CAMERAS = {  # name: (zoom studs, vertical FOV degrees, studs ahead of the throne the focus lies, turn from the throne's facing in degrees)
+    "default": (70.0, 55.0, 20.0, 180.0),  # the start view (FL-0147): the yard in front of the keep, looking back at it; the dump's `start` overrides
+    "far": (220.0, 55.0, 20.0, 180.0),     # fully zoomed out from the same focus and yaw
+    "legacy": (120.0, 70.0, 0.0, 0.0),     # the B22 build's start view: pitch 50, focus on the throne, looking out along its facing
 }
 KINGDOMS = ("crimson", "azure", "emerald", "gold")
 
@@ -181,24 +185,37 @@ def ruler_pitch(zoom):
     return 38.0 + (65.0 - 38.0) * (zoom - 40.0) / (220.0 - 40.0)
 
 
-def ruler_view(data, kingdom, zoom, ahead=40.0):
-    """The ruler's real overview camera (RulerCameraController): the focus is the yard `ahead` studs in front of the throne (Def.startFocus:
-    the seated ruler's root + its flat look direction * startAhead) and the camera looks along the throne's facing (Roblox's default
-    camera sits behind the seated ruler when the overview starts), `zoom` studs from the focus at the pitch for that zoom ->
-    (location, focus). The dump's `throne` is the seated ruler's root (tests/world/support/StartView; the seat's height is an estimate)."""
+def ruler_view(data, kingdom, zoom, ahead=20.0, turn=180.0):
+    """The ruler's real overview camera (RulerCameraController, FL-0147): the focus is the yard `ahead` studs in front of the throne
+    (Def.startFocus: the seated ruler's root + its flat look direction * startAhead) and the camera looks along the throne's facing
+    turned `turn` degrees (Def.startYaw; 180 = back across the yard at the keep's front), `zoom` studs from the focus at the pitch for
+    that zoom -> (location, focus). The dump's `throne` is the seated ruler's root (tests/world/support/StartView; the seat's height is
+    an estimate)."""
     th = data["plots"][kingdom]["throne"]
     rx, ry, rz = th[0], th[1], th[2]
     look = (-th[5], -th[8], -th[11])  # a CFrame's LookVector is minus its third column: components R02, R12, R22
     flat = math.hypot(look[0], look[2]) or 1.0
-    fx, fz = look[0] / flat, look[2] / flat
+    tx, tz = look[0] / flat, look[2] / flat
+    c, sn = math.cos(math.radians(turn)), math.sin(math.radians(turn))
+    fx, fz = tx * c + tz * sn, -tx * sn + tz * c  # the camera's flat look direction (Def.startYaw: yaw + turn, to the left)
     pitch = math.radians(ruler_pitch(zoom))
-    focus = (rx + fx * ahead, ry, rz + fz * ahead)
+    focus = (rx + tx * ahead, ry, rz + tz * ahead)
     loc = (focus[0] - fx * zoom * math.cos(pitch), focus[1] + zoom * math.sin(pitch), focus[2] - fz * zoom * math.cos(pitch))
     return loc, focus
 
 
+def camera_table(data):
+    """CAMERAS with the dump's `start` (the controller's own numbers) applied to the default and far views."""
+    out = dict(CAMERAS)
+    start = data.get("start")
+    if start:
+        out["default"] = (start["zoom"], start["fov"], start["ahead"], start["turn"])
+        out["far"] = (220.0, start["fov"], start["ahead"], start["turn"])
+    return out
+
+
 def parse_camera(spec):
-    cam = {"zoom": 70.0, "fov": 55.0, "ahead": 40.0, "yaw": "throne", "focus": None, "pitch": None, "w": 1600, "h": 900}
+    cam = {"zoom": None, "fov": None, "ahead": None, "yaw": None, "focus": None, "pitch": None, "w": 1600, "h": 900}  # None = the start view's
     for item in spec.split(";"):
         item = item.strip()
         if not item:
@@ -220,6 +237,13 @@ def custom_view(data, kingdom, cam):
     """A free camera at a kingdom: returns (location, focus, fov, None, (w, h)) and prints the numbers used."""
     plot = data["plots"][kingdom]
     th = plot["throne"]
+    start = camera_table(data)["default"]  # (zoom, fov, ahead, turn): what an omitted key means, so "--camera zoom=220" is the far start view
+    cam = dict(cam)
+    for key, val in (("zoom", start[0]), ("fov", start[1]), ("ahead", start[2])):
+        if cam[key] is None:
+            cam[key] = val
+    if cam["yaw"] is None:
+        cam["yaw"] = f"throne+{start[3]:g}" if start[3] else "throne"
     look = (-th[5], -th[8], -th[11])
     flat = math.hypot(look[0], look[2]) or 1.0
     tx, tz = look[0] / flat, look[2] / flat
@@ -235,7 +259,7 @@ def custom_view(data, kingdom, cam):
     if yaw_spec.startswith("throne"):
         turn = float(yaw_spec[len("throne"):] or 0)
         c, sn = math.cos(math.radians(turn)), math.sin(math.radians(turn))
-        fx, fz = tx * c - tz * sn, tx * sn + tz * c
+        fx, fz = tx * c + tz * sn, -tx * sn + tz * c  # as Def.startYaw: positive turns to the left (throne facing -Z, +90 looks toward -X)
     else:
         y = math.radians(float(yaw_spec))
         fx, fz = -math.sin(y), -math.cos(y)
@@ -251,11 +275,12 @@ def custom_view(data, kingdom, cam):
 def default_views(data):
     out = {}
     for k in KINGDOMS:
-        for name, (zoom, fov, ahead) in CAMERAS.items():
-            loc, tgt = ruler_view(data, k, zoom, ahead)
+        cams = camera_table(data)
+        for name, (zoom, fov, ahead, turn) in cams.items():
+            loc, tgt = ruler_view(data, k, zoom, ahead, turn)
             out[f"{name}_{k}"] = (loc, tgt, fov, None, (1600, 900))
-        zoom, fov, ahead = CAMERAS["default"]
-        loc, tgt = ruler_view(data, k, zoom, ahead)
+        zoom, fov, ahead, turn = cams["default"]
+        loc, tgt = ruler_view(data, k, zoom, ahead, turn)
         out[f"default_phone_{k}"] = (loc, tgt, fov, None, (750, 311))
     return out
 
