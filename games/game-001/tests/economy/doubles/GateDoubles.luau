@@ -95,7 +95,10 @@ function GateDoubles.service(_world)
 							treasury:deposit(kingdom, res, amount, `refund:gate:{wallId}:{res}`, "refund")
 						end
 					end
-					assert(treasury:spend(kingdom, price, `gate:{wallId}`, "construction"), "gate price after the check")
+					assert(
+						treasury:spend(kingdom, price, `gate:{wallId}`, "construction"),
+						"gate price after the check"
+					)
 					wall.state = "destroyed"
 					build:push(wallId)
 					local look = wall.cframe.LookVector
