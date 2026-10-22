@@ -3,11 +3,11 @@ id: FL-0126
 title: "Walls, gates and towers on territory lines (Build.PlaceLine), plus three neutral outposts that grant territory"
 track: build
 owner: forge-01
-status: READY
+status: BUILDING
 priority: P1
 game: game-001
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-22
 depends_on: [FL-0125]
 evidence: []
 ---
@@ -22,7 +22,7 @@ Rulers can fortify: draw a wall line along their territory, put a gate in it tha
 - Military already makes walls block armies and siege units hit buildings x4. The Kit already builds wall and gate pieces (FORGE-02).
 
 ## Requirements
-- `Build.PlaceLine(type: "wall", from: Vector2, to: Vector2)` → `(ok, { buildingIds }?, reason?)`: snaps to a grid, splits into Kit segments, charges per segment once, all-or-nothing, inside own territory, respects reservedAreas and unit/ruler clearance (G13.9 rules). `Build.PlaceGate(segmentId)` replaces one segment with a gate. Write the G13.5 contract text in your handoff; FORGE-00 adds it.
+- `Build.PlaceLine(type: "wall", from: Vector3, to: Vector3)` → `({ buildingId }?, reason?)` (as shipped in #301; CONTRACTS g11p): snaps to a grid, splits into Kit segments, charges per segment once, all-or-nothing, inside own territory, respects reservedAreas and unit/ruler clearance (G13.9 rules). `Build.PlaceGate(segmentId)` replaces one segment with a gate. Write the G13.5 contract text in your handoff; FORGE-00 adds it.
 - Gates: own kingdom's units and citizens path through; enemies treat it as a wall. Towers: shoot enemy units in range using the existing defensive-fire code.
 - Outposts: three neutral capture points (FORGE-02 places them in `world/Layout.luau`; you consume `Layout.objectives`). Owning one extends territory by a radius and earns Crown Points per minute (config `Objectives.luau`).
 - RulerAI: governors build a wall ring and a gate after Keep level 2 when aggression ≥ 0.5, and march on outposts.
@@ -43,3 +43,4 @@ Automated specs for PlaceLine/PlaceGate/outposts and a mutation row per refusal.
 
 ## Log
 - 2026-10-18 FORGE-00: created for Operation Crownfall (owner directive 2026-10-18, D-053).
+- 2026-10-22 forge-00: READY → BUILDING. Part 2 in progress: slice 1 #301 and slice 2 #306 merged; slice 4 (RulerAI fortify) next; signature corrected to Vector3 per #301
