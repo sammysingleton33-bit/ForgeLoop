@@ -19,11 +19,11 @@
 	(Gather, Farm, Build) stand apart instead of on one spot. Each takes a slot on the reach circle it
 	stopped at before (the target's radius), on the kingdom's side of the target (towards its centre),
 	turned by 0, +1, -1, +2, -2, ... steps of SLOT_SPACING studs of arc (at most SLOT_MAX_TURN a step, on a
-	small tree or rock),
-	and walks onto it (moveTo stops arriveRadius short; the last stretch is walked too). The slot index
+	small tree or rock). The worker walks onto its slot (moveTo stops arriveRadius short; the last stretch is walked too). The slot index
 	is the lowest one free among the citizens on that target, scanned in sim.citizenOrder when the slot
-	is taken: deterministic, no randomness. It is kept while the target stays the same (a gatherer comes
-	back to its own spot) and freed on the first step with another target (or none). The worker faces
+	is taken: deterministic, no randomness. It is kept while the target stays the same and where it was
+	(a gatherer comes back to its own spot; a moved farm or site gives a new slot, FL-0119), and freed on
+	the first step with another target (or none). The worker faces
 	its target (citizen.faceX/faceZ, read by Sim/Replication). Slots change where a worker stands and its
 	walk to get there, never who works or how fast.
 
@@ -80,8 +80,10 @@ function CitizenActions.moveTo(sim: any, c: any, x: number, z: number, radius: n
 	return false
 end
 
-CitizenActions.SLOT_SPACING = 3.5 -- studs of arc between neighbouring slots: wider than a citizen
-CitizenActions.SLOT_MAX_TURN = math.rad(40) -- at most this turn a step, on a small target
+-- studs between neighbouring slots: 3.5 (a part-built citizen is 2.3-2.4 studs wide) x the client's rig scale
+-- (EntityController.Def.RIG_SCALE, 1.25; FORGE-00 22 Oct), so drawn citizens never touch
+CitizenActions.SLOT_SPACING = 3.5 * 1.25
+CitizenActions.SLOT_MAX_TURN = math.rad(60) -- at most this turn a step, on a small target: a tree's two slots stay 4 studs apart
 
 -- 0, 1, -1, 2, -2, ...: the slot's steps from the approach
 local function slotSteps(index: number): number
@@ -90,9 +92,10 @@ local function slotSteps(index: number): number
 end
 
 -- The citizen's work slot at its target (citizen.target: a node's id is a string, a building's a number, so the
--- two never mix), centred on x, z, on the circle of `radius`. Taken once per target; see the header.
+-- two never mix), centred on x, z, on the circle of `radius`. Taken once per target and target position; see the
+-- header.
 function CitizenActions.workSpot(sim: any, c: any, x: number, z: number, radius: number): (number, number)
-	if c.slotTarget ~= c.target or c.slotX == nil then
+	if c.slotTarget ~= c.target or c.slotX == nil or c.slotAtX ~= x or c.slotAtZ ~= z then
 		local used = {}
 		for _, id in sim.citizenOrder do
 			local o = sim.citizens[id]
@@ -106,12 +109,15 @@ function CitizenActions.workSpot(sim: any, c: any, x: number, z: number, radius:
 		end
 		-- every slot of a target is measured from one side, the kingdom's centre (+X for the keep itself)
 		local kingdom = sim.kingdoms[c.kingdomId]
-		local ax, az = kingdom.x - x, kingdom.z - z
+		local ax, az = 0, 0
+		if kingdom ~= nil then
+			ax, az = kingdom.x - x, kingdom.z - z
+		end
 		local side = if ax * ax + az * az > 1e-6 then math.atan2(az, ax) else 0
 		local step = math.min(CitizenActions.SLOT_SPACING / radius, CitizenActions.SLOT_MAX_TURN)
 		local angle = side + slotSteps(index) * step
-		c.slot, c.slotTarget = index, c.target
 		c.slotX, c.slotZ = x + math.cos(angle) * radius, z + math.sin(angle) * radius
+		c.slot, c.slotTarget, c.slotAtX, c.slotAtZ = index, c.target, x, z
 		c.faceX, c.faceZ = x, z
 	end
 	return c.slotX, c.slotZ
@@ -407,6 +413,7 @@ function CitizenActions.step(sim: any, c: any, dt: number)
 	if c.slotTarget ~= nil and c.slotTarget ~= c.target then
 		-- left that work (another target, or none): its slot there is free for the next worker (D-059)
 		c.slot, c.slotTarget, c.slotX, c.slotZ, c.faceX, c.faceZ = nil, nil, nil, nil, nil, nil
+		c.slotAtX, c.slotAtZ = nil, nil
 	end
 	action(sim, c, dt)
 end

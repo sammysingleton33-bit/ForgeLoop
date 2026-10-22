@@ -12,6 +12,7 @@ local CitizenActions = require("@game/ReplicatedStorage/Game/Sim/CitizenActions"
 local Replication = require("@game/ReplicatedStorage/Game/Sim/Replication")
 local Match = require("@game/ReplicatedStorage/Game/Kingdom/Match")
 local MatchConfig = require("@game/ReplicatedStorage/Forge/Config/Match")
+local EntityController = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/EntityController")
 
 local DT = 1 / 16
 
@@ -207,6 +208,66 @@ describe("Sim/CitizenActions: work slots (D-059)", function()
 		local b = math.atan2(builders[2].z - site.z, builders[2].x - site.x)
 		local d = math.abs(a - b)
 		expect(math.min(d, 2 * math.pi - d) * reach).toBeNear(CitizenActions.SLOT_SPACING, 1e-6)
+	end)
+
+	it("spaces slots for the drawn citizen: 3.5 studs x the client's rig scale, 4+ studs at a tree", function()
+		-- the client draws every rig RIG_SCALE x the Kit size (EntityController); the sim's spacing follows it
+		expect(CitizenActions.SLOT_SPACING).toBeNear(3.5 * EntityController.RIG_SCALE, 1e-9)
+		local sim, k = setup({ woodcutter = 2 })
+		local tree = sim:addNode("tree", -40, 10)
+		local w = citizens(sim, k, "woodcutter")
+		goWork(sim, w, "Gather", tree.id)
+		-- a tree's two woodcutters: the cap's chord, clear of a drawn citizen (about 3 studs wide at 1.25)
+		local apart = dist(w[1].x, w[1].z, w[2].x, w[2].z)
+		expect(apart).toBeNear(2 * (tree.footprint + 1) * math.sin(CitizenActions.SLOT_MAX_TURN / 2), 1e-6)
+		expect(apart >= 4 - 1e-6).toBe(true)
+	end)
+
+	it("a moved farm or site gives its workers a new slot at the new place (FL-0119; FORGE-01 L1)", function()
+		local sim, k = setup({ farmer = 2 })
+		local farm = nil
+		for _, b in sim.buildings do
+			if b.kind == "farm" and b.kingdomId == k.id then
+				farm = b
+			end
+		end
+		assert(farm ~= nil, "the fixture's farm")
+		local f = citizens(sim, k, "farmer")
+		goWork(sim, f, "Farm", farm.id)
+		local slot = f[1].slot
+		-- the ruler moves the farm while f[1] still works it: on its next walk there it heads for the new place
+		farm.x += 30
+		f[1].x, f[1].z = 0, 0
+		goWork(sim, { f[1] }, "Farm", farm.id)
+		expect(dist(f[1].x, f[1].z, farm.x, farm.z)).toBeNear(farm.footprint, 1e-6)
+		expect(f[1].faceX).toBe(farm.x)
+		expect(f[1].slot).toBe(slot) -- the same index: f[2] still holds its own
+	end)
+
+	it("measures from +X for a worker without a kingdom on record (FORGE-01 L2)", function()
+		local sim, k = setup({ miner = 1 })
+		local rock = sim:addNode("rock", 40, 0)
+		local m = citizens(sim, k, "miner")[1]
+		m.activity, m.target, m.phase = "Gather", rock.id, "Go"
+		local saved = sim.kingdoms[m.kingdomId]
+		sim.kingdoms[m.kingdomId] = nil
+		local ok, err = pcall(CitizenActions.workSpot, sim, m, rock.x, rock.z, rock.footprint + 1)
+		sim.kingdoms[m.kingdomId] = saved
+		assert(ok, err)
+		expect(m.slotX).toBeNear(rock.x + rock.footprint + 1, 1e-6)
+		expect(m.slotZ).toBeNear(rock.z, 1e-6)
+	end)
+
+	it("a dead worker's slot goes to the next worker (FORGE-01 L3)", function()
+		local sim, k = setup({ miner = 3 })
+		local rock = sim:addNode("rock", 40, 0)
+		local m = citizens(sim, k, "miner")
+		goWork(sim, { m[1], m[2] }, "Gather", rock.id)
+		local first = if m[1].slot == 0 then m[1] else m[2]
+		sim:killCitizen(first, "test")
+		expect(sim.citizens[first.id]).toBeNil()
+		goWork(sim, { m[3] }, "Gather", rock.id)
+		expect(m[3].slot).toBe(0)
 	end)
 
 	it("is deterministic: the same seed puts every citizen on the same spot", function()

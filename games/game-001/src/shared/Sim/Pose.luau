@@ -25,10 +25,10 @@
 		Pose.JOINTS, Pose.LIMITS (max rotation per joint, degrees), Pose.WALK_REF_SPEED, Pose.STRIDE
 	Work (D-059, FORGE-04 under a one-PR exception): each cycle is a blow that reads from the overview
 	camera at zoom 70: the tool rises slowly (BLOW[style][1] of the cycle), comes down fast (BLOW[style][2]),
-	then the body rests in the follow-through. Chop and pick go overhead (arms to 140-145 deg), the hammer
+	then the body rests in the follow-through. Chop and pick go overhead (arms to 140 deg), the hammer
 	past the shoulder (120), the hoe up (105, below a hat brim) as the back straightens; the generic job bends and lifts a load.
 	Bounds: every rotation stays within Pose.LIMITS. Arms reach 150° only in "celebrate" (arms up) and
-	145° at the top of a work blow; every other joint and action stays within 90°. Torso lift stays within
+	140° at the top of a work blow; every other joint and action stays within 90°. Torso lift stays within
 	±2 studs.
 	Celebrate: both arms up for rigs with nothing in the right fist (idle citizens) or a sack on the back
 	(hauler). Every other job holds the tool arm out from the body (55° + the pump) and tips the tool back and
@@ -187,15 +187,15 @@ local function work(out: Joints, style: string, p: number)
 	elseif style == "mine" then
 		local h = blow(p, BLOW.mine[1], BLOW.mine[2])
 		lean = 20 - 22 * h -- arches back with the pick overhead, then bends into the blow
-		out.RightArm = rx(30 + 115 * h)
-		out.LeftArm = rx(30 + 115 * h)
-		out.Tool = rx(10 - 10 * h)
+		out.RightArm = rx(30 + 110 * h)
+		out.LeftArm = rx(30 + 110 * h)
+		out.Tool = rx(10 - 40 * h) -- the pick's head tips forward at the top: clear of a lamp helmet (#317's sizes too)
 	elseif style == "hammer" then
 		local h = blow(p, BLOW.hammer[1], BLOW.hammer[2])
 		lean = 12
 		out.RightArm = rx(40 + 80 * h)
 		out.LeftArm = rx(40)
-		out.Tool = rx(15 * h)
+		out.Tool = rx(-15 * h) -- the hammer's head tips forward at the top: clear of the head and hat (#317's sizes too)
 	elseif style == "harvest" then
 		local h = blow(p, BLOW.harvest[1], BLOW.harvest[2])
 		lean = 30 - 22 * h -- the hoe raised as the back straightens, then down into the soil with a bend

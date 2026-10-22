@@ -77,6 +77,12 @@
 		  changes and before the rig returns to the pool. Without Kit.carried nothing is held. A citizen
 		  that starts to work starts its blow from the beginning (phase 0: it stands and faces its work,
 		  then raises the tool), not from wherever its walk cycle was.
+		- D-059 rig scale (FORGE-00 15:50, FORGE-02's measure): every rig is drawn RIG_SCALE (1.25) times
+		  the Kit size, scaled once when built (adapter.scaleModel, Model:ScaleTo, about the pivot at the
+		  feet) and pooled scaled; the rig keeps the factor it got (`scale`, 1 without scaleModel).
+		  Motor6D.Transform is not scaled by ScaleTo, so the pose's Torso lift is multiplied by the rig's
+		  scale each frame; the carried load is scaled like the rigs and welded at CARRY_OFFSET x the rig's
+		  scale; PICK_HEIGHT aims at the scaled body. The sim's positions are unchanged: visual only.
 	Engine calls (BulkMoveTo, Motor6D.Transform, camera and character reads) go through `adapter`
 	(Lune has no BulkMoveTo). Unverified in Studio until the FL-0049 playtest.
 ]]
@@ -105,13 +111,14 @@ Def.LOD_ZOOM = 1.25
 Def.DEATH_DELAY = 2 -- seconds the dead pose stays before the rig is released
 Def.DEATH_BLEND = 0.4 -- seconds to fall into the dead pose
 Def.PICK_RADIUS = 60 -- pixels
-Def.PICK_HEIGHT = 2.75 -- studs above the pivot: the body centre the pick aims at
+Def.RIG_SCALE = 1.25 -- D-059: rigs drawn 1.25x the Kit size (FORGE-00 15:50; FORGE-02's handoff: 57 -> 72 px tall at the start view)
+Def.PICK_HEIGHT = 2.75 * Def.RIG_SCALE -- studs above the pivot: the body centre the pick aims at
 Def.POOL_MAX = 64 -- spare rigs kept in all; past it the oldest spare is destroyed
 Def.FOLDER_NAME = "KingdomEntities"
 Def.GET_ENTITIES_TRIES = 10 -- unanswered calls before giving up
 Def.GET_ENTITIES_PAGES = 64 -- at most this many pages (64 x 49 entities): a runaway cursor stops here
 Def.RETRY_SECONDS = 1.5
-Def.CARRY_OFFSET = CFrame.new(0, 0, -1.2) -- the carried load's pivot in the Torso's frame: the carry pose's hands (D-059)
+Def.CARRY_OFFSET = CFrame.new(0, 0, -1.2) -- the carried load's pivot in the Torso's frame at the Kit size (x the rig's scale): the carry pose's hands (D-059)
 
 export type Adapter = {
 	bulkMove: (parts: { any }, cframes: { CFrame }) -> (), -- workspace:BulkMoveTo(..., FireCFrameChanged)
@@ -119,9 +126,10 @@ export type Adapter = {
 	focus: () -> Vector3?, -- LOD centre outside the overview: the local character, else the camera focus
 	eye: (() -> Vector3?)?, -- the camera's position (the overview's zoom is its distance from the focus)
 	project: (point: Vector3) -> (Vector2?, number?), -- screen point and depth; nil when off screen
+	scaleModel: ((model: any, factor: number) -> ())?, -- Model:ScaleTo, about its pivot (RIG_SCALE); none: unscaled
 }
 
-type Rig = { model: any, root: any, rootOffset: CFrame, motors: { [string]: any }, key: string }
+type Rig = { model: any, root: any, rootOffset: CFrame, motors: { [string]: any }, key: string, scale: number }
 
 type Entity = {
 	id: number,
@@ -162,6 +170,9 @@ function Def.robloxAdapter(env: any): Adapter
 		end,
 		setTransform = function(motor: any, cframe: CFrame)
 			motor.Transform = cframe
+		end,
+		scaleModel = function(model: any, factor: number)
+			model:ScaleTo(factor)
 		end,
 		focus = function(): Vector3?
 			local player = env.Players.LocalPlayer
@@ -511,17 +522,29 @@ end
 
 -- look (G13.2 CitizenLook, from the spawn record) and, for soldiers, the kingdom (their helmet
 -- crest, D-033) are Kit.character's optional 4th and 5th arguments
-local function buildRig(kind: string, job: string, kingdom: string, look: any?, key: string): Rig
+local function buildRig(kind: string, job: string, kingdom: string, look: any?, key: string, adapter: Adapter): Rig
 	local crest = if kind == "soldier" then kingdom else nil
 	local model = (Kit.character :: any)(kind, job, COLORS[kingdom] or Kit.NEUTRAL_COLOR, look, crest)
-	local root = model.PrimaryPart
+	local scale = 1
+	if Def.RIG_SCALE ~= 1 and adapter.scaleModel ~= nil then
+		adapter.scaleModel(model, Def.RIG_SCALE) -- once per rig: it is pooled scaled (D-059)
+		scale = Def.RIG_SCALE
+	end
+	local root = model.PrimaryPart -- read after the scale: its PivotOffset is the scaled one
 	local motors = {}
 	for _, d in model:GetDescendants() do
 		if d:IsA("Motor6D") then
 			motors[d.Name] = d
 		end
 	end
-	return { model = model, root = root, rootOffset = root.PivotOffset:Inverse(), motors = motors, key = key }
+	return {
+		model = model,
+		root = root,
+		rootOffset = root.PivotOffset:Inverse(),
+		motors = motors,
+		key = key,
+		scale = scale,
+	}
 end
 
 function EntityController:_acquire(entity: Entity): Rig
@@ -532,7 +555,7 @@ function EntityController:_acquire(entity: Entity): Rig
 			return table.remove(spares, i)
 		end
 	end
-	return buildRig(entity.kind, entity.job, entity.kingdom, entity.look, key)
+	return buildRig(entity.kind, entity.job, entity.kingdom, entity.look, key, self.adapter)
 end
 
 -- Attaches a rig. Inside a frame (`inFrame`) the frame's BulkMoveTo places it and `rendered` fires
@@ -694,6 +717,9 @@ function EntityController:_loadTemplate(resource: string): any?
 			ok, model = pcall(carried, resource)
 		end
 		cached = if ok and model ~= nil and model.PrimaryPart ~= nil then model else false
+		if cached and Def.RIG_SCALE ~= 1 and self.adapter.scaleModel ~= nil then
+			self.adapter.scaleModel(cached, Def.RIG_SCALE) -- the load matches the scaled hands (D-059)
+		end
 		self._loads[resource] = cached
 	end
 	return if cached then cached else nil
@@ -719,7 +745,7 @@ function EntityController:_holdLoad(entity: Entity, rig: Rig?, resource: string?
 	weld.Name = "CarryWeld"
 	weld.Part0 = torso
 	weld.Part1 = load.PrimaryPart
-	weld.C0 = Def.CARRY_OFFSET
+	weld.C0 = Def.CARRY_OFFSET.Rotation + Def.CARRY_OFFSET.Position * rig.scale -- the scaled rig's hands
 	weld.C1 = load.PrimaryPart.PivotOffset -- the load's pivot (Kit: its centre), not its primary part, sits at the hands
 	weld.Parent = load.PrimaryPart
 	load.Parent = rig.model
@@ -737,6 +763,10 @@ function EntityController:_animate(entity: Entity, rig: Rig, state: Interpolatio
 	local joints = Pose.sample(action, entity.job, entity.phase, state.speed, entity.pose)
 	if entity.diedAt ~= nil then
 		joints = Pose.blend(joints, DEAD_POSE, (now - entity.diedAt) / Def.DEATH_BLEND, joints)
+	end
+	local torso = joints.Torso
+	if torso ~= nil and rig.scale ~= 1 then
+		joints.Torso = torso.Rotation + torso.Position * rig.scale -- ScaleTo leaves Transform's lift in studs
 	end
 	local setTransform = self.adapter.setTransform
 	for joint, motor in rig.motors do

@@ -69,6 +69,7 @@
 
 local Bubbles = require("@game/ReplicatedStorage/Game/Feedback/Bubbles")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
+local EntityController = require("./EntityController") -- RIG_SCALE: the drawn rig's size (D-059)
 local Motion = require("@game/ReplicatedStorage/Forge/UI/Motion")
 local ScreenLayout = require("../UI/Layout")
 local Vfx = require("@game/ReplicatedStorage/Forge/Config/Vfx")
@@ -81,7 +82,7 @@ local Def = {
 Def.POLL_SEC = 0.25
 Def.CUE_EFFECT_SEC = 6 -- a continuous cue effect with no `seconds` of its own stops after this
 Def.UNKNOWN_CUE_LOG = 8 -- distinct unknown cue names warned about; later ones share one last warning
-Def.HEIGHT = 3.2 -- studs above the model's pivot: the bubble's bottom edge
+Def.HEIGHT = 3.2 * EntityController.RIG_SCALE -- studs above the model's pivot: the bubble's bottom edge (3.2 at the Kit size, scaled with the drawn rig, D-059)
 Def.SIZE = table.freeze({ -- Bubbles.SIZES, which the layout uses
 	card = UDim2.fromOffset(Bubbles.SIZES.card.X, Bubbles.SIZES.card.Y), -- a thought with words, or a reaction
 	badge = UDim2.fromOffset(Bubbles.SIZES.badge.X, Bubbles.SIZES.badge.Y), -- a thought's glyph alone

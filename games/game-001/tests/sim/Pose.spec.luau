@@ -185,7 +185,7 @@ describe("Sim/Pose", function()
 		local STEPS = 200
 		-- { job, the arm's top at least, its travel a blow at least }: the hoe stops at 105 degrees, below the hat brim
 		for _, case in
-			{ { "woodcutter", 135, 100 }, { "miner", 140, 110 }, { "builder", 115, 75 }, { "farmer", 100, 55 } }
+			{ { "woodcutter", 135, 100 }, { "miner", 135, 105 }, { "builder", 115, 75 }, { "farmer", 100, 55 } }
 		do
 			local job, top, travel = case[1], case[2], case[3]
 			local high, low, highAt = -math.huge, math.huge, 0

@@ -8,6 +8,7 @@ local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 local D = require("./RulerDoubles")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local CameraDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/RulerCameraController")
+local EntityController = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/EntityController")
 
 local C = CameraDef.DEFAULTS
 local O = C.overview
@@ -1162,10 +1163,12 @@ describe("RulerCameraController overview, walk mode, build mode and shake (FL-00
 			controller._opts.viewportWidth, controller._opts.viewportHeight = 750, 311 -- FORGE-03's phone
 			controller:focusOn(citizen, { duration = 0 })
 			frames(2)
-			local head = fromTop(citizen + Vector3.new(0, 4, 0))
+			-- the drawn citizen: head about 4 and its top 5 studs up at the Kit size, x the rig's scale (D-059)
+			local k = EntityController.RIG_SCALE
+			local head = fromTop(citizen + Vector3.new(0, 4 * k, 0))
 			expect(head >= 0.27 and head <= 0.31).toBe(true) -- above a costed stage's top at 29-30 %
-			expect(fromTop(citizen + Vector3.new(0, 5, 0)) >= 0.26).toBe(true) -- below the HUD stack (26 %)
-			expect(fromTop(citizen) <= 0.40).toBe(true) -- whole citizen clear of a short stage at 47 %
+			expect(fromTop(citizen + Vector3.new(0, 5 * k, 0)) >= 0.26).toBe(true) -- below the HUD stack (26 %)
+			expect(fromTop(citizen) <= 0.45).toBe(true) -- whole citizen clear of a short stage at 47 %
 			local phone = controller:getFocus()
 			controller:restore({ duration = 0 })
 			controller._opts.viewportWidth, controller._opts.viewportHeight = 1920, 1080

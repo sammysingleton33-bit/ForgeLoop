@@ -40,6 +40,7 @@
 ]]
 
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
+local EntityController = require("./EntityController") -- RIG_SCALE: the drawn rig's size (D-059)
 local Requests = require("@game/ReplicatedStorage/Game/Feedback/Requests")
 local ScreenLayout = require("../UI/Layout")
 
@@ -57,7 +58,7 @@ Def.CLEAR = 8 -- px kept between a badge and FORGE-03's HUD (Def.insets)
 Def.TIP = 15
 Def.GAP = 52 -- px: badges closer than this share one
 Def.MAX = 4 -- badges on screen at most
-Def.HEIGHT = 3.2 -- studs above the rig's pivot: where its bubble sits (CitizenBubbleController.HEIGHT)
+Def.HEIGHT = 3.2 * EntityController.RIG_SCALE -- studs above the rig's pivot: where its bubble sits (CitizenBubbleController.HEIGHT)
 Def.NEXT_KEYS = table.freeze({ Enum.KeyCode.F, Enum.KeyCode.DPadRight })
 Def.PREVIOUS_KEYS = table.freeze({ Enum.KeyCode.DPadLeft })
 local rgb = Color3.fromRGB

@@ -403,6 +403,7 @@ History:
 - 2026-10-13 FORGE-04: written (FL-0100 (1/2)), from the camera handoff's rows; released citizens, walk mode mid-conversation and zoom during a conversation added (FORGE-05's B14 review).
 - 2026-10-15 FORGE-04: operator probes E10a/E10b; E10a also measures against the ruler direction (FORGE-05).
 - 2026-10-19 FORGE-04: framing for the overview's new 55° field of view (D-059): 35 studs, offsets 5 and 7.5 (it was 30, 6 and 12 at 70°).
+- 2026-10-22 FORGE-04: the phone offset is 6.7 for the citizen drawn 1.25x (FL-0148): its head top just under the HUD stack (26 %), its head at 29 %.
 
 ## E11 — Back key (FL-0053, game-001)
 
@@ -801,30 +802,32 @@ The owner's B22 review found the citizens at the start view "barely recognisable
 - A citizen carrying goods home carried nothing you could see.
 
 Now:
-- Each worker stands at its own spot around its work (about 3.5 studs apart on the edge where it used to stop), facing it.
+- Each worker stands at its own spot around its work (about 4.4 studs apart on the edge where it used to stop; 4 at a tree), facing it.
+- Every citizen (and soldier) is drawn 1.25x the Kit size (`EntityController.RIG_SCALE`, D-059): only the look; the sim's positions are the same. The request bubble sits higher with it, and on a phone the conversation camera frames the taller citizen a little lower.
 - Each swing is a blow: the tool goes up slowly and comes down fast. Woodcutters and miners swing overhead, builders hammer from the shoulder, farmers raise the hoe and bend into the soil, and haulers bend down and lift.
 - A citizen carrying goods home holds the load in both hands: a basket of food, a bundle of logs, a stone block or a stack of gold bars (FORGE-02's `Kit.carried`, #312). The body bobs and leans back under the load.
 - A citizen that arrives at its work stands, faces it, then raises the tool for the first blow.
 
 How much gets made is unchanged (headless, 32 seeds; see the PR).
 
-Needs: nothing for steps 1–4 (Play Solo). The loads in step 3 need FORGE-02's #312 on main; before it, a carrying citizen just holds out empty arms, as today. Judge the motion and the spacing, not the citizens' looks (FORGE-02's pass).
+Needs: nothing (Play Solo). FORGE-02's `Kit.carried` (#312) is on main. Judge the motion, the spacing and the size, not the citizens' looks (FORGE-02's pass).
 
 Steps
 1. Play Solo at the start view (E22 step 1) and wait about 30 s. Look at the farm, the woodcutters' trees and the miners' rocks:
    - Workers on the same field, tree or rock stand apart, side by side around it. None stands inside another.
    - Each faces its tree, rock or field.
 
-   Count the separate workers you can tell apart in view.
+   Count the separate workers you can tell apart in view. Check the size against the buildings: a citizen by the keep door and the market stalls looks like it belongs there (not a giant), and none stands inside a wall or a stall.
 
    Screenshot **E23-1** at about 30 s, and compare it with E22-1 / your B22 screenshot.
 2. Watch a woodcutter and a miner for a few seconds from the start view: you can see the tool go up over the head and come down. A builder hammers, a farmer raises the hoe and bends, a hauler at a node bends and lifts. The tools never pass through a head. Write which of the five reads well at zoom 70 and which does not.
-3. With #312 on main: follow a citizen walking home with goods. It holds a load in both hands (food, wood, stone or gold, by colour), the body bobs, and the load disappears when it reaches the storehouse or keep. No load is ever left floating, stuck on a citizen that walks empty-handed, or on a citizen at work.
+3. Follow a citizen walking home with goods. It holds a load in both hands (food, wood, stone or gold, by colour), the body bobs, and the load disappears when it reaches the storehouse or keep. No load is ever left floating, stuck on a citizen that walks empty-handed, or on a citizen at work.
 4. Zoom in on a citizen arriving at its work (about zoom 40): it stops at its own spot, turns to face the work, then raises the tool before the first blow; it never starts mid-swing.
 5. On a phone (Device emulator, landscape): repeat step 1. Workers are small but separate. Screenshot **E23-2**.
 6. Performance: with the Microprofiler open at the start view (all four kingdoms in the match), the client frame shows no new spike from the citizens' poses. Write the frame time you see.
 
-Pass: steps 1, 2, 4 and 5 hold; 3 once #312 is on main; 6 with the number written. Copy every red line from Output.
+Pass: steps 1–5 hold; 6 with the number written. Copy every red line from Output.
 
 History:
 - 2026-10-22 FORGE-04: written (FL-0148, D-059).
+- 2026-10-22 FORGE-04: the rig drawn 1.25x (FORGE-00), slots 4.4 studs apart (4 at a tree); step 3 now runs with #312 on main; step 1 checks the size against the door and the stalls.

@@ -1071,6 +1071,85 @@ describe("EntityController: the start citizens look alive (D-059)", function()
 		assert(ok, err)
 	end)
 
+	it(
+		"draws every rig RIG_SCALE x the Kit size: scaled once when built, its torso lift and load with it (D-059)",
+		function()
+			local carried = (Kit :: any).carried
+			table.clear(made);
+			(Kit :: any).carried = fakeCarried
+			local ok, err = pcall(function()
+				-- the same citizen and timeline with and without a scaling adapter
+				local plain = start(setup({ full(1, 0, 0) }))
+				local h = setup({ full(1, 0, 0) })
+				local scaled = {}
+				h.rec.adapter.scaleModel = function(model, factor)
+					table.insert(scaled, { name = model.Name, factor = factor })
+					-- Model:ScaleTo keeps the pivot (the feet) where it is: the root's offset to it grows
+					local root = model.PrimaryPart
+					root.PivotOffset = root.PivotOffset.Rotation + root.PivotOffset.Position * factor
+				end
+				start(h)
+				expect(Def.RIG_SCALE).toBe(1.25)
+				expect(Def.PICK_HEIGHT).toBeNear(2.75 * Def.RIG_SCALE, 1e-9)
+				for _, harness in { plain, h } do
+					play(harness, 0.5, { action = "carry", carrying = "wood" })
+				end
+				-- the rig once and the wood load once, both at RIG_SCALE
+				expect(#scaled).toBe(2)
+				expect(scaled[1].factor).toBe(Def.RIG_SCALE)
+				expect(scaled[2].name).toBe("Load_wood")
+				expect(scaled[2].factor).toBe(Def.RIG_SCALE)
+				-- placed from the scaled pivot offset: the feet stay on the record's spot
+				local model = h.controller:getModel(1)
+				expect(pivotOf(model).Magnitude).toBeLessThan(1e-3)
+				-- the load sits at the scaled hands
+				local weld = loadsOf(model)[1].PrimaryPart:FindFirstChild("CarryWeld")
+				local hands = Def.CARRY_OFFSET.Position * Def.RIG_SCALE
+				expect((weld.C0.Position - hands).Magnitude).toBeLessThan(1e-4)
+				local plainModel = plain.controller:getModel(1)
+				local plainWeld = loadsOf(plainModel)[1].PrimaryPart:FindFirstChild("CarryWeld")
+				expect((plainWeld.C0.Position - Def.CARRY_OFFSET.Position).Magnitude).toBeLessThan(1e-4)
+				-- the Transforms in the dead pose (the Torso drops 1.7 studs): the drop grows with the rig,
+				-- every rotation is the same
+				for _, harness in { plain, h } do
+					events(harness, { { type = "cue", id = 1, cue = "die" }, { type = "despawn", id = 1 } })
+					frame(harness, Def.DEATH_BLEND + 0.1)
+				end
+				local checked = 0
+				for _, d in model:GetDescendants() do
+					if d:IsA("Motor6D") then
+						local twin = nil
+						for _, e in plainModel:GetDescendants() do
+							if e:IsA("Motor6D") and e.Name == d.Name then
+								twin = e
+							end
+						end
+						local x, y = plain.rec.transforms[twin], h.rec.transforms[d]
+						expect((y.Position - x.Position * Def.RIG_SCALE).Magnitude).toBeLessThan(1e-4)
+						expect(y.LookVector:Dot(x.LookVector)).toBeGreaterThan(0.99999)
+						expect(y.UpVector:Dot(x.UpVector)).toBeGreaterThan(0.99999)
+						checked += 1
+					end
+				end
+				expect(checked >= 6).toBe(true)
+				local torso = h.rec.transforms[model.PrimaryPart:FindFirstChild("Torso")]
+				expect(torso.Position.Y).toBeNear(
+					Pose.sample("dead", "farmer", 0, 0).Torso.Position.Y * Def.RIG_SCALE,
+					1e-3
+				)
+				-- pooled scaled: the rig comes back for the next citizen of its kind without a second scale
+				frame(h, Def.DEATH_DELAY)
+				expect(h.controller:getModel(1)).toBeNil()
+				events(h, { full(2, 10, 0) })
+				frame(h, 0.05)
+				expect(h.controller:getModel(2)).toBe(model)
+				expect(#scaled).toBe(2)
+			end);
+			(Kit :: any).carried = carried
+			assert(ok, err)
+		end
+	)
+
 	it("a citizen that starts to work starts its blow from the beginning, not mid-swing", function()
 		local h = start(setup({ full(1, 0, 0, { job = "woodcutter" }) }))
 		play(h, 1.3, { action = "walk" })
