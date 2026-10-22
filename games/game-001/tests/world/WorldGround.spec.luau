@@ -638,17 +638,14 @@ describe("WorldGround: the checks catch each way of breaking the rule (mutants)"
 			table.insert(many, ops[#ops - (i % 20)])
 		end
 		for i = 1, ADDED_OPS do
-			table.insert(
-				many,
-				{
-					kind = "Cylinder",
-					material = "Ground",
-					cframe = CFrame.new(i, -1, 0),
-					radius = 4,
-					height = 2.4,
-					feature = "patch",
-				}
-			)
+			table.insert(many, {
+				kind = "Cylinder",
+				material = "Ground",
+				cframe = CFrame.new(i, -1, 0),
+				radius = 4,
+				height = 2.4,
+				feature = "patch",
+			})
 		end
 		expect(has(violations(Layout, many), "ground ops")).toBe(true)
 		local fat = table.clone(ops)
