@@ -83,14 +83,14 @@ return {
 	-- Terrain material colours (Terrain:SetMaterialColor). Warm greens and earthy browns that sit
 	-- with the Kit palette (Kit/Parts.luau, blender/lib/palette.py).
 	terrainColors = {
-		Grass = Color3.fromRGB(106, 168, 62),
-		LeafyGrass = Color3.fromRGB(84, 150, 52),
-		Ground = Color3.fromRGB(150, 116, 78),
-		Mud = Color3.fromRGB(110, 86, 60),
+		Grass = Color3.fromRGB(116, 156, 66),
+		LeafyGrass = Color3.fromRGB(80, 122, 54),
+		Ground = Color3.fromRGB(150, 114, 76),
+		Mud = Color3.fromRGB(106, 80, 56),
 		Sand = Color3.fromRGB(214, 190, 138),
-		Rock = Color3.fromRGB(128, 124, 118),
-		Slate = Color3.fromRGB(110, 108, 104),
-		Cobblestone = Color3.fromRGB(150, 144, 132),
+		Rock = Color3.fromRGB(132, 128, 120),
+		Slate = Color3.fromRGB(100, 98, 96),
+		Cobblestone = Color3.fromRGB(178, 164, 140),
 		-- no Water entry: water colour is Terrain.WaterColor (below), not a material colour
 	},
 

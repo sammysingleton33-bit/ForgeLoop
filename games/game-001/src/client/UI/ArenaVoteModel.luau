@@ -7,14 +7,14 @@
 	stage == "vote", one entry per side with two or more candidates:
 		vote = { a = { kingdom, candidates: { userId }, voted: { userId } }, b = ... }
 	`voted` names who has voted, never for whom (the ballot is secret). Without the field nothing shows: the
-	panel is dark until the server sends it.
+	panel is dark until the server sends it (live on main since #275, FORGE-01).
 
 		ArenaVoteModel.entry(state, me) -> (side?, entry?)   the local player's own vote, when they are a candidate
 		ArenaVoteModel.view(state, lookup, me, now, pick?) -> View?
 			lookup = { kingdom: (KingdomId) -> { name? }?, name: (userId) -> string? }
 			pick   = { candidate, status = "pending" | "ok" | "failed" }?   the local player's last vote
 			View = { side, kingdomId, kingdom, seconds, clock ("8 s"), candidates: { Candidate }, voted, total,
-			         votedText ("1 of 2 voted"), status, statusKind ("hint" | "pending" | "ok" | "failed") }
+			         votedText ("1 of 2 voted"), status, statusKind ("hint" | "pending" | "ok" | "failed" | "left") }
 			Candidate = { userId, name, you, picked, hasVoted }
 		ArenaVoteModel.result(state, side, me, lookup) -> string?   once the champions are known (any stage after
 			the vote): "You fight for Emberhold" / "Rowan fights for Emberhold" / "Emberhold's champion fights"
@@ -59,8 +59,12 @@ function ArenaVoteModel.view(state: any, lookup: any, me: number?, now: number, 
 	if side == nil then
 		return nil
 	end
+	-- The ruler this voter picked has left: ArenaFlow:forfeit drops the leaver from the candidates and drops the
+	-- leaver's own ballot, but not the ballots cast for them (#285). So this voter still counts as voted, for the count
+	-- and for the early close, while their vote counts for nobody: say so rather than the opening hint (G12.6).
+	local pickLeft = pick ~= nil and pick.status == "ok" and not contains(e.candidates, pick.candidate)
 	if pick ~= nil and not contains(e.candidates, pick.candidate) then
-		pick = nil -- the ruler voted for has left (ArenaFlow:forfeit drops them and the votes for them)
+		pick = nil
 	end
 	local candidates = {}
 	local voted = 0
@@ -91,12 +95,14 @@ function ArenaVoteModel.view(state: any, lookup: any, me: number?, now: number, 
 			pickedName = if c.you then "yourself" else c.name
 		end
 	end
-	if pick == nil then
+	if pickLeft then
+		status, kind = "Your pick left, so your vote counts for nobody. Choose again until the vote closes.", "left"
+	elseif pick == nil then
 		status, kind = `Choose who fights for {kingdom}. A tie goes to the higher leadership.`, "hint"
 	elseif pick.status == "pending" then
 		status, kind = "Sending your vote…", "pending"
 	elseif pick.status == "ok" then
-		status, kind = `You voted for {pickedName or "a ruler"}. You can change it until the time runs out.`, "ok"
+		status, kind = `You voted for {pickedName or "a ruler"}. You can change it until the vote closes.`, "ok"
 	else
 		status, kind = "Your vote was not counted. Try again.", "failed"
 	end

@@ -206,7 +206,10 @@ function Figures:_fitWeapon(model: any, tool: any): boolean
 	-- the loadout weapon rides the Tool part (the arm if the rig has none), at the fist, at the Grip rest
 	local toolPart = stripOwnWeapon(model)
 	local carrier = toolPart or fist
-	local atFist = fist.CFrame * CFrame.new(0, -fist.Size.Y / 2, 0)
+	-- A hand's grip attachment carries the weapon's grip frame turned -90 degrees about X from the hanging arm's own frame
+	-- (Kit/Gear.luau: "holding it with the arm forward carries it upright"), so at rest the blade points forward, level,
+	-- and FORGE-04's wrist poses (Feedback/DuelPoses) lift it from there, as for a human's equipped Tool.
+	local atFist = fist.CFrame * CFrame.new(0, -fist.Size.Y / 2, 0) * CFrame.Angles(-math.pi / 2, 0, 0)
 	-- the Tool is modelled in grip space and `Grip` puts it right in a hand: the weld's C1, as an equipped Tool's RightGrip has it
 	local gripOk, grip = pcall(function()
 		return tool.Grip
