@@ -139,16 +139,13 @@ end
 local function itemsOf(placements: { any }): { any }
 	local out = {}
 	for _, p in placements do
-		table.insert(
-			out,
-			{
-				assetId = p.assetId,
-				x = p.cframe.Position.X,
-				z = p.cframe.Position.Z,
-				feature = p.feature,
-				scale = p.scale,
-			}
-		)
+		table.insert(out, {
+			assetId = p.assetId,
+			x = p.cframe.Position.X,
+			z = p.cframe.Position.Z,
+			feature = p.feature,
+			scale = p.scale,
+		})
 	end
 	return out
 end

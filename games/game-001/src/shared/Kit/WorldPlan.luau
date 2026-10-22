@@ -694,47 +694,59 @@ end
 
 -- ---------------------------------------------------------------- the nature generator (visual pass 1)
 
--- Where the ruler camera looks (RulerCameraController overview). The ruler starts seated on the keep's throne; the first focus is the
--- yard `startAhead` studs in front of the throne and the camera looks along the keep's facing (its -Z), standing `zoom` studs from the
--- focus at the pitch for that zoom (38 degrees at zoom 40 rising to 65 at zoom 220), 16:9: the start view (zoom 70) sees the yard and
--- the ground beyond it out to the horizon edge, the fully zoomed-out view (zoom 220) sees the stands and tree lines as the
--- composition. A WEIGHT for where nature clumps, never a rule. (tests/world/support/StartView.luau is the spec-side copy of this maths.)
+-- Where the ruler camera looks (RulerCameraController overview). The ruler starts seated on the keep's throne; the focus is the yard
+-- `ahead` studs in front of the throne and the camera stands `zoom` studs from it at the pitch for that zoom (38 degrees at zoom 40
+-- rising to 65 at zoom 220), 16:9. The START view (FL-0147) looks back across the yard toward the keep (`back`: the throne's facing
+-- turned 180 degrees): the lane network, the fields' sides and the work areas, and the land beyond them out to the horizon edge. The
+-- fully zoomed-out view looks along the throne's facing and sees the stands and tree lines as the composition. A WEIGHT for where
+-- nature clumps, never a rule. (blender/scripts/render_world.py and tests/world/support/StartView.luau hold the same maths.)
 WorldPlan.VIEW = table.freeze({
-	default = table.freeze({ zoom = 70, fov = 55 }),
-	far = table.freeze({ zoom = 220, fov = 55 }),
+	default = table.freeze({ zoom = 70, fov = 55, ahead = 20, back = true }),
+	far = table.freeze({ zoom = 220, fov = 55, ahead = 40, back = false }),
 	aspect = 16 / 9,
 	near = 30, -- studs round the start view's ground that still count as in it
 	reach = 900, -- rays that never reach the ground stop here
-	startAhead = 40, -- RulerCameraController.DEFAULTS.overview.startAhead
 	throne = Vector3.new(0, 7.7, -11.8), -- the seated ruler's root in the keep's frame (the Kit's throne seat, a little above it)
 })
 
 type Poly = { Vector2 }
 local viewCache: { [any]: { default: { Poly }, far: { Poly } } } = setmetatable({}, { __mode = "k" }) :: any
 
--- The ground a ruler camera at `zoom` studs from a keep's start focus sees (4 corners: top-left, top-right, bottom-right, bottom-left
--- as the player sees them; the first two are the far edge).
-local function groundPolygon(keep: CFrame, zoom: number, fovDeg: number): Poly
+-- The ground a ruler camera at a keep's throne sees at screen position (sx, sy) in -1..1 (x right, y up): the ray's hit on the ground, or
+-- its end where it never reaches it (the horizon).
+local function groundPoint(
+	keep: CFrame,
+	view: { zoom: number, fov: number, ahead: number, back: boolean },
+	sx: number,
+	sy: number
+): Vector2
 	local V = WorldPlan.VIEW
 	local look = keep.LookVector
-	local flat = Vector3.new(look.X, 0, look.Z).Unit
-	local focus = keep:PointToWorldSpace(V.throne) + flat * V.startAhead
-	local pitch = math.rad(38 + (65 - 38) * (zoom - 40) / (220 - 40))
+	local facing = Vector3.new(look.X, 0, look.Z).Unit
+	local focus = keep:PointToWorldSpace(V.throne) + facing * view.ahead
+	local flat = if view.back then -facing else facing -- the way the camera looks, on the ground
+	local pitch = math.rad(38 + (65 - 38) * (view.zoom - 40) / (220 - 40))
 	local sp, cp = math.sin(pitch), math.cos(pitch)
-	local pos = focus - flat * (zoom * cp) + Vector3.new(0, zoom * sp, 0)
+	local pos = focus - flat * (view.zoom * cp) + Vector3.new(0, view.zoom * sp, 0)
 	local forward = flat * cp + Vector3.new(0, -sp, 0)
 	local right = flat:Cross(Vector3.yAxis)
 	local up = right:Cross(forward)
-	local ty = math.tan(math.rad(fovDeg) / 2)
-	local tx = ty * V.aspect
-	local poly: Poly = {}
-	for _, c in { { -1, 1 }, { 1, 1 }, { 1, -1 }, { -1, -1 } } do
-		local dir = forward + right * (c[1] * tx) + up * (c[2] * ty)
-		local t = if dir.Y < -1e-3 then math.min(-pos.Y / dir.Y, V.reach) else V.reach
-		local hit = pos + dir * t
-		table.insert(poly, Vector2.new(hit.X, hit.Z))
-	end
-	return poly
+	local ty = math.tan(math.rad(view.fov) / 2)
+	local dir = forward + right * (sx * ty * V.aspect) + up * (sy * ty)
+	local t = if dir.Y < -1e-3 then math.min(-pos.Y / dir.Y, V.reach) else V.reach
+	local hit = pos + dir * t
+	return Vector2.new(hit.X, hit.Z)
+end
+
+-- The ground a ruler camera sees (4 corners: top-left, top-right, bottom-right, bottom-left as the player sees them; the first two are
+-- the far edge).
+local function groundPolygon(keep: CFrame, view: { zoom: number, fov: number, ahead: number, back: boolean }): Poly
+	return {
+		groundPoint(keep, view, -1, 1),
+		groundPoint(keep, view, 1, 1),
+		groundPoint(keep, view, 1, -1),
+		groundPoint(keep, view, -1, -1),
+	}
 end
 
 local function inPoly(poly: Poly, x: number, z: number): boolean
@@ -767,8 +779,8 @@ function WorldPlan.viewWeight(layout: any, x: number, z: number): number
 		cached = { default = {}, far = {} }
 		for _, kingdom in KINGDOM_ORDER do
 			local keep = layout.plots[kingdom].anchors.keep
-			table.insert(cached.default, groundPolygon(keep, WorldPlan.VIEW.default.zoom, WorldPlan.VIEW.default.fov))
-			table.insert(cached.far, groundPolygon(keep, WorldPlan.VIEW.far.zoom, WorldPlan.VIEW.far.fov))
+			table.insert(cached.default, groundPolygon(keep, WorldPlan.VIEW.default))
+			table.insert(cached.far, groundPolygon(keep, WorldPlan.VIEW.far))
 		end
 		viewCache[layout] = cached
 	end
@@ -894,9 +906,9 @@ WorldPlan.NATURE = table.freeze({
 		m = table.freeze({ 0.9, 1.25 }),
 		l = table.freeze({ 0.82, 1.12 }),
 	}),
-	fringeSeeds = 2, -- groves and hedges on the fringe of each plot
+	fringeSeeds = 3, -- groves and hedges on the fringe of each plot
 	openGroves = 4,
-	frameHoles = 3, -- plantings per kingdom that fill the emptiest ground of its start view
+	frameHoles = 6, -- plantings per kingdom that fill the emptiest ground of its start view
 	holeGap = 40, -- studs from any other nature that make a spot a hole -- loose groves across the open land
 	fieldHedge = 0.35, -- chance that an outer side of a crop field gets a hedge
 	standShare = 0.7, -- of a Layout stand's `count` the generator plants (the D-047 part budget decides; dense cores read as a forest with fewer)
@@ -1319,11 +1331,7 @@ local function generateNature(layout: any): { Placement }
 			local sites = {}
 			-- the start view's far edge: trees just beyond it show their crowns along the top of the frame (a backdrop), so sites in
 			-- that band count 1.7 times as much
-			local frame = groundPolygon(
-				layout.plots[kingdom].anchors.keep,
-				WorldPlan.VIEW.default.zoom,
-				WorldPlan.VIEW.default.fov
-			)
+			local frame = groundPolygon(layout.plots[kingdom].anchors.keep, WorldPlan.VIEW.default)
 			local farMid, nearMid = (frame[1] + frame[2]) / 2, (frame[3] + frame[4]) / 2
 			local outward = (farMid - nearMid).Unit -- the way the camera looks, on the ground
 			local across = Vector2.new(-outward.Y, outward.X)
@@ -1434,19 +1442,30 @@ local function generateNature(layout: any): { Placement }
 		end
 	end
 
-	-- ---- 4c. fill the holes of each kingdom's start view: the frame is cut into 3 x 3 cells beyond its near quarter (the keep's own towers
-	-- fill that), and in each cell the legal spot farthest from any other nature is a candidate; the emptiest few get a grove, a hedge
-	-- with a flower drift, or a rock group with bushes. Coverage, not chance: no stretch of the start view is left bare.
+	-- ---- 4c. fill the holes of each kingdom's start view: the screen is cut into 3 x 3 cells (the bottom tenth left out), and in each
+	-- cell the legal spot farthest from any other nature is a candidate (the ground round a plot's yard is mostly reserved, so a spot
+	-- may take only a flower tuft or a bush). The emptiest few get what fits: a grove, a hedge with a flower drift or a rock group with
+	-- bushes where there is room, a bush clump or a flower drift where there is little. Coverage, not chance.
 	do
 		local rng = prng(5470)
+		local function room(x: number, z: number): number -- 2: a tree fits, 1: a bush, 0: a flower tuft
+			if legal("tree", 8, x, z, 0.62) then
+				return 2
+			end
+			return if legal("bush", 5.2, x, z, 0) then 1 else 0
+		end
+		local function nearReserved(x: number, z: number, d: number): boolean
+			for _, rect in rects do
+				if WorldPlan.rectDistance(rect, x, z) <= d then
+					return true
+				end
+			end
+			return false
+		end
 		for _, kingdom in KINGDOM_ORDER do
-			local frame = groundPolygon(
-				layout.plots[kingdom].anchors.keep,
-				WorldPlan.VIEW.default.zoom,
-				WorldPlan.VIEW.default.fov
-			)
-			local function at(u: number, v: number): Vector2
-				return frame[4]:Lerp(frame[3], u):Lerp(frame[1]:Lerp(frame[2], u), v)
+			local keepCF = layout.plots[kingdom].anchors.keep
+			local function at(u: number, v: number): Vector2 -- u across the screen, v up it (0..1)
+				return groundPoint(keepCF, WorldPlan.VIEW.default, u * 2 - 1, v * 2 - 1)
 			end
 			local function gapAt(x: number, z: number): number
 				local gap = math.huge
@@ -1461,8 +1480,8 @@ local function generateNature(layout: any): { Placement }
 				for col = 1, 3 do
 					local best, bestGap = nil, 0
 					for _ = 1, 24 do
-						local p = at((col - 1 + rng.next()) / 3, 0.25 + (band - 1 + rng.next()) * 0.25)
-						if legal("tree", 8, p.X, p.Y, 0.62) then
+						local p = at((col - 1 + rng.next()) / 3, 0.1 + (band - 1 + rng.next()) * 0.3)
+						if legal("flower", 3.4, p.X, p.Y, 0) then
 							local gap = gapAt(p.X, p.Y)
 							if gap > bestGap then
 								best, bestGap = p, gap
@@ -1470,7 +1489,7 @@ local function generateNature(layout: any): { Placement }
 						end
 					end
 					if best then
-						table.insert(holes, { x = best.X, z = best.Y, w = bestGap, band = band })
+						table.insert(holes, { x = best.X, z = best.Y, w = bestGap })
 					end
 				end
 			end
@@ -1487,10 +1506,14 @@ local function generateNature(layout: any): { Placement }
 				end
 				if gapAt(hole.x, hole.z) > N.holeGap then -- (an earlier planting may have filled it)
 					planted += 1
+					local fits = room(hole.x, hole.z)
 					local roll = rng.next()
-					if roll < 0.55 then
+					if fits == 2 and roll < 0.5 then
 						grove(rng, hole.x, hole.z, rng.int(3, 5))
-					elseif roll < 0.8 then
+					elseif fits == 2 and roll < 0.75 and nearReserved(hole.x, hole.z, 45) then
+						rockGroup(rng, hole.x, hole.z, rng.int(2, 4), 1, 0)
+						clump(rng, hole.x + 10, hole.z + 6, rng.int(2, 3), 3, false)
+					elseif fits >= 1 then
 						local a = rng.range(0, math.pi)
 						local dx, dz = math.cos(a), math.sin(a)
 						for k = -2, 2 do
@@ -1501,10 +1524,11 @@ local function generateNature(layout: any): { Placement }
 								tryFlower(rng, x, z)
 							end
 						end
-						tryTree(rng, "tree_birch", hole.x, hole.z, "lone_tree", 0.62)
+						if fits == 2 then
+							tryTree(rng, "tree_birch", hole.x, hole.z, "lone_tree", 0.62)
+						end
 					else
-						rockGroup(rng, hole.x, hole.z, rng.int(2, 4), 1, 0)
-						clump(rng, hole.x + 10, hole.z + 6, rng.int(2, 3), 3, false)
+						clump(rng, hole.x, hole.z, rng.int(3, 4), 2.5, true)
 					end
 				end
 			end
@@ -1792,6 +1816,59 @@ local function generateNature(layout: any): { Placement }
 		end
 	end
 
+	-- every look of every family appears at least once (the imported-mesh kit lists all of them, and the KitEnvMesh spec wants the world to
+	-- place each): a variant the draws missed is taken over by the last placement of the family's most used variant. Same footprint, same
+	-- spot, nothing else moves.
+	do
+		local families: { { prefix: string, n: number } } = {
+			{ prefix = "tree_oak", n = 8 },
+			{ prefix = "tree_pine", n = 6 },
+			{ prefix = "tree_birch", n = 6 },
+			{ prefix = "bush", n = 8 },
+			{ prefix = "plant_flowers", n = 6 },
+			{ prefix = "rock_boulder_s", n = 3 },
+			{ prefix = "rock_boulder_m", n = 3 },
+			{ prefix = "rock_boulder_l", n = 3 },
+		}
+		for _, fam in families do
+			local byVariant: { [number]: { number } } = {}
+			local total = 0
+			for i, p in out do
+				if string.sub(p.assetId, 1, #fam.prefix + 1) == fam.prefix .. "_" then
+					local v = tonumber(string.sub(p.assetId, #fam.prefix + 2))
+					if v then
+						byVariant[v] = byVariant[v] or {}
+						table.insert(byVariant[v], i)
+						total += 1
+					end
+				end
+			end
+			if total >= fam.n then
+				for v = 1, fam.n do
+					if not byVariant[v] then
+						local donor, donorN = 1, -1
+						for w = 1, fam.n do
+							local n = if byVariant[w] then #byVariant[w] else 0
+							if n > donorN then
+								donor, donorN = w, n
+							end
+						end
+						local i = table.remove(byVariant[donor]) :: number -- the donor's last placement (it has at least two)
+						local p = out[i]
+						out[i] = {
+							assetId = assetId(fam.prefix, v),
+							cframe = p.cframe,
+							feature = p.feature,
+							scale = p.scale,
+							tint = p.tint,
+						}
+						byVariant[v] = { i }
+					end
+				end
+			end
+		end
+	end
+
 	natureCache[layout] = out
 	return out
 end
@@ -1856,6 +1933,21 @@ function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placeme
 					elseif i == 4 then "prop_cart_02"
 					else assetId("prop_goods", i)
 				place(id, p.X, p.Z, "dressing") -- hand-placed clear of slots, nav and roads (spec)
+			end
+			-- the work areas of the start view (FORGE-02 visual pass 1): hay by the farm and its field lane, a cart and crates by the
+			-- storehouse and the quarry road. Keep-frame offsets near the lanes; the clearance moves each to the nearest legal spot
+			-- (never onto a lane, a slot, a building or a field), 4 + 4 + 12 + 8 + 8 = 36 parts a kingdom
+			for _, extra in
+				{
+					{ "farm_haystack_02", Vector3.new(40, 0, -34) },
+					{ "farm_haystack_02", Vector3.new(38, 0, 42) },
+					{ "prop_cart_01", Vector3.new(-62, 0, -42) },
+					{ "prop_goods_03", Vector3.new(-34, 0, -40) },
+					{ "prop_goods_04", Vector3.new(68, 0, 22) },
+				}
+			do
+				local p = (keep * CFrame.new(extra[2])).Position
+				place(extra[1], p.X, p.Z, "dressing")
 			end
 		end
 	end
