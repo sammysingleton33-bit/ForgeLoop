@@ -26,4 +26,16 @@ M = [
  ("FL-0025", X+"Onboarding.luau", '\t\tearned = state.earned == true,\n', '', "Onboarding", "a flow pays its completeReward only if", "fw"),
  ("FL-0025", X+"Onboarding.luau", '\t\t\tearned = stored.earned == true,\n', '\t\t\tearned = false,\n', "Onboarding", "a flow pays its completeReward only if", "fw"),
  ("FL-0025", S+"OnboardingService.luau", 'local reward = Onboarding.completionReward(flow, state)', 'local reward = flow.completeReward', "Onboarding", "every server step passed over pays no completeReward", "fw"),
+ # D-059: the card docks at the bottom for the start-frame steps (hint.dock); a short screen gets the compact card
+ ("FL-0025", C+"OnboardingController.luau", 'self._dock = if state.hint.dock == "bottom" then "bottom" else "top"', 'self._dock = "top"', "OnboardingController", "docks the card at the bottom centre", "fw"),
+ ("FL-0025", C+"OnboardingController.luau", 'self._dock = if state.hint.dock == "bottom" then "bottom" else "top"', 'self._dock = self._dock', "OnboardingController", "docks the card at the bottom centre", "fw"),
+ ("FL-0025", C+"OnboardingController.luau", 'view.card.Position = UDim2.new(0.5, 0, 1, -Def.CARD_BOTTOM)\n\t\tself:_reserve(nil)', 'view.card.Position = UDim2.new(0.5, 0, 1, -Def.CARD_BOTTOM)\n\t\tself:_reserve(Def.CARD_RESERVE)', "OnboardingController", "docks the card at the bottom centre", "fw"),
+ ("FL-0025", C+"OnboardingController.luau", 'Def.CARD_BOTTOM = 16', 'Def.CARD_BOTTOM = 72', "OnboardingController", "docks the card at the bottom centre", "fw"),
+ ("FL-0025", C+"OnboardingController.luau", 'local short = tall ~= nil and tall <= Def.SHORT_SCREEN', 'local short = false', "OnboardingController", "compacts the card on a short screen", "fw"),
+ ("FL-0025", C+"OnboardingController.luau", 'local short = tall ~= nil and tall <= Def.SHORT_SCREEN', 'local short = tall ~= nil', "OnboardingController", "compacts the card on a short screen", "fw"),
+ ("FL-0025", C+"OnboardingController.luau", 'view.counter.Visible = not short', 'view.counter.Visible = true', "OnboardingController", "compacts the card on a short screen", "fw"),
+ ("FL-0025", C+"OnboardingController.luau", 'view.body.TextWrapped = not short', 'view.body.TextWrapped = true', "OnboardingController", "compacts the card on a short screen", "fw"),
+ ("FL-0025", C+"OnboardingController.luau", 'self:_reserve(Def.CARD_TOP + height + 8)', 'self:_reserve(Def.CARD_RESERVE)', "OnboardingController", "compacts the card on a short screen", "fw"),
+ ("FL-0025", X+"Onboarding.luau", 'if dock ~= nil and dock ~= "top" and dock ~= "bottom" then', 'if false then', "Onboarding", "accepts hint.dock top or bottom", "fw"),
+ ("FL-0025", G+"config/Onboarding.luau", 'body = "Their card shows their job, mood and loyalty.",\n\t\t\t\t\t\tdock = "bottom",', 'body = "Their card shows their job, mood and loyalty.",', "Onboarding", "docks the card at the bottom for the start-frame steps only", "game"),
 ]

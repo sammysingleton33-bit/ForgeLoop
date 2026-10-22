@@ -19,7 +19,7 @@ M = [
  ("FL-0027", C+"NotificationController.luau", 'position = position or self:_rulerPosition(), tint = tint }', 'position = position or self:_rulerPosition() }', "Notification", "payload.tint colours the celebration's effect", "fw"),
  ("FL-0027", X+"NotificationQueue.luau", ' and spec.durationSec == spec.durationSec -- not NaN', '', "Notification", "a NaN duration gets the kind's default", "fw"),
  ("FL-0027", X+"NotificationQueue.luau", 'return if #text > limit then string.sub(text, 1, limit) .. "…" else text', 'return text', "Notification", "a NaN duration gets the kind's default", "fw"),
- ("FL-0027", C+"OnboardingController.luau", '	self:_reserve(Def.CARD_RESERVE)\n', '', "OnboardingController", "keeps the toast stack below the card", "fw"),
+ ("FL-0027", C+"OnboardingController.luau", '		self:_reserve(Def.CARD_TOP + height + 8)\n', '', "OnboardingController", "keeps the toast stack below the card", "fw"),
  ("FL-0027", C+"OnboardingController.luau", '		self:_reserve(nil)\n		return', '		return', "OnboardingController", "keeps the toast stack below the card", "fw"),
  ("FL-0027", C+"NotificationController.luau", 'return if missing then nil else id', 'return id', "Notification", "never asks for the sound id", "fw"),
  ("FL-0027", C+"NotificationController.luau", 'self:_announce(item, spec.silent == true)', 'self:_announce(item, false)', "Notification", "celebration toasts are important", "fw"),
