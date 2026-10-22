@@ -28,7 +28,7 @@ GAME_PROJECTS=("game-001:games/game-001/default.project.json:games/game-001/test
 LOG_DIR="$(mktemp -d)"
 trap 'rm -rf "$LOG_DIR"' EXIT
 LUAU_DIRS=(roblox/src roblox/tests roblox/scripts games)
-EXPECTED_STEPS=$((7 + 3 * ${#GAME_PROJECTS[@]})) # 7 framework steps + (specs, build, place check) per game
+EXPECTED_STEPS=$((8 + 3 * ${#GAME_PROJECTS[@]})) # 8 framework steps + (specs, build, place check) per game
 STEP_TIMEOUT=600 # seconds per Lune step (coreutils `timeout`, when installed): a hung spec cannot stall CI
 # spec folders that run as several Lune steps (run.luau --shard i/n), each under STEP_TIMEOUT:
 # "<game id>/<folder>:<n>". game-001's sim/ took 572 s alone locally on 2026-10-15 (limit 600); its 49 files
