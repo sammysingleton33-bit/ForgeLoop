@@ -12,7 +12,8 @@
 		- From the duel stage through the crowning, both champions hold a ready stance between actions.
 		  A new pair of duellists resets both. Any other stage fades the poses out over DuelPoses.XFADE,
 		  then gives each avatar back to its Animator (a Kit rig goes back to rest).
-		- A late joiner animates from the next event (the next snapshot, at most 0.2 s away).
+		- A late joiner animates from the next event (the next snapshot, at most 0.2 s away). A pair first
+		  seen in the crowning (a late join, or a coronation with no duel) is not posed at all.
 		- Your own presses play at once (FORGE-00's ruling): InputModeArenaController.sent fires for each
 		  action DuelController:act() sent, and the local champion's track predicts it (DuelPoses
 		  predict: a cosmetic guess on this client; the server's next state or event confirms it, or it
@@ -121,6 +122,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_state = nil :: any,
 		_pair = nil :: string?,
 		_running = false,
+		_sawDuel = false, -- this pair's duel stage was seen here (not only its crowning)
 		_stoppedAt = nil :: number?,
 		_sides = { a = {}, b = {} } :: { [string]: any }, -- { model, rig, lookedAt }
 		_out = { a = { weight = 0, body = 0 }, b = { weight = 0, body = 0 } } :: { [string]: any },
@@ -215,8 +217,14 @@ function Controller:onArenaState(state: any)
 			self.poses:reset()
 			self:_releaseAll()
 			self._running = false
+			self._sawDuel = false
 		end
-		if not self._running then
+		if state.stage == "duel" then
+			self._sawDuel = true
+		end
+		-- A pair first seen in the crowning (a late join, or a coronation with no duel) is not posed: this
+		-- client saw no `ended`, so it has no end pose to show, and a ready stance would be wrong.
+		if not self._running and self._sawDuel then
 			self._running = true
 			self._stoppedAt = nil
 			self.poses:start(now)
@@ -263,8 +271,9 @@ end
 -- The local champion's own press, sent: it plays at once on this client (DuelPoses predict).
 function Controller:onPress(action: any)
 	if self._preview ~= nil or type(action) ~= "string" then
-		return -- outside a duel the track is not active, so its predict refuses the press
+		return
 	end
+	-- Outside a duel the tracks are not active, so predict refuses the press.
 	local side = self:_localSide()
 	if side ~= nil then
 		self.poses:predict(side, action, self:_now())
