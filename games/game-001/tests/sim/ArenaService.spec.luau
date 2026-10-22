@@ -1144,10 +1144,8 @@ describe("ArenaService: the champions' bodies, gear and venue (FL-0140)", functi
 			-- weapon's grip frame does at rest (the fake arm is unturned)
 			local frame = w.Part0.CFrame * w.C0 * w.C1:Inverse() * attachment.CFrame
 			expect((frame.UpVector - Vector3.new(0, 0, -1)).Magnitude < 1e-3).toBe(true)
-			expect(
-				(frame.LookVector - Vector3.new(0, 1, 0)).Magnitude < 1e-3
-					or (frame.LookVector - Vector3.new(0, -1, 0)).Magnitude < 1e-3
-			).toBe(true)
+			-- and not half-turned about the arm: the frame's look (-Z) points down, as the weapon's grip frame does
+			expect((frame.LookVector - Vector3.new(0, -1, 0)).Magnitude < 1e-3).toBe(true)
 			local aiWeapon = nil
 			for _, entry in swordShieldWeapons(world) do
 				if entry.opts ~= nil then

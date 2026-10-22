@@ -13,4 +13,5 @@ M = [
  ("FL-0140S", FG, 'local arm = partNamed(model, "LeftArm")', 'local arm = partNamed(model, "RightArm")', "sim/ArenaService", "puts the shield on the AI figure's left hand and the sword alone"),
  ("FL-0140S", FG, 'return arm, if arm then CFrame.new(0, -arm.Size.Y / 2, 0) * CFrame.Angles(-math.pi / 2, 0, 0) else nil', 'return arm, if arm then CFrame.new(0, -arm.Size.Y / 2, 0) else nil', "sim/ArenaService", "puts the shield on the AI figure's left hand and the sword alone"),
  ("FL-0140S", FG, 'hasGrip = character:FindFirstChild("LeftGripAttachment", true) ~= nil', 'hasGrip = character:FindFirstChild("LeftGripAttachment") ~= nil', "sim/ArenaService", "gives a human champion the shield accessory and the sword alone"),
+ ("FL-0140S", FG, 'CFrame.new(0, -arm.Size.Y / 2, 0) * CFrame.Angles(-math.pi / 2, 0, 0) else nil', 'CFrame.new(0, -arm.Size.Y / 2, 0) * CFrame.Angles(-math.pi / 2, math.pi, 0) else nil', "sim/ArenaService", "puts the shield on the AI figure's left hand and the sword alone"),
 ]
