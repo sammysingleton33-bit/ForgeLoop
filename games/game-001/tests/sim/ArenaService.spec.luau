@@ -1140,6 +1140,14 @@ describe("ArenaService: the champions' bodies, gear and venue (FL-0140)", functi
 			local point = (w.Part0.CFrame * w.C0 * w.C1:Inverse() * attachment.CFrame).Position
 			local hand = (arm.CFrame * CFrame.new(0, -arm.Size.Y / 2, 0)).Position
 			expect((point - hand).Magnitude < 1e-3).toBe(true) -- at the end of the arm, the right hand's mirror
+			-- in the hand's grip frame, turned like the weapon's: its up (+Y) runs along the arm's forward (-Z), as the
+			-- weapon's grip frame does at rest (the fake arm is unturned)
+			local frame = w.Part0.CFrame * w.C0 * w.C1:Inverse() * attachment.CFrame
+			expect((frame.UpVector - Vector3.new(0, 0, -1)).Magnitude < 1e-3).toBe(true)
+			expect(
+				(frame.LookVector - Vector3.new(0, 1, 0)).Magnitude < 1e-3
+					or (frame.LookVector - Vector3.new(0, -1, 0)).Magnitude < 1e-3
+			).toBe(true)
 			local aiWeapon = nil
 			for _, entry in swordShieldWeapons(world) do
 				if entry.opts ~= nil then
@@ -1169,8 +1177,9 @@ describe("ArenaService: the champions' bodies, gear and venue (FL-0140)", functi
 				FindFirstChildOfClass = function(_self: any, _class: string)
 					return humanoid
 				end,
-				FindFirstChild = function(_self: any, name: string, _recursive: boolean?)
-					return if hasGrip and name == "LeftGripAttachment" then {} else nil
+				-- an R15 hand holds LeftGripAttachment a level down (LeftHand), so only a recursive search finds it
+				FindFirstChild = function(_self: any, name: string, recursive: boolean?)
+					return if hasGrip and name == "LeftGripAttachment" and recursive == true then {} else nil
 				end,
 			}
 			figures:wear(character, { color = Color3.new(1, 0, 0), weapon = weapon, armour = "medium" })
