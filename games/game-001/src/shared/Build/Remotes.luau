@@ -8,7 +8,7 @@
 		Build.Place(type, position, rot) -> (buildingId?, reason?)    charges through the treasury; placedBy
 		Build.PlaceGate(wallId) -> (gateId?, reason?)   FL-0126 part 2: one of the player's kingdom's wall pieces becomes a gate, in
 		                                 place and facing the same way: the wall goes (half its level-1 price comes back, as on a cancelled
-		                                 site), the gate is a new site charged its level-1 price. One gate per kingdom (limit_reached). Reasons:
+		                                 site), the gate is a new site charged its level-1 price. One gate per kingdom (limit_reached). Refusals:
 		                                 not_found, not_owner, not_a_wall, limit_reached, busy (the wall is being upgraded), under_attack,
 		                                 blocked / out_of_territory (the gate is thicker than the wall), cannot_afford, match_not_active.
 		Build.PlaceLine("wall", from: Vector3, to: Vector3) -> ({ buildingId }?, reason?)   FL-0126 part 2: a straight wall of
