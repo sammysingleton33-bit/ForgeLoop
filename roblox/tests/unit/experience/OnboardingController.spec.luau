@@ -11,6 +11,7 @@ local IDLE_HINTS = { Expansion = "Try a building you have not built yet.", Confl
 
 describe("OnboardingController (client)", function()
 	local env, controller, gui, remotes, notifications, settings
+	local screenTall: number? = nil -- the card's screen height in px (nil: unknown, the full card)
 
 	local function remote(name)
 		local root = env.ReplicatedStorage:FindFirstChild("ForgeRemotes")
@@ -51,6 +52,7 @@ describe("OnboardingController (client)", function()
 	end
 
 	beforeEach(function()
+		screenTall = nil
 		env = MockEnv.new({ isServer = false, localPlayer = { userId = 1001 }, services = { GuiService = {} } })
 		remotes = {
 			state = remote("OnboardingState"),
@@ -79,7 +81,13 @@ describe("OnboardingController (client)", function()
 				name = "OnboardingController",
 				dependencies = { "SettingsController" },
 				new = function(e, r)
-					return OnboardingDef.create(e, r, { playerGui = gui, idleHints = IDLE_HINTS })
+					return OnboardingDef.create(e, r, {
+						playerGui = gui,
+						idleHints = IDLE_HINTS,
+						screenHeight = function()
+							return screenTall
+						end,
+					})
 				end,
 			},
 			{
@@ -170,6 +178,59 @@ describe("OnboardingController (client)", function()
 		expect(OnboardingDef.CARD_RESERVE).toBe(OnboardingDef.CARD_TOP + OnboardingDef.CARD_HEIGHT + 8)
 		controller:skip()
 		expect(notifications.reserved[#notifications.reserved]).toBe("onboarding:nil")
+	end)
+
+	it("docks the card at the bottom centre when the step's hint says so, with no toast reserve (D-059)", function()
+		controller:apply(state({ hint = { title = "Welcome, ruler.", body = "Pan with WASD.", dock = "bottom" } }))
+		local card = gui:FindFirstChild("ForgeOnboarding"):FindFirstChild("Card")
+		-- at the start frame the keep fills the top of the screen: the card waits below it
+		expect(card.AnchorPoint).toEqual(Vector2.new(0.5, 1))
+		expect(card.Position).toEqual(UDim2.new(0.5, 0, 1, -OnboardingDef.CARD_BOTTOM))
+		expect(OnboardingDef.CARD_BOTTOM).toBe(16)
+		expect(notifications.reserved[#notifications.reserved]).toBe("onboarding:nil")
+		-- the next step (the build menu and the placement bar sit at the bottom) takes the top back
+		controller:apply(state({ step = 3, hint = { title = "Build on a free plot", body = "Tap the marked plot." } }))
+		expect(card.AnchorPoint).toEqual(Vector2.new(0.5, 0))
+		expect(card.Position).toEqual(UDim2.new(0.5, 0, 0, OnboardingDef.CARD_TOP))
+		expect(notifications.reserved[#notifications.reserved]).toBe(`onboarding:{OnboardingDef.CARD_RESERVE}`)
+		-- a tip over a docked step sits where its own hint says (the top by default)
+		controller:apply(state({ step = 1, hint = { title = "Welcome, ruler.", dock = "bottom" } }))
+		expect(card.AnchorPoint).toEqual(Vector2.new(0.5, 1))
+		controller:apply({
+			tip = true,
+			flowId = "tip_siege",
+			total = 1,
+			step = 1,
+			hint = { title = "Your keep is under siege" },
+			done = false,
+			skipped = false,
+		})
+		expect(card.AnchorPoint).toEqual(Vector2.new(0.5, 0))
+		expect(notifications.reserved[#notifications.reserved]).toBe(`onboarding:{OnboardingDef.CARD_RESERVE}`)
+	end)
+
+	it("compacts the card on a short screen: shorter, one line of body, the reserve following it", function()
+		screenTall = OnboardingDef.SHORT_SCREEN + 1
+		controller:apply(state())
+		local card = gui:FindFirstChild("ForgeOnboarding"):FindFirstChild("Card")
+		local body = card:FindFirstChild("Body")
+		expect(card.Size.Y.Offset).toBe(OnboardingDef.CARD_HEIGHT)
+		expect(body.TextWrapped).toBe(true)
+		expect(card:FindFirstChild("Counter").Visible).toBe(true)
+		screenTall = 311 -- a 750 x 311 phone held sideways
+		controller:apply(state({ step = 3 }))
+		expect(card.Size.Y.Offset).toBe(OnboardingDef.CARD_HEIGHT_SHORT)
+		expect(OnboardingDef.CARD_HEIGHT_SHORT).toBe(60)
+		expect(body.TextWrapped).toBe(false)
+		expect(body.TextTruncate).toBe(Enum.TextTruncate.AtEnd)
+		expect(card:FindFirstChild("Counter").Visible).toBe(false) -- Skip sits where "n/total" was
+		expect(body.Position.Y.Offset + body.Size.Y.Offset <= OnboardingDef.CARD_HEIGHT_SHORT).toBe(true)
+		-- the Skip button keeps its 44 px touch target inside the short card
+		local skip = card:FindFirstChild("Skip")
+		expect(skip.Size.Y.Offset).toBe(44)
+		expect(OnboardingDef.CARD_HEIGHT_SHORT + skip.Position.Y.Offset >= 0).toBe(true)
+		local reserve = OnboardingDef.CARD_TOP + OnboardingDef.CARD_HEIGHT_SHORT + 8
+		expect(notifications.reserved[#notifications.reserved]).toBe(`onboarding:{reserve}`)
 	end)
 
 	it("Skip tells the server and hides the card at once", function()

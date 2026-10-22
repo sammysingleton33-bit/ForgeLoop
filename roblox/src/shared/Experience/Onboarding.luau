@@ -21,7 +21,7 @@
 		Step = {
 			id: string (PascalCase; the funnel step name),
 			trigger: { auto: true } | { bus: string, match: { [string]: any }? } | { client: string },
-			hint: { title: string, body: string?, target: Target? },
+			hint: { title: string, body: string?, target: Target?, dock: ("top" | "bottom")? },
 			expectSec: number,                -- design estimate, used for the 30 s / first-reward checks
 			interactive: boolean?,            -- the player does something meaningful (move, tap, build)
 			nudgeAfterSec: number?,           -- hint escalates (arrow pulses, OnboardingHintEscalated)
@@ -202,6 +202,10 @@ function Onboarding.validate(config: any, knownBusEvents: { string }): { string 
 				table.insert(problems, `{at}: hint.title required`)
 			elseif #step.hint.title > 60 or (step.hint.body and #step.hint.body > 140) then
 				table.insert(problems, `{at}: hint too long (title <= 60, body <= 140 characters; teach by doing)`)
+			end
+			local dock = step.hint and step.hint.dock
+			if dock ~= nil and dock ~= "top" and dock ~= "bottom" then
+				table.insert(problems, `{at}: hint.dock must be "top" or "bottom" (where the card sits, D-059)`)
 			end
 			local target = step.hint and step.hint.target
 			if target ~= nil then

@@ -138,6 +138,16 @@ describe("Experience/Onboarding config rules", function()
 		expect(text).toContain("only one flow may log the onboarding funnel")
 	end)
 
+	it("accepts hint.dock top or bottom and rejects anything else (D-059)", function()
+		expect(problemsOf(function(c)
+			c.flows[1].steps[1].hint.dock = "bottom"
+			c.flows[1].steps[2].hint.dock = "top"
+		end)).toBe("")
+		expect(problemsOf(function(c)
+			c.flows[1].steps[1].hint.dock = "left"
+		end)).toContain("hint.dock must be")
+	end)
+
 	it(
 		"accepts a tip and rejects one that has two steps, logs the funnel, pays, never hides or is auto (FL-0137)",
 		function()

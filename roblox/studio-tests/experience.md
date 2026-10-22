@@ -148,11 +148,12 @@ Each passed or timed-out step is still logged as its funnel step (Roblox counts 
 
 Fresh player = a new Play Solo session (VS-1 keeps no progress between sessions).
 1. Play Solo on the game-001 place. Filter Output for `onboarding` and `analytics funnel Onboarding`. Start a stopwatch when you spawn.
-2. At spawn: the aerial view over your keep, and the card "Welcome, ruler. Your kingdom awaits.", then "Tap a citizen to see what they think".
-3. Tap a citizen. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The citizen card opens, and the tutorial card moves to "Build on a free plot", with the nearest plot marker highlighted.
+2. At spawn: the aerial view over your keep, and the card "Welcome, ruler. Your kingdom awaits.", then "Tap a citizen to see what they think". For these two steps the card sits at the **bottom centre**, clear of the keep's face, the Build/Kingdom rail and the top bar (D-059). Screenshot **E6-2**.
+3. Tap a citizen. Record the time (target: first meaningful interaction ≤ 30 s from spawn). The citizen card opens, and the tutorial card moves to "Build on a free plot", with the nearest plot marker highlighted. From this step on the card is back at the **top centre**: open the build menu and place the House, and check that the card never covers the placement bar's Turn, Cancel or Place buttons. Screenshot **E6-3** while placing.
 4. Tap the highlighted plot marker (a small plot: the menu offers a House, not a Farm), choose a House and confirm. The card moves to 'A citizen with "!" has a request'. Tap a citizen with a "!" bubble and choose an answer.
 5. Build a Barracks, then recruit 3 soldiers from the Army rail button (highlighted by the Recruit card), and press Send to capture. The card points at the objective until the capture, and then the "Tutorial complete" celebration plays.
 6. On any step, wait 30–60 s without acting: the card border (and the arrow, where there is a target) turns gold (escalation).
+7. Device emulator, a phone held sideways (about 750 × 311): steps 1–2 show the compact card at the bottom centre, about 60 px tall: the title, one line of body ("Drag or WASD to pan, pinch or wheel to zoom." in full, not cut short) and Skip tutorial, with no step counter. Skip is easy to tap and does not cover the keep door. Screenshot **E6-7**.
 
 Expected `env.log` order (the adapter writes every call; `sent=true` means it was handed to Roblox, which records nothing from Studio):
 ```
@@ -186,6 +187,7 @@ History:
 - 2026-10-12 FORGE-04: rewritten for onboarding v2 (D-030, FL-0092): inspect → build → answer → recruit → capture; passed-over steps (`requires`), the Build-button hint until FL-0081.
 - 2026-10-13 FORGE-04: FL-0081 follow-ups (#99): the build hint points at the plot markers again, and the Recruit hint at the Army rail button (`HUD.ArmyButton`).
 - 2026-10-13 FORGE-04: AnswerCitizen follows G9 `CitizenAnswered` (FL-0108, D-044 (3)); the panel's client report no longer counts.
+- 2026-10-22 FORGE-04: D-059 card placement: steps 1–2 at the bottom centre (`hint.dock`), the build steps at the top; the compact card on a short screen (step 7); the step-1 body shortened so it fits one line.
 
 ## E7 — Notifications and celebrations (FL-0027)
 Needs:
@@ -212,7 +214,7 @@ Steps
 3. Settings → Notifications → Important. Place a building: no "placed" toast. A warning or error notice from the HUD, if one comes up, still shows. Set it back to All.
 4. Finish the tutorial (E6): a "Tutorial complete" toast with the onboarding.complete sound (when chosen, user sounds handoff) and the gold burst over the ruler. Skipping the tutorial in a new session shows no celebration.
 5. Device emulator, a small phone: the stack stays inside the safe area, does not cover the top bar or the thumbstick, and its text is readable; each card is at most about half the screen wide.
-6. Same phone, during the tutorial (E6) with HUD notices coming in: the toasts start below the onboarding card, and Skip and the step counter stay visible and tappable.
+6. Same phone, during the tutorial (E6) with HUD notices coming in: the toasts start below the onboarding card while it is at the top (from step 3), and Skip stays visible and tappable. On a phone held sideways the compact card has no step counter (D-059); on a taller phone the counter shows.
 
 Pass: steps 1–6 hold. Note anything that feels noisy (too many toasts in a busy minute) for the FL-0062 tuning.
 

@@ -21,9 +21,16 @@
 	the showHints setting is off (the server hides it by itself).
 
 	View (thin, built with Instances until FORGE-03's Panel/Button land; then only _render changes):
-	- one small card at the top centre (ScreenGui DisplayOrder 60, the onboarding band of interfaces §9):
-	  title, one line of body, "n/total", and a Skip button with a 44 px touch target; never modal,
-	  never captures input
+	- one small card (ScreenGui DisplayOrder 60, the onboarding band of interfaces §9): title, one line of
+	  body, "n/total", and a Skip button with a 44 px touch target; never modal, never captures input
+	- where (D-059, FORGE-03's start-frame review): at the top centre, CARD_TOP below the top inset, unless
+	  the step's hint says dock = "bottom": then at the bottom centre, CARD_BOTTOM above the bottom edge.
+	  The game docks the steps seen at the start frame (the keep fills the top of it) and keeps the top
+	  for steps that open the build menu and the placement bar (both sit at the bottom). The toast
+	  reserve (NotificationController:reserveTop) follows the card: only a card at the top needs it.
+	- a short screen (SHORT_SCREEN px tall or less: a phone held sideways) gets a compact card,
+	  CARD_HEIGHT_SHORT tall with a one-line body and no step counter (Skip fills that corner), so less
+	  of the world and the build menu is covered
 	- world targets (hint.target.kind = "world"): a Highlight plus an arrow over the instance tagged
 	  hint.target.tag that is nearest to the character (game-001: WorldService's ResourceNode,
 	  BuildZone, ObjectiveZone tags, CONTRACTS G10); UI targets: a UIStroke on the GuiObject whose
@@ -53,7 +60,10 @@ Def.REACH_STUDS = 15
 Def.POLL_SEC = 0.25
 Def.IDLE_HINT_SEC = 6
 Def.CARD_TOP = 72 -- px below the top inset (the card is centred, up to 420 px wide)
+Def.CARD_BOTTOM = 16 -- px above the bottom edge, for a step whose hint has dock = "bottom" (D-059)
 Def.CARD_HEIGHT = 88
+Def.SHORT_SCREEN = 420 -- px tall or less: the compact card (a 750 x 311 phone held sideways)
+Def.CARD_HEIGHT_SHORT = 60
 -- While the card shows, NotificationController keeps its stack below it (on phones the card spans
 -- the width, and the stack would cover Skip).
 Def.CARD_RESERVE = Def.CARD_TOP + Def.CARD_HEIGHT + 8
@@ -70,11 +80,13 @@ function Def.create(env: any, registry: any, options: { [string]: any }?)
 		_registry = registry,
 		_settings = registry:get("SettingsController"),
 		_playerGui = opts.playerGui,
+		_screenHeight = opts.screenHeight, -- specs: () -> px; else the card's ScreenGui AbsoluteSize
 		_idleHints = opts.idleHints or OnboardingConfig.idleHints or {},
 		_links = {},
 		_connections = {},
 		_view = nil :: any,
 		_marks = {},
+		_dock = "top",
 		_detectorToken = 0,
 		state = nil :: any,
 		tip = nil :: any,
@@ -340,7 +352,24 @@ function OnboardingController:_build(): any
 			self:_onButton()
 		end)
 	end)
-	return { gui = gui, card = card, stroke = stroke, title = title, body = body, counter = counter, skip = skip }
+	pcall(function() -- a resize (a phone turned) re-lays the card; Lune instances have no such signal
+		table.insert(
+			self._connections,
+			gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+				self:_layout()
+			end)
+		)
+	end)
+	return {
+		gui = gui,
+		card = card,
+		limit = limit,
+		stroke = stroke,
+		title = title,
+		body = body,
+		counter = counter,
+		skip = skip,
+	}
 end
 
 -- The tagged instance nearest to the local character (the first one when there is no character yet).
@@ -440,7 +469,8 @@ function OnboardingController:_render()
 		return
 	end
 	view.gui.Enabled = true
-	self:_reserve(Def.CARD_RESERVE)
+	self._dock = if state.hint.dock == "bottom" then "bottom" else "top"
+	self:_layout()
 	view.title.Text = state.hint.title or ""
 	view.body.Text = state.hint.body or ""
 	view.counter.Text = if tutorial then `{state.step}/{state.total}` else ""
@@ -448,6 +478,48 @@ function OnboardingController:_render()
 	view.stroke.Color = if state.escalated then GOLD else INK
 	view.stroke.Transparency = if state.escalated then 0 else 0.6
 	self:_mark(state.hint.target, state.escalated)
+end
+
+function OnboardingController:_screenTall(): number?
+	if self._screenHeight then
+		return self._screenHeight()
+	end
+	local view = self._view
+	if view == nil then
+		return nil
+	end
+	local ok, size = pcall(function() -- unknown before layout, and headless (Lune has no AbsoluteSize)
+		return view.gui.AbsoluteSize.Y
+	end)
+	return if ok and size > 0 then size else nil
+end
+
+-- Where the card sits and how tall it is: the step's dock (top unless the hint says "bottom") and the
+-- screen's height (compact at SHORT_SCREEN px or less). The toast reserve follows a card at the top only.
+function OnboardingController:_layout()
+	local view = self._view
+	if view == nil or not view.gui.Enabled then
+		return
+	end
+	local tall = self:_screenTall()
+	local short = tall ~= nil and tall <= Def.SHORT_SCREEN
+	local height = if short then Def.CARD_HEIGHT_SHORT else Def.CARD_HEIGHT
+	view.card.Size = UDim2.new(0.92, 0, 0, height)
+	view.limit.MaxSize = Vector2.new(420, height)
+	view.body.TextWrapped = not short
+	view.body.TextTruncate = if short then Enum.TextTruncate.AtEnd else Enum.TextTruncate.None
+	view.body.Position = UDim2.fromOffset(14, if short then 30 else 34)
+	view.body.Size = UDim2.new(1, -120, 0, if short then 20 else 44)
+	view.counter.Visible = not short -- Skip fills the short card's right side, where "n/total" sits
+	if self._dock == "bottom" then
+		view.card.AnchorPoint = Vector2.new(0.5, 1)
+		view.card.Position = UDim2.new(0.5, 0, 1, -Def.CARD_BOTTOM)
+		self:_reserve(nil)
+	else
+		view.card.AnchorPoint = Vector2.new(0.5, 0)
+		view.card.Position = UDim2.new(0.5, 0, 0, Def.CARD_TOP)
+		self:_reserve(Def.CARD_TOP + height + 8)
+	end
 end
 
 -- Keeps NotificationController's toast stack below the card while it shows (nil frees the space).

@@ -95,7 +95,11 @@ return table.freeze({
 					trigger = { auto = true },
 					hint = {
 						title = "Welcome, ruler. Your kingdom awaits.",
-						body = "Pan with WASD or drag, zoom with the wheel or a pinch.",
+						body = "Drag or WASD to pan, pinch or wheel to zoom.",
+						-- D-059: at the start frame the keep fills the top of the screen; the card waits at the
+						-- bottom for steps 1-2 and goes back to the top for the build steps (the build menu and
+						-- the placement bar sit at the bottom; FORGE-03's start-frame review, FORGE-07 M1 on #314)
+						dock = "bottom",
 					},
 					expectSec = 2,
 				},
@@ -105,6 +109,7 @@ return table.freeze({
 					hint = {
 						title = "Tap a citizen to see what they think",
 						body = "Their card shows their job, mood and loyalty.",
+						dock = "bottom",
 					},
 					expectSec = 18,
 					interactive = true,

@@ -83,6 +83,21 @@ describe("game-001 VS-1 onboarding config", function()
 		expect(FLOW.version).toBe(2)
 	end)
 
+	it("docks the card at the bottom for the start-frame steps only; the build steps keep the top (D-059)", function()
+		local docked = {}
+		for _, step in FLOW.steps do
+			if step.hint.dock == "bottom" then
+				table.insert(docked, step.id)
+			end
+		end
+		-- FORGE-03's review: at the start frame a top card covers the keep; from BuildOnPlot on the build
+		-- menu and the placement bar sit at the bottom (FORGE-07 M1 on #314: Skip over Place on a phone)
+		expect(docked).toEqual({ "Spawn", "InspectCitizen" })
+		for _, tip in tips() do
+			expect(tip.steps[1].hint.dock).toBeNil()
+		end
+	end)
+
 	it("VS-1 grants no rewards: no step reward, no completeReward, no firstRewardSec (BRIEF §7)", function()
 		for _, flow in OnboardingConfig.flows do
 			expect(flow.completeReward).toBeNil()
