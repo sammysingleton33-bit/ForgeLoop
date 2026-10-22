@@ -58,7 +58,18 @@ end)
 describe("Kingdom/Types (G2)", function()
 	it("lists exactly the contract ids", function()
 		expect(Types.KINGDOM_IDS).toEqual({ "crimson", "azure", "emerald", "gold" })
-		expect(Types.JOB_IDS).toEqual({ "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "soldier" })
+		expect(Types.JOB_IDS).toEqual({
+			"idle",
+			"farmer",
+			"woodcutter",
+			"miner",
+			"builder",
+			"hauler",
+			"soldier",
+			"archer",
+			"knight",
+			"ram",
+		})
 		expect(#Types.BUILDING_TYPES).toBe(10)
 		expect(Types.MATCH_PHASES[1]).toBe("Lobby")
 		expect(Types.MATCH_PHASES[6]).toBe("Results")

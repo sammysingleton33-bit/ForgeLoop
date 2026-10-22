@@ -6,7 +6,8 @@
 		Types.KINGDOM_IDS   { "crimson", "azure", "emerald", "gold" }
 		Types.RESOURCE_IDS  { "food", "wood", "stone", "gold" }
 		Types.ENTITY_KINDS  { "citizen", "soldier", "governor" }
-		Types.JOB_IDS       { "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "soldier" }
+		Types.JOB_IDS       { "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "soldier", "archer", "knight",
+		                      "ram" }   (the last three are the unit kind of a soldier entity, never a citizen job)
 		Types.BUILDING_TYPES{ "keep", "house", "farm", "storehouse", "lumbercamp", "quarry", "barracks",
 		                      "watchtower", "wall", "gate" }
 		Types.MATCH_PHASES  { "Lobby", "Founding", "Expansion", "Conflict", "Endgame", "Results" }
@@ -18,7 +19,17 @@ export type KingdomId = "crimson" | "azure" | "emerald" | "gold"
 export type ResourceId = "food" | "wood" | "stone" | "gold"
 export type EntityId = number
 export type EntityKind = "citizen" | "soldier" | "governor"
-export type JobId = "idle" | "farmer" | "woodcutter" | "miner" | "builder" | "hauler" | "soldier"
+export type JobId =
+	"idle"
+	| "farmer"
+	| "woodcutter"
+	| "miner"
+	| "builder"
+	| "hauler"
+	| "soldier"
+	| "archer"
+	| "knight"
+	| "ram"
 export type BuildingType =
 	"keep"
 	| "house"
@@ -65,7 +76,18 @@ local Types = {}
 Types.KINGDOM_IDS = table.freeze({ "crimson", "azure", "emerald", "gold" })
 Types.RESOURCE_IDS = table.freeze({ "food", "wood", "stone", "gold" })
 Types.ENTITY_KINDS = table.freeze({ "citizen", "soldier", "governor" })
-Types.JOB_IDS = table.freeze({ "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "soldier" })
+Types.JOB_IDS = table.freeze({
+	"idle",
+	"farmer",
+	"woodcutter",
+	"miner",
+	"builder",
+	"hauler",
+	"soldier",
+	"archer",
+	"knight",
+	"ram",
+})
 Types.BUILDING_TYPES = table.freeze({
 	"keep",
 	"house",
