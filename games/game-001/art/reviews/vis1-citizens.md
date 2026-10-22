@@ -86,3 +86,14 @@ farmer's disc (4.3) is wider than the 3.5-stud work slot spacing (handoff).
 By the geometry the line is already crossed at x1.25: a citizen's head top is level with a house door's top (and its hat and tool higher: figure top with the hoe or pick 7.9 to 8.6 at x1.0, 9.9 to 10.8 at x1.25). x1.6 is 1.26 house doors tall. Whether that reads as "readable" or "giant" is a taste call for FORGE-00 and the owner; the pictures are the evidence, the door heights are the measure. (In the storehouse picture the builders stand nearer the camera than the house, so the picture alone cannot compare their height with its door.)
 
 The numbers for x1.6 and x2.0 are the x1.0 measure times the factor (the measure is linear in the scale). Not Studio: ScaleTo scales about the model pivot, EntityController decides the feet (root height) and the bubbles.
+
+## Tools and props pass 3 (2026-10-22, branch `forge/02-blender-visual-citizens-tools`, stacked on #317): job-coded saturated tool heads
+Every job's tool head (the hauler's sack) is now one saturated colour: hoe blade magenta, axe bit cyan, pick tines violet, mallet head lime, sack orange; handles are ink; none is steel,
+wood or a kingdom colour, each is >= 49 dE from the other jobs' and >= 32 dE from grass / ground (KitCitizenAerial). Hoe 6.76 -> 7.28 long (blade 1.43 x 1.69 -> 2.23 x 2.64), axe 5.07 -> 5.85
+(bit 2.47 -> 3.71 long), farmer's straw disc 3.41 -> 2.79 (HAT_SCALE 0.9); the pick tines, the mallet head and the sack keep their sizes (the Pose sweeps, the pot and the hauler's hair
+stop them). At RIG_SCALE 1.5 (`citizen_screen.py measure --scale 1.5`, sim crimson set): body 95.7 px desktop / 27.6 phone (unchanged by this pass), FIGURE with hat and tool 111.0 -> 117.7 px
+desktop and 32.0 -> 33.9 phone. Images `img/vis1-citizens3-{before,after}-x15-*.jpg` (opened): in the 240 px tiles at 1:1 every job is nameable by its tool before the head
+and body: magenta blades over the farm, cyan bits at the lumber camp, violet tines on the miners, a lime mallet on the builder, the orange sack on the hauler; before, all of it was
+steel grey, dirt brown or pale yellow. On the full 1600 x 900 start frame at x1.5 the orange sack at the keep door, the magenta hoes on the farm and the cyan axe bits at the top are the
+first things the eye finds; on the 750 x 311 phone frame the same three register as coloured dots about 5 px across and the rest are still specks (the violet pick and lime mallet do not
+show). Honest limit: the colours name the job once you look at the figure; they do not make 13 citizens easy to count at a glance on a phone.
