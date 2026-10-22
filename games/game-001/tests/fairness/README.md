@@ -20,6 +20,18 @@ The other specs prove the harness itself on a local duel double and the design n
 
 ## Run it
 
+**The merge gate** (real `Arena/DuelModel` + config `Support`; what CI and `check.sh` run, and the only
+numbers to quote for the game):
+
+```bash
+lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests/fairness FairnessGate                       # quick, in check.sh
+FORGE_FAIRNESS_FULL=1 lune run roblox/tests/harness/run.luau --project games/game-001/default.project.json --specs games/game-001/tests/fairness FairnessGate  # the full sweep (CI "fairness" job on main, ~14 min)
+```
+
+**The CLI below is not the gate** (FL-0146): it runs the local `DuelDouble` with the design numbers
+(`DesignSupport`) and measures the harness. Its exit line and report say so. A bound failing here is not a
+balance finding.
+
 ```bash
 lune run games/game-001/tests/fairness/run.luau            # average skill, 200 duels per cell (~3 s)
 lune run games/game-001/tests/fairness/run.luau --full     # 3 skills x every tier/perk set + 12 loadouts, 2000 per cell (~4-5 min)
