@@ -129,11 +129,14 @@ local HEAD_Y = NECK_Y + HEAD_D / 2 - 0.06 -- head centre (4.64)
 -- HEAD_Y - NECK_Y = 0.74 x HEAD_SCALE above the neck, so it still sits on the shoulders; a tool is scaled about its butt (a sack about its
 -- bottom front) so the grip stays in the fist and the sack stays against the back. Soldiers, governors and the mesh kit keep 1.
 Character.HEAD_SCALE = 1.3
-Character.TOOL_SCALE = 1.3
-Character.TOOL_SCALES = table.freeze({ hammer = 1.15 }) -- the mallet swings past the hard hat and the bigger head: any bigger and it clips them in the work and fight poses
+Character.TOOL_SCALE = 1.5 -- handles: 1.3 in pass 2
+Character.TOOL_HEAD_SCALE = 1.45 -- tool heads (blade, bit, tines) grow this much more, about their own centres
+Character.TOOL_HEAD_SCALES = table.freeze({ hammer = 1, axe = 1.3, pick = 1 }) -- pick = 1: the tines are long and thin, bigger they meet the pot in the cheer
+Character.TOOL_THICKNESS = 1.15 -- and the handle is this much thicker than its length scale says
+Character.TOOL_SCALES = table.freeze({ hoe = 1.4, pick = 1.3, hammer = 1.15 }) -- the mallet swings past the hard hat and the bigger head: any bigger and it clips them in the work and fight poses
 Character.SACK_SCALE = 1.15 -- the sack is bigger than the tools' handles already (2.7 across): any bigger and it meets the hauler's long hair
 Character.NECK_LIFT = 0.07 -- the bigger head sits this much higher (it still touches the shoulders): the raised arm keeps its 0.2 from it
-Character.HAT_SCALE = table.freeze({ farmer = 1.1 }) -- the straw disc is the widest thing on a citizen (3.1) and work slots are 3.5 apart
+Character.HAT_SCALE = table.freeze({ farmer = 0.9 }) -- the straw disc is the widest thing on a citizen (3.1) and work slots are 3.5 apart
 
 Character.ROOT_HEIGHT = 3.2 -- Root centre above the feet (Kit.CHARACTER_ROOT_HEIGHT), rig and LOD alike
 Character.LOD_ROOT_HEIGHT = Character.ROOT_HEIGHT
@@ -148,8 +151,7 @@ Character.DETAIL_ATTRIBUTE = "KitDetail" -- true on every detail part, so the cl
 
 local STEEL = Color3.fromRGB(176, 182, 192)
 local STEEL_DARK = Color3.fromRGB(84, 90, 100)
-local BLADE = Color3.fromRGB(138, 146, 158)
-local BURLAP = Color3.fromRGB(244, 232, 140) -- the hauler's sack: pale grain yellow (the old brown sackcloth was the colour of the fields and roads: dE 3 from "Ground"; white merged with the builder's hat)
+local BURLAP = Color3.fromRGB(255, 128, 0) -- the hauler's sack: orange, the saturated hue of a job-coded prop (pass 3; the pale yellow it had merged with the gold kingdom and the straw hats)
 local LINEN = Color3.fromRGB(242, 238, 224)
 local LEATHER = Color3.fromRGB(120, 78, 46)
 local APRON = Color3.fromRGB(246, 240, 222) -- the citizens' apron: near white (Parts.C.canvas is dE 20 from the paler cobble)
@@ -159,7 +161,6 @@ local KNIT = Color3.fromRGB(34, 38, 52) -- woodcutter's cap: ink-dark wool (L .1
 local HARDHAT = Color3.fromRGB(214, 98, 28) -- miner's iron pot: safety orange (L .46; palette L .40-.53; the old ochre was the fields' colour)
 local COIF = Color3.fromRGB(250, 244, 228) -- builder's hard hat: near white (L .96; palette L .93-.96)
 local ASH = Color3.fromRGB(214, 190, 146) -- spear shaft: pale ash, visible against grass and soldiers' steel
-local WOOD_PALE = Color3.fromRGB(198, 152, 104) -- hammer handle
 local ERMINE = Color3.fromRGB(242, 238, 228)
 local FACE_TEXTURE = "rbxasset://textures/face.png" -- Roblox's built-in classic face (engine content, no upload)
 
@@ -680,7 +681,18 @@ local BOW_LIMB, BOW_TILT = 1.25, math.rad(30)
 -- brim's bounding box, 0.15 or more with the exact disc)
 local HOE_LEAN = CFrame.Angles(0, 0, math.rad(-14))
 local LEAN_HAMMER = CFrame.Angles(0, 0, math.rad(-24)) -- the mallet leans further: its head swings past the face at work (cheek clearance 0.15)
-local IRON = Color3.fromRGB(104, 110, 122) -- pick tines: lighter than the pot so the arch shows against grass and rock
+-- Job-coded tool colours (silhouette pass 3, 2026-10-22): the steel grey and wood brown of the first tools were the colours of rock, cobble and
+-- fields, so at the start frame the JOB did not read when the body was a speck. Each job now carries one saturated colour on its tool head
+-- (a hue the ground has none of, none of the four kingdom colours, and 49 dE or more from the other jobs'), on dark ink handles that show
+-- against every ground: hoe magenta, axe cyan, pick violet, mallet lime, the hauler's sack orange (tests/world/KitCitizenAerial.spec).
+local HOE_MAGENTA = Color3.fromRGB(232, 48, 168)
+local AXE_CYAN = Color3.fromRGB(0, 200, 220)
+local PICK_VIOLET = Color3.fromRGB(140, 72, 224)
+local MALLET_LIME = Color3.fromRGB(200, 255, 0)
+local HANDLE_HOE = Color3.fromRGB(34, 30, 40)
+local HANDLE_AXE = Color3.fromRGB(28, 36, 40)
+local HANDLE_PICK = Color3.fromRGB(40, 30, 30)
+local HANDLE_HAMMER = Color3.fromRGB(30, 30, 44)
 local PICK_TINE = Vector3.new(0.45, 0.8, 2.5) -- a wedge: thick at the hub, a point at the far end
 local PICK_DROOP = 28 -- degrees each tine droops below the level
 local PICK_HUB = GRIP * LEAN * CFrame.new(0, 4.2, 0) * CFrame.Angles(0, math.rad(30), 0)
@@ -690,16 +702,16 @@ local TOOLS: { [string]: PartSpec } = {
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
 		size = Vector3.new(5.2, 0.38, 0.38),
-		color = C.woodLight,
-		material = Enum.Material.Wood,
+		color = HANDLE_HOE,
+		material = Enum.Material.SmoothPlastic,
 		offset = GRIP * HOE_LEAN * CFrame.new(0, 0.8, 0) * UPRIGHT,
 		details = {
 			{
 				name = "hoeblade",
 				class = "WedgePart",
 				size = Vector3.new(1.1, 0.34, 1.3),
-				color = BLADE,
-				material = Enum.Material.Metal,
+				color = HOE_MAGENTA,
+				material = Enum.Material.SmoothPlastic,
 				offset = GRIP * HOE_LEAN * CFrame.new(0, 3.35, -0.6) * CFrame.Angles(math.rad(-22), 0, 0),
 			},
 		},
@@ -709,16 +721,16 @@ local TOOLS: { [string]: PartSpec } = {
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
 		size = Vector3.new(3.9, 0.42, 0.42),
-		color = C.wood,
-		material = Enum.Material.Wood,
+		color = HANDLE_AXE,
+		material = Enum.Material.SmoothPlastic,
 		offset = GRIP * LEAN * CFrame.new(0, 0.9, 0) * UPRIGHT,
 		details = {
 			{
 				name = "axehead",
 				class = "WedgePart",
 				size = Vector3.new(0.5, 1.7, 1.9),
-				color = BLADE,
-				material = Enum.Material.Metal,
+				color = AXE_CYAN,
+				material = Enum.Material.SmoothPlastic,
 				offset = GRIP * LEAN * CFrame.new(0, 2.0, -0.8) * CFrame.Angles(math.pi, 0, 0),
 			},
 		},
@@ -731,16 +743,16 @@ local TOOLS: { [string]: PartSpec } = {
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
 		size = Vector3.new(5.4, 0.4, 0.4),
-		color = C.woodDark,
-		material = Enum.Material.Wood,
+		color = HANDLE_PICK,
+		material = Enum.Material.SmoothPlastic,
 		offset = GRIP * LEAN * CFrame.new(0, 1.65, 0) * UPRIGHT,
 		details = {
 			{
 				name = "pickhead",
 				class = "WedgePart",
 				size = PICK_TINE,
-				color = IRON,
-				material = Enum.Material.Metal,
+				color = PICK_VIOLET,
+				material = Enum.Material.SmoothPlastic,
 				offset = PICK_HUB
 					* CFrame.Angles(math.rad(PICK_DROOP), 0, 0)
 					* CFrame.new(0, 0, PICK_TINE.Z / 2 + 0.15),
@@ -749,8 +761,8 @@ local TOOLS: { [string]: PartSpec } = {
 				name = "pickpoint",
 				class = "WedgePart",
 				size = PICK_TINE,
-				color = IRON,
-				material = Enum.Material.Metal,
+				color = PICK_VIOLET,
+				material = Enum.Material.SmoothPlastic,
 				offset = PICK_HUB
 					* CFrame.Angles(math.rad(-PICK_DROOP), 0, 0)
 					* CFrame.new(0, 0, -(PICK_TINE.Z / 2 + 0.15))
@@ -763,8 +775,8 @@ local TOOLS: { [string]: PartSpec } = {
 		class = "Part",
 		shape = Enum.PartType.Cylinder,
 		size = Vector3.new(3.0, 0.42, 0.42),
-		color = WOOD_PALE,
-		material = Enum.Material.Wood,
+		color = HANDLE_HAMMER,
+		material = Enum.Material.SmoothPlastic,
 		offset = GRIP * LEAN_HAMMER * CFrame.new(0, 0.5, 0) * UPRIGHT,
 		details = {
 			{
@@ -772,8 +784,8 @@ local TOOLS: { [string]: PartSpec } = {
 				class = "Part",
 				shape = Enum.PartType.Block,
 				size = Vector3.new(1.2, 1.15, 2.0),
-				color = C.wood,
-				material = Enum.Material.Wood,
+				color = MALLET_LIME,
+				material = Enum.Material.SmoothPlastic,
 				offset = GRIP * LEAN_HAMMER * CFrame.new(0, 2.0, 0) * CFrame.Angles(0, math.rad(40), 0),
 			},
 		},
@@ -804,7 +816,7 @@ local TOOLS: { [string]: PartSpec } = {
 				class = "Part",
 				shape = Enum.PartType.Ball,
 				size = Vector3.new(0.85, 0.85, 0.85),
-				color = Color3.fromRGB(112, 80, 52),
+				color = Color3.fromRGB(36, 30, 40),
 				material = Enum.Material.Fabric,
 				offset = CFrame.new(-0.86, 0.4, 1.525),
 			},
@@ -985,7 +997,25 @@ local function scaledTool(spec: PartSpec, k: number): PartSpec
 		}
 	end
 	local butt = spec.offset * UPRIGHT:Inverse() * CFrame.new(0, -spec.size.X / 2, 0)
-	return scaledSpec(spec, k, butt, nil)
+	local scaled = scaledSpec(spec, k, butt, nil)
+	local details: { PartSpec } = {}
+	for i, d in scaled.details or {} do
+		details[i] = scaledSpec(d, Character.TOOL_HEAD_SCALES[spec.name] or Character.TOOL_HEAD_SCALE, d.offset, nil) -- the head grows about its own centre
+	end
+	return {
+		name = scaled.name,
+		class = scaled.class,
+		shape = scaled.shape,
+		size = Vector3.new(
+			scaled.size.X,
+			scaled.size.Y * Character.TOOL_THICKNESS,
+			scaled.size.Z * Character.TOOL_THICKNESS
+		),
+		color = scaled.color,
+		material = scaled.material,
+		offset = scaled.offset,
+		details = details,
+	}
 end
 
 -- A job hat drawn hsk times bigger about the head centre; a disc or drum (a cylinder) is then seated on the crown of the head (grown to

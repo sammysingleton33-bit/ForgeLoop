@@ -812,7 +812,7 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 		end
 		-- the shapes: a wide flat disc, a slouched tall wedge cap, a squat drum, a low peaked wedge cap
 		expect(rows.farmer.kind).toBe("Part/Cylinder")
-		expect(rows.farmer.width).toBeGreaterThan(3)
+		expect(rows.farmer.width).toBeGreaterThan(2.7) -- 3.1 before the silhouette passes (HAT_SCALE.farmer 0.9: 2.79)
 		expect(rows.woodcutter.kind).toBe("Part/Ball")
 		expect(rows.miner.kind).toBe("Part/Cylinder")
 		expect(rows.builder.kind).toBe("Part/Cylinder")
@@ -825,7 +825,7 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 			end
 		end
 		-- the miner's pot is clearly smaller and darker than the farmer's disc
-		expect(rows.miner.width).toBeLessThanOrEqual(rows.farmer.width * 0.75) -- 0.65 before the silhouette pass (the straw disc grew 1.1 x, the pot 1.3 x)
+		expect(rows.miner.width).toBeLessThanOrEqual(rows.farmer.width * 0.9) -- 0.65 before the silhouette pass (the straw disc grew 1.1 x, the pot 1.3 x)
 		expect(rows.miner.hi).toBeLessThan(rows.farmer.lo - 0.1)
 	end)
 
@@ -1000,14 +1000,13 @@ describe("Kit.character job silhouettes (readable jobs at gameplay and aerial di
 				local handle, heads = tool(job)
 				expect(primitive(handle)).toBe("Part/Cylinder")
 				expect(handle.Size.X).toBeGreaterThanOrEqual(want.handle) -- the cylinder's length is its X
-				expect(handle.Size.Y).toBeLessThanOrEqual(0.45 * Kit.CHARACTER_TOOL_SCALE + 0.01) -- slim before the silhouette pass
+				expect(handle.Size.Y).toBeLessThanOrEqual(
+					0.45 * Kit.CHARACTER_TOOL_SCALE * Character.TOOL_THICKNESS + 0.01
+				) -- slim before the silhouette passes
 				expect(#heads).toBe(want.tines or 1)
 				expect(primitive(heads[1])).toBe(want.head)
-				expect(
-					if want.metal
-						then heads[1].Material == Enum.Material.Metal
-						else heads[1].Material == Enum.Material.Wood
-				).toBe(true)
+				-- painted plastic, not steel or wood: the job colour is the saturated hue of the head (pass 3, KitCitizenAerial)
+				expect(heads[1].Material).toBe(Enum.Material.SmoothPlastic)
 				-- the head rises to the handle's top end, beside the body: it reads above the shoulders
 				local _, headTop = bounds(heads[1])
 				expect(headTop.Y).toBeGreaterThan(4.4)

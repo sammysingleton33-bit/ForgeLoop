@@ -12,6 +12,8 @@
 	3. The kingdom tint on the torso or the sleeves keeps dE >= 25 from the three main grounds in all four kingdoms (the colour that says
 	   "ours"; gold and emerald are the hard cases).
 	4. Parts per citizen: no readability change adds a part (the pass recoloured; counts are pinned per job).
+	7. Job codes (pass 3): each job's tool head (the hauler's sack) is one saturated colour, no kingdom's, 40 dE or more from the other jobs'; the
+	   tool handles are ink; the ground rule 1 covers tool handles, heads, the sack and its tie too.
 	6. Silhouette parts (pass 2): a citizen's head, hat, tool and the hauler's sack are drawn bigger (Character.HEAD_SCALE, HAT_SCALE,
 	   TOOL_SCALE(S), SACK_SCALE); sizes are pinned in studs below, and the pixel floors in 5 are the sizes measured with them.
 	5. Size on screen: at the approved start view (zoom 70, FOV 55, pitch 42.5), at zoom 220 (pitch 65) and on a 750 x 311 phone, the body
@@ -103,8 +105,11 @@ for _, name in Kit.JOB_HEADWEAR do
 	HAT_NAMES[name] = true
 end
 
+local TOOL_HEAD_KINDS =
+	{ hoeblade = true, axehead = true, pickhead = true, pickpoint = true, mallet = true, tie = true }
+
 -- Every part whose colour the Kit chooses for readability: not tinted by the kingdom, not skin, not a hair colour. The job hats, the
--- body parts in neutral cloth, and the hauler's sack. Returns { label, colour } pairs.
+-- body parts in neutral cloth, the tool handles and heads and the hauler's sack and tie. Returns { label, colour } pairs.
 local function wornColours(rig: Model): { { label: string, color: Color3 } }
 	local out = {}
 	for _, name in { "Torso", "LeftArm", "RightArm", "LeftLeg", "RightLeg" } do
@@ -118,8 +123,14 @@ local function wornColours(rig: Model): { { label: string, color: Color3 } }
 		table.insert(out, { label = "Hair", color = hat.Color })
 	end
 	local tool = rig:FindFirstChild("Tool") :: BasePart?
-	if tool and tool:GetAttribute("KitTool") == "sack" then
-		table.insert(out, { label = "sack", color = tool.Color })
+	if tool and tool:GetAttribute("KitTool") ~= nil then
+		table.insert(out, { label = tostring(tool:GetAttribute("KitTool")), color = tool.Color }) -- the handle, and the sack
+	end
+	for _, name in { "Detail1", "Detail2" } do -- tool heads and the sack's tie: not the kingdom-tinted strap
+		local d = rig:FindFirstChild(name) :: BasePart?
+		if d and d:GetAttribute("KitTint") == nil and TOOL_HEAD_KINDS[tostring(d:GetAttribute("KitDetailKind"))] then
+			table.insert(out, { label = tostring(d:GetAttribute("KitDetailKind")), color = d.Color })
+		end
 	end
 	return out
 end
@@ -176,6 +187,45 @@ local function shrunk(rig: Model, k: number): Model -- a mutant: the same rig dr
 	return m
 end
 
+-- ------------------------------------------------------------------ job-coded tool colours (pass 3)
+
+local function saturation(c: Color3): number -- HSV saturation
+	local mx, mn = math.max(c.R, c.G, c.B), math.min(c.R, c.G, c.B)
+	return if mx == 0 then 0 else (mx - mn) / mx
+end
+
+local TOOL_CODE = { farmer = "hoeblade", woodcutter = "axehead", miner = "pickhead", builder = "mallet" }
+
+-- the colour a job's tool head (or, for the hauler, its sack) carries: the job's code
+local function jobCode(job: string): Color3
+	local rig = Kit.character("citizen", job, CRIMSON, lookOf(1, 1, 1))
+	if job == "hauler" then
+		return child(rig, "Tool").Color
+	end
+	for _, name in { "Detail1", "Detail2" } do
+		local d = rig:FindFirstChild(name) :: BasePart?
+		if d and d:GetAttribute("KitDetailKind") == TOOL_CODE[job] then
+			return d.Color
+		end
+	end
+	error(`{job} has no {TOOL_CODE[job]}`)
+end
+
+-- why a colour is not a job code: dull (saturation under 0.6: steel, iron, wood, stone) or a kingdom's (dE under 30 from crimson,
+-- azure, emerald or gold at full tint), so that a tool never reads as ownership
+local function jobCodeProblem(c: Color3): string?
+	if saturation(c) < 0.6 then
+		return `saturation {string.format("%.2f", saturation(c))} is under 0.6`
+	end
+	for id, k in KINGDOMS do
+		local d = dE(c, k)
+		if d < 30 then
+			return `dE {string.format("%.1f", d)} from {id}`
+		end
+	end
+	return nil
+end
+
 -- ------------------------------------------------------------------ silhouette sizes (pass 2)
 
 local function horizontal(
@@ -197,9 +247,11 @@ end
 -- The studs the silhouette parts were before the pass, and the least each must now be (default look, rest pose).
 local OLD_HEAD = 1.6
 local MIN_HEAD = 2.0 -- 1.25 x
-local MIN_HAT = { farmer = 3.3, woodcutter = 1.85, miner = 2.35, builder = 2.2 } -- widths: was 3.1, 1.5, 1.9, 1.8
-local MIN_HANDLE = { farmer = 6.5, woodcutter = 4.8, miner = 6.7, builder = 3.3 } -- cylinder lengths: was 5.2, 3.9, 5.4, 3.0
+local MIN_HAT = { farmer = 2.7, woodcutter = 1.85, miner = 2.35, builder = 2.2 } -- widths: was 3.1, 1.5, 1.9, 1.8 (the farmer's disc is 0.9 x: work slots)
+local MIN_HANDLE = { farmer = 7.0, woodcutter = 5.6, miner = 6.7, builder = 3.3 } -- cylinder lengths: was 5.2, 3.9, 5.4, 3.0 (hoe x1.4, axe x1.5, pick x1.3, mallet x1.15)
+local MIN_TOOL_HEAD = { farmer = 2.5, woodcutter = 3.5, miner = 3.1, builder = 2.2 } -- the head's longest side: blade 2.64, bit 3.7, tine 3.25, mallet 2.3 (were 1.3, 1.9, 2.5, 2.0)
 local MIN_SACK = 3.0 -- was 2.7
+local TOOL_HEADS = { hoeblade = true, axehead = true, pickhead = true, mallet = true }
 
 -- the silhouette rules a rig set breaks (empty when the pass is in place)
 local function silhouetteFailures(): { string }
@@ -217,6 +269,19 @@ local function silhouetteFailures(): { string }
 		local tool = rig:FindFirstChild("Tool") :: BasePart?
 		if tool and MIN_HANDLE[job] and tool.Size.X < MIN_HANDLE[job] then
 			table.insert(out, `{job} handle {string.format("%.2f", tool.Size.X)}`)
+		end
+		local toolHead: BasePart? -- the tool's head: the detail named for it (the first detail of a hatted job is the hat's crown, pompom or visor)
+		for _, name in { "Detail1", "Detail2" } do
+			local d = rig:FindFirstChild(name) :: BasePart?
+			if d and TOOL_HEADS[tostring(d:GetAttribute("KitDetailKind"))] then
+				toolHead = d
+			end
+		end
+		if MIN_TOOL_HEAD[job] and toolHead then
+			local side = math.max(toolHead.Size.X, toolHead.Size.Y, toolHead.Size.Z)
+			if side < MIN_TOOL_HEAD[job] then
+				table.insert(out, `{job} tool head {string.format("%.2f", side)}`)
+			end
 		end
 		if tool and job == "hauler" and tool.Size.X < MIN_SACK then
 			table.insert(out, `hauler sack {string.format("%.2f", tool.Size.X)}`)
@@ -455,4 +520,53 @@ describe("citizen aerial readability (ground contrast, hat hues, size on screen)
 		-- restored: the pass is back in place
 		expect(silhouetteFailures()).toEqual({})
 	end)
+
+	it(
+		"codes every job by one saturated tool colour that is no kingdom colour and 40 dE or more from the other jobs' (pass 3)",
+		function()
+			local codes = {}
+			for _, job in { "farmer", "woodcutter", "miner", "builder", "hauler" } do
+				local c = jobCode(job)
+				codes[job] = c
+				local problem = jobCodeProblem(c)
+				if problem then
+					expect(`{job} tool colour {c:ToHex()}: {problem}`).toBe("a saturated colour that is no kingdom's")
+				end
+			end
+			local jobs = { "farmer", "woodcutter", "miner", "builder", "hauler" }
+			for i, a in jobs do
+				for k = i + 1, #jobs do
+					local d = dE(codes[a], codes[jobs[k]])
+					if d < 40 then
+						expect(`{a} and {jobs[k]} tool colours only dE {string.format("%.1f", d)} apart`).toBe(
+							"40 or more"
+						)
+					end
+				end
+			end
+		end
+	)
+
+	it(
+		"trips the tool colour checker on the colours pass 3 replaced (mutants: steel, iron, wood, the pale sack, a gold head)",
+		function()
+			local replaced = {
+				steel_blade = Color3.fromRGB(138, 146, 158), -- the hoe blade and axe head
+				iron_tines = Color3.fromRGB(104, 110, 122), -- the pick
+				wood_mallet = Color3.fromRGB(139, 90, 51), -- the mallet head: dirt brown
+				pale_sack = Color3.fromRGB(244, 232, 140), -- the hauler's sack of pass 1
+				gold_head = Color3.fromRGB(235, 185, 16), -- a head in the gold kingdom's colour
+				crimson_head = Color3.fromRGB(190, 40, 50), -- and in crimson's
+			}
+			for name, c in replaced do
+				if jobCodeProblem(c) == nil and tooClose(c) == nil then -- dull or a kingdom's colour, or the ground's
+					expect(`{name} {c:ToHex()} passes the job-code and ground checks`).toBe("trips them")
+				end
+			end
+			expect(tooClose(replaced.wood_mallet)).never.toBeNil() -- and the ground check alone catches the brown
+			-- the checker's own arithmetic: pure white and pure red saturation
+			expect(saturation(Color3.new(1, 1, 1))).toBeNear(0, 1e-9)
+			expect(saturation(Color3.new(1, 0, 0))).toBeNear(1, 1e-9)
+		end
+	)
 end)
