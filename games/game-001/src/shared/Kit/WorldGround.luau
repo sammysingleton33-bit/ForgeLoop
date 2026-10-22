@@ -46,10 +46,14 @@ local COARSE_BELOW = 0.7 -- view weight under which the cover is sampled on 8-st
 WorldGround.COVER = table.freeze({
 	fullRadius = 250, -- studs from a plot spawn inside which the ground is as varied as it gets
 	farRadius = 560, -- ... and beyond which it is at its sparsest
-	leafy = table.freeze({ scale = 80, near = 0.72, far = 0.97 }), -- LeafyGrass where the tone noise passes the threshold
-	clump = table.freeze({ scale = 32, near = 0.84, far = 0.99 }), -- ... and in smaller clumps
+	leafy = table.freeze({ scale = 80, near = 0.7, far = 0.97 }), -- LeafyGrass where the tone noise passes the threshold
+	clump = table.freeze({ scale = 32, near = 0.82, far = 0.99 }), -- ... and in smaller clumps
 	bare = table.freeze({ scale = 44, near = 0.8, far = 0.98 }), -- Ground
 	wet = table.freeze({ scale = 24, near = 0.78, far = 0.95 }), -- Mud inside the bare earth
+	jitter = 5, -- studs: each cell reads the noise a little off its centre (breaks straight stair edges)
+	homeRadius = 160, -- studs from a plot spawn inside which bare earth is rare ...
+	homeFade = 120, -- ... fading back to normal over this many studs
+	homeBare = 0.25, -- the threshold raise at a spawn
 	greenMargin = 7, -- studs of green kept beside a field edge or a lane (a cell is 4 studs: its edge stays 5 or more off)
 })
 
@@ -130,6 +134,14 @@ local function plotAnchors(layout: any): { Vector3 }
 		table.insert(out, layout.plots[kingdom].spawn.Position)
 	end
 	return out
+end
+
+local function nearestSpawn(spawns: { Vector3 }, x: number, z: number): number
+	local best = math.huge
+	for _, p in spawns do
+		best = math.min(best, (x - p.X) ^ 2 + (z - p.Z) ^ 2)
+	end
+	return math.sqrt(best)
 end
 
 -- 1 inside the full radius of a plot spawn (or 120 studs of the heartland), falling to 0 at the far radius.
@@ -273,8 +285,14 @@ local function coverSampler(
 	local warpA, warpB = sampler(101, 0), sampler(103, 0)
 	return function(x: number, z: number, green: boolean): string?
 		local far = 1 - viewWeight(spawns, hub, x, z)
-		-- the noise is read through a slow warp, so no edge follows the lattice
-		local wx, wz = x + (warpA(x / 55, z / 55) - 0.5) * 46, z + (warpB(x / 55 + 9, z / 55 - 4) - 0.5) * 46
+		-- the noise is read through a slow warp (no edge follows the lattice) and a one-cell jitter (no long straight staircase)
+		local cx, cz = math.floor(x / CELL), math.floor(z / CELL)
+		local wx = x + (warpA(x / 55, z / 55) - 0.5) * 46 + (hash(cx, cz, 7) - 0.5) * c.jitter
+		local wz = z + (warpB(x / 55 + 9, z / 55 - 4) - 0.5) * 46 + (hash(cx, cz, 8) - 0.5) * c.jitter
+		-- bare and wet earth are for the work areas and the far land: rare and small near a plot, where the greens carry the variety
+		local plotNear = 1 - math.clamp((nearestSpawn(spawns, x, z) - c.homeRadius) / c.homeFade, 0, 1)
+		local bareT = c.bare.near + (c.bare.far - c.bare.near) * far + c.homeBare * plotNear
+		local wetT = c.wet.near + (c.wet.far - c.wet.near) * far + c.homeBare * 0.6 * plotNear
 		local mat = "Grass"
 		if
 			toneAt(wx / c.leafy.scale, wz / c.leafy.scale) > c.leafy.near + (c.leafy.far - c.leafy.near) * far
@@ -282,12 +300,9 @@ local function coverSampler(
 		then
 			mat = "LeafyGrass"
 		end
-		if
-			not green
-			and bareAt(wx / c.bare.scale, wz / c.bare.scale) > c.bare.near + (c.bare.far - c.bare.near) * far
-		then
+		if not green and bareAt(wx / c.bare.scale, wz / c.bare.scale) > bareT then
 			mat = "Ground"
-			if wetAt(wx / c.wet.scale, wz / c.wet.scale) > c.wet.near + (c.wet.far - c.wet.near) * far then
+			if wetAt(wx / c.wet.scale, wz / c.wet.scale) > wetT then
 				mat = "Mud"
 			end
 		end
@@ -449,38 +464,39 @@ function WorldGround.aprons(layout: any, api: Api): { Op }
 	local ops: { Op } = {}
 	local B = newBuilder(layout, api, ops)
 	local rng = api.prng(913)
-	-- the fields: a trodden headland around each, so the dark soil reads against the grass and the gaps between fields close up
+	-- the fields: a narrow trodden headland around each (2 studs), so the dark soil reads against the grass
 	for _, field in layout.features.fields do
 		local cf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
-		rrect(B, rng, "Ground", cf, field.size.X + 7, field.size.Y + 7, 4, "apron")
+		rrect(B, rng, "Ground", cf, field.size.X + 4, field.size.Y + 4, 3, "apron")
 	end
 	for _, kingdom in KINGDOMS do
 		local plot = layout.plots[kingdom]
 		local keep = plot.anchors.keep
-		-- the starting buildings sit in worn ground: a dirt pad turned with each, bigger than its footprint
+		-- the starting buildings sit in worn ground: a dirt pad turned with each, a stride bigger than its footprint
+		-- the keep's pad is its drawn base plus the door step, not the 46 x 46 reserved footprint: 32 x 36 from the court back to the rear wall
+		rrect(B, rng, "Ground", localCF(keep, 0, -6), 32, 36, 5, "apron")
 		local pads = { -- anchor, footprint half x, half z (Buildings.footprint), margin
-			{ "keep", 23, 23, 0 },
-			{ "storehouse", 13, 10, 3 },
-			{ "farm", 20, 16, 3 },
-			{ "lumbercamp", 11, 9, 5 },
-			{ "quarry", 11, 10, 5 },
+			{ "storehouse", 13, 10, 1 },
+			{ "farm", 20, 16, 1 },
+			{ "lumbercamp", 11, 9, 1 },
+			{ "quarry", 11, 10, 1 },
 		}
 		for _, pad in pads do
 			local anchor = plot.anchors[pad[1]]
-			rrect(B, rng, "Ground", anchor, (pad[2] + pad[4]) * 2, (pad[3] + pad[4]) * 2, 5, "apron")
+			rrect(B, rng, "Ground", anchor, (pad[2] + pad[4]) * 2, (pad[3] + pad[4]) * 2, 4, "apron")
 		end
 		-- work yards: trampled mud where the woodcutters and the miners stand, and a rock floor at the quarry
 		local camp = localCF(keep, -62, 48)
-		blob(B, rng, "Mud", camp.Position.X, camp.Position.Z, 13, 5, "apron")
+		blob(B, rng, "Mud", camp.Position.X, camp.Position.Z, 8, 4, "apron")
 		local yard = localCF(keep, 52, 54)
-		blob(B, rng, "Rock", yard.Position.X, yard.Position.Z, 14, 5, "apron")
-		blob(B, rng, "Slate", yard.Position.X + 3, yard.Position.Z + 2, 7, 3, "apron")
+		blob(B, rng, "Rock", yard.Position.X, yard.Position.Z, 9, 4, "apron")
+		blob(B, rng, "Slate", yard.Position.X + 3, yard.Position.Z + 2, 4.5, 2, "apron")
 		local stone = localCF(keep, 40, 28).Position
-		blob(B, rng, "Rock", stone.X, stone.Z, 7, 3, "apron")
+		blob(B, rng, "Rock", stone.X, stone.Z, 5, 2, "apron")
 		local stone2 = localCF(keep, 80, 60).Position
-		blob(B, rng, "Rock", stone2.X, stone2.Z, 7, 3, "apron")
+		blob(B, rng, "Rock", stone2.X, stone2.Z, 5, 2, "apron")
 		local ore = localCF(keep, 70, 34).Position
-		blob(B, rng, "Slate", ore.X, ore.Z, 6, 3, "apron")
+		blob(B, rng, "Slate", ore.X, ore.Z, 4.5, 2, "apron")
 	end
 	return ops
 end
@@ -489,7 +505,8 @@ end
 -- fringe discs on the edges, rounded joints. (No worn darker strip down the middle: a strip narrower than a voxel (4 studs) turns into
 -- scattered dark diamonds, so the roads stay one colour.)
 local function trail(B: any, rng: any, lane: Lane)
-	local pts, width = lane.points, lane.width
+	local pts = lane.points
+	local width = if lane.kind == "road" then lane.width * 0.6 else lane.width -- a road is drawn a little narrower than it clears
 	local feature = lane.kind
 	for i = 1, #pts - 1 do
 		local a, b = pts[i], pts[i + 1]
@@ -501,12 +518,12 @@ local function trail(B: any, rng: any, lane: Lane)
 			local p0, p1 = a:Lerp(b, k / n), a:Lerp(b, (k + 1) / n)
 			local seg = p1 - p0
 			local mid = (p0 + p1) / 2 + nrm * (rng.range(-0.07, 0.07) * width)
-			local w = width * rng.range(0.84, 1.1)
+			local w = width * rng.range(0.8, 1.0)
 			B.slab("Ground", along(mid.X, 0, mid.Y, seg.X, seg.Y), w, seg.Magnitude + w * 0.5, feature)
-			if rng.next() < 0.5 then
+			if rng.next() < 0.3 then
 				local side = if rng.next() < 0.5 then -1 else 1
-				local c = mid + nrm * (side * (w / 2 + rng.range(-0.4, 1.2)))
-				B.disc("Ground", c.X, c.Y, rng.range(1.8, 3.2), feature)
+				local c = mid + nrm * (side * (w / 2 + rng.range(-0.4, 0.8)))
+				B.disc("Ground", c.X, c.Y, rng.range(1.4, 2.6), feature)
 			end
 		end
 	end
@@ -534,13 +551,12 @@ function WorldGround.worn(layout: any, api: Api): { Op }
 		local a = i * 2.1 + rng.next()
 		B.disc("Rock", last.X + math.cos(a) * 4, last.Y + math.sin(a) * 4, rng.range(2.4, 3.6), "plaza")
 	end
-	-- each keep's market square: a cobbled court from the keep door to the yard crossroads, paved with darker worn stones
+	-- each keep's market square: a small cobbled court from the keep's door step towards the yard, with a darker kerb all round
 	for _, kingdom in KINGDOMS do
 		local keep = layout.plots[kingdom].anchors.keep
-		local court = localCF(keep, 0, -46)
-		rrect(B, rng, "Rock", court, 36, 42, 9, "plaza") -- a darker kerb all round
-		rrect(B, rng, "Cobblestone", court, 28, 34, 7, "plaza")
-		blob(B, rng, "Rock", court.Position.X, court.Position.Z, 11, 4, "plaza") -- the worn middle, a little darker than the paving
+		local court = localCF(keep, 0, -39)
+		rrect(B, rng, "Rock", court, 22, 26, 6, "plaza")
+		rrect(B, rng, "Cobblestone", court, 16, 20, 4, "plaza")
 	end
 	return ops
 end

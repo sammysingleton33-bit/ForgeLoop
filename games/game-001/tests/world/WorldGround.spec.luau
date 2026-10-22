@@ -6,8 +6,12 @@
 
 	The rule, and why each clause:
 	  * the cover is deterministic and bounded: the same ops twice, every op a legal Terrain call, the added voxels and ops under a ceiling;
-	  * the open ground of every plot's frame is varied: no material covers more than MAX_SHARE of it, at least three materials each cover
-	    MIN_SHARE (the grass of old was one flat colour with 28 discs for the valley);
+	  * the open ground of every plot's frame is varied: no material covers more than MAX_SHARE of it and both greens, Grass and LeafyGrass,
+	    each cover MIN_DRIFT (the grass of old was one flat colour with 28 discs for the valley; bare earth is for work areas and far land);
+	  * the START FRAME (the ruler's default camera at a kingdom's spawn: zoom 70, vertical FOV 55, pitch 42.5, 16:9) is mostly green: of the
+	    ground it shows, off the field, building and slot footprints, Grass + LeafyGrass are at least MIN_GREEN, Ground + Mud (lanes, roads,
+	    pads and headlands included) at most MAX_BROWN and the greys (court, kerb, rock floors) at most MAX_GREY, measured once per screen
+	    sample (what the eye sees) and once per ground area;
 	  * every named place is on a road or a lane (keep, storehouse, farm, lumber camp, quarry, each field, each build slot) and the
 	    four kingdoms have the same lanes (per-kingdom fairness);
 	  * a lane never crosses a farm field, a build slot or a starting building (it would hide it), and lanes are NOT features.roads (the
@@ -30,7 +34,9 @@ local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 
 local KINGDOMS = { "crimson", "azure", "emerald", "gold" }
 local MAX_SHARE = 0.72 -- the largest share one material may cover of a frame's open ground
-local MIN_SHARE = 0.03 -- ... and what at least three materials must each cover
+local MIN_DRIFT = 0.15 -- ... and what each of the two greens must cover (the greens carry the variety near a plot)
+local MIN_GREEN, MAX_BROWN, MAX_GREY = 0.6, 0.25, 0.12 -- the start frame's shares
+local START = { zoom = 70, fov = 55, pitch = 42.5 } -- RulerCameraController.DEFAULTS (overview), the owner-approved start view
 local FRAME = 110 -- the plot frame: studs around the spawn (the start view and the far view's near half)
 local ADDED_OPS = 5600 -- ceiling on the new ground ops (patch, apron, path, plaza, border; the whole plan had 482 ops before)
 local ADDED_VOXELS = 70000 -- ceiling on the voxels of those ops (48 k now; the plan had 7.72 M before, 99 % of it the hills and the base ground)
@@ -175,6 +181,101 @@ local function openPoints(layout, rects)
 	return out
 end
 
+-- The ground the start camera shows at each kingdom's spawn, as two sample sets off the field, building and slot footprints: `screen` (one
+-- ray per cell of a 96 x 54 screen grid, so near ground weighs more, as it does to the eye) and `area` (a 3-stud grid over the same ground
+-- trapezoid). Cached per layout.
+local frameCache = setmetatable({}, { __mode = "k" })
+local function startFrames(layout, rects)
+	if frameCache[layout] then
+		return frameCache[layout]
+	end
+	local gy = layout.features.groundY or 0
+	local pitch = math.rad(START.pitch)
+	local tanV = math.tan(math.rad(START.fov / 2))
+	local tanH = tanV * 16 / 9
+	local fwd, right, up =
+		Vector3.new(0, -math.sin(pitch), -math.cos(pitch)),
+		Vector3.new(1, 0, 0),
+		Vector3.new(0, math.cos(pitch), -math.sin(pitch))
+	local out = {}
+	for _, kingdom in KINGDOMS do
+		local sp = layout.plots[kingdom].spawn.Position
+		local cam = Vector3.new(sp.X, sp.Y + START.zoom * math.sin(pitch), sp.Z + START.zoom * math.cos(pitch))
+		local function ground(u: number, v: number): Vector2
+			local dir = fwd + right * (u * tanH) + up * (v * tanV)
+			local hit = cam + dir * ((gy - cam.Y) / dir.Y)
+			return Vector2.new(hit.X, hit.Z)
+		end
+		local near = {}
+		for _, r in rects do
+			if r.kind ~= "zone" and (r.cf.Position - sp).Magnitude < 260 then
+				table.insert(near, r)
+			end
+		end
+		local function keep(pts)
+			local kept = {}
+			for _, pt in pts do
+				local free = true
+				for _, r in near do
+					if WorldPlan.rectDistance(r, pt.X, pt.Y) <= 0 then
+						free = false
+						break
+					end
+				end
+				if free then
+					table.insert(kept, pt)
+				end
+			end
+			return kept
+		end
+		local screen, area = {}, {}
+		for iy = 0, 53 do
+			for ix = 0, 95 do
+				table.insert(screen, ground((ix + 0.5) / 96 * 2 - 1, 1 - (iy + 0.5) / 54 * 2))
+			end
+		end
+		local corners = { ground(-1, -1), ground(1, -1), ground(1, 1), ground(-1, 1) }
+		local minX, maxX, minZ, maxZ = math.huge, -math.huge, math.huge, -math.huge
+		for _, c in corners do
+			minX, maxX, minZ, maxZ = math.min(minX, c.X), math.max(maxX, c.X), math.min(minZ, c.Y), math.max(maxZ, c.Y)
+		end
+		for x = minX, maxX, 3 do
+			for z = minZ, maxZ, 3 do
+				local pos, neg = false, false
+				for i = 1, 4 do
+					local a, b = corners[i], corners[i % 4 + 1]
+					local cross = (b.X - a.X) * (z - a.Y) - (b.Y - a.Y) * (x - a.X)
+					pos = pos or cross > 0
+					neg = neg or cross < 0
+				end
+				if not (pos and neg) then
+					table.insert(area, Vector2.new(x, z))
+				end
+			end
+		end
+		out[kingdom] = { screen = keep(screen), area = keep(area) }
+	end
+	frameCache[layout] = out
+	return out
+end
+
+-- Shares of green, brown and grey ground over a sample set: { green, brown, grey } in 0..1.
+local function shares(read, points)
+	local green, brown, grey = 0, 0, 0
+	for _, pt in points do
+		local m = read(pt.X, pt.Y)
+		if m == "Grass" or m == "LeafyGrass" then
+			green += 1
+		elseif m == "Ground" or m == "Mud" then
+			brown += 1
+		elseif m == "Cobblestone" or m == "Rock" or m == "Slate" then
+			grey += 1
+		end
+	end
+	local n = math.max(1, #points)
+	return { green = green / n, brown = brown / n, grey = grey / n }
+end
+
 -- The rule as code: the violated clauses of a plan (ops) over a layout, as strings.
 local function violations(layout, ops): { string }
 	local why = {}
@@ -218,17 +319,32 @@ local function violations(layout, ops): { string }
 				total += 1
 			end
 		end
-		local kinds = 0
 		for m, n in counts do
 			if n / total > MAX_SHARE then
 				add(`{kingdom}: {m} covers {math.floor(100 * n / total)} % of the open ground`)
 			end
-			if n / total >= MIN_SHARE then
-				kinds += 1
+		end
+		-- the greens carry the variety near a plot (bare earth is for the work areas and the far land): both drifts show
+		for _, m in { "Grass", "LeafyGrass" } do
+			if (counts[m] or 0) / total < MIN_DRIFT then
+				add(`{kingdom}: {m} covers only {math.floor(100 * (counts[m] or 0) / total)} % of the open ground`)
 			end
 		end
-		if kinds < 3 then
-			add(`{kingdom}: only {kinds} materials cover {math.floor(MIN_SHARE * 100)} % or more of the open ground`)
+	end
+
+	-- the start frame is mostly green
+	for kingdom, frame in startFrames(layout, rects) do
+		for _, mode in { "screen", "area" } do
+			local sh = shares(read, frame[mode])
+			if sh.green < MIN_GREEN then
+				add(`start frame {kingdom} ({mode}): only {math.floor(sh.green * 100)} % green`)
+			end
+			if sh.brown > MAX_BROWN then
+				add(`start frame {kingdom} ({mode}): {math.floor(sh.brown * 100 + 0.5)} % brown`)
+			end
+			if sh.grey > MAX_GREY then
+				add(`start frame {kingdom} ({mode}): {math.floor(sh.grey * 100 + 0.5)} % grey`)
+			end
 		end
 	end
 
@@ -258,10 +374,36 @@ local function violations(layout, ops): { string }
 			end
 		end
 	end
+	-- a field is reached by a road or a lane within 36 studs, or by touching (8 studs) a reached field: the headlands chain the fields
+	local reached, fieldRects = {}, {}
+	for _, r in rects do
+		if r.kind == "field" then
+			table.insert(fieldRects, r)
+		end
+	end
 	for i, field in layout.features.fields do
 		local d, half = laneDistance(layout, field.center.X, field.center.Y)
-		if d - half > 36 then
-			add(`field {i} is {math.floor(d - half)} studs from a road or lane`)
+		reached[i] = d - half <= 36
+	end
+	for _ = 1, #fieldRects do
+		for i, r in fieldRects do
+			for j, other in fieldRects do
+				if reached[j] and not reached[i] then
+					for _, corner in
+						{ Vector3.new(-1, 0, -1), Vector3.new(1, 0, -1), Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1) }
+					do
+						local p = (r.cf * CFrame.new(corner.X * r.half.X, 0, corner.Z * r.half.Y)).Position
+						if WorldPlan.rectDistance(other, p.X, p.Z) <= 8 then
+							reached[i] = true
+						end
+					end
+				end
+			end
+		end
+	end
+	for i in layout.features.fields do
+		if not reached[i] then
+			add(`field {i} is off every road, lane and neighbouring field`)
 		end
 	end
 
@@ -566,6 +708,41 @@ describe("WorldGround: the checks catch each way of breaking the rule (mutants)"
 			table.insert(f.roads, f.paths[1])
 		end)
 		expect(has(violations(layout, ops), "is also a road")).toBe(true)
+	end)
+
+	it("flags a start frame that is mostly dirt or mostly paving", function()
+		local sp = Layout.plots.crimson.spawn.Position
+		local mud = table.clone(ops)
+		table.insert(mud, {
+			kind = "Cylinder",
+			material = "Ground",
+			cframe = CFrame.new(sp.X, -1, sp.Z - 60),
+			radius = 90,
+			height = 2.4,
+			feature = "patch",
+		})
+		expect(has(violations(Layout, mud), "start frame crimson (screen):")).toBe(true)
+		expect(has(violations(Layout, mud), "brown")).toBe(true)
+		local paved = table.clone(ops)
+		table.insert(paved, {
+			kind = "Cylinder",
+			material = "Cobblestone",
+			cframe = CFrame.new(sp.X, -1, sp.Z - 40),
+			radius = 60,
+			height = 2.4,
+			feature = "plaza",
+		})
+		expect(has(violations(Layout, paved), "grey")).toBe(true)
+		local bare = table.clone(ops)
+		table.insert(bare, {
+			kind = "Cylinder",
+			material = "Sand",
+			cframe = CFrame.new(sp.X, -1, sp.Z - 60),
+			radius = 120,
+			height = 2.4,
+			feature = "patch",
+		})
+		expect(has(violations(Layout, bare), "green")).toBe(true)
 	end)
 
 	it("flags brown cover on the edge of a field and of a lane", function()
