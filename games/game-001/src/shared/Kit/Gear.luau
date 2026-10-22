@@ -1,8 +1,8 @@
 --!strict
 --[[
-	Kit/Gear — duel armour and weapons: Kit.armour(armour, kingdomColor) -> { Accessory } and
-	Kit.weapon(weapon, kingdomColor?) -> Tool (FL-0072, CONTRACTS G12.1 Armour / Weapon, G12.6, design/crown-arena.md §5;
-	D-026 primitive Parts only, nothing yields, no scripts). Owner: FORGE-02.
+	Kit/Gear — duel armour, shield and weapons: Kit.armour(armour, kingdomColor) -> { Accessory }, Kit.shield(kingdomColor?) ->
+	Accessory and Kit.weapon(weapon, kingdomColor?, opts?) -> Tool (FL-0072, CONTRACTS G12.1 Armour / Weapon, G12.6,
+	design/crown-arena.md §5; D-026 primitive Parts only, nothing yields, no scripts). Owner: FORGE-02.
 
 	Types are G12.1's: Armour = "light" | "medium" | "heavy", Weapon = "swordShield" | "greatsword" | "spear" | "mace".
 	Every option is a sidegrade (design §5): none is the "gold" one. They differ in silhouette and in how much steel against
@@ -23,11 +23,26 @@
 		         layered spaulders with a kingdom ridge)                              broad, boxy shoulders
 	Attributes on every Accessory: KitArmour, KitPiece.
 
+	Shield = an Accessory on the LEFT hand (Kit.shield; a Tool is one hand, and the duel poses guard with the left arm). Built like
+	the armour pieces, on the attachment LeftGripAttachment, modelled in the left hand's grip frame: the frame the hand has when the
+	arm points forward (+Y up, -Z forward = along the arm toward the fingers, +X right), the same frame the right hand's Tool grip
+	uses. A round buckler (rim, kingdom-coloured face, iron band, boss; 4 parts, the old Tool shield's parts) sits just ahead of
+	the fist and a little to the outside (-X), facing forward: raised across the chest in the guard it reads as held on the left
+	forearm. With the arm HANGING the grip frame is turned (its -Z points down), so a hanging arm carries the shield flat under the
+	fist: equip it with the left arm raised (the duel's ready and guard poses do). Whether LeftGripAttachment exists on R6's "Left
+	Arm", and its exact frame on R15's LeftHand, is UNVERIFIED in Studio (the stand-in avatars follow the Roblox attachment
+	reference). Attributes: KitPiece = "Shield", KitShield = "shield" (the value Kit.weapon("swordShield") also carries), no
+	KitArmour.
+
 	Weapon = a Tool with a Handle (the grip, at the origin), no scripts, RequiresHandle, not droppable. Modelled in grip space (the
 	frame an equipped Tool's Grip puts on the hand: +Y up, -Z forward, +X right): the blade (or haft) rises along +Y, so an avatar
 	holding it with the arm forward carries it upright. Grip = the Handle's CFrame inverse (the cylinder Handle is turned upright). The other parts are welded to the Handle; hits are resolved server-side, so no part
-	touches or collides. Attributes: KitWeapon, KitHands, KitReach (the tip's height above the grip, studs).
-		swordShield  a straight blade (1 hand) and a round shield held in front of the hand (a Tool is one hand: the shield rides it)
+	touches or collides. Attributes: KitWeapon, KitHands, KitReach (the tip's height above the grip, studs); swordShield also KitShield.
+		swordShield  a straight blade (1 hand). Kit.weapon("swordShield", color) still carries the round shield on the Tool, held by
+		             the sword hand across the chest (10 parts: the sword's 6 and the shield's 4: the form before Kit.shield);
+		             Kit.weapon("swordShield", color, { shield = false }) is the sword alone (6 parts; the same Handle, Grip and
+		             KitReach) for a champion who wears Kit.shield on the left hand. KitShield = "shield" on both: "this weapon
+		             goes with Kit.shield(color)". The other weapons ignore opts and carry no KitShield.
 		greatsword   a long broad blade, a wide guard (2 hands)
 		spear        a 9-stud shaft with a leaf head and a kingdom pennant (2 hands)
 		mace         a 5-stud haft and a studded ball head (a morning star) held clear above the wearer's head, with a kingdom ribbon (1 hand)
@@ -206,10 +221,18 @@ local function weld(handle: BasePart, part: BasePart)
 end
 
 -- An Accessory on a body attachment: the first spec is the Handle, the rest are welded to it.
-local function accessory(armour: string, piece: string, attachName: string, specs: { Spec }, kingdom: Color3): Accessory
+local function accessory(
+	armour: string?, -- nil: not armour (the shield)
+	piece: string,
+	attachName: string,
+	specs: { Spec },
+	kingdom: Color3
+): Accessory
 	local acc = Instance.new("Accessory")
 	acc.Name = `Kit{piece}`
-	acc:SetAttribute("KitArmour", armour)
+	if armour then
+		acc:SetAttribute("KitArmour", armour)
+	end
 	acc:SetAttribute("KitPiece", piece)
 	local handle = build(acc, specs[1], kingdom, "Handle")
 	local a = Instance.new("Attachment")
@@ -388,6 +411,32 @@ function Gear.armour(armour: string, kingdomColor: Color3?): { Accessory }
 	error(`Kit.armour: unknown armour {armour} (light | medium | heavy)`)
 end
 
+-- ------------------------------------------------------------------ shield
+
+-- The round shield's four parts about `c` (a disc facing -Z, thickness stacking toward -Z): a wooden rim, the kingdom-coloured
+-- face, an iron band and a steel boss. The first is the Accessory's Handle; on the sword Tool (the form before Kit.shield) the
+-- same parts ride the Tool's Handle.
+local function roundShieldSpecs(c: CFrame): { Spec }
+	return {
+		discSpec("ShieldRim", 2.8, 0.28, c, LEATHER_DARK, M.Wood),
+		discSpec("ShieldFace", 2.4, 0.2, c * CFrame.new(0, 0, -0.14), C.cloth, M.SmoothPlastic, 1),
+		discSpec("ShieldBand", 1.4, 0.12, c * CFrame.new(0, 0, -0.24), IRON, M.Metal),
+		ballSpec("ShieldBoss", 0.75, (c * CFrame.new(0, 0, -0.34)), STEEL, M.Metal),
+	}
+end
+
+-- In the left hand's grip frame (the arm pointing forward: -Z along the arm toward the fingers, +X right, so the outside of the
+-- left arm is -X): the disc's back face is a fist's depth ahead of the grip point, its centre a little to the outside and low, so
+-- the fist holds it at its middle and it covers the forearm's front and outer side.
+local SHIELD_CF = CFrame.new(-0.3, -0.25, -0.35)
+
+function Gear.shield(kingdomColor: Color3?): Accessory
+	local acc =
+		accessory(nil, "Shield", "LeftGripAttachment", roundShieldSpecs(SHIELD_CF), kingdomColor or Gear.NEUTRAL_COLOR)
+	acc:SetAttribute("KitShield", "shield")
+	return acc
+end
+
 -- ------------------------------------------------------------------ weapons
 
 local function swordSpecs(): ({ Spec }, number)
@@ -408,16 +457,15 @@ local function swordSpecs(): ({ Spec }, number)
 		0.84 + 3.7 + 0.18
 end
 
-local function weaponSpecs(weapon: string): ({ Spec }, number, number)
+local function weaponSpecs(weapon: string, withShield: boolean): ({ Spec }, number, number)
 	if weapon == "swordShield" then
 		local specs, reach = swordSpecs()
-		-- the round shield rides the hand, to its inside and a little behind it: with the arm forward it lies across the chest
-		-- (rim, kingdom face, iron band and boss)
-		local c = CFrame.new(-1.75, -0.25, 0.8)
-		table.insert(specs, discSpec("ShieldRim", 2.8, 0.28, c, LEATHER_DARK, M.Wood))
-		table.insert(specs, discSpec("ShieldFace", 2.4, 0.2, c * CFrame.new(0, 0, -0.14), C.cloth, M.SmoothPlastic, 1))
-		table.insert(specs, discSpec("ShieldBand", 1.4, 0.12, c * CFrame.new(0, 0, -0.24), IRON, M.Metal))
-		table.insert(specs, ballSpec("ShieldBoss", 0.75, (c * CFrame.new(0, 0, -0.34)), STEEL, M.Metal))
+		if withShield then
+			-- the round shield rides the hand, to its inside and a little behind it: with the arm forward it lies across the chest
+			for _, s in roundShieldSpecs(CFrame.new(-1.75, -0.25, 0.8)) do
+				table.insert(specs, s)
+			end
+		end
 		return specs, reach, 1
 	elseif weapon == "greatsword" then
 		return {
@@ -499,9 +547,13 @@ local function weaponSpecs(weapon: string): ({ Spec }, number, number)
 	error(`Kit.weapon: unknown weapon {weapon} (swordShield | greatsword | spear | mace)`)
 end
 
-function Gear.weapon(weapon: string, kingdomColor: Color3?): Tool
+export type WeaponOptions = {
+	shield: boolean?, -- swordShield only: false = the sword alone (the shield is Kit.shield on the left hand); default true
+}
+
+function Gear.weapon(weapon: string, kingdomColor: Color3?, opts: WeaponOptions?): Tool
 	local color = kingdomColor or Gear.NEUTRAL_COLOR
-	local specs, reach, hands = weaponSpecs(weapon)
+	local specs, reach, hands = weaponSpecs(weapon, not (opts and opts.shield == false))
 	local tool = Instance.new("Tool")
 	tool.Name = weapon
 	tool.RequiresHandle = true
@@ -509,6 +561,9 @@ function Gear.weapon(weapon: string, kingdomColor: Color3?): Tool
 	tool:SetAttribute("KitWeapon", weapon)
 	tool:SetAttribute("KitHands", hands)
 	tool:SetAttribute("KitReach", reach)
+	if weapon == "swordShield" then
+		tool:SetAttribute("KitShield", "shield") -- this weapon goes with a shield: on the Tool by default, Kit.shield(color) when opts.shield == false
+	end
 	local handle = build(tool, specs[1], color, "Handle")
 	for i = 2, #specs do
 		weld(handle, build(tool, specs[i], color, nil))

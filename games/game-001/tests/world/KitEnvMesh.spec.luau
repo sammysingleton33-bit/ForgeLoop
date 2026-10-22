@@ -635,7 +635,7 @@ if next(CommittedData.props) ~= nil then
 		for _, placement in planned do
 			worldIds[placement.assetId] = true
 		end
-		-- and what the world adds when the Kit builds the imported meshes (FL-0136 phase 3: fences, cabbage variants, rim cliffs)
+		-- and what the world adds when the Kit builds the imported meshes (FL-0136 phase 3: fences and cabbage variants; the rim cliffs were dropped)
 		for _, placement in
 			WorldPlan.meshDressing(Layout, planned, function(_: string): boolean
 				return true
