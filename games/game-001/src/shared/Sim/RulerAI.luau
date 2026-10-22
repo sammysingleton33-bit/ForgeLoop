@@ -138,25 +138,22 @@ local function place(sim: any, kingdom: any, kind: string, near: { x: number, z:
 end
 
 -- ---------------------------------------------------------------- fortifying (FL-0126 part 2)
--- A governor with aggression >= FORTIFY_AGGRESSION (and a keep at level 2 with its two towers) rings its keep with a
--- palisade: one wall piece at a time at FORTIFY_RING studs from the keep, laid tangent to the circle (12 slots: the D-047 count
--- is 12 walls and one gate, and here 11 walls and the gate). The slot that faces the nearest other keep is kept for the gate,
--- which goes up once GATE_AFTER pieces are finished. A slot that does not fit (a house, a field, a road) is skipped, so the ring
--- may have holes: the walls hold an assault, they do not seal a keep.
+-- A governor with aggression >= FORTIFY_AGGRESSION (and a keep at level 2 with its two towers) walls the approach: an arc
+-- of up to FORTIFY_SLOTS pieces, one at a time, centred on the direction of the nearest other keep, laid tangent to the
+-- circle FORTIFY_RING studs from its own keep. The yard (farms, houses, quarry, camps, towers) fills the ground out to
+-- about 120 studs, so the arc stands just beyond it, inside the L2 territory (170). The middle slot is kept for the gate,
+-- which goes up once GATE_AFTER pieces are finished. Each slot tries a few radii (RING_OFFSETS); a slot that still does
+-- not fit (a field, a tree, a rock) is skipped, so the arc may have holes: the walls hold an assault, they do not seal a
+-- keep. The D-047 part count is unchanged (12 walls and one gate, 11 and the gate here).
 local FORTIFY_AGGRESSION = 0.5
-local FORTIFY_RING = 64 -- studs from the keep's centre to the middle of a wall piece (12 slots of 32 studs just touch)
-local GATE_RING = 66 -- the gate is thicker (12 against 8): its inner face sits where the walls' inner faces do
+local FORTIFY_RING = 132 -- studs from the keep's centre to the middle of a wall piece
+local RING_OFFSETS = { 0, 8, -8, 16 } -- radii tried for a slot, in this order
+local ARC_STEP = 34 / FORTIFY_RING -- radians between slots: a 32-stud piece and a little air
 local FORTIFY_SLOTS = 12
+local GATE_SLOT = 6 -- the middle of the arc (slots 1..12): facing the nearest other keep
+local GATE_EXTRA = 2 -- the gate is thicker (12 against 8): its inner face sits where the walls' inner faces do
 local FORTIFY_WOOD_RESERVE = 120 -- a palisade is never built out of the wood the kingdom needs to live on
 local GATE_AFTER = 6 -- finished wall pieces before the gate is built
-
-local function ringSpot(keep: any, slot: number, radius: number): (number, number, number)
-	local angle = (slot - 0.5) / FORTIFY_SLOTS * math.pi * 2
-	local x, z = keep.x + math.cos(angle) * radius, keep.z + math.sin(angle) * radius
-	-- the piece's long axis (cos yaw, -sin yaw) runs along the tangent (-sin angle, cos angle)
-	local yaw = math.atan2(-math.cos(angle), -math.sin(angle))
-	return x, z, yaw
-end
 
 local function nearestOtherKeep(sim: any, kingdom: any): any?
 	local best, bestDistance = nil, math.huge
@@ -172,30 +169,48 @@ local function nearestOtherKeep(sim: any, kingdom: any): any?
 	return best
 end
 
--- The slot whose wall piece would stand closest to the nearest other keep: the gate's.
-local function gateSlot(sim: any, kingdom: any, keep: any): number
+-- The direction from the keep to the nearest other keep (0 when it is alone): the arc's middle.
+local function approachAngle(sim: any, kingdom: any, keep: any): number
 	local rival = nearestOtherKeep(sim, kingdom)
 	if rival == nil then
-		return 1
+		return 0
 	end
-	local best, bestDistance = 1, math.huge
-	for slot = 1, FORTIFY_SLOTS do
-		local x, z = ringSpot(keep, slot, FORTIFY_RING)
-		local d = (x - rival.x) ^ 2 + (z - rival.z) ^ 2
-		if d < bestDistance then
-			best, bestDistance = slot, d
-		end
-	end
-	return best
+	return math.atan2(rival.z - keep.z, rival.x - keep.x)
 end
 
-local function standsAt(pieces: { any }, x: number, z: number): boolean
+local function slotAngle(centre: number, slot: number): number
+	return centre + (slot - (FORTIFY_SLOTS + 1) / 2 + 0.5) * ARC_STEP
+end
+
+local function ringSpot(keep: any, angle: number, radius: number): (number, number, number)
+	local x, z = keep.x + math.cos(angle) * radius, keep.z + math.sin(angle) * radius
+	-- the piece's long axis (cos yaw, -sin yaw) runs along the tangent (-sin angle, cos angle)
+	local yaw = math.atan2(-math.cos(angle), -math.sin(angle))
+	return x, z, yaw
+end
+
+-- A slot is taken when a piece of the arc already stands within half a step of its angle (at any radius it can use).
+local function slotTaken(pieces: { any }, keep: any, angle: number): boolean
 	for _, b in pieces do
-		if (b.x - x) ^ 2 + (b.z - z) ^ 2 < 36 then
+		local a = math.atan2(b.z - keep.z, b.x - keep.x)
+		local turn = math.abs((a - angle + math.pi) % (2 * math.pi) - math.pi)
+		local radius = math.sqrt((b.x - keep.x) ^ 2 + (b.z - keep.z) ^ 2)
+		if turn < ARC_STEP / 2 and math.abs(radius - FORTIFY_RING) <= 24 then
 			return true
 		end
 	end
 	return false
+end
+
+-- The first radius at which the piece fits in this slot, or nil.
+local function fittingSpot(sim: any, kingdom: any, keep: any, kind: string, angle: number, extra: number)
+	for _, offset in RING_OFFSETS do
+		local x, z, yaw = ringSpot(keep, angle, FORTIFY_RING + offset + extra)
+		if sim:canPlace(kingdom, kind, x, z, yaw) then
+			return x, z, yaw
+		end
+	end
+	return nil, nil, nil
 end
 
 local function fortify(sim: any, kingdom: any): string?
@@ -220,13 +235,13 @@ local function fortify(sim: any, kingdom: any): string?
 	if resting[key] ~= nil and sim.time < resting[key] then
 		return nil
 	end
-	local reserved = gateSlot(sim, kingdom, keep)
-	-- the gate, in the reserved slot, once the palisade has begun to stand
+	local centre = approachAngle(sim, kingdom, keep)
+	-- the gate, in the middle of the arc, once the palisade has begun to stand
 	if #gates == 0 and finished >= GATE_AFTER then
 		local price = sim.costs.building("gate", 1)
 		if price and sim:canAfford(kingdom.id, price.cost) then
-			local x, z, yaw = ringSpot(keep, reserved, GATE_RING)
-			if sim:canPlace(kingdom, "gate", x, z, yaw) then
+			local x, z, yaw = fittingSpot(sim, kingdom, keep, "gate", slotAngle(centre, GATE_SLOT), GATE_EXTRA)
+			if x ~= nil then
 				local ok = Commands.executeFor(sim, kingdom, nil, "PlaceBuilding", "gate", x, z, yaw)
 				if ok then
 					return "PlaceBuilding:gate"
@@ -239,9 +254,10 @@ local function fortify(sim: any, kingdom: any): string?
 		return nil
 	end
 	for slot = 1, FORTIFY_SLOTS do
-		if slot ~= reserved then
-			local x, z, yaw = ringSpot(keep, slot, FORTIFY_RING)
-			if not standsAt(walls, x, z) and sim:canPlace(kingdom, "wall", x, z, yaw) then
+		local angle = slotAngle(centre, slot)
+		if slot ~= GATE_SLOT and not slotTaken(walls, keep, angle) then
+			local x, z, yaw = fittingSpot(sim, kingdom, keep, "wall", angle, 0)
+			if x ~= nil then
 				local ok = Commands.executeFor(sim, kingdom, nil, "PlaceBuilding", "wall", x, z, yaw)
 				if ok then
 					return "PlaceBuilding:wall"
