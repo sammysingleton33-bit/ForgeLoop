@@ -14,6 +14,7 @@ U = "games/game-001/src/client/UI/"
 C = "games/game-001/src/client/Controllers/"
 H, K, A, M, I = U + "HudModel.luau", C + "KingdomHudController.luau", C + "ArenaHudController.luau", U + "ArenaHudModel.luau", C + "ArenaIntroController.luau"
 V = U + "ArenaHud.luau"
+Q, QC = U + "ArenaQualifyModel.luau", U + "ArenaQualifyCard.luau"
 
 
 def run(filt):
@@ -48,6 +49,17 @@ ROWS = [
      "ArenaHud.CLOCK = table.freeze({ desktop = 84, phone = 56 })", "ArenaPhase", "clock box's words fit"),
     ("note not scaled", V, "LayoutOrder = 2, Parent = clock, TextScaled = true }", "LayoutOrder = 2, Parent = clock }",
      "ArenaPhase", "the note shrinks"),
+    # the qualify stage (FORGE-01's coming PR)
+    ("no qualify label", H, "\tqualify = \"Kingdoms qualify\",\n", "", "ArenaPhase", "keeps the phase's own pill"),
+    ("qualifiers swapped", Q, "local left = side(q[1], state, lookup, mineId)\n\tlocal right = side(q[2], state, lookup, mineId)",
+     "local left = side(q[2], state, lookup, mineId)\n\tlocal right = side(q[1], state, lookup, mineId)", "ArenaPhase",
+     "names both qualifiers"),
+    ("banner in every stage", Q, "if type(state) ~= \"table\" or state.stage ~= \"qualify\" then", "if type(state) ~= \"table\" then",
+     "ArenaPhase", "names both qualifiers"),
+    ("frozen points ignored", Q, "local points = if type(state.qualifierPoints) == \"table\" then state.qualifierPoints[id] else nil",
+     "local points = nil", "ArenaPhase", "names both qualifiers"),
+    ("banner never drawn", "games/game-001/src/client/Controllers/ArenaIntroController.luau",
+     "\tself:_renderQualify(metrics or hud:metrics())\n", "", "ArenaPhase", "shows the banner to every player"),
     ("theirs in our accent", A, "kind = if ours then \"achievement\" else \"info\",", "kind = \"achievement\",",
      "ArenaPhase", "names the kingdom that takes the crown"),
 ]

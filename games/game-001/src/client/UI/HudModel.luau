@@ -95,6 +95,7 @@ HudModel.NEXT_NOTE = table.freeze({ Conflict = "war opens" })
 -- the current time until arenaEnded), so the pill would read "Endgame 0:00 left, next Results" through the
 -- whole arena. With an ArenaState in a running stage it names the arena, the stage and the stage's own clock.
 HudModel.ARENA_STAGES = table.freeze({
+	qualify = "Kingdoms qualify",
 	vote = "Choosing champions",
 	loadout = "Champions arm",
 	intro = "Champions enter",

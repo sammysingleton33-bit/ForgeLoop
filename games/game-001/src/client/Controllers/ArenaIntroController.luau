@@ -8,11 +8,16 @@
 	ring are not hidden behind it (D-059 arena pass; it covered the whole ring at 1920 x 1080).
 
 	Depends on KingdomHudController (modal layer, layout) and ArenaHudController (state, lookup).
-	API (specs and scenes)   intro.view   intro:model()   ArenaIntroController.POLL_SEC   .RING_SEC
+	The `qualify` stage (FORGE-01's coming PR; fields `qualifiers`, `qualifierPoints`): a banner naming the two
+	kingdoms that fight for the crown (UI/ArenaQualifyCard over UI/ArenaQualifyModel), for every player.
+	API (specs and scenes)   intro.view   intro.qualify   intro:model()   intro:qualifyModel()
+	                         ArenaIntroController.POLL_SEC   .RING_SEC
 ]]
 
 local ArenaIntroCard = require("../UI/ArenaIntroCard")
 local ArenaIntroModel = require("../UI/ArenaIntroModel")
+local ArenaQualifyCard = require("../UI/ArenaQualifyCard")
+local ArenaQualifyModel = require("../UI/ArenaQualifyModel")
 local Crowd = require("@game/ReplicatedStorage/Forge/Config/Crowd")
 local Signature = require("../UI/Signature")
 
@@ -31,7 +36,9 @@ function Def.new(env: any, registry: any)
 		hud = registry:get("KingdomHudController"),
 		arena = registry:get("ArenaHudController"),
 		view = nil :: any,
+		qualify = nil :: any,
 		_key = nil :: string?,
+		_qualifyKey = nil :: string?,
 		_connections = {} :: { any },
 	}, ArenaIntroController)
 end
@@ -55,7 +62,7 @@ function ArenaIntroController:start()
 		while self._running do
 			env.wait(ArenaIntroController.POLL_SEC)
 			local st = self.arena.state
-			if self._running and st ~= nil and st.stage == "intro" then
+			if self._running and st ~= nil and (st.stage == "intro" or st.stage == "qualify") then
 				self:render()
 			end
 		end
@@ -74,6 +81,35 @@ function ArenaIntroController:destroy()
 	if self.view then
 		self.view:destroy()
 	end
+	if self.qualify then
+		self.qualify:destroy()
+	end
+end
+
+function ArenaIntroController:qualifyModel(): any
+	local mine = self.hud.store:mine()
+	return ArenaQualifyModel.view(
+		self.arena.state,
+		self.arena:lookup(),
+		if mine then mine.id else nil,
+		self._env.serverTimeNow()
+	)
+end
+
+function ArenaIntroController:_renderQualify(m: any)
+	self.qualify = self.qualify or ArenaQualifyCard.new(self.hud.roots.modals)
+	local model = self:qualifyModel()
+	if model == nil then
+		self.qualify:destroy()
+		self._qualifyKey = nil
+		return
+	end
+	local key = Signature.of({ model = model, breakpoint = m.breakpoint, width = m.width, height = m.height })
+	if key == self._qualifyKey and self.qualify.instance ~= nil then
+		return
+	end
+	self._qualifyKey = key
+	self.qualify:render(model, m)
 end
 
 function ArenaIntroController:model(): any
@@ -93,6 +129,7 @@ function ArenaIntroController:render(metrics: any?)
 		return
 	end
 	self.view = self.view or ArenaIntroCard.new(hud.roots.modals)
+	self:_renderQualify(metrics or hud:metrics())
 	local model = self:model()
 	if model == nil then
 		self.view:destroy()
