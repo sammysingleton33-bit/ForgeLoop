@@ -7,8 +7,8 @@ with `--backdrop=none` and laid over Blender renders of the arena venue: FORGE-0
 - the duel's follow view: zoom 16, FOV 70, pitch 14, behind champion A's mark.
 
 The vote, the loadout and Results show while the camera is still on the player's kingdom, so they lie over the
-D-059 start frame. Composites are in `screenshots/d059-arena/`: desktop 1920 × 1080 shown at 1280 × 720, and the
-`phone` device at 844 × 390. The champions have no figures in the Blender dump, so white rings mark where they stand
+D-059 start frame. Composites are in `screenshots/d059-arena/`: `desktop-*` (1920 × 1080 shown at 1280 × 720) and `phone-*` (the
+`phone` device, 844 × 390, over 1688 × 780 venue renders). The champions have no figures in the Blender dump, so white rings mark where they stand
 (their marks, Layout.arena spawnA / spawnB). All are judged by eye. A composite is not Studio.
 
 Device note: `phone-wide` (#314) treats 750 × 311 as the whole screen, then takes the 58 px top bar out of it, which
@@ -46,6 +46,10 @@ states are clean: no votes yet, "1 of 4 voted", long names cut to fit, stamina u
 4. **The crowning names the winner** (`ArenaHudController:crownToast`). One toast when the crowning starts: "<Kingdom>
    takes the crown", with "Your champion won the duel" (achievement accent) or "Their champion won the duel", or
    "Crowned without a duel" for a coronation. A draw gets none: FORGE-04's match-end line says it.
+
+5. **The phone's clock box** (`ArenaHud.CLOCK.phone` 56 → 68, the note `TextScaled` between 6 px and its size). On
+   the 844 × 390 phone "Sudden death" read "Sudden de…"; a spectator's "<Kingdom> wins" shrinks to fit instead of
+   being cut.
 
 ## Structural (not fixed; owners named)
 

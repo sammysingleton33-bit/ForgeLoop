@@ -13,6 +13,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[5]
 U = "games/game-001/src/client/UI/"
 C = "games/game-001/src/client/Controllers/"
 H, K, A, M, I = U + "HudModel.luau", C + "KingdomHudController.luau", C + "ArenaHudController.luau", U + "ArenaHudModel.luau", C + "ArenaIntroController.luau"
+V = U + "ArenaHud.luau"
 
 
 def run(filt):
@@ -43,6 +44,10 @@ ROWS = [
      "\tif stage == \"crowning\" then\n\t\tself:_announceCrown()", "ArenaPhase", "names the kingdom that takes the crown"),
     ("coronation ignored", A, "\tlocal kingdomId = state.coronation\n", "\tlocal kingdomId = nil\n", "ArenaPhase",
      "names the kingdom that takes the crown"),
+    ("phone clock box back to 56", V, "ArenaHud.CLOCK = table.freeze({ desktop = 84, phone = 68 })",
+     "ArenaHud.CLOCK = table.freeze({ desktop = 84, phone = 56 })", "ArenaPhase", "clock box's words fit"),
+    ("note not scaled", V, "LayoutOrder = 2, Parent = clock, TextScaled = true }", "LayoutOrder = 2, Parent = clock }",
+     "ArenaPhase", "the note shrinks"),
     ("theirs in our accent", A, "kind = if ours then \"achievement\" else \"info\",", "kind = \"achievement\",",
      "ArenaPhase", "names the kingdom that takes the crown"),
 ]

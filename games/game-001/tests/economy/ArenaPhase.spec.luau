@@ -6,6 +6,9 @@ local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
 local ArenaDoubles = require("./doubles/ArenaDoubles")
+local ArenaHud = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaHud")
+local ArenaHudModel = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaHudModel")
+local ArenaVote = require("@game/StarterPlayer/StarterPlayerScripts/Game/UI/ArenaVote")
 local ArenaHudDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ArenaHudController")
 local ArenaIntroDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/ArenaIntroController")
 local Create = require("@game/ReplicatedStorage/Forge/UI/Create")
@@ -157,5 +160,51 @@ describe("Crown Arena: the intro's ring shot and the crowning (D-059 arena pass)
 		expect(theirs.body).toBe("Their champion won the duel")
 		expect(world.arena:crownToast({ stage = "crowning", coronation = "azure" }).body).toBe("Crowned without a duel")
 		expect(world.arena:crownToast({ stage = "crowning", a = a, b = b })).toBeNil()
+	end)
+end)
+
+describe("Duel HUD: the clock box's words fit (D-059 arena pass)", function()
+	it("fits every note and end word in the phone's clock box; a long winner's name shrinks to it", function()
+		-- ArenaVote.textWidth measures at 15 px (the vote panel's status size); scale to the note's 8 px
+		local function width(text, px)
+			return ArenaVote.textWidth(text) * px / 15
+		end
+		-- the fixed words fit at full size; a winner's kingdom name may be long, so the note shrinks (TextScaled,
+		-- 6 to 8 px on a phone): "Frostmere wins" must fit at 6 px
+		for _, note in { "Duel", "Sudden death", "You win", "You lost", "No winner" } do
+			expect(width(note, 8)).toBeLessThan(ArenaHud.CLOCK.phone - 4)
+			expect(width(note, 10)).toBeLessThan(ArenaHud.CLOCK.desktop - 4)
+		end
+		expect(width("Frostmere wins", 6)).toBeLessThan(ArenaHud.CLOCK.phone - 4)
+		for _, word in ArenaHudModel.ENDED do
+			expect(width(word, 16)).toBeLessThan(ArenaHud.CLOCK.phone - 4)
+		end
+	end)
+end)
+
+describe("Duel HUD: the note shrinks to its box", function()
+	it("draws the clock note scaled, at most its size, on a phone, so a long winner's name is never cut", function()
+		world = arenaWorld()
+		world.hud:setViewport(750, 311) -- the phone device's core area
+		local a, b = duellists(ArenaDoubles)
+		world.arenaServer:setState({ stage = "duel", endsAt = world.env.serverTimeNow() + 40, a = a, b = b })
+		world:advance(0.3)
+		world.arenaServer:events({ { t = 9, kind = "ended", side = "b", data = { winner = "b", reason = "ko" } } })
+		world:advance(0.5)
+		local note = nil
+		for _, gui in world.hud.guis do
+			for _, d in gui:GetDescendants() do
+				if d.Name == "Note" and d:IsA("TextLabel") then
+					note = d
+				end
+			end
+		end
+		expect(note).never.toBeNil()
+		expect(note.Text).toBe("You lost")
+		expect(note.TextScaled).toBe(true)
+		local limit = note:FindFirstChildWhichIsA("UITextSizeConstraint")
+		expect(limit).never.toBeNil()
+		expect(limit.MaxTextSize).toBe(8)
+		expect(ArenaHud.CLOCK.phone >= 68).toBe(true) -- "Sudden death" at 8 px (56 cut it)
 	end)
 end)
