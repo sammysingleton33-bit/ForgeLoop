@@ -88,6 +88,8 @@ export type ArenaState = {
 	coronation: KingdomId?,
 	winner: number?,
 	vote: { [string]: VoteSide }?, -- "a" | "b" -> the side's vote; vote stage only
+	qualifiers: { KingdomId }?, -- the two qualifying kingdoms, side a first (the better Crown Points); from the qualify stage on, never in a coronation
+	qualifierPoints: { [KingdomId]: number }?, -- the Crown Points that decided it, a snapshot taken when the arena begins
 }
 export type DuelAction = "light" | "heavy" | "block" | "blockEnd" | "parry" | "dodge"
 

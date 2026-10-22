@@ -4,12 +4,15 @@
 	Owner: FORGE-01. No Roblox API, no clock (the caller passes `now`), no randomness: the same setup and calls give the
 	same arena, so the specs run whole arenas headless. ArenaService owns one Flow per match and feeds it the world.
 
-	Stages: vote -> loadout -> intro -> duel -> crowning -> done. A stage that has nothing to decide is skipped: no vote
-	when every qualified kingdom has at most one candidate, no loadout when both champions are AI. One qualifier is last
-	keep standing: a coronation, straight to the crowning with no duel.
+	Stages: qualify -> vote -> loadout -> intro -> duel -> crowning -> done. `qualify` announces the two qualifying kingdoms
+	(config Arena qualifySeconds; nothing to decide). A stage that has nothing to decide is skipped: no vote when every
+	qualified kingdom has at most one candidate, no loadout when both champions are AI. One qualifier is last keep
+	standing: a coronation, straight to the crowning with no qualify and no duel.
 
 		ArenaFlow.new(setup, now, config?) -> Flow
 			setup.qualifiers   { KingdomId }: 1 (coronation) or 2, side "a" first (the better Crown Points)
+			setup.points       (KingdomId) -> number?          optional: the Crown Points that decided it, read once when the
+			                   arena begins and shown as ArenaState.qualifierPoints
 			setup.rulersOf     (KingdomId) -> { userId }       the human rulers seated there
 			setup.leadership   (userId, KingdomId) -> number   valour + conduct, the tie-break for a champion
 			setup.citizens     (KingdomId) -> number?          optional: the kingdom's living citizens, read once per
@@ -113,6 +116,8 @@ function ArenaFlow.new(setup: any, now: number, config: any?): any
 	self._rev = 0
 	self._stage = "vote"
 	self._endsAt = nil :: number?
+	self._qualifiers = nil :: { string }? -- the two qualifiers (side a first), from the qualify stage on
+	self._points = nil :: { [string]: number }?
 	self._sides = { "a", "b" }
 	self._kingdoms = {} :: { [string]: string } -- side -> kingdom
 	self._candidates = {} :: { [string]: { number } } -- side -> seated human rulers (sorted)
@@ -134,14 +139,36 @@ function ArenaFlow.new(setup: any, now: number, config: any?): any
 		self:_crown(nil, qualifiers[1], nil, { kind = "coronation" }, now)
 		return self
 	end
+	self._qualifiers = table.clone(qualifiers)
+	if setup.points then
+		local points: { [string]: number } = {}
+		for _, kingdom in qualifiers do
+			local value = setup.points(kingdom)
+			if type(value) == "number" and value == value and value > -math.huge and value < math.huge then
+				points[kingdom] = value
+			end
+		end
+		self._points = points
+	end
+	if type(cfg.qualifySeconds) == "number" and cfg.qualifySeconds > 0 then
+		self._stage = "qualify"
+		self._endsAt = now + cfg.qualifySeconds
+	else
+		self:_afterQualify(now)
+	end
+	return self
+end
+
+-- The qualify stage is over (or there is none): the vote when a kingdom has co-rulers to choose between, else the champions.
+function ArenaFlow:_afterQualify(now: number)
 	if self:_needsVote() then
 		self._stage = "vote"
-		self._endsAt = now + cfg.voteSeconds
+		self._endsAt = now + self._cfg.voteSeconds
 	else
 		self:_pickChampions()
 		self:_afterChampions(now)
 	end
-	return self
+	self._rev += 1
 end
 
 function ArenaFlow:_needsVote(): boolean
@@ -298,6 +325,8 @@ function ArenaFlow:state(): ArenaState
 		coronation = self._coronation,
 		winner = self._winnerUser,
 		vote = self:_voteView(),
+		qualifiers = if self._qualifiers then table.clone(self._qualifiers) else nil,
+		qualifierPoints = if self._points then table.clone(self._points) else nil,
 	}
 end
 
@@ -424,7 +453,9 @@ function ArenaFlow:step(now: number): boolean
 	local changed = false
 	while self._endsAt ~= nil and now >= self._endsAt and self._stage ~= "done" do
 		local at = self._endsAt :: number
-		if self._stage == "vote" then
+		if self._stage == "qualify" then
+			self:_afterQualify(at)
+		elseif self._stage == "vote" then
 			self:_pickChampions()
 			self:_afterChampions(at)
 		elseif self._stage == "loadout" then
@@ -493,7 +524,7 @@ function ArenaFlow:forfeit(userId: number, now: number): boolean
 	if self._stage == "crowning" or self._stage == "done" then
 		return false
 	end
-	if self._stage == "vote" then
+	if self._stage == "vote" or self._stage == "qualify" then -- a ruler leaving before the vote drops out of it too
 		local changed = false
 		for _, side in self._sides do
 			local candidates = self._candidates[side]

@@ -459,6 +459,10 @@ function ArenaService:_begin(qualifiers: { string }): boolean
 			end
 			return living
 		end,
+		points = function(kingdom: string): number?
+			local k = sim.kingdoms[kingdom]
+			return if k then k.crownPoints else nil
+		end,
 		leadership = function(userId: number, kingdom: string): number
 			return leadership:leadership(kingdom, userId)
 		end,

@@ -5,6 +5,8 @@
 
 	PROVISIONAL timings (FORGE-04 owns the match-level phase lengths in Pacing; these are the stages inside the arena).
 
+	qualifySeconds         the two qualifying kingdoms are announced (nothing to decide; skipped on a coronation); config Pacing
+	                       arena.qualify says the same number and a spec pins them equal
 	voteSeconds            co-rulers of a qualified kingdom choose their champion (closes early when all have voted)
 	loadoutSeconds         the champion picks weapon, armour and trigger perks; the offered defaults stand if they don't
 	introSeconds           the versus card and the camera pass
@@ -47,6 +49,7 @@
 ]]
 
 return {
+	qualifySeconds = 5,
 	voteSeconds = 10,
 	loadoutSeconds = 20,
 	introSeconds = 12,
