@@ -33,7 +33,7 @@ local function sideFrame(s: any, phone: boolean, name: string, right: boolean): 
 	local frame = Create("Frame", {
 		Name = name,
 		AnchorPoint = if right then Vector2.new(1, 0.5) else Vector2.new(0, 0.5),
-		Position = if right then UDim2.new(1, 0, 0.5, 0) else UDim2.new(0, 0, 0.5, 0),
+		Position = if right then UDim2.fromScale(1, 0.5) else UDim2.fromScale(0, 0.5),
 		Size = UDim2.new(0.5, if phone then -26 else -38, 1, 0),
 		BackgroundColor3 = Theme.color("ink800"),
 		BackgroundTransparency = 0.1,
