@@ -15,6 +15,9 @@
 		growth    upgrade the Keep from day 3; upgrade Houses when wood and stone are plentiful
 		military  build a Barracks from day 4, keep an army of about a quarter of the population,
 		          Watchtowers after Keep level 2
+		fortify   aggression >= 0.5, keep level 2 and both towers: a palisade of up to 11 wall pieces ringing the keep (12 slots, 64
+		          studs out; a slot that does not fit is skipped), and once 6 are finished a gate in the slot that faces the
+		          nearest other keep (FL-0126 part 2; the D-047 count is 12 walls and one gate)
 		objective with 3+ soldiers and no war, march on the nearest capture point it does not own
 		war       after the grace period, an aggressive AI declares war on the weakest neighbour and
 		          attacks once its army is large enough; it proposes peace when its army is gone and
@@ -132,6 +135,122 @@ local function place(sim: any, kingdom: any, kind: string, near: { x: number, z:
 	end
 	local ok = Commands.executeFor(sim, kingdom, nil, "PlaceBuilding", kind, x, z)
 	return if ok then "PlaceBuilding:" .. kind else nil
+end
+
+-- ---------------------------------------------------------------- fortifying (FL-0126 part 2)
+-- A governor with aggression >= FORTIFY_AGGRESSION (and a keep at level 2 with its two towers) rings its keep with a
+-- palisade: one wall piece at a time at FORTIFY_RING studs from the keep, laid tangent to the circle (12 slots: the D-047 count
+-- is 12 walls and one gate, and here 11 walls and the gate). The slot that faces the nearest other keep is kept for the gate,
+-- which goes up once GATE_AFTER pieces are finished. A slot that does not fit (a house, a field, a road) is skipped, so the ring
+-- may have holes: the walls hold an assault, they do not seal a keep.
+local FORTIFY_AGGRESSION = 0.5
+local FORTIFY_RING = 64 -- studs from the keep's centre to the middle of a wall piece (12 slots of 32 studs just touch)
+local GATE_RING = 66 -- the gate is thicker (12 against 8): its inner face sits where the walls' inner faces do
+local FORTIFY_SLOTS = 12
+local FORTIFY_WOOD_RESERVE = 120 -- a palisade is never built out of the wood the kingdom needs to live on
+local GATE_AFTER = 6 -- finished wall pieces before the gate is built
+
+local function ringSpot(keep: any, slot: number, radius: number): (number, number, number)
+	local angle = (slot - 0.5) / FORTIFY_SLOTS * math.pi * 2
+	local x, z = keep.x + math.cos(angle) * radius, keep.z + math.sin(angle) * radius
+	-- the piece's long axis (cos yaw, -sin yaw) runs along the tangent (-sin angle, cos angle)
+	local yaw = math.atan2(-math.cos(angle), -math.sin(angle))
+	return x, z, yaw
+end
+
+local function nearestOtherKeep(sim: any, kingdom: any): any?
+	local best, bestDistance = nil, math.huge
+	for _, kid in sim.kingdomOrder do
+		local other = sim.kingdoms[kid]
+		if other ~= kingdom and other.alive then
+			local d = (other.x - kingdom.x) ^ 2 + (other.z - kingdom.z) ^ 2
+			if d < bestDistance then
+				best, bestDistance = other, d
+			end
+		end
+	end
+	return best
+end
+
+-- The slot whose wall piece would stand closest to the nearest other keep: the gate's.
+local function gateSlot(sim: any, kingdom: any, keep: any): number
+	local rival = nearestOtherKeep(sim, kingdom)
+	if rival == nil then
+		return 1
+	end
+	local best, bestDistance = 1, math.huge
+	for slot = 1, FORTIFY_SLOTS do
+		local x, z = ringSpot(keep, slot, FORTIFY_RING)
+		local d = (x - rival.x) ^ 2 + (z - rival.z) ^ 2
+		if d < bestDistance then
+			best, bestDistance = slot, d
+		end
+	end
+	return best
+end
+
+local function standsAt(pieces: { any }, x: number, z: number): boolean
+	for _, b in pieces do
+		if (b.x - x) ^ 2 + (b.z - z) ^ 2 < 36 then
+			return true
+		end
+	end
+	return false
+end
+
+local function fortify(sim: any, kingdom: any): string?
+	local keep = sim.buildings[kingdom.keepId]
+	if keep == nil then
+		return nil
+	end
+	local walls, finished, gates = {}, 0, {}
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b.kind == "wall" then
+			table.insert(walls, b)
+			if b.level >= 1 then
+				finished += 1
+			end
+		elseif b.kind == "gate" then
+			table.insert(gates, b)
+		end
+	end
+	local resting = sim.rulerAI.noSpotUntil
+	local key = `{kingdom.id}:wall`
+	if resting[key] ~= nil and sim.time < resting[key] then
+		return nil
+	end
+	local reserved = gateSlot(sim, kingdom, keep)
+	-- the gate, in the reserved slot, once the palisade has begun to stand
+	if #gates == 0 and finished >= GATE_AFTER then
+		local price = sim.costs.building("gate", 1)
+		if price and sim:canAfford(kingdom.id, price.cost) then
+			local x, z, yaw = ringSpot(keep, reserved, GATE_RING)
+			if sim:canPlace(kingdom, "gate", x, z, yaw) then
+				local ok = Commands.executeFor(sim, kingdom, nil, "PlaceBuilding", "gate", x, z, yaw)
+				if ok then
+					return "PlaceBuilding:gate"
+				end
+			end
+		end
+	end
+	local price = sim.costs.building("wall", 1)
+	if price == nil or not sim:canAfford(kingdom.id, price.cost) then
+		return nil
+	end
+	for slot = 1, FORTIFY_SLOTS do
+		if slot ~= reserved then
+			local x, z, yaw = ringSpot(keep, slot, FORTIFY_RING)
+			if not standsAt(walls, x, z) and sim:canPlace(kingdom, "wall", x, z, yaw) then
+				local ok = Commands.executeFor(sim, kingdom, nil, "PlaceBuilding", "wall", x, z, yaw)
+				if ok then
+					return "PlaceBuilding:wall"
+				end
+			end
+		end
+	end
+	resting[key] = sim.time + NO_SPOT_RETRY -- every free slot is built or blocked: look again in a minute
+	return nil
 end
 
 local function tryUpgrade(sim: any, kingdom: any, kind: string, maxLevel: number): string?
@@ -485,6 +604,19 @@ function RulerAI.think(sim: any, kingdom: any): string?
 		end
 		if sim:keepLevel(kingdom) >= 2 and count(sim, kingdom, "watchtower", true) < 2 then
 			local issued = place(sim, kingdom, "watchtower")
+			if issued then
+				return issued
+			end
+		end
+		if
+			aggression >= FORTIFY_AGGRESSION
+			and sim:keepLevel(kingdom) >= 2
+			and count(sim, kingdom, "watchtower", true) >= 2
+			and not hasSite(sim, kingdom, "wall")
+			and not hasSite(sim, kingdom, "gate")
+			and sim:balance(kingdom.id, "wood") >= FORTIFY_WOOD_RESERVE
+		then
+			local issued = fortify(sim, kingdom)
 			if issued then
 				return issued
 			end
