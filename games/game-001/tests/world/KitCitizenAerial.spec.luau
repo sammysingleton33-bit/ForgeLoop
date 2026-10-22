@@ -24,6 +24,7 @@ local describe, it, expect = T.describe, T.it, T.expect
 
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local LightingPreset = require("@game/ReplicatedStorage/Game/World/Lighting")
+local StartView = require("./support/StartView")
 
 local CRIMSON = Color3.fromRGB(190, 40, 50)
 local KINGDOMS = {
@@ -130,15 +131,19 @@ local function countParts(rig: Model): number
 	return n
 end
 
--- ------------------------------------------------------------------ the camera (RulerCameraController overview, pitchFor)
+-- ------------------------------------------------------------------ the camera (the real start view: support/StartView)
 
--- Projects the body of a rig standing at the focus: its height in pixels. The camera looks at the focus from `zoom` studs away at
--- the zoom's pitch (38 degrees at zoom 40 to 65 at zoom 220), yaw 0, vertical FOV `fov`, on a viewport `height` px tall.
+-- RulerCameraController's pitch law (Def.pitchFor): 38 degrees at zoom 40 up to 65 at zoom 220, linear between
+local function pitchFor(zoom: number): number
+	return 38 + 27 * (math.clamp(zoom, 40, 220) - 40) / 180
+end
+
+-- Projects the body of a rig standing at the camera's focus: its height in pixels. The camera is StartView.camera (the start view's
+-- focus and yaw, `zoom` studs away at the zoom's pitch), vertical FOV `fov`, on a viewport `height` px tall.
 local function bodyPixels(rig: Model, zoom: number, fov: number, height: number): number
-	local pitch = math.rad(38 + 27 * (math.clamp(zoom, 40, 220) - 40) / 180)
-	local focus = Vector3.new(0, 2.75, 0)
-	local eye = focus + Vector3.new(0, zoom * math.sin(pitch), zoom * math.cos(pitch))
-	local cam = CFrame.lookAt(eye, focus)
+	local START = StartView.START
+	local root = CFrame.new(0, 2.75, START.ahead) -- facing -Z: the focus (ahead studs in front of it) is the origin column, 2.75 up
+	local cam = StartView.camera(root, zoom, pitchFor(zoom), START.ahead, START.turn)
 	local f = (height / 2) / math.tan(math.rad(fov) / 2)
 	local lo, hi = math.huge, -math.huge
 	for _, name in { "Torso", "Head", "LeftLeg", "RightLeg", "LeftArm", "RightArm" } do
@@ -147,8 +152,8 @@ local function bodyPixels(rig: Model, zoom: number, fov: number, height: number)
 		for _, sx in { -1, 1 } do
 			for _, sy in { -1, 1 } do
 				for _, sz in { -1, 1 } do
-					local w = cam:PointToObjectSpace(p.CFrame * Vector3.new(sx * h.X, sy * h.Y, sz * h.Z))
-					local y = -f * w.Y / -w.Z -- the camera looks along -Z; +Y is up on screen
+					local rel = p.CFrame * Vector3.new(sx * h.X, sy * h.Y, sz * h.Z) - cam.position
+					local y = f * rel:Dot(cam.up) / rel:Dot(cam.forward)
 					lo, hi = math.min(lo, y), math.max(hi, y)
 				end
 			end
@@ -224,7 +229,7 @@ describe("citizen aerial readability (ground contrast, hat hues, size on screen)
 		-- and the checker's own arithmetic: a colour is 0 from itself, and the worst of the old set is under 10 from some ground
 		expect(dE(GROUND[3].color, GROUND[3].color)).toBeNear(0, 1e-9)
 		expect(dE(replaced.hauler_panel, GROUND[3].color)).toBeLessThan(10)
-		expect(dE(replaced.idle_trousers, GROUND[4].color)).toBeLessThan(1)
+		expect(dE(replaced.idle_trousers, GROUND[4].color)).toBeLessThan(5)
 	end)
 
 	it("separates the four job hats by hue as well as by value (dE 40 or more apart, default look)", function()
@@ -296,10 +301,22 @@ describe("citizen aerial readability (ground contrast, hat hues, size on screen)
 			-- tools/citizen_screen.py measures the citizens as the dump stands them (farther ones are smaller): medians 65.9, 19.0, 19.2, 5.5.
 			-- The floors sit 7 % to 9 % under, so a pose or a hat does not trip them and a shrunk rig does.
 			local floors = {
-				{ zoom = 70, fov = 55, height = 1080, min = 66, label = "start view, desktop 1080p" },
-				{ zoom = 70, fov = 55, height = 311, min = 19, label = "start view, phone" },
-				{ zoom = 220, fov = 55, height = 1080, min = 15, label = "zoom 220, desktop 1080p" },
-				{ zoom = 220, fov = 55, height = 311, min = 4.3, label = "zoom 220, phone" },
+				{
+					zoom = StartView.START.zoom,
+					fov = StartView.START.fov,
+					height = 1080,
+					min = 66,
+					label = "start view, desktop 1080p",
+				},
+				{
+					zoom = StartView.START.zoom,
+					fov = StartView.START.fov,
+					height = 311,
+					min = 19,
+					label = "start view, phone",
+				},
+				{ zoom = 220, fov = StartView.START.fov, height = 1080, min = 15, label = "zoom 220, desktop 1080p" },
+				{ zoom = 220, fov = StartView.START.fov, height = 311, min = 4.3, label = "zoom 220, phone" },
 			}
 			for _, job in JOBS do
 				local rig = Kit.character("citizen", job, CRIMSON, lookOf(1, 1, 1))

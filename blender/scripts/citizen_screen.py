@@ -1,24 +1,24 @@
-"""Citizen readability at the default gameplay camera (visual upgrade pass 1, stream C).
+"""Citizen readability at the start camera (visual upgrade pass 1, stream C).
 
-Pure python (numpy + Pillow, no bpy): reads the Lune world dump (WorldDump.spec, `feature = "citizen"` placements: 23 per kingdom,
-default look, at rest) and answers two questions with numbers, not impressions.
+Pure python (numpy + Pillow, no bpy): reads the Lune world dump (WorldDump.spec: `feature = "citizen"` placements, by default the sim's
+real positions 30 s after the start, rest pose) and measures how big the citizens are on screen.
 
-  measure   how many pixels tall / wide is each citizen at the ruler's camera? The camera is the one render_world.py draws
-            (focus = plot spawn, yaw 0, vertical FOV per view) at any zoom; the pitch is pitchFor(zoom) = 38 + 27 * (zoom - 40) / 180
-            (zoom 70 -> 42.5 deg, zoom 120 -> 50, zoom 220 -> 65). Every part's silhouette is
-            projected (boxes by their 8 corners, cylinders by two end circles, balls as screen discs) and the figure's
-            screen box is their union; `h` is its height in pixels, `w` its width.
-  crops     cut the citizens out of a finished render of the same view at 1:1 (no resampling) and lay them out on one sheet,
-            labelled by job, so a reviewer judges them at the size a player sees them (--scale 3 adds an enlarged copy).
-  contrast  mean colour of the pixels a citizen covers in a render vs the mean colour of a ring of ground around it, as a
-            plain sRGB distance and as a WCAG-style luminance ratio (the number the crop sheet is judged by).
+  measure   how many pixels tall / wide is each citizen at the ruler's start camera? The camera is the one render_world.py draws: the dump's
+            `start` = {zoom, fov, pitch, ahead, turn} (the focus lies `ahead` studs in front of the seated ruler's root along the throne's
+            facing; the camera looks along that facing turned by `turn` degrees: 180 = back across the yard at the keep), the pitch
+            from pitchFor(zoom) = 38 + 27 * (zoom - 40) / 180 (zoom 70 -> 42.5 deg, zoom 220 -> 65, zoom 120 -> 50). Every part's
+            silhouette is projected (boxes by their 8 corners, cylinders by two end circles, balls as screen discs) and the figure's
+            screen box is their union: `figure h` is its height in pixels with hat and tool, `body-only h` without them.
+  crops     cut the citizens out of a finished render of the same view at 1:1 (no resampling), labelled by job (a citizen outside the
+            frame is blank: citizen_crops.py draws every citizen on its own tile instead).
 
-  python3 blender/scripts/citizen_screen.py measure --json world.json --kingdom crimson
+  python3 blender/scripts/citizen_screen.py measure --json world.json --kingdom crimson --views default1080,defaultphone,far1080,farphone
   python3 blender/scripts/citizen_screen.py crops   --json world.json --kingdom crimson --view default --image render.png --out sheet.jpg
-  python3 blender/scripts/citizen_screen.py contrast --json world.json --kingdom crimson --view default --image render.png
 
-Views: see VIEWS (default = the start view from the dump's `start`, far = zoom 220, legacy = zoom 120 / FOV 70; each at the 1600 x 900 render, 1080, phone).
-The pixel sizes scale with the render height: a 900 px render is 0.83 of 1080p.
+Views: see VIEWS (default = the start view, far = zoom 220, legacy = zoom 120 / FOV 70; each at the 1600 x 900 render size, "1080" =
+1920 x 1080 desktop, "phone" = 750 x 311). Pixel sizes scale with the viewport height: a 900 px render is 0.83 of 1080p.
+(A render-based "ground contrast" measure was tried and dropped: the ring of ground round a citizen in the start frame is mostly
+buildings and shadow, so the number moved with the neighbours, not the citizen. The colour rule is KitCitizenAerial.spec's CIELAB dE.)
 """
 
 import argparse
@@ -254,57 +254,6 @@ def cmd_crops(args):
         print(f"wrote {res[0]} {res[1]} bytes {res[3]}")
 
 
-def srgb_lin(c):
-    c = np.asarray(c, float) / 255.0
-    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
-
-
-def lum(rgb):
-    lin = srgb_lin(rgb)
-    return float(0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2])
-
-
-def cmd_contrast(args):
-    """How far the figure's pixels sit from the ground around it. The figure's pixels: those inside its screen box whose
-    colour differs clearly from the ring's median (a crude matte: it counts shadow and tool pixels too)."""
-    data = json.loads(Path(args.json).read_text())
-    cam = camera_for(data, args.kingdom, args.view)
-    img = np.asarray(load_image(args.image)).astype(float)
-    out = []
-    for job, p in citizens(data, args.kingdom):
-        (x0, y0, x1, y1), _ = citizen_box(cam, data["assets"][p["assetId"]], p)
-        X0, Y0, X1, Y1 = int(x0), int(y0), int(math.ceil(x1)), int(math.ceil(y1))
-        m = 5
-        ring = np.ones(img.shape[:2], bool)
-        ring[:] = False
-        ay0, ay1, ax0, ax1 = max(0, Y0 - m), min(img.shape[0], Y1 + m), max(0, X0 - m), min(img.shape[1], X1 + m)
-        ring[ay0:ay1, ax0:ax1] = True
-        ring[max(0, Y0):min(img.shape[0], Y1), max(0, X0):min(img.shape[1], X1)] = False
-        if ring.sum() < 8:
-            continue
-        ground = np.median(img[ring], axis=0)
-        box = img[max(0, Y0):min(img.shape[0], Y1), max(0, X0):min(img.shape[1], X1)].reshape(-1, 3)
-        dist = np.linalg.norm(box - ground, axis=1)
-        fig = box[dist > args.threshold]
-        if len(fig) < 3:
-            out.append((job, 0.0, 1.0, 0))
-            continue
-        mean = fig.mean(axis=0)
-        la, lb = lum(mean), lum(ground)
-        ratio = (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
-        out.append((job, float(np.linalg.norm(mean - ground)), ratio, len(fig)))
-    by = {}
-    for job, dist, ratio, n in out:
-        by.setdefault(job, []).append((dist, ratio, n))
-    print(f"contrast of figure pixels vs the ground ring, {args.kingdom} {args.view} (threshold {args.threshold})")
-    tot = []
-    for job, v in sorted(by.items()):
-        print(f"   {job:<11} n={len(v):>2}  rgb distance med {statistics.median(a for a, _, _ in v):5.1f}"
-              f"  luminance ratio med {statistics.median(b for _, b, _ in v):4.2f}  figure px med {statistics.median(c for _, _, c in v):4.0f}")
-        tot += [a for a, _, _ in v]
-    print(f"   all         rgb distance med {statistics.median(tot):5.1f} min {min(tot):5.1f}")
-
-
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -320,14 +269,8 @@ def main(argv):
     c.add_argument("--out", required=True)
     c.add_argument("--tile", type=int, default=56)
     c.add_argument("--scale", type=int, default=1)
-    k = sub.add_parser("contrast")
-    k.add_argument("--json", required=True)
-    k.add_argument("--kingdom", default="crimson")
-    k.add_argument("--view", default="default", choices=sorted(VIEWS))
-    k.add_argument("--image", required=True)
-    k.add_argument("--threshold", type=float, default=28.0)
     args = ap.parse_args(argv)
-    {"measure": cmd_measure, "crops": cmd_crops, "contrast": cmd_contrast}[args.cmd](args)
+    {"measure": cmd_measure, "crops": cmd_crops}[args.cmd](args)
 
 
 if __name__ == "__main__":

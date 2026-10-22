@@ -40,7 +40,7 @@
 		woodcutter  small ink-dark knit beanie (a ball sitting high), axe with a bearded steel head, stocky   "knitcap"
 		miner       small dark iron pot (1.9), pick with two drooped iron tines on a 5.4 handle (an arch, not a T), stocky   "hardhat"
 		builder     white hard hat (a drum with a visor detail, sits on the head), wooden mallet, broad  "buildercap"
-		hauler      no job hat (hair shows), big pale flour sack low on the back, broad
+		hauler      no job hat (hair shows), big pale grain-yellow sack low on the back, broad
 		idle        hair, nothing carried, lean; the free 9th part is a headband or scarf (Accessory, KitAccessory)
 	The job also owns an outfit accent: the trousers (colour, KitAccent = job) and the outfit's fixed neutral
 	panel (the torso or the sleeves, whichever the outfit does not tint or leave bare) take the job's colour, so
@@ -138,9 +138,10 @@ Character.DETAIL_ATTRIBUTE = "KitDetail" -- true on every detail part, so the cl
 local STEEL = Color3.fromRGB(176, 182, 192)
 local STEEL_DARK = Color3.fromRGB(84, 90, 100)
 local BLADE = Color3.fromRGB(138, 146, 158)
-local BURLAP = Color3.fromRGB(226, 216, 190) -- the hauler's sack: a pale flour sack (the old brown sackcloth was the colour of the fields and roads: dE 3 from "Ground")
-local LINEN = Color3.fromRGB(226, 214, 186)
+local BURLAP = Color3.fromRGB(244, 232, 140) -- the hauler's sack: pale grain yellow (the old brown sackcloth was the colour of the fields and roads: dE 3 from "Ground"; white merged with the builder's hat)
+local LINEN = Color3.fromRGB(242, 238, 224)
 local LEATHER = Color3.fromRGB(120, 78, 46)
+local APRON = Color3.fromRGB(246, 240, 222) -- the citizens' apron: near white (Parts.C.canvas is dE 20 from the paler cobble)
 local VEST = Color3.fromRGB(44, 96, 120) -- the citizens' vest: a dyed teal (the leather brown it had is the fields' colour)
 local STRAW = Color3.fromRGB(224, 184, 72) -- farmer's hat: golden straw (L .72; palette L .70-.78; dE 43 from the fields)
 local KNIT = Color3.fromRGB(34, 38, 52) -- woodcutter's cap: ink-dark wool (L .15; neutral, so it never reads as a kingdom)
@@ -435,7 +436,7 @@ local OUTFITS: { Outfit } = {
 	{ name = "tunic", torso = 0.8, sleeves = LINEN, legs = Color3.fromRGB(58, 66, 104) }, -- 1 default
 	{ name = "sleeveless", torso = 0.85, sleeves = "skin", legs = Color3.fromRGB(74, 56, 84) },
 	{ name = "vest", torso = VEST, sleeves = 0.8, legs = Color3.fromRGB(88, 90, 98) },
-	{ name = "apron", torso = C.canvas, sleeves = 0.72, legs = Color3.fromRGB(46, 84, 92) },
+	{ name = "apron", torso = APRON, sleeves = 0.72, legs = Color3.fromRGB(46, 84, 92) },
 	{ name = "robe", torso = 0.66, sleeves = 0.66, legs = 0.5 },
 	{ name = "jerkin", torso = 1, sleeves = Color3.fromRGB(64, 68, 92), legs = Color3.fromRGB(104, 120, 168) },
 }
@@ -589,13 +590,13 @@ type JobStyle = {
 -- dyed variant (tests/world/KitCitizenAerial.spec); blue, orange, white, gold and ink are the hues the ground has none of.
 local JOBS: { [string]: JobStyle } = {
 	idle = { width = 1.9 },
-	farmer = { -- light: cream shirt or apron, blue trousers, golden straw hat
+	farmer = { -- light: white shirt or apron, blue trousers, golden straw hat
 		width = 1.95,
 		tool = "hoe",
 		hat = JOB_HATS.farmer,
-		panel = Color3.fromRGB(232, 222, 190),
+		panel = Color3.fromRGB(255, 252, 232),
 		legs = Color3.fromRGB(62, 84, 128),
-		panels = { Color3.fromRGB(232, 222, 190), Color3.fromRGB(214, 224, 196), Color3.fromRGB(242, 226, 196) },
+		panels = { Color3.fromRGB(255, 252, 232), Color3.fromRGB(238, 248, 248), Color3.fromRGB(252, 250, 242) },
 		legsSet = { Color3.fromRGB(62, 84, 128), Color3.fromRGB(82, 86, 130), Color3.fromRGB(54, 88, 108) },
 	},
 	woodcutter = { -- dark: slate flannel, ink trousers, ink beanie, bright steel axe
@@ -625,7 +626,7 @@ local JOBS: { [string]: JobStyle } = {
 		panels = { Color3.fromRGB(236, 132, 36), Color3.fromRGB(230, 146, 44), Color3.fromRGB(240, 120, 48) },
 		legsSet = { Color3.fromRGB(40, 52, 102), Color3.fromRGB(48, 50, 104), Color3.fromRGB(64, 70, 108) },
 	},
-	hauler = { -- blue smock and plum trousers under the pale flour sack; keeps the look's hair (the sack is the signature)
+	hauler = { -- blue smock and plum trousers under the pale grain-yellow sack; keeps the look's hair (the sack is the signature)
 		width = 2.3,
 		tool = "sack",
 		panel = Color3.fromRGB(66, 112, 168),
