@@ -78,9 +78,6 @@ local BUILDINGS: { [string]: { BuildingCost } } = {
 	shrine = {
 		{ cost = { wood = 50, stone = 60 }, buildSeconds = 30 },
 	},
-	market = {
-		{ cost = { wood = 100, stone = 40 }, buildSeconds = 35 },
-	},
 	watchtower = {
 		{ cost = { wood = 60, stone = 80 }, buildSeconds = 40 },
 		{ cost = { wood = 60, stone = 100 }, buildSeconds = 40 },

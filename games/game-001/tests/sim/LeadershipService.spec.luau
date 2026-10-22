@@ -678,7 +678,7 @@ describe("LeadershipService acts from the simulation", function()
 end)
 
 -- Finished buildings of the given kinds in crimson (a support building brings its key citizen, D-060 / FL-0149).
-local SUPPORT_BUILDINGS = { "blacksmith", "infirmary", "granary", "shrine", "market", "barracks" }
+local SUPPORT_BUILDINGS = { "blacksmith", "infirmary", "granary", "shrine", "barracks" }
 local function stand(w, kinds: { string }): { any }
 	local out = {}
 	for i, kind in kinds do
@@ -799,10 +799,14 @@ describe("LeadershipService.keyCitizens", function()
 	it("names each role's building by its catalog id, and every one of them is a placeable type", function()
 		local w = boot()
 		expect(Support.roles.blacksmith.building).toBe("blacksmith")
-		for _, def in Support.roles do
+		for role, def in Support.roles do
 			local building = w.sim.catalog.buildings[def.building]
-			expect(building ~= nil).toBe(true)
-			expect(building.placeable).toBe(true)
+			if role == "merchant" then
+				expect(building).toBe(nil) -- deferred with the Merchant, who cannot appear (D-061)
+			else
+				expect(building ~= nil).toBe(true)
+				expect(building.placeable).toBe(true)
+			end
 		end
 	end)
 

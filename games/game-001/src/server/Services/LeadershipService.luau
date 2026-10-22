@@ -155,7 +155,8 @@ function LeadershipService:leadership(kingdom: string, userId: number?): number
 end
 
 -- D-060: a supporter comes with their building (config Support roles[r].building): the role counts only while a finished
--- building of that type stands in the kingdom (FL-0149 made the five support buildings placeable; the captain's is the barracks).
+-- building of that type stands in the kingdom (FL-0149 made the four reachable support buildings placeable; the captain's
+-- barracks and the merchant's market bring nobody today, D-061).
 local function bringsSupporter(config: any, sim: any, kingdom: any, role: string): boolean
 	local building = config.roles[role].building
 	for _, bid in kingdom.buildingIds do

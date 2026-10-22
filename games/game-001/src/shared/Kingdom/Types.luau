@@ -10,7 +10,7 @@
 		                      "ram" }   (the last three are the unit kind of a soldier entity, never a citizen job)
 		Types.BUILDING_TYPES{ "keep", "house", "farm", "storehouse", "lumbercamp", "quarry", "barracks",
 		                      "watchtower", "wall", "gate",
-		                      "blacksmith", "market", "infirmary", "granary", "shrine" }
+		                      "blacksmith", "infirmary", "granary", "shrine" }
 		Types.MATCH_PHASES  { "Lobby", "Founding", "Expansion", "Conflict", "Endgame", "Results" }
 		Types.BUILDING_STATES { "planned", "constructing", "complete", "damaged", "destroyed" }
 		Types.is(listName, value): boolean   -- e.g. Types.is("KINGDOM_IDS", "azure")
@@ -43,7 +43,6 @@ export type BuildingType =
 	| "wall"
 	| "gate"
 	| "blacksmith"
-	| "market"
 	| "infirmary"
 	| "granary"
 	| "shrine"
@@ -107,7 +106,6 @@ Types.BUILDING_TYPES = table.freeze({
 	"gate",
 	-- the support buildings (FL-0149, D-060, CONTRACTS G13.5): each one brings its key citizen
 	"blacksmith",
-	"market",
 	"infirmary",
 	"granary",
 	"shrine",

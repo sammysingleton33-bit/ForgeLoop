@@ -1,7 +1,7 @@
 --[[
 	Sim/RulerAI support buildings (FL-0149, D-060): a governor with a level-2 keep, a storehouse, a lumber camp and a quarry,
 	from day 3, builds the support buildings that bring key citizens (config Support roles[r].building): one at a time, the
-	first it can pay in the order blacksmith, infirmary, granary, shrine, market, and only for a role whose key citizen is
+	first it can pay in the order blacksmith, infirmary, granary, shrine, and only for a role whose key citizen is
 	alive. The palisade's gate and the keep's L2 upgrade have the stone first. Specs drive think() directly.
 ]]
 
@@ -15,7 +15,7 @@ local RulerAI = require("@game/ReplicatedStorage/Game/Sim/RulerAI")
 local NEVER = 1e9
 local deposits = 0
 
-local SUPPORT = { "blacksmith", "infirmary", "granary", "shrine", "market" }
+local SUPPORT = { "blacksmith", "infirmary", "granary", "shrine" }
 
 -- crimson with a level-2 keep and the three drop-offs finished, plenty of wood and stone, day 5; the citizens named in
 -- `keys` (role -> true) carry that key role; the AI is idle (the test calls think()).
@@ -81,7 +81,7 @@ end
 
 describe("Sim/RulerAI: support buildings (FL-0149)", function()
 	it("builds a support building for each key citizen alive, in order, one at a time", function()
-		local sim, k = world({ "blacksmith", "healer", "elder", "provisioner", "merchant" })
+		local sim, k = world({ "blacksmith", "healer", "elder", "provisioner" })
 		local order = {}
 		for _ = 1, 60 do
 			local what = RulerAI.think(sim, k)
@@ -95,7 +95,7 @@ describe("Sim/RulerAI: support buildings (FL-0149)", function()
 			sim.time += 7
 		end
 		-- the order of the plan: the blacksmith first (the elder, the provisioner and the merchant follow their turn)
-		expect(table.concat(order, ",")).toBe("blacksmith,infirmary,granary,shrine,market")
+		expect(table.concat(order, ",")).toBe("blacksmith,infirmary,granary,shrine")
 	end)
 
 	it("builds only for a role whose key citizen is alive", function()
@@ -103,7 +103,7 @@ describe("Sim/RulerAI: support buildings (FL-0149)", function()
 		run(sim, k, 12)
 		local built = kindsStanding(sim, k)
 		expect(built.infirmary).toBe(1)
-		expect(built.market).toBe(1)
+		expect(built.market).toBe(nil) -- the market is deferred with the Merchant (D-061): it is not even a building type
 		expect(built.blacksmith).toBe(nil)
 		expect(built.granary).toBe(nil)
 		expect(built.shrine).toBe(nil)

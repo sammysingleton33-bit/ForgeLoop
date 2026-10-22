@@ -497,7 +497,7 @@ end
 -- one in the order it can pay (wood is plentiful and stone is not, so it does not wait for a dear one) and only for a role
 -- whose key citizen is alive: a building without its citizen brings no support. Stone is the bottleneck, so the keep's L2
 -- upgrade and the palisade's gate come first.
-local SUPPORT_ORDER = { "blacksmith", "infirmary", "granary", "shrine", "market" }
+local SUPPORT_ORDER = { "blacksmith", "infirmary", "granary", "shrine" }
 local SUPPORT_DAY = 3
 local SUPPORT_MARGIN = { wood = 60 } -- wood left over after the price: a support building never empties the stores
 

@@ -31,7 +31,6 @@ return {
 		"wall",
 		"gate",
 		"blacksmith",
-		"market",
 		"infirmary",
 		"granary",
 		"shrine",
@@ -188,7 +187,7 @@ return {
 				{ hp = 3000 },
 			},
 		},
-		-- the support buildings (FL-0149, D-060; CONTRACTS G13.5): one level each; a finished one brings its key citizen,
+		-- the support buildings (FL-0149, D-060, D-061; CONTRACTS G13.5): one level each; a finished one brings its key citizen,
 		-- whose perk the Crown Arena can offer (config Support roles[r].building). Footprints are the Kit stand-ins' (PROVISIONAL).
 		blacksmith = { -- brings the Blacksmith: Reforge
 			id = "blacksmith",
@@ -199,17 +198,6 @@ return {
 			maxCount = 1, -- one per kingdom (the D-047 part ceiling counts one of each)
 			levels = {
 				{ hp = 450 },
-			},
-		},
-		market = { -- brings the Merchant: Fine Wares
-			id = "market",
-			name = "Market",
-			footprint = 8,
-			placeable = true,
-			dropoff = false,
-			maxCount = 1, -- one per kingdom (the D-047 part ceiling counts one of each)
-			levels = {
-				{ hp = 400 },
 			},
 		},
 		infirmary = { -- brings the Healer: Field Remedy
