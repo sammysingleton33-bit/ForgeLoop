@@ -43,7 +43,7 @@ local PERKS = {
 		pledged = 0.15,
 		empowered = 0.25,
 		duration = 8,
-		uses = { pledged = 2, empowered = 3 },
+		uses = 2,
 		condition = "opponentHeavy",
 	},
 	heartyRations = {
@@ -113,7 +113,7 @@ local function perkModifiers(name: string, power: string): { any }
 				source = source,
 				kind = "telegraph",
 				lead = magnitude,
-				uses = if type(perk.uses) == "table" then perk.uses[power] else perk.uses,
+				uses = perk.uses,
 				duration = perk.duration,
 				condition = perk.condition,
 			},
