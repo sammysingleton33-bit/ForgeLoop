@@ -13,6 +13,7 @@ local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
 local GameEvents = require("@game/ReplicatedStorage/Forge/Contracts/GameEvents")
 local Loader = require("@game/ReplicatedStorage/Forge/Contracts/Loader")
 local ArenaFlow = require("@game/ReplicatedStorage/Game/Arena/ArenaFlow")
+local Figures = require("@game/ReplicatedStorage/Game/Arena/Figures")
 local WorldLayout = require("@game/ReplicatedStorage/Game/World/Layout")
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
 local ArenaConfig = require("@game/ReplicatedStorage/Forge/Config/Arena")
@@ -141,6 +142,7 @@ local function fakeKit(env: any, log: { any }): any
 		part("Head", Vector3.new(2, 1, 1), CFrame.new(0, 5.5, 0), model)
 		part("Torso", Vector3.new(2, 2, 1), CFrame.new(0, 3.5, 0), model)
 		part("RightArm", Vector3.new(1, 2, 1), CFrame.new(1.5, 3.5, 0), model)
+		part("LeftArm", Vector3.new(1, 2, 1), CFrame.new(-1.5, 3.5, 0), model)
 		local arm = model:FindFirstChild("RightArm")
 		local held = part("Tool", Vector3.new(1, 4, 1), CFrame.new(1.5, 2.5, 0), model)
 		local joint = env.newInstance("Motor6D") -- the rig's `Tool` joint drives the held item (Sim/Pose.JOINTS)
@@ -167,8 +169,12 @@ local function fakeKit(env: any, log: { any }): any
 			accessory("PauldronR", "RightCollarAttachment"),
 		}
 	end
-	function kit.weapon(name: string, color: Color3): any
-		table.insert(log, { what = "weapon", weapon = name, color = color })
+	function kit.shield(color: Color3): any
+		table.insert(log, { what = "shield", color = color })
+		return accessory("KitShield", "LeftGripAttachment")
+	end
+	function kit.weapon(name: string, color: Color3, opts: { shield: boolean? }?): any
+		table.insert(log, { what = "weapon", weapon = name, color = color, opts = opts })
 		local tool = env.newInstance("Tool")
 		tool.Name = "Blade"
 		part("Handle", Vector3.new(1, 1, 1), WEAPON_HANDLE, tool)
@@ -1246,6 +1252,125 @@ describe("ArenaService: the champions' bodies, gear and venue (FL-0140)", functi
 			local gap = math.sqrt((me.x - opponent.x) ^ 2 + (me.z - opponent.z) ^ 2)
 			local before = math.sqrt((world.start.X - opponent.x) ^ 2 + (world.start.Z - opponent.z) ^ 2)
 			expect(math.abs(gap - before) < 1e-3).toBe(true)
+		end)
+	end)
+
+	describe("the sword-and-shield champion's shield", function()
+		local function shields(world: any): { any }
+			return logged(world, "shield")
+		end
+		local function swordShieldWeapons(world: any): { any }
+			local out = {}
+			for _, entry in logged(world, "weapon") do
+				if entry.weapon == "swordShield" then
+					table.insert(out, entry)
+				end
+			end
+			return out
+		end
+
+		it("puts the shield on the AI figure's left hand and the sword alone in the right", function()
+			local world = soloOnVenue()
+			expect(#shields(world)).toBe(1) -- the AI figure's (the mock human has no grip attachment)
+			local arm = world.figure:FindFirstChild("LeftArm", true)
+			local handle = world.figure:FindFirstChild("KitShield", true):FindFirstChild("Handle")
+			local w = handle:FindFirstChildOfClass("Weld")
+			assert(w and w.Part0 == arm, "the shield is welded to the left arm")
+			local attachment = handle:FindFirstChildOfClass("Attachment")
+			local point = (w.Part0.CFrame * w.C0 * w.C1:Inverse() * attachment.CFrame).Position
+			local hand = (arm.CFrame * CFrame.new(0, -arm.Size.Y / 2, 0)).Position
+			expect((point - hand).Magnitude < 1e-3).toBe(true) -- at the end of the arm, the right hand's mirror
+			-- in the hand's grip frame, turned like the weapon's: its up (+Y) runs along the arm's forward (-Z), as the
+			-- weapon's grip frame does at rest (the fake arm is unturned)
+			local frame = w.Part0.CFrame * w.C0 * w.C1:Inverse() * attachment.CFrame
+			expect((frame.UpVector - Vector3.new(0, 0, -1)).Magnitude < 1e-3).toBe(true)
+			-- and not half-turned about the arm: the frame's look (-Z) points down, as the weapon's grip frame does
+			expect((frame.LookVector - Vector3.new(0, -1, 0)).Magnitude < 1e-3).toBe(true)
+			local aiWeapon = nil
+			for _, entry in swordShieldWeapons(world) do
+				if entry.opts ~= nil then
+					aiWeapon = entry
+				end
+			end
+			assert(aiWeapon, "the AI figure's sword was asked for alone")
+			expect(aiWeapon.opts.shield).toBe(false)
+		end)
+
+		-- Figures:wear on a hand-made character: the mock Humanoid has no AddAccessory / EquipTool, and a mock character
+		-- no LeftGripAttachment, so the pieces the arena asks the Humanoid for are recorded here
+		local function wearOn(hasGrip: boolean, weapon: string): any
+			local env = MockEnv.new({ seed = 1 })
+			local log = {}
+			local figures = Figures.new({ kit = fakeKit(env, log), parent = env.Workspace, new = env.newInstance })
+			local result = { accessories = {}, tools = {}, log = log }
+			local humanoid = {
+				AddAccessory = function(_self: any, accessory: any)
+					table.insert(result.accessories, accessory)
+				end,
+				EquipTool = function(_self: any, tool: any)
+					table.insert(result.tools, tool)
+				end,
+			}
+			local character = {
+				FindFirstChildOfClass = function(_self: any, _class: string)
+					return humanoid
+				end,
+				-- an R15 hand holds LeftGripAttachment a level down (LeftHand), so only a recursive search finds it
+				FindFirstChild = function(_self: any, name: string, recursive: boolean?)
+					return if hasGrip and name == "LeftGripAttachment" and recursive == true then {} else nil
+				end,
+			}
+			figures:wear(character, { color = Color3.new(1, 0, 0), weapon = weapon, armour = "medium" })
+			return result
+		end
+
+		it(
+			"gives a human champion the shield accessory and the sword alone when the character has a grip attachment",
+			function()
+				local worn = wearOn(true, "swordShield")
+				local shieldWorn = false
+				for _, accessory in worn.accessories do
+					if accessory.Name == "KitShield" then
+						shieldWorn = true
+					end
+				end
+				expect(shieldWorn).toBe(true)
+				local weapons = {}
+				for _, entry in worn.log do
+					if entry.what == "weapon" then
+						table.insert(weapons, entry)
+					end
+				end
+				expect(#weapons).toBe(1)
+				expect(weapons[1].opts ~= nil and weapons[1].opts.shield == false).toBe(true) -- never the shield on the Tool as well
+				expect(#worn.tools).toBe(1)
+			end
+		)
+
+		it("keeps the shield on the Tool for a human whose character has no grip attachment (R6)", function()
+			local worn = wearOn(false, "swordShield")
+			for _, accessory in worn.accessories do
+				expect(accessory.Name == "KitShield").toBe(false)
+			end
+			for _, entry in worn.log do
+				if entry.what == "weapon" then
+					expect(entry.opts).toBeNil() -- the default form: the shield rides on the Tool
+				end
+				expect(entry.what == "shield").toBe(false)
+			end
+		end)
+
+		it("gives another weapon no shield", function()
+			local world = boot({ 1 })
+			world.arena.config.ai = { weapon = "spear", armour = "medium", skill = 0.5 }
+			world.arena.config.defaultWeapon = "mace"
+			reachSolo(world)
+			advanceTo(world, "intro")
+			expect(#shields(world)).toBe(0)
+			expect(#wearOn(true, "spear").log > 0).toBe(true)
+			for _, entry in wearOn(true, "spear").log do
+				expect(entry.what == "shield").toBe(false) -- a spear champion with a grip attachment gets no shield either
+			end
 		end)
 	end)
 
