@@ -93,7 +93,11 @@
 		Kit.arenaDress(model, kingdomA?, kingdomB?)    -- rebuild both dresses in place (ArenaService, at the Arena phase)
 		Kit.crowdFigure(kingdomColor, role?, variant?) -> Model  -- <= 4 parts, client-only, feet pivot, front -Z; role: KeyRole
 		Kit.armour(armour, kingdomColor) -> { Accessory }        -- "light" | "medium" | "heavy" on Hat / BodyFront / BodyBack / Collar
-		Kit.weapon(weapon, kingdomColor?) -> Tool                -- "swordShield" | "greatsword" | "spear" | "mace"
+		Kit.shield(kingdomColor?) -> Accessory                   -- the round shield on the LEFT hand (LeftGripAttachment; 4 parts; KitShield)
+		Kit.weapon(weapon, kingdomColor?, opts?) -> Tool        -- "swordShield" | "greatsword" | "spear" | "mace"; opts = { shield: boolean? }:
+		                                                          -- swordShield keeps its round shield on the Tool (10 parts) unless
+		                                                          -- opts.shield == false (the sword alone, 6 parts, to go with Kit.shield);
+		                                                          -- swordShield carries KitShield = "shield" either way
 		Kit.ARENA (dimensions, PART_BUDGET), Kit.CROWD_ROLES, CROWD_MAX_PARTS, CROWD_ROLE_MAX_PARTS, CROWD_VARIANTS, CROWD_HEIGHT, crowdPoolKey,
 		Kit.ARMOURS, Kit.WEAPONS
 	Additive (emblems): Kit.EMBLEM_KINDS ({ [hue style]: kind }), Kit.emblemKind(color) -> kind?
@@ -133,7 +137,7 @@ export type BuildingType = string -- Kingdom/Types BuildingType (kept local so K
 export type Stage = number | string
 
 Kit.NEUTRAL_COLOR = Color3.fromRGB(208, 200, 184)
-Kit.VERSION = "0.6.0" -- 0.6: Crown Arena, crowd figures, duel gear (FL-0072); 0.5: kingdom architecture styles (FL-0127); 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques
+Kit.VERSION = "0.6.1" -- 0.6.1: Kit.shield (a left-hand Accessory) and Kit.weapon opts.shield (additive, FL-0072 follow-up); 0.6: Crown Arena, crowd figures, duel gear (FL-0072); 0.5: kingdom architecture styles (FL-0127); 0.4: kingdom emblems (D-039) on every banner, flag, pennant and shield + aerial plaques
 -- G2 BuildingType + the G13.5 VS-2 types (part-built stand-ins until FL-0086)
 Kit.BUILDING_TYPES = {
 	"keep",
@@ -189,7 +193,8 @@ Kit.CROWD_HEIGHT = Crowd.HEIGHT
 Kit.crowdPoolKey = Crowd.poolKey
 -- Duel gear (G12.1 Armour / Weapon, G12.6): accessories in attachment space (R15 and R6) and a Tool with a Handle, no scripts
 Kit.armour = Gear.armour -- (armour: "light" | "medium" | "heavy", kingdomColor) -> { Accessory }
-Kit.weapon = Gear.weapon -- (weapon: "swordShield" | "greatsword" | "spear" | "mace", kingdomColor?) -> Tool
+Kit.weapon = Gear.weapon -- (weapon: "swordShield" | "greatsword" | "spear" | "mace", kingdomColor?, opts: { shield: boolean? }?) -> Tool
+Kit.shield = Gear.shield -- (kingdomColor?) -> Accessory on LeftGripAttachment: the sword-and-shield's shield for the left hand (use with { shield = false })
 Kit.ARMOURS = Gear.ARMOURS
 Kit.WEAPONS = Gear.WEAPONS
 

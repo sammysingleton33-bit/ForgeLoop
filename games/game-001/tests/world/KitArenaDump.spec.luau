@@ -1,6 +1,6 @@
 --[[
 	Crown Arena preview dump (FL-0072, FORGE-02): the arena in several kingdom pairings, seated crowds, the role-prop
-	line-up and the armour x weapon sheet, serialised like KitDump.spec.luau (class, shape, size, CFrame, colour, material).
+	line-up, the armour x weapon sheet and the shield-on-the-left-hand group ("shield"), serialised like KitDump.spec.luau (class, shape, size, CFrame, colour, material).
 
 	Always: asserts the catalogue serialises to finite numbers.
 	With FORGE_KIT_DUMP_ARENA=<path.json>: also writes the JSON for the scratch Blender renderer (D-019 review). Run:
@@ -136,14 +136,27 @@ local function lineup(color: Color3): Model
 	return m
 end
 
--- one stand-in avatar in a given armour with a given weapon in its right hand, in the kingdom's colour
-local function geared(rigType: string, armour: string, weapon: string?, color: Color3): Model
-	local av = Avatar.build(rigType)
+-- one stand-in avatar in a given armour with a given weapon in its right hand, in the kingdom's colour.
+-- shieldHand: the sword-and-shield the new way: the sword alone in the right hand ({ shield = false }) and Kit.shield on the
+-- left hand, with the left arm raised forward (the duel's guard) unless `raised` says otherwise; false/nil = the Tool carries
+-- its own shield.
+local function geared(
+	rigType: string,
+	armour: string,
+	weapon: string?,
+	color: Color3,
+	shieldHand: boolean?,
+	raised: boolean?
+): Model
+	local av = Avatar.build(rigType, nil, { guard = if raised ~= nil then raised else shieldHand == true })
 	for _, acc in Kit.armour(armour, color) do
 		Avatar.wear(acc, av)
 	end
 	if weapon then
-		Avatar.hold(Kit.weapon(weapon, color), av)
+		Avatar.hold(Kit.weapon(weapon, color, if shieldHand then { shield = false } else nil), av)
+	end
+	if shieldHand then
+		Avatar.wear(Kit.shield(color), av)
 	end
 	return av.model
 end
@@ -184,7 +197,25 @@ local function catalogue()
 		add("gear", `gear_{armour}_none`, geared("R15", armour, nil, CANON[kingdoms[ai]]), { kingdom = kingdoms[ai] })
 		-- R6 fit: the same armour with the mace
 		add("gear", `gear_r6_{armour}`, geared("R6", armour, "mace", CANON[kingdoms[ai]]), { kingdom = kingdoms[ai] })
+		-- the shield as an Accessory on the raised left hand, the sword alone in the right (Kit.shield, { shield = false })
+		add(
+			"shield",
+			`shield_{armour}_r15`,
+			geared("R15", armour, "swordShield", CANON[kingdoms[ai]], true),
+			{ kingdom = kingdoms[ai] }
+		)
 	end
+	add("shield", "shield_light_r6", geared("R6", "light", "swordShield", CANON.azure, true), { kingdom = "azure" })
+	add("shield", "shield_medium_r6", geared("R6", "medium", "swordShield", CANON.gold, true), { kingdom = "gold" })
+	-- the shield on a HANGING left arm (grip frame turned down with the arm: the disc lies flat under the fist; the known caveat)
+	add(
+		"shield",
+		"shield_hanging_r15",
+		geared("R15", "medium", "swordShield", CANON.azure, true, false),
+		{ kingdom = "azure" }
+	)
+	-- the old form, for comparison: the Tool carries the shield, the left arm hangs
+	add("shield", "shield_old_tool_form", geared("R15", "medium", "swordShield", CANON.gold), { kingdom = "gold" })
 	return groups
 end
 
