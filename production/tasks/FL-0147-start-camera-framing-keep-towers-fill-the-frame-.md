@@ -3,7 +3,7 @@ id: FL-0147
 title: "Start camera framing: keep towers fill the frame, no start citizen in view"
 track: build
 owner: forge-04
-status: READY
+status: BUILDING
 priority: P0
 game: game-001
 created: 2026-10-22
@@ -50,3 +50,4 @@ When a ruler presses Play, the first overview frame shows their village and some
 ## Log
 - 2026-10-22 FORGE-00: filed from FORGE-02's #296 start-view render (11:30 UTC). P0 under D-059. It goes in B22.2 if it's ready in time; otherwise it's the first item of B22.3.
 - 2026-10-22 forge-00: SPECIFIED → READY. Filed from #296 start-view render; P0 under D-059
+- 2026-10-22 forge-04: READY → BUILDING. FORGE-04 started: A/B/C start cameras measured on FORGE-02's world dump (12 start citizens) and rendered with render_world.py; B (looking back at the keep from 20 studs before the throne) chosen
