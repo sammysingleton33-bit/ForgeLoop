@@ -334,16 +334,22 @@ local function dump()
 		plots = (function()
 			local out = {}
 			for k, plot in Layout.plots do
+				local anchors = {}
+				for name, cf in plot.anchors do
+					anchors[name] = cf12(cf)
+				end
 				out[k] = {
 					keep = cf12(plot.anchors.keep),
 					spawn = cf12(plot.spawn),
 					throne = cf12(StartView.root(Kit, Layout, k)),
+					anchors = anchors,
 				}
 			end
 			return out
 		end)(),
 		objective = cf12(o.cframe),
 		lighting = plain(LightingPreset),
+		start = plain(StartView.START), -- the ruler's first view (zoom, fov, pitch, ahead, turn): the preview's default and far cameras follow it
 	}
 end
 
