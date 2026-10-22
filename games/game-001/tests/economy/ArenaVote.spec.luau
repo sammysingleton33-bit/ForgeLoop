@@ -113,7 +113,7 @@ describe("ArenaVoteModel (FL-0142)", function()
 	end)
 
 	it(
-		"the second kingdom (side b) votes too; a vote for a ruler who left counts as no vote (FORGE-07 M3, L2)",
+		"side b votes too; a vote for a ruler who left counts for nobody and says so (FORGE-07 M3, L2; G12.6 after #285)",
 		function()
 			local st = VoteDoubles.state("azure", { 7, 1 }, 110, {}, "b")
 			local v = ArenaVoteModel.view(st, lookup, 1, 100)
@@ -124,9 +124,18 @@ describe("ArenaVoteModel (FL-0142)", function()
 			expect(ArenaVoteModel.view(both, lookup, 1, 100).side).toBe("b")
 			expect(ArenaVoteModel.view(both, lookup, 3, 100).side).toBe("a")
 			local left = ArenaVoteModel.view(st, lookup, 1, 100, { candidate = 3, status = "ok" })
-			expect(left.statusKind).toBe("hint")
+			expect(left.statusKind).toBe("left") -- not the opening hint: the server still counts this ballot as cast
+			expect(left.status).toBe(
+				"Your pick left, so your vote counts for nobody. Choose again until the vote closes."
+			)
 			for _, c in left.candidates do
 				expect(c.picked).toBe(false)
+			end
+			-- a vote still on its way, or refused, for a ruler who left: the plain hint (the server refuses it)
+			for _, status in { "pending", "failed" } do
+				expect(ArenaVoteModel.view(st, lookup, 1, 100, { candidate = 3, status = status }).statusKind).toBe(
+					"hint"
+				)
 			end
 		end
 	)
@@ -429,9 +438,13 @@ describe("Arena vote panel (FL-0142)", function()
 		local content = box:FindFirstChild("Content", true)
 		local lineWidth = box.Size.X.Offset + content.Size.X.Offset
 		expect(width).toBeLessThan(2 * lineWidth) -- wraps to at most two lines
-		for _, kind in { "hint", "pending", "failed" } do
-			local pick = if kind == "hint" then nil else { candidate = 2, status = kind }
+		for _, kind in { "hint", "pending", "failed", "left" } do
+			local pick = if kind == "hint"
+				then nil
+				elseif kind == "left" then { candidate = 9, status = "ok" }
+				else { candidate = 2, status = kind }
 			local v = ArenaVoteModel.view(VoteDoubles.state("crimson", { 1, 2 }, 100), nil, 1, 0, pick)
+			expect(v.statusKind).toBe(kind)
 			expect(ArenaVote.textWidth(v.status) * 12 / 15).toBeLessThan(2 * lineWidth)
 		end
 		world:destroy()
