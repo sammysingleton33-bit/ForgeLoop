@@ -239,8 +239,6 @@ local function relay(model: any, citizens: { [string]: any }, event: DuelEvent, 
 			side = event.side,
 			data = { impactIn = math.max(0, data.impactAt - event.t) },
 		})
-	elseif kind == "dodgeStart" then
-		table.insert(out, { t = event.t, kind = kind, side = event.side })
 	elseif kind == "triggerFired" and data then
 		local trigger = triggerOf(data.source)
 		local citizen = (citizens[event.side] or {})[trigger]
@@ -250,7 +248,7 @@ local function relay(model: any, citizens: { [string]: any }, event: DuelEvent, 
 			side = event.side,
 			data = { trigger = trigger, citizenName = if citizen then citizen.name else nil },
 		})
-	elseif kind == "parry" or kind == "stagger" or kind == "staminaOut" or kind == "hype" then
+	elseif kind == "parry" or kind == "stagger" or kind == "staminaOut" or kind == "hype" or kind == "dodgeStart" then
 		table.insert(out, { t = event.t, kind = kind, side = event.side })
 	elseif kind == "ended" and data then
 		table.insert(out, { t = event.t, kind = kind, side = event.side, data = { reason = data.reason } })

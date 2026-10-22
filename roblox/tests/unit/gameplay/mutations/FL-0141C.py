@@ -11,7 +11,7 @@ M = [
  ("FL-0141C", DM, 'local blocked = defender.state == "block"', 'local blocked = false', "sim/DuelModel", "a hit says whether the target was guarding"),
  ("FL-0141C", DM, '\t\tblocked = blocked,\n', '\t\tblocked = defender.state == "block",\n', "sim/DuelModel", "a hit says whether the target was guarding"),
  ("FL-0141C", DR, 'data = { impactIn = math.max(0, data.impactAt - event.t) },', 'data = { impactIn = data.impactAt },', "sim/DuelRunner", "relays the cues FL-0141 animates from"),
- ("FL-0141C", DR, '\telseif kind == "dodgeStart" then\n\t\ttable.insert(out, { t = event.t, kind = kind, side = event.side })\n', '', "sim/DuelRunner", "relays the cues FL-0141 animates from"),
+ ("FL-0141C", DR, ' or kind == "hype" or kind == "dodgeStart" then', ' or kind == "hype" then', "sim/DuelRunner", "relays the cues FL-0141 animates from"),
  ("FL-0141C", DR, 'blocked = data.blocked == true,', 'blocked = false,', "sim/DuelRunner", "relays the cues FL-0141 animates from"),
  ("FL-0141C", DR, '\telseif kind == "lightWindup" and data then', '\telseif kind == "lightWindupX" and data then', "sim/DuelRunner", "relays the cues FL-0141 animates from"),
 ]
