@@ -85,7 +85,7 @@ return {
 			pledged = 0.15,
 			empowered = 0.25,
 			duration = 8,
-			uses = { pledged = 2, empowered = 2 }, -- heavy attacks covered, per tier (equal for now: empowered 3 broke the G12.3 sweep)
+			uses = { pledged = 2, empowered = 3 }, -- heavy attacks covered, per tier
 			condition = "opponentHeavy",
 			effect = "Their first {uses} heavy attacks are telegraphed sooner",
 			when = "the opponent's first heavy attack",

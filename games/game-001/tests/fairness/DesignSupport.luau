@@ -43,7 +43,7 @@ local PERKS = {
 		pledged = 0.15,
 		empowered = 0.25,
 		duration = 8,
-		uses = { pledged = 2, empowered = 2 },
+		uses = { pledged = 2, empowered = 3 },
 		condition = "opponentHeavy",
 	},
 	heartyRations = {

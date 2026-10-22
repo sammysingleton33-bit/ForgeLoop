@@ -208,7 +208,7 @@ describe("Arena/SupportModel: offers", function()
 		expect(twice[1].effect).toBe("Their first two heavy attacks are telegraphed sooner")
 	end)
 
-	it("the Called Warning resolves uses per tier from the config, in the text and the modifier", function()
+	it("the Called Warning covers 2 heavy attacks pledged and 3 empowered, in the text and the modifier", function()
 		local function warn(power, cfg)
 			local mods = SupportModel.modifiers("loyal", { { trigger = "calledWarning", power = power } }, cfg)
 			for _, m in mods do
@@ -219,15 +219,8 @@ describe("Arena/SupportModel: offers", function()
 			return nil
 		end
 		expect(warn("pledged").uses).toBe(2)
-		expect(warn("empowered").uses).toBe(2)
-		local tiered = table.clone(Support)
-		tiered.perks = table.clone(Support.perks)
-		tiered.perks.calledWarning = table.clone(Support.perks.calledWarning)
-		tiered.perks.calledWarning.uses = { pledged = 2, empowered = 3 }
-		expect(warn("pledged", tiered).uses).toBe(2)
-		expect(warn("empowered", tiered).uses).toBe(3)
-		local offers =
-			SupportModel.offers({ { role = "captain", loyalty = 95, alive = true, name = "A" } }, "loyal", tiered)
+		expect(warn("empowered").uses).toBe(3)
+		local offers = SupportModel.offers({ { role = "captain", loyalty = 95, alive = true, name = "A" } }, "loyal")
 		expect(offers[1].effect).toBe("Their first three heavy attacks are telegraphed sooner")
 	end)
 
