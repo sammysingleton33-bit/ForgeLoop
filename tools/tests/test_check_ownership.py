@@ -42,7 +42,7 @@ def test_rules_file_loads_and_every_pattern_is_reachable(rules):
     assert {r.owner for r in rules.rules} == set(OWNERS)
     assert co.unreachable_patterns(rules) == []
     ids = {e["id"] for e in rules.exceptions}
-    assert ids == {"handoff-new", "task-own-status", "task-forge05-status", "own-status-file", "codex-intelligence", "forge03-ui-members-291"}
+    assert ids == {"handoff-new", "task-own-status", "task-forge05-status", "own-status-file", "codex-intelligence"}
     assert all(e["description"].strip() for e in rules.exceptions)
 
 
