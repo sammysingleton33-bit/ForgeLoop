@@ -17,3 +17,6 @@ Build.PlaceLine is the server side of "drag a wall": send the two ends; the piec
 
 ## Evidence
 Headless: `sim/PlaceLine` and the `Build.PlaceLine` remote in `sim/BuildingService`; mutation rows `FL-0126L` (see the PR). Not seen in Studio.
+
+## Per-kingdom caps (D-047)
+The D-047 part ceiling (26,402 of 27,000 all-built, `tests/world/KitCeiling.spec`) counts 12 wall segments and one gate per kingdom. Config `Buildings` now carries `wall.maxCount = 12` and `gate.maxCount = 1`, so Build.Place, Build.PlaceSlot and Build.PlaceLine all answer `limit_reached` beyond them (PlaceLine counts what stands plus the new pieces). With the cap, the all-built count is unchanged (26,402). If FORGE-00 wants longer walls, that is a D-047 amendment (parts), not a code change.

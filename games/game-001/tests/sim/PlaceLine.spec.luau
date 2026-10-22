@@ -163,6 +163,21 @@ describe("Kingdom/Simulation: wall lines (FL-0126, G13.5)", function()
 		expect({ sim:placeLine(k, "nonsense", -50, -90, -50 + length, -90) }).toEqual({ nil, "unknown_building" })
 	end)
 
+	it("stops at the kingdom's wall limit (the D-047 part ceiling counts 12 segments), counting what stands", function()
+		local sim, k = world()
+		local length = segmentLength(sim)
+		expect(sim.catalog.buildings.wall.maxCount).toBe(12)
+		-- rows inside the 130-stud territory, 5 + 4 pieces north of the keep
+		expect(#assert(sim:placeLine(k, "wall", -80, -60, -80 + 5 * length, -60))).toBe(5)
+		expect(#assert(sim:placeLine(k, "wall", -64, -92, -64 + 4 * length, -92))).toBe(4)
+		local before = #sim.buildingOrder
+		-- 4 more would make 13
+		expect({ sim:placeLine(k, "wall", -64, 92, -64 + 4 * length, 92) }).toEqual({ nil, "limit_reached" })
+		expect(#sim.buildingOrder).toBe(before)
+		expect(#assert(sim:placeLine(k, "wall", -48, 92, -48 + 3 * length, 92))).toBe(3) -- exactly 12
+		expect({ sim:placeLine(k, "wall", -48, 60, -48 + length, 60) }).toEqual({ nil, "limit_reached" })
+	end)
+
 	it("a line of a single piece is one wall; a second line may join the first end to end", function()
 		local sim, k = world()
 		local length = segmentLength(sim)

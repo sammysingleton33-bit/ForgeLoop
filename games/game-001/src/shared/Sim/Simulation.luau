@@ -1591,7 +1591,7 @@ function Simulation:placeLine(
 	if def.requiresKeepLevel and self:keepLevel(kingdom) < def.requiresKeepLevel then
 		return nil, "requires_keep_level"
 	end
-	if def.maxCount and self:countOf(kingdom, kind) + count > def.maxCount then
+	if def.maxCount and self:countOf(kingdom, kind) + count > def.maxCount then -- the D-047 part ceiling counts 12 walls
 		return nil, "limit_reached"
 	end
 	local ux, uz = dx / length, dz / length

@@ -16,4 +16,5 @@ M = [
  ("FL-0126L", SM, 'local at = (i - 0.5) * segment', 'local at = i * segment', "sim/PlaceLine", "lays round(length / segment) wall pieces end to end"),
  ("FL-0126L", CM, 'local ids, err = sim:placeLine(kingdom, kind, fx, fz, tx, tz, by)', 'local ids, err = sim:placeLine(kingdom, kind, fx, fz, tx, tz, nil)', "sim/BuildingService", "Build.PlaceLine lays a wall line all or nothing"),
  ("FL-0126L", BS, '"PlaceBuildingLine", kind, from.X, from.Z, to.X, to.Z', '"PlaceBuildingLine", kind, from.X, from.Z, to.X, from.Z', "sim/BuildingService", "Build.PlaceLine lays a wall line all or nothing"),
+ ("FL-0126L", G + "config/Buildings.luau", 'maxCount = 12, -- wall segments per kingdom', 'maxCount = 40, -- wall segments per kingdom', "sim/PlaceLine", "stops at the kingdom's wall limit"),
 ]
