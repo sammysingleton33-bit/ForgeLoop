@@ -182,7 +182,7 @@ if command -v lune >/dev/null 2>&1; then
 		summary="$(grep -E '^Lune tests:' "$LOG_DIR/world-measurements.log" | tail -1 | sed -E 's/^Lune tests: //')"
 		if [[ $code == 0 ]]; then record "world measurements" "PASS" "$summary"; else record "world measurements" "FAIL" "$summary"; fi
 	else
-		record "world measurements" "PASS" "no blender/scripts/lune folder"
+		record "world measurements" "FAIL" "no blender/scripts/lune folder (the measurement specs must exist; see docs/lessons-learned/integration.md)"
 	fi
 else
 	record "world measurements" "FAIL" "lune not found"
