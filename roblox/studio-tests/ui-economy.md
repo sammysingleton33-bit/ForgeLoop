@@ -479,9 +479,12 @@ kingdom (Studio "Start" with 2 players, both seated rulers of the same kingdom),
 ## U33 — Build: the wall line (FL-0129c; FORGE-01's Build.PlaceLine, #301)
 Desktop window and the phone emulator, one client, the starting treasury (walls cost the level-1 price per piece).
 1. Build → Military → Wall → Place: the bar reads "Wall line: the start", has no Turn button, and its button says
-   "Set start". Aim at open ground inside your kingdom: "✓ Start here". Tap Set start.
+   "Set start". Aim at open ground inside your kingdom: "✓ Start here". Also aim right beside a building (one stud
+   of gap): it still reads "✓ Start here" and Set start is on (the start is an end, not a piece). Tap Set start.
 2. Move the aim away along the ground: one ghost per 32-stud piece appears from the start toward the cursor, all
-   facing along the line; the bar reads "Wall line · N pieces" with the total price, and "Build wall".
+   facing along the line; the bar reads "Wall line · N pieces" with the total price, "Builds in one go: all pieces
+   or none" (no check mark: the ground is checked on Build wall), and "Build wall". Move the cursor back over the
+   ghost pieces: the far end follows the ground under the cursor and never climbs onto the ghosts.
 3. With the aim on the start: "✕ Move the far end out further" and Build wall is off. Drag past 12 pieces:
    "✕ Too long: 12 pieces at most". Aim at more pieces than the treasury pays for: the price turns red and
    "✕ Not enough for the whole wall".

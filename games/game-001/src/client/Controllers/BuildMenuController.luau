@@ -338,6 +338,21 @@ function BuildMenuController:aimAt(position: Vector3)
 		self:_aimLine(position)
 		return
 	end
+	if p.line then
+		-- The start is one end, not a piece: the first piece stands half a segment along the line, turned to it,
+		-- so a one-spot Build.CanPlace here would refuse starts beside a building that the line clears (FORGE-07
+		-- L1 on #308). The ground of every piece is the server's all-or-nothing answer on Build wall.
+		local snapped = Placement.snap(position)
+		local key = `start|{snapped.X}|{snapped.Z}`
+		if key == p.key then
+			return
+		end
+		p.position, p.key, p.status, p.reason = snapped, key, "ok", nil
+		self._checker:cancel()
+		self:_refreshGhost()
+		self.hud:render()
+		return
+	end
 	if p.move then
 		p.move.aim = position
 		local slot = self:_slotAt(position)
@@ -764,9 +779,14 @@ end
 function BuildMenuController:_lineCosts(count: number): { any }
 	local detail = BuildModel.placeDetail(self.hud.store, BuildMenuController.LINE_TYPE)
 	local have = self.hud.store:balances()
+	local per = {}
+	for _, c in if detail then detail.costs else {} do
+		per[c.currency] = c.amount
+	end
+	local total = WallLine.cost(per, count)
 	local out = {}
 	for _, c in if detail then detail.costs else {} do
-		local amount = c.amount * count
+		local amount = total[c.currency]
 		table.insert(out, { currency = c.currency, amount = amount, short = (have[c.currency] or 0) < amount })
 	end
 	return out
@@ -936,7 +956,7 @@ function BuildMenuController:render(metrics: any)
 					elseif line.from then "Move the mouse to the far end · Click builds the wall · Q cancels"
 					else "Move the mouse to one end · Click sets it · Q cancels",
 				okText = if line
-					then (if line.from then "✓ Builds in one go: all pieces or none" else "✓ Start here")
+					then (if line.from then "Builds in one go: all pieces or none" else "✓ Start here")
 					elseif slot then `✓ {Turns.label(p.move.turn)}`
 					else nil, -- the plot outline shows the snap
 				icon = if info then info.icon else "build",

@@ -4,6 +4,7 @@
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
+local Catalog = require("@game/ReplicatedStorage/Game/Sim/Catalog")
 local BuildMenuDef = require("@game/StarterPlayer/StarterPlayerScripts/Game/Controllers/BuildMenuController")
 local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
 local Costs = require("@game/ReplicatedStorage/Forge/Config/Costs")
@@ -63,11 +64,10 @@ local function bar(world)
 	return find(world.hud.guis.hud, "PlacementBar")
 end
 
--- start a line at `from` (checked like any spot), then aim the far end at `to`
+-- start a line at `from` (an end, not a piece: no one-spot check), then aim the far end at `to`
 local function draw(world, from: Vector3, to: Vector3)
 	world.build:startPlacement("wall")
 	world.build:aimAt(from)
-	world:advance(0.5) -- Build.CanPlace answers
 	world.build:confirm() -- Set start
 	world.build:aimAt(to)
 	world:advance(0.1)
@@ -121,6 +121,10 @@ describe("UI/WallLine: the server's pieces (Simulation:placeLine)", function()
 		expect(#long.pieces).toBe(0)
 	end)
 
+	it("uses the wall piece's long side as the segment (the catalog's placeSize)", function()
+		expect(WallLine.SEGMENT).toBe(Catalog.default().buildings.wall.placeSize.X)
+	end)
+
 	it("prices a line at its level-1 price per piece", function()
 		expect(WallLine.cost({ stone = 20, gold = 1 }, 3)).toEqual({ stone = 60, gold = 3 })
 	end)
@@ -144,10 +148,15 @@ describe("Build menu: the wall line (FL-0129c)", function()
 		expect(b.placing.line).never.toBeNil()
 		expect(find(bar(world), "Rotate")).toBeNil() -- a line faces along itself: no Turn
 		expect(find(bar(world), "BuildingName").Text).toBe("Wall line: the start")
+		local asked = #world:callsNamed("Build.CanPlace")
 		b:aimAt(Vector3.new(60, 0, 0))
+		-- the start is an end, not a piece: ok at once, no one-spot Build.CanPlace (FORGE-07 L1 on #308)
+		expect(b.placing.status).toBe("ok")
 		world:advance(0.5)
-		expect(b.placing.status).toBe("ok") -- the start is checked like any spot (Build.CanPlace)
+		expect(#world:callsNamed("Build.CanPlace")).toBe(asked)
+		expect(b.placing.status).toBe("ok")
 		expect(find(find(bar(world), "Place"), "Label").Text).toBe("Set start")
+		expect(find(bar(world), "Hint").Text).toBe("Move the mouse to one end · Click sets it · Q cancels")
 		b:confirm()
 		expect(b.placing.line.from).toEqual(Vector3.new(60, 0, 0))
 		expect(b.placing.status).toBe("bad") -- the far end starts on the start: too short until it moves
@@ -159,6 +168,9 @@ describe("Build menu: the wall line (FL-0129c)", function()
 		expect(ghostFolders(world)).toBe(2) -- one ghost per piece
 		expect(find(bar(world), "BuildingName").Text).toBe("Wall line · 2 pieces")
 		expect(find(find(bar(world), "Place"), "Label").Text).toBe("Build wall")
+		expect(find(bar(world), "Hint").Text).toBe(
+			"Move the mouse to the far end · Click builds the wall · Q cancels"
+		)
 		local per = Costs.building("wall", 1).cost
 		for currency, amount in per do
 			local chip = find(bar(world), "Chip_" .. currency)
@@ -209,6 +221,22 @@ describe("Build menu: the wall line (FL-0129c)", function()
 		b:confirm()
 		world:advance(0.2)
 		expect(#world.line.calls).toBe(0)
+	end)
+
+	it("lets a treasury that pays for the line exactly build it", function()
+		local per = Costs.building("wall", 1).cost
+		world = newWorld({ treasury = WallLine.cost(per, 3) })
+		local b = world.build
+		draw(world, Vector3.new(60, 0, 0), Vector3.new(60, 0, 96)) -- three pieces, at the exact price
+		expect(b.placing.line.plan.count).toBe(3)
+		expect(b.placing.status).toBe("ok")
+		for currency, amount in per do
+			local chip = find(bar(world), "Chip_" .. currency)
+			expect(find(chip, "Amount").Text).toBe(tostring(amount * 3))
+		end
+		tap(find(bar(world), "Place"))
+		world:advance(0.2)
+		expect(#world.line.calls).toBe(1)
 	end)
 
 	it("keeps the line open with the server's reason when it refuses, and Turn does nothing", function()

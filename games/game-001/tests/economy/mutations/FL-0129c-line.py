@@ -44,6 +44,16 @@ ROWS = [
      "sends both ends in one call"),
     ("Turn shown on a line", B, "noTurn = line ~= nil,", "noTurn = false,", "fits the phone bar"),
     ("bar keeps Turn", P, "local turn = model.noTurn ~= true", "local turn = true", "sets the start, previews"),
+    # FORGE-07 L1-L3 on #308
+    ("start checked like a piece", B, "p.position, p.key, p.status, p.reason = snapped, key, \"ok\", nil\n\t\tself._checker:cancel()",
+     "p.position, p.key, p.status, p.reason = snapped, key, \"pending\", nil\n\t\tself._checker:request(p.type, snapped, p.rot)",
+     "sets the start, previews"),
+    ("the exact price reads short", B, "short = (have[c.currency] or 0) < amount })", "short = (have[c.currency] or 0) <= amount })",
+     "pays for the line exactly"),
+    ("line price not times count", B, "local total = WallLine.cost(per, count)", "local total = WallLine.cost(per, 1)",
+     "sets the start, previews"),
+    ("desktop hint ignored", P, "\t\t\ttext = model.hint\n", "\t\t\ttext = nil\n", "sets the start, previews"),
+    ("segment not the catalog's", W, "WallLine.SEGMENT = 32", "WallLine.SEGMENT = 30", "the catalog's placeSize"),
     ("line reasons unused", X, "\tif context == \"line\" and LINE_REASONS[key] then", "\tif false then", "words every"),
 ]
 
