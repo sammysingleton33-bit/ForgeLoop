@@ -201,6 +201,9 @@ function BuildingService:start()
 	self._remotes:handle("Build.Place", function(player: any, kind: string, position: Vector3, rot: number)
 		return self:place(player, kind, BuildingService.toCFrame(position, rot))
 	end)
+	self._remotes:handle("Build.PlaceLine", function(player: any, kind: string, from: Vector3, to: Vector3)
+		return self:placeLine(player, kind, from, to)
+	end)
 	self._remotes:handle("Build.Upgrade", function(player: any, buildingId: number)
 		return self:upgrade(player, buildingId)
 	end)
@@ -261,6 +264,15 @@ function BuildingService:place(player: any, kind: string, cframe: CFrame): (numb
 		return nil, err
 	end
 	return result.buildingId, nil
+end
+
+-- A straight wall line (FL-0126 part 2): all or nothing, the segments' building ids in order, else (nil, reason).
+function BuildingService:placeLine(player: any, kind: string, from: Vector3, to: Vector3): ({ number }?, string?)
+	local ok, err, result = self._match.host:command(player, "PlaceBuildingLine", kind, from.X, from.Z, to.X, to.Z)
+	if not ok then
+		return nil, err
+	end
+	return result.buildingIds, nil
 end
 
 -- ---------------------------------------------------------------- base editing (CONTRACTS G13.9)

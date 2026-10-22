@@ -27,6 +27,8 @@
 	work slot, D-059), so a worker beside its node or building faces it, not the way it walked in.
 ]]
 
+local Types = require("../Kingdom/Types")
+
 local Replication = {}
 Replication.__index = Replication
 
@@ -71,8 +73,13 @@ function Replication.actionOf(sim: any, e: any): string
 	return if e.moving then "walk" else "idle"
 end
 
+-- The wire's job: a citizen's job, or, for a unit (no job), its unit kind (soldier, archer, knight, ram; G2 JobId), so
+-- the client can dress a knight, an archer or a ram instead of every unit as the spear soldier.
 local function jobOf(e: any): string
-	return if e.job ~= nil then e.job else "soldier"
+	if e.job ~= nil then
+		return e.job
+	end
+	return if type(e.kind) == "string" and table.find(Types.JOB_IDS, e.kind) ~= nil then e.kind else "soldier"
 end
 
 local function carrying(e: any): string?

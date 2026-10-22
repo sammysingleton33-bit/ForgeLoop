@@ -13,7 +13,18 @@ describe("Kingdom/Types (G2)", function()
 		expect(Types.KINGDOM_IDS).toEqual({ "crimson", "azure", "emerald", "gold" })
 		expect(Types.RESOURCE_IDS).toEqual({ "food", "wood", "stone", "gold" })
 		expect(Types.ENTITY_KINDS).toEqual({ "citizen", "soldier", "governor" })
-		expect(Types.JOB_IDS).toEqual({ "idle", "farmer", "woodcutter", "miner", "builder", "hauler", "soldier" })
+		expect(Types.JOB_IDS).toEqual({
+			"idle",
+			"farmer",
+			"woodcutter",
+			"miner",
+			"builder",
+			"hauler",
+			"soldier",
+			"archer",
+			"knight",
+			"ram",
+		})
 		expect(Types.BUILDING_TYPES).toEqual({
 			"keep",
 			"house",

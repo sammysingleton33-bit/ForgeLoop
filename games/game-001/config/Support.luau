@@ -85,9 +85,9 @@ return {
 			pledged = 0.15,
 			empowered = 0.25,
 			duration = 8,
-			uses = 2,
+			uses = { pledged = 2, empowered = 3 }, -- heavy attacks covered, per tier
 			condition = "opponentHeavy",
-			effect = "Their first two heavy attacks are shown {magnitude} s earlier",
+			effect = "Their first {uses} heavy attacks are telegraphed sooner",
 			when = "the opponent's first heavy attack",
 		},
 		heartyRations = {
