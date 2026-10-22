@@ -10,6 +10,7 @@ created: 2026-10-22
 updated: 2026-10-22
 depends_on: []
 evidence:
+  - "rig 1.5 (FORGE-00 17:04), slots 5 studs: check.sh OVERALL PASS on ca7a4cc6 (main e8a82c51 merged in): game-001 3052/0, framework 588/0, selene 0, stylua 736 files, both builds and place checks PASS; sim specs 1158/0 at 5 studs (5.25 trips Simulation.spec's two-builders timing test: 4.6/5.0 pass, 4.8/5.25/5.5 fail); FL-0148 rows 66/66 CAUGHT on da2ff4f6 (0 stale over 1005 rows); production 32 seeds main e8a82c51 vs head: food +0.1 %, wood -0.8 %, all resources -0.3 %, every measure under 0.5 sd; workers within 1.5 studs 56 % -> 0.1 %, median nearest neighbour 0.97 -> 4.98 studs; KitCharacter 59/59 on main, main + #317 (92f0b664) and #317's tool pass; sheets games/game-001/design/pacing/citizens/fl0148-start-citizens.jpg and fl0148-phone-scale.jpg opened (headless Blender, not Studio)"
   - "check.sh OVERALL PASS on a156247f (main 06230ecd merged in): game-001 2957/0, framework 588/0, selene 0, stylua 729 files, both builds and place checks PASS; FL-0148 rows 42/42 CAUGHT; production 32 seeds main vs head: all resources +0.0 % (sd 1.1 %), food +0.6 %, wood -0.8 %, stone -1.0 %, gold +0.6 %; workers within 1.5 studs 56 % -> 0.1 %; sheet games/game-001/design/pacing/citizens/fl0148-start-citizens.jpg (headless Blender, not Studio)"
 ---
 
@@ -50,3 +51,4 @@ At the default start view (FL-0147), the ruler sees their citizens as separate, 
 - 2026-10-22 forge-00: SPECIFIED → READY. Filed for FORGE-04's D-059 PR
 - 2026-10-22 forge-00: READY → BUILDING. FORGE-04 building on forge/04-experience-citizen-motion
 - 2026-10-22 forge-04: BUILDING → REVIEW. PR open: work slots (3.5 studs, production unchanged on 32 seeds), facing, blows that read at zoom 70 (hoe to 105 deg), carried goods, blow start at phase 0; before/after sheet opened and judged
+- 2026-10-22 forge-04: REVIEW (new head). Rig drawn 1.5x (FORGE-00 17:04), slots 5 studs apart (5.25 trips FORGE-01's two-builders timing test), the pick and hammer tip forward (clear of #317), FORGE-01's L1-L3 and FORGE-07's L1-L4 fixed; sheets re-rendered at 1.5 and opened
