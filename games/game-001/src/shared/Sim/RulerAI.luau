@@ -15,6 +15,9 @@
 		growth    upgrade the Keep from day 3; upgrade Houses when wood and stone are plentiful
 		military  build a Barracks from day 4, keep an army of about a quarter of the population,
 		          Watchtowers after Keep level 2
+		fortify   aggression >= 0.5, keep level 2 and both towers: a palisade of up to 11 wall pieces ringing the keep (12 slots, 64
+		          studs out; a slot that does not fit is skipped), and once 6 are finished a gate in the slot that faces the
+		          nearest other keep (FL-0126 part 2; the D-047 count is 12 walls and one gate)
 		objective with 3+ soldiers and no war, march on the nearest capture point it does not own
 		war       after the grace period, an aggressive AI declares war on the weakest neighbour and
 		          attacks once its army is large enough; it proposes peace when its army is gone and
@@ -132,6 +135,201 @@ local function place(sim: any, kingdom: any, kind: string, near: { x: number, z:
 	end
 	local ok = Commands.executeFor(sim, kingdom, nil, "PlaceBuilding", kind, x, z)
 	return if ok then "PlaceBuilding:" .. kind else nil
+end
+
+-- ---------------------------------------------------------------- fortifying (FL-0126 part 2)
+-- A governor with aggression >= FORTIFY_AGGRESSION (and a keep at level 2 with its two towers) walls the approach: an arc
+-- of up to FORTIFY_SLOTS pieces, one at a time, centred on the direction of the nearest other keep, laid tangent to the
+-- circle FORTIFY_RING studs from its own keep. The yard (farms, houses, quarry, camps, towers) fills the ground out to
+-- about 120 studs, so the arc stands just beyond it, inside the L2 territory (170). Once GATE_AFTER pieces are finished the
+-- finished piece nearest the middle of the arc becomes the gate, in place (Build.PlaceGate: the gate needs no free ground of
+-- its own, and its price counts the wall's refund); a piece the thicker gate does not fit in is passed over for the next. Each slot tries a few radii (RING_OFFSETS); a slot that still does
+-- not fit (a field, a tree, a rock) is skipped, so the arc may have holes: the walls hold an assault, they do not seal a
+-- keep. The D-047 part count is unchanged (12 walls and one gate, 11 and the gate here).
+local FORTIFY_AGGRESSION = 0.5
+local FORTIFY_RING = 132 -- studs from the keep's centre to the middle of a wall piece
+local RING_OFFSETS = { 0, 8, -8, 16 } -- radii tried for a slot, in this order
+local ARC_STEP = 34 / FORTIFY_RING -- radians between slots: a 32-stud piece and a little air
+local FORTIFY_SLOTS = 12
+local FORTIFY_WOOD_RESERVE = 120 -- a palisade is never built out of the wood the kingdom needs to live on
+local GATE_AFTER = 6 -- finished wall pieces before the gate is made
+local GATE_TRIES = 4 -- pieces tried for the gate in one think, nearest the middle first
+local GATE_PATIENCE = 300 -- seconds the palisade waits for the gate (stone, a free piece) before it goes on with walls
+
+local function nearestOtherKeep(sim: any, kingdom: any): any?
+	local best, bestDistance = nil, math.huge
+	for _, kid in sim.kingdomOrder do
+		local other = sim.kingdoms[kid]
+		if other ~= kingdom and other.alive then
+			local d = (other.x - kingdom.x) ^ 2 + (other.z - kingdom.z) ^ 2
+			if d < bestDistance then
+				best, bestDistance = other, d
+			end
+		end
+	end
+	return best
+end
+
+-- The direction from the keep to the nearest other keep (0 when it is alone): the arc's middle.
+local function approachAngle(sim: any, kingdom: any, keep: any): number
+	local rival = nearestOtherKeep(sim, kingdom)
+	if rival == nil then
+		return 0
+	end
+	return math.atan2(rival.z - keep.z, rival.x - keep.x)
+end
+
+local function slotAngle(centre: number, slot: number): number
+	return centre + (slot - (FORTIFY_SLOTS + 1) / 2 + 0.5) * ARC_STEP
+end
+
+local function ringSpot(keep: any, angle: number, radius: number): (number, number, number)
+	local x, z = keep.x + math.cos(angle) * radius, keep.z + math.sin(angle) * radius
+	-- the piece's long axis (cos yaw, -sin yaw) runs along the tangent (-sin angle, cos angle)
+	local yaw = math.atan2(-math.cos(angle), -math.sin(angle))
+	return x, z, yaw
+end
+
+-- A slot is taken when a piece of the arc already stands within half a step of its angle (at any radius it can use).
+local function slotTaken(pieces: { any }, keep: any, angle: number): boolean
+	for _, b in pieces do
+		local a = math.atan2(b.z - keep.z, b.x - keep.x)
+		local turn = math.abs((a - angle + math.pi) % (2 * math.pi) - math.pi)
+		local radius = math.sqrt((b.x - keep.x) ^ 2 + (b.z - keep.z) ^ 2)
+		if turn < ARC_STEP / 2 and math.abs(radius - FORTIFY_RING) <= 24 then
+			return true
+		end
+	end
+	return false
+end
+
+-- The first radius at which the piece fits in this slot, or nil.
+local function fittingSpot(sim: any, kingdom: any, keep: any, angle: number)
+	for _, offset in RING_OFFSETS do
+		local x, z, yaw = ringSpot(keep, angle, FORTIFY_RING + offset)
+		if sim:canPlace(kingdom, "wall", x, z, yaw) then
+			return x, z, yaw
+		end
+	end
+	return nil, nil, nil
+end
+
+-- The gate: the finished piece nearest the middle of the arc turns into it, once the palisade has begun to stand. Called at
+-- the top of think (before the economy spends the stone it costs) and again by fortify. Returns the command issued, or
+-- "wait" while the palisade holds its other pieces for the gate, or nil when there is nothing to do.
+-- What Simulation:placeGate asks for before it does the geometry: the gate's price, with the converted wall's refund counted.
+-- Checked first so a kingdom short of stone does not run the placement checks of four pieces at every think.
+local function canPayGate(sim: any, kingdom: any): boolean
+	local price = sim.costs.building("gate", 1)
+	local back = sim.costs.building("wall", 1)
+	if price == nil or back == nil then
+		return false
+	end
+	for res, amount in price.cost do
+		local refund = math.floor((back.cost[res] or 0) * sim.catalog.tuning.cancelRefund)
+		if sim:balance(kingdom.id, res) + refund < amount then
+			return false
+		end
+	end
+	return true
+end
+
+local function makeGate(sim: any, kingdom: any): string?
+	local keep = sim.buildings[kingdom.keepId]
+	if keep == nil then
+		return nil
+	end
+	local walls, finished = {}, 0
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b.kind == "gate" then
+			return nil -- one gate per kingdom: standing or being built
+		elseif b.kind == "wall" then
+			table.insert(walls, b)
+			if b.level >= 1 then
+				finished += 1
+			end
+		end
+	end
+	if finished < GATE_AFTER then
+		return nil
+	end
+	local centre = approachAngle(sim, kingdom, keep)
+	local candidates = {}
+	for _, b in walls do
+		if b.level >= 1 and b.pendingLevel == nil then
+			table.insert(candidates, b)
+		end
+	end
+	local function offCentre(b: any): number
+		local a = math.atan2(b.z - keep.z, b.x - keep.x)
+		return math.abs((a - centre + math.pi) % (2 * math.pi) - math.pi)
+	end
+	table.sort(candidates, function(l, r)
+		return offCentre(l) < offCentre(r)
+	end)
+	if canPayGate(sim, kingdom) then
+		for i = 1, math.min(#candidates, GATE_TRIES) do
+			if Commands.executeFor(sim, kingdom, nil, "PlaceGate", candidates[i].id) then
+				return "PlaceGate"
+			end
+		end
+	end
+	-- The gate costs stone, which a governor spends on towers and upgrades. The palisade holds its other pieces for
+	-- GATE_PATIENCE seconds, so the gate comes before the last pieces, not never.
+	local since = sim.rulerAI.gateSince[kingdom.id]
+	if since == nil then
+		since = sim.time
+		sim.rulerAI.gateSince[kingdom.id] = since
+	end
+	if sim.time - since < GATE_PATIENCE then
+		return "wait"
+	end
+	return nil
+end
+
+local function fortify(sim: any, kingdom: any): string?
+	local keep = sim.buildings[kingdom.keepId]
+	if keep == nil then
+		return nil
+	end
+	local pieces = {} -- walls and the gate: a slot a piece stands in is taken
+	for _, bid in kingdom.buildingIds do
+		local b = sim.buildings[bid]
+		if b.kind == "wall" or b.kind == "gate" then
+			table.insert(pieces, b)
+		end
+	end
+	local resting = sim.rulerAI.noSpotUntil
+	local key = `{kingdom.id}:wall`
+	if resting[key] ~= nil and sim.time < resting[key] then
+		return nil
+	end
+	local centre = approachAngle(sim, kingdom, keep)
+	local gateIssued = makeGate(sim, kingdom)
+	if gateIssued == "wait" then
+		return nil
+	elseif gateIssued then
+		return gateIssued
+	end
+	local price = sim.costs.building("wall", 1)
+	if price == nil or not sim:canAfford(kingdom.id, price.cost) then
+		return nil
+	end
+	for slot = 1, FORTIFY_SLOTS do
+		local angle = slotAngle(centre, slot)
+		if not slotTaken(pieces, keep, angle) then
+			local x, z, yaw = fittingSpot(sim, kingdom, keep, angle)
+			if x ~= nil then
+				local ok = Commands.executeFor(sim, kingdom, nil, "PlaceBuilding", "wall", x, z, yaw)
+				if ok then
+					return "PlaceBuilding:wall"
+				end
+			end
+		end
+	end
+	resting[key] = sim.time + NO_SPOT_RETRY -- every free slot is built or blocked: look again in a minute
+	return nil
 end
 
 local function tryUpgrade(sim: any, kingdom: any, kind: string, maxLevel: number): string?
@@ -373,6 +571,14 @@ function RulerAI.think(sim: any, kingdom: any): string?
 		end
 	end
 
+	-- the palisade's gate comes first: it costs stone, which the building decisions below would spend as it arrives
+	if aggression >= FORTIFY_AGGRESSION and sim:keepLevel(kingdom) >= 2 then
+		local issued = makeGate(sim, kingdom)
+		if issued and issued ~= "wait" then
+			return issued
+		end
+	end
+
 	-- housing: beds are for citizens only, soldiers sleep in barracks bunks (D-041)
 	if #kingdom.citizenIds >= kingdom.popCap - 1 and not hasSite(sim, kingdom, "house") then
 		local issued = place(sim, kingdom, "house")
@@ -489,6 +695,19 @@ function RulerAI.think(sim: any, kingdom: any): string?
 				return issued
 			end
 		end
+		if
+			aggression >= FORTIFY_AGGRESSION
+			and sim:keepLevel(kingdom) >= 2
+			and count(sim, kingdom, "watchtower", true) >= 2
+			and not hasSite(sim, kingdom, "wall")
+			and not hasSite(sim, kingdom, "gate")
+			and sim:balance(kingdom.id, "wood") >= FORTIFY_WOOD_RESERVE
+		then
+			local issued = fortify(sim, kingdom)
+			if issued then
+				return issued
+			end
+		end
 	end
 	if sim:balance(kingdom.id, "wood") > 150 and sim:balance(kingdom.id, "stone") > 120 then
 		local issued = tryUpgrade(sim, kingdom, "house", 3)
@@ -508,6 +727,7 @@ function RulerAI.install(sim: any, options: { [string]: any }?)
 		interval = opts.interval or 6,
 		assistHumans = opts.assistHumans == true,
 		noSpotUntil = {} :: { [string]: number }, -- "kingdom:kind" -> sim time before which no new search is made
+		gateSince = {} :: { [string]: number }, -- kingdom -> sim time its palisade was ready for the gate and none could be made yet
 		nextThink = {} :: { [string]: number },
 		aggression = {} :: { [string]: number },
 		lastAction = {} :: { [string]: string? },
