@@ -30,9 +30,11 @@ return function(ctx, opts, act)
 	world.kingdoms:addCrownPoints("crimson", 12)
 	world.kingdoms:addCrownPoints("azure", 20)
 	world:advance(0.2)
-	-- A house under construction, as in the prototype.
-	local houseId = world.build:add("crimson", "house", 1, "constructing", Vector3.new(-60, 0, 60))
-	world.build:progress(houseId, 0.45)
+	-- A house under construction, as in the prototype (opts.bare: the match's first second, nothing built yet).
+	if not opts.bare then
+		local houseId = world.build:add("crimson", "house", 1, "constructing", Vector3.new(-60, 0, 60))
+		world.build:progress(houseId, 0.45)
+	end
 	world:advance(0.1)
 	if act then
 		act(world, hud, build)

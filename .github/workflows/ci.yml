@@ -102,7 +102,7 @@ jobs:
         run: |
           # Paths whose change can affect the Roblox gates. No usable base (new branch, failed diff)
           # runs the gates: when in doubt, check.
-          pattern='^(roblox/|games/|rokit\.toml$|selene\.toml$|stylua\.toml$|roblox\.yml$|\.gitattributes$|\.github/)'
+          pattern='^(blender/scripts/lune/|roblox/|games/|rokit\.toml$|selene\.toml$|stylua\.toml$|roblox\.yml$|\.gitattributes$|\.github/)'
           range="$BASE...$HEAD"
           if [ "$EVENT" = "push" ]; then range="$BASE..$HEAD"; fi
           if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] \

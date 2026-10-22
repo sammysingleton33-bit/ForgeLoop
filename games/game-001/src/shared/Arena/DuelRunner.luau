@@ -31,8 +31,10 @@
 		Runner:finished() -> boolean       Runner:result() -> ("a" | "b" | "draw", reason)?
 		Runner:snapshot() -> the public picture (DuelModel.snapshot)
 		RelayEvent = { t, kind, side, data? }, shares only, nothing about the opponent that a spectator cannot see:
-			hit          side = the hitter   { damageShare, hpShare (the target's), heavy }
+			hit          side = the hitter   { damageShare, hpShare (the target's), heavy, blocked }
 			heavyWindup  side = the attacker { impactIn (seconds), warned }
+			lightWindup  side = the attacker { impactIn (seconds) }
+			dodgeStart   side = the dodger   no data
 			parry, stagger, staminaOut, hype   side as DuelModel sends it, no data
 			triggerFired side = who it helps { trigger = TriggerId, citizenName? }
 			ended        side = "a" | "b" | "draw"   { reason = "ko" | "timeCap" | "hardCap" | "draw" | "forfeit" }
@@ -220,6 +222,7 @@ local function relay(model: any, citizens: { [string]: any }, event: DuelEvent, 
 				damageShare = data.damage / model.config.maxHp,
 				hpShare = data.targetHpShare,
 				heavy = data.heavy == true,
+				blocked = data.blocked == true,
 			},
 		})
 	elseif kind == "heavyWindup" and data then
@@ -228,6 +231,13 @@ local function relay(model: any, citizens: { [string]: any }, event: DuelEvent, 
 			kind = kind,
 			side = event.side,
 			data = { impactIn = math.max(0, data.impactAt - event.t), warned = data.warned or 0 },
+		})
+	elseif kind == "lightWindup" and data then
+		table.insert(out, {
+			t = event.t,
+			kind = kind,
+			side = event.side,
+			data = { impactIn = math.max(0, data.impactAt - event.t) },
 		})
 	elseif kind == "triggerFired" and data then
 		local trigger = triggerOf(data.source)
@@ -238,7 +248,7 @@ local function relay(model: any, citizens: { [string]: any }, event: DuelEvent, 
 			side = event.side,
 			data = { trigger = trigger, citizenName = if citizen then citizen.name else nil },
 		})
-	elseif kind == "parry" or kind == "stagger" or kind == "staminaOut" or kind == "hype" then
+	elseif kind == "parry" or kind == "stagger" or kind == "staminaOut" or kind == "hype" or kind == "dodgeStart" then
 		table.insert(out, { t = event.t, kind = kind, side = event.side })
 	elseif kind == "ended" and data then
 		table.insert(out, { t = event.t, kind = kind, side = event.side, data = { reason = data.reason } })

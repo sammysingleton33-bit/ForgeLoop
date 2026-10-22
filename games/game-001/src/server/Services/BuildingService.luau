@@ -201,6 +201,9 @@ function BuildingService:start()
 	self._remotes:handle("Build.Place", function(player: any, kind: string, position: Vector3, rot: number)
 		return self:place(player, kind, BuildingService.toCFrame(position, rot))
 	end)
+	self._remotes:handle("Build.PlaceGate", function(player: any, wallId: number)
+		return self:placeGate(player, wallId)
+	end)
 	self._remotes:handle("Build.PlaceLine", function(player: any, kind: string, from: Vector3, to: Vector3)
 		return self:placeLine(player, kind, from, to)
 	end)
@@ -260,6 +263,15 @@ end
 function BuildingService:place(player: any, kind: string, cframe: CFrame): (number?, string?)
 	local p = cframe.Position
 	local ok, err, result = self._match.host:command(player, "PlaceBuilding", kind, p.X, p.Z, yawOf(cframe))
+	if not ok then
+		return nil, err
+	end
+	return result.buildingId, nil
+end
+
+-- One wall piece becomes a gate, in place (FL-0126 part 2, slice 2): the gate's id, else (nil, reason).
+function BuildingService:placeGate(player: any, wallId: number): (number?, string?)
+	local ok, err, result = self._match.host:command(player, "PlaceGate", wallId)
 	if not ok then
 		return nil, err
 	end
