@@ -27,7 +27,8 @@ ArenaVote.SIZE = table.freeze({ width = 520, height = 204 })
 ArenaVote.PHONE = table.freeze({ width = 520, height = 178 })
 ArenaVote.GAP = 8
 
-local STATUS_COLOR = { hint = "textSecondary", pending = "textSecondary", ok = "gold300", failed = "gules" }
+local STATUS_COLOR =
+	{ hint = "textSecondary", pending = "textSecondary", ok = "gold300", failed = "gules", left = "gules" }
 
 -- A candidate's label is held to its button (Style.text truncates with "…", exact on Roblox). Before that, a name is
 -- cut here to what an estimate of the bold 15 px label says fits, so it ends with "…" inside the button rather than

@@ -71,7 +71,7 @@ describe("Layout.reservedAreas: no-build areas (G13.9 v0.4-g9j)", function()
 	end)
 
 	it(
-		"keeps 3 studs of free ground around a crop field: no house is placed within 2.5 studs of one (the farm fences)",
+		"keeps 3 studs of free ground around a crop field: no house is placed within 2.9 studs of one (the farm fences)",
 		function()
 			local sim = generate()
 			local def = sim.catalog.buildings.house
@@ -81,7 +81,7 @@ describe("Layout.reservedAreas: no-build areas (G13.9 v0.4-g9j)", function()
 				local hx, hz = field.size.X / 2, field.size.Y / 2
 				for _, identity in KingdomsConfig.identities do
 					local kingdom = sim.kingdoms[identity.id]
-					for _, clear in { 0.5, 1.5, 2.5 } do
+					for _, clear in { 0.5, 1.5, 2.5, 2.9 } do
 						for _, side in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
 							-- a house `clear` studs outside the field's edge, on one of its four sides, in the field's frame
 							local lx = side[1] * (hx + def.footprint + clear)
@@ -102,6 +102,35 @@ describe("Layout.reservedAreas: no-build areas (G13.9 v0.4-g9j)", function()
 			expect(accepted).toBe(0) -- before the gap, 4 of these spots took a house (and the fence's collider ended up inside it)
 		end
 	)
+
+	it("the gap around a crop field is exactly 3 studs: 2.9 studs out overlaps it, 3.1 studs out does not", function()
+		local fields = 0
+		for _, area in Layout.reservedAreas() do
+			if area.gap == nil then
+				continue
+			end
+			fields += 1
+			expect(area.gap).toBe(3)
+			for _, field in WORLD.features.fields do
+				if math.abs(field.center.X - area.x) < 1e-6 and math.abs(field.center.Y - area.z) < 1e-6 then
+					local yaw = field.yaw
+					for _, side in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
+						local function at(out: number): (number, number)
+							local lx = side[1] * (field.size.X / 2 + out)
+							local lz = side[2] * (field.size.Y / 2 + out)
+							return field.center.X + lx * math.cos(yaw) + lz * math.sin(yaw),
+								field.center.Y - lx * math.sin(yaw) + lz * math.cos(yaw)
+						end
+						local nx, nz = at(2.9)
+						local fx, fz = at(3.1)
+						expect(Footprint.overlapsCircle(area, nx, nz, 0.01, area.gap)).toBe(true)
+						expect(Footprint.overlapsCircle(area, fx, fz, 0.01, area.gap)).toBe(false)
+					end
+				end
+			end
+		end
+		expect(fields).toBe(12)
+	end)
 
 	it("covers the spawn point, the avenue and the cross street of every plot, and not the yard or the keep", function()
 		for _, identity in KingdomsConfig.identities do

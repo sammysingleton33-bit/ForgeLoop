@@ -163,6 +163,7 @@ return {
 			footprint = 4,
 			placeable = true,
 			dropoff = false,
+			maxCount = 12, -- wall segments per kingdom: the D-047 part ceiling counts 12 (Kit/Buildings header, KitCeiling)
 			levels = {
 				{ hp = 900 },
 				{ hp = 1600 },
@@ -175,6 +176,7 @@ return {
 			footprint = 6,
 			placeable = true,
 			dropoff = false,
+			maxCount = 1, -- one gate per kingdom: the D-047 part ceiling counts one
 			levels = {
 				{ hp = 1200 },
 				{ hp = 2000 },
@@ -184,6 +186,8 @@ return {
 	},
 	placementGap = 2, -- studs kept free between footprints
 	wallGap = 0, -- studs kept free between two line pieces (wall / gate): they join end to end
+	lineGrid = 4, -- studs the two ends of a wall line (Build.PlaceLine) snap to
+	maxLineSegments = 12, -- the most wall segments one Build.PlaceLine may lay (a segment is one Kit wall piece, 32 studs)
 	-- base editing (CONTRACTS G13.9 v0.4-g9j); every time is sim time
 	moveCooldown = 10, -- seconds a building waits between moves (Build.Move / MoveToSlot)
 	moveSettle = 30, -- seconds a moved storehouse, lumber camp or quarry takes no deliveries and gives no gather bonus

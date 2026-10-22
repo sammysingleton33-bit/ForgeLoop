@@ -1,6 +1,6 @@
 -- FL-0142: the co-rulers' champion vote. The real KingdomHudController, DuelController, ArenaHudController and
--- ArenaHudVoteController over FORGE-01-shaped doubles (ArenaDoubles + VoteDoubles: Arena.Vote and the proposed
--- ArenaState.vote). Sam (user 1) and Mira (user 2) rule Emberhold (crimson).
+-- ArenaHudVoteController over FORGE-01-shaped doubles (ArenaDoubles + VoteDoubles: Arena.Vote and FORGE-01's
+-- ArenaState.vote, live since #275). Sam (user 1) and Mira (user 2) rule Emberhold (crimson).
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect, beforeEach, afterEach = T.describe, T.it, T.expect, T.beforeEach, T.afterEach
 
@@ -113,7 +113,7 @@ describe("ArenaVoteModel (FL-0142)", function()
 	end)
 
 	it(
-		"the second kingdom (side b) votes too; a vote for a ruler who left counts as no vote (FORGE-07 M3, L2)",
+		"side b votes too; a vote for a ruler who left counts for nobody and says so (FORGE-07 M3, L2; G12.6 after #285)",
 		function()
 			local st = VoteDoubles.state("azure", { 7, 1 }, 110, {}, "b")
 			local v = ArenaVoteModel.view(st, lookup, 1, 100)
@@ -124,9 +124,18 @@ describe("ArenaVoteModel (FL-0142)", function()
 			expect(ArenaVoteModel.view(both, lookup, 1, 100).side).toBe("b")
 			expect(ArenaVoteModel.view(both, lookup, 3, 100).side).toBe("a")
 			local left = ArenaVoteModel.view(st, lookup, 1, 100, { candidate = 3, status = "ok" })
-			expect(left.statusKind).toBe("hint")
+			expect(left.statusKind).toBe("left") -- not the opening hint: the server still counts this ballot as cast
+			expect(left.status).toBe(
+				"Your pick left, so your vote counts for nobody. Choose again until the vote closes."
+			)
 			for _, c in left.candidates do
 				expect(c.picked).toBe(false)
+			end
+			-- a vote still on its way, or refused, for a ruler who left: the plain hint (the server refuses it)
+			for _, status in { "pending", "failed" } do
+				expect(ArenaVoteModel.view(st, lookup, 1, 100, { candidate = 3, status = status }).statusKind).toBe(
+					"hint"
+				)
 			end
 		end
 	)
@@ -182,7 +191,7 @@ describe("Arena vote panel (FL-0142)", function()
 		expect(find(p, "VotedCount").Text).toBe("1 of 2 voted") -- the server's push
 	end)
 
-	it("the latest vote counts: a ruler may change it until the time runs out", function()
+	it("the latest vote counts: a ruler may change it until the vote closes", function()
 		world = newWorld()
 		open(world)
 		tap(find(panel(world), "Candidate_2"))
@@ -409,6 +418,38 @@ describe("Arena vote panel (FL-0142)", function()
 			end
 		end
 	)
+
+	it("the phone status line holds its longest text in two lines (FORGE-07 low on #265)", function()
+		world = newWorld({ width = 667, height = 375 })
+		open(world, { 1, 2 })
+		local status = find(panel(world), "VoteStatus")
+		local lineHeight = 12 * status.LineHeight
+		expect(status.TextSize).toBe(12)
+		expect(status.TextWrapped).toBe(true)
+		expect(status.Size.Y.Offset).toBeGreaterThan(2 * lineHeight - 0.01) -- two lines fit in the box
+		-- the longest status: "ok" for a 20-character name; ArenaVote's bold 15 px estimate, scaled to 12 px
+		local long = ArenaVoteModel.view(VoteDoubles.state("crimson", { 1, 2 }, 100), {
+			name = function(id)
+				return if id == 2 then "WWWWWWWWWWWWWWWWWWWW" else nil
+			end,
+		}, 1, 0, { candidate = 2, status = "ok" })
+		local width = ArenaVote.textWidth(long.status) * 12 / 15
+		local box = panel(world):FindFirstChildWhichIsA("Frame")
+		local content = box:FindFirstChild("Content", true)
+		local lineWidth = box.Size.X.Offset + content.Size.X.Offset
+		expect(width).toBeLessThan(2 * lineWidth) -- wraps to at most two lines
+		for _, kind in { "hint", "pending", "failed", "left" } do
+			local pick = if kind == "hint"
+				then nil
+				elseif kind == "left" then { candidate = 9, status = "ok" }
+				else { candidate = 2, status = kind }
+			local v = ArenaVoteModel.view(VoteDoubles.state("crimson", { 1, 2 }, 100), nil, 1, 0, pick)
+			expect(v.statusKind).toBe(kind)
+			expect(ArenaVote.textWidth(v.status) * 12 / 15).toBeLessThan(2 * lineWidth)
+		end
+		world:destroy()
+		world = nil
+	end)
 
 	it("a vote never waits longer than the vote stage lasts (FORGE-07 L1)", function()
 		expect(VoteDef.VOTE_TIMEOUT_SEC).toBeLessThan(ArenaConfig.voteSeconds)
