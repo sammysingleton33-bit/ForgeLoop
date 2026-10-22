@@ -123,6 +123,17 @@ local ARM_SPLAY = math.rad(7)
 local HAND_UP = 0.2 -- the hand joint sits inside the fist, this far above the arm's end
 local HEAD_D = 1.6
 local HEAD_Y = NECK_Y + HEAD_D / 2 - 0.06 -- head centre (4.64)
+-- Silhouette scale (citizen readability pass 2, 2026-10-22: "no job nameable at the start frame"). A citizen's head and everything on it
+-- (hat, head details, headband or scarf) is drawn HEAD_SCALE times bigger about the neck, its hand tool (handle and head) and the hauler's
+-- sack TOOL_SCALE times bigger; the torso, arms, legs, joints and Pose are untouched, and so is the part count. The scaled head sits
+-- HEAD_Y - NECK_Y = 0.74 x HEAD_SCALE above the neck, so it still sits on the shoulders; a tool is scaled about its butt (a sack about its
+-- bottom front) so the grip stays in the fist and the sack stays against the back. Soldiers, governors and the mesh kit keep 1.
+Character.HEAD_SCALE = 1.3
+Character.TOOL_SCALE = 1.3
+Character.TOOL_SCALES = table.freeze({ hammer = 1.15 }) -- the mallet swings past the hard hat and the bigger head: any bigger and it clips them in the work and fight poses
+Character.SACK_SCALE = 1.15 -- the sack is bigger than the tools' handles already (2.7 across): any bigger and it meets the hauler's long hair
+Character.NECK_LIFT = 0.07 -- the bigger head sits this much higher (it still touches the shoulders): the raised arm keeps its 0.2 from it
+Character.HAT_SCALE = table.freeze({ farmer = 1.1 }) -- the straw disc is the widest thing on a citizen (3.1) and work slots are 3.5 apart
 
 Character.ROOT_HEIGHT = 3.2 -- Root centre above the feet (Kit.CHARACTER_ROOT_HEIGHT), rig and LOD alike
 Character.LOD_ROOT_HEIGHT = Character.ROOT_HEIGHT
@@ -668,7 +679,7 @@ local BOW_LIMB, BOW_TILT = 1.25, math.rad(30)
 -- the hoe leans out 14 degrees: its handle clears the straw brim of every hat roll in every pose (0.04 or more with the
 -- brim's bounding box, 0.15 or more with the exact disc)
 local HOE_LEAN = CFrame.Angles(0, 0, math.rad(-14))
-local LEAN_HAMMER = CFrame.Angles(0, 0, math.rad(-15)) -- the mallet leans further: its head swings past the face at work (cheek clearance 0.15)
+local LEAN_HAMMER = CFrame.Angles(0, 0, math.rad(-24)) -- the mallet leans further: its head swings past the face at work (cheek clearance 0.15)
 local IRON = Color3.fromRGB(104, 110, 122) -- pick tines: lighter than the pot so the arch shows against grass and rock
 local PICK_TINE = Vector3.new(0.45, 0.8, 2.5) -- a wedge: thick at the hub, a point at the far end
 local PICK_DROOP = 28 -- degrees each tine droops below the level
@@ -896,6 +907,110 @@ local TOOLS: { [string]: PartSpec } = {
 		},
 	},
 }
+
+-- A spec drawn `k` times bigger about `pivot` (a CFrame in the spec's own frame): sizes times k, the offset's position taken from the
+-- pivot times k, its rotation kept. Details scale about the same pivot unless `detailPivots` names theirs by part name.
+local function scaledSpec(spec: PartSpec, k: number, pivot: CFrame, detailPivots: { [string]: CFrame }?): PartSpec
+	if k == 1 then
+		return spec
+	end
+	local rel = pivot:Inverse() * spec.offset
+	local details: { PartSpec }? = nil
+	if spec.details then
+		details = {}
+		for _, d in spec.details do
+			local dp = if detailPivots and detailPivots[d.name] then detailPivots[d.name] else pivot
+			table.insert(details :: { PartSpec }, scaledSpec(d, k, dp, nil))
+		end
+	end
+	return {
+		name = spec.name,
+		class = spec.class,
+		shape = spec.shape,
+		size = spec.size * k,
+		color = spec.color,
+		material = spec.material,
+		offset = pivot * (CFrame.new(rel.Position * k) * rel.Rotation),
+		onBack = spec.onBack,
+		details = details,
+		palette = spec.palette,
+	}
+end
+
+-- a hand tool scaled about its butt (the lowest end of its handle, axis +Y after UPRIGHT), so the fist keeps its grip on it
+local function scaledTool(spec: PartSpec, k: number): PartSpec
+	if k == 1 then
+		return spec
+	end
+	if spec.onBack then -- the sack: about its bottom front; its strap lies across the chest and keeps its size (longer, its top end meets the head)
+		local r = spec.size.X / 2
+		local pivot = CFrame.new(spec.offset.Position + Vector3.new(0, -r, -r))
+		local scaled = scaledSpec(spec, k, pivot, nil)
+		local back = CFrame.new(0, -0.14, 0.4) -- a little lower and further back: the head and its hair grew too (0.1 clearance in the cheer)
+		local details: { PartSpec } = {}
+		for i, d in spec.details or {} do
+			if d.name == "strap" then -- unscaled, hung a little lower: the bigger head's chin comes down to it
+				details[i] = {
+					name = d.name,
+					class = d.class,
+					shape = d.shape,
+					size = d.size,
+					color = d.color,
+					material = d.material,
+					offset = CFrame.new(0, -0.15, 0) * d.offset,
+				}
+			else
+				local sd = (scaled.details :: { PartSpec })[i]
+				details[i] = {
+					name = sd.name,
+					class = sd.class,
+					shape = sd.shape,
+					size = sd.size,
+					color = sd.color,
+					material = sd.material,
+					offset = back * sd.offset,
+				}
+			end
+		end
+		return {
+			name = scaled.name,
+			class = scaled.class,
+			shape = scaled.shape,
+			size = scaled.size,
+			color = scaled.color,
+			material = scaled.material,
+			offset = back * scaled.offset,
+			onBack = scaled.onBack,
+			details = details,
+		}
+	end
+	local butt = spec.offset * UPRIGHT:Inverse() * CFrame.new(0, -spec.size.X / 2, 0)
+	return scaledSpec(spec, k, butt, nil)
+end
+
+-- A job hat drawn hsk times bigger about the head centre; a disc or drum (a cylinder) is then seated on the crown of the head (grown to
+-- hk) as deep as it was before, so "the head enters the hat by at most 0.4" still holds. Returns the hat and how far it was raised
+-- (its head detail follows).
+local function fitHat(spec: PartSpec, hk: number, hsk: number): (PartSpec, number)
+	local scaled = scaledSpec(spec, hsk, CFrame.identity, nil)
+	if spec.shape ~= Enum.PartType.Cylinder or (hk == 1 and hsk == 1) then
+		return scaled, 0
+	end
+	local seat = HEAD_D / 2 - (spec.offset.Y - spec.size.X / 2) -- how deep the head entered the hat's lower face
+	local centre = HEAD_D / 2 * hk - seat + scaled.size.X / 2
+	local lift = centre - scaled.offset.Y
+	return {
+		name = scaled.name,
+		class = scaled.class,
+		shape = scaled.shape,
+		size = scaled.size,
+		color = scaled.color,
+		material = scaled.material,
+		offset = CFrame.new(0, lift, 0) * scaled.offset,
+		palette = scaled.palette,
+	},
+		lift
+end
 
 -- ------------------------------------------------------------------ looks
 
@@ -1154,6 +1269,9 @@ function Character.character(
 	local outfit: Outfit, headwear: PartSpec?, width: number, tool: string?
 	local hatRoll = 0 -- the working hat's tilt about the head: its head details follow it
 	local accentJob: string? = nil -- the job whose accent colours the outfit (working citizens only)
+	local hk = if style == "citizen" then Character.HEAD_SCALE else 1 -- the silhouette scale of the head and what it wears
+	local hatLift = 0 -- how far fitHat raised the job hat (its head detail follows)
+	local hatK = hk -- the job hat's own scale
 	local panelTorso, panelSleeves = false, false -- where the job's panel colour landed
 	if unit then
 		outfit, width, tool = unit.outfit, unit.width, unit.tool
@@ -1163,6 +1281,9 @@ function Character.character(
 	else
 		outfit, headwear, width, tool =
 			individual(OUTFITS[l.outfit], l), HAIR_STYLES[l.hair].spec, jobSpec.width, jobSpec.tool
+		if headwear then
+			headwear = scaledSpec(headwear, hk, CFrame.identity, nil)
+		end
 		if jobSpec.legs then
 			local sleevesTinted = l.hairColor % 2 == 0
 			panelTorso = typeof(outfit.torso) == "Color3"
@@ -1170,7 +1291,10 @@ function Character.character(
 			outfit, accentJob = jobOutfit(outfit, jobSpec, l, sleevesTinted), job
 		end
 		if jobSpec.hat then -- the job hat takes the Hair slot; look.hair picks its variant
-			headwear = hatVariant(jobSpec.hat, l.hair)
+			hatK = Character.HAT_SCALE[job] or hk
+			local fitted, lift = fitHat(jobSpec.hat, hk, hatK)
+			hatLift = lift
+			headwear = hatVariant(fitted, l.hair)
 			hatRoll = HAT_VARIANTS[(l.hair - 1) % #HAT_VARIANTS + 1].roll
 		end
 	end
@@ -1213,7 +1337,8 @@ function Character.character(
 	)
 	motor(root, torso, CFrame.new(0, HIP_Y, 0))
 
-	local headCF = CFrame.new(0, HEAD_Y, 0)
+	local headD = HEAD_D * hk
+	local headCF = CFrame.new(0, NECK_Y + (HEAD_Y - NECK_Y) * hk + (if hk ~= 1 then Character.NECK_LIFT else 0), 0)
 	local neck = CFrame.new(0, NECK_Y, 0)
 	local head
 	if unit and unit.helm then
@@ -1224,7 +1349,7 @@ function Character.character(
 			"Head",
 			"Part",
 			Enum.PartType.Ball,
-			Vector3.new(HEAD_D, HEAD_D, HEAD_D),
+			Vector3.new(headD, headD, headD),
 			headCF,
 			skin,
 			Enum.Material.SmoothPlastic
@@ -1259,8 +1384,8 @@ function Character.character(
 			"Accessory",
 			"Part",
 			Enum.PartType.Cylinder,
-			accessory.size,
-			headFrame * accessory.offset,
+			accessory.size * hk,
+			headFrame * (CFrame.new(accessory.offset.Position * hk) * accessory.offset.Rotation),
 			color,
 			Enum.Material.Fabric,
 			tint
@@ -1297,6 +1422,20 @@ function Character.character(
 		elseif style == "citizen" and jobSpec.hat then HEAD_DETAILS[job]
 		else nil
 	if headDetail then
+		if style == "citizen" then
+			headDetail = scaledSpec(headDetail, if jobSpec.hat then hatK else hk, CFrame.identity, nil)
+			if hatLift ~= 0 then
+				headDetail = {
+					name = headDetail.name,
+					class = headDetail.class,
+					shape = headDetail.shape,
+					size = headDetail.size,
+					color = headDetail.color,
+					material = headDetail.material,
+					offset = CFrame.new(0, hatLift, 0) * headDetail.offset,
+				}
+			end
+		end
 		addDetail(headDetail, head, head.CFrame * CFrame.Angles(0, 0, hatRoll))
 	end
 
@@ -1362,6 +1501,12 @@ function Character.character(
 	end
 
 	local spec = if tool then TOOLS[tool] else nil
+	if spec and style == "citizen" then
+		spec = scaledTool(
+			spec,
+			if spec.onBack then Character.SACK_SCALE else Character.TOOL_SCALES[spec.name] or Character.TOOL_SCALE
+		)
+	end
 	if spec then
 		local hand = rarm.CFrame * CFrame.new(0, -ARM.Y / 2 + HAND_UP, 0)
 		local joint = if spec.onBack

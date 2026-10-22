@@ -157,6 +157,8 @@ Kit.BUILDING_TYPES = {
 	"granary",
 	"shrine",
 }
+Kit.CHARACTER_HEAD_SCALE = Character.HEAD_SCALE -- a citizen's head and what it wears are drawn this much bigger (silhouette pass 2); tools Kit.CHARACTER_TOOL_SCALE
+Kit.CHARACTER_TOOL_SCALE = Character.TOOL_SCALE
 Kit.CHARACTER_ROOT_HEIGHT = Character.ROOT_HEIGHT -- 3.2: Root centre above the feet, rig and LOD alike
 Kit.CHARACTER_MAX_PARTS = Character.MAX_PARTS -- rig part cap the Kit specs enforce (11 = 9 + 2 detail parts, D-048)
 -- Job silhouettes (art pass): job -> KitHeadwear name of its hat / KitTool name of its tool (farmer, woodcutter,

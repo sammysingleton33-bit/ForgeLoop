@@ -13,6 +13,8 @@ real positions 30 s after the start, rest pose) and measures how big the citizen
             frame is blank: citizen_crops.py draws every citizen on its own tile instead).
 
   python3 blender/scripts/citizen_screen.py measure --json world.json --kingdom crimson --views default1080,defaultphone,far1080,farphone
+  python3 blender/scripts/citizen_screen.py measure --json world.json --scale 1.25      (the same with every citizen x1.25: ScaleTo)
+  python3 blender/scripts/citizen_screen.py scale   --json world.json --out world_x125.json --factor 1.25   (a dump to render that look)
   python3 blender/scripts/citizen_screen.py crops   --json world.json --kingdom crimson --view default --image render.png --out sheet.jpg
 
 Views: see VIEWS (default = the start view, far = zoom 220, legacy = zoom 120 / FOV 70; each at the 1600 x 900 render size, "1080" =
@@ -177,8 +179,30 @@ def camera_for(data, kingdom, view, focus=None):
     return Camera(focus, zoom, (w, h), fov, flat_dir(th, turn))
 
 
+def scale_citizens(data, factor):
+    """A copy of the dump with every citizen asset drawn `factor` times bigger about its feet (what EntityController's Model:ScaleTo
+    would do): part sizes and part positions times factor, rotations kept. The placements (where the feet stand) do not move."""
+    out = json.loads(json.dumps(data))
+    for name, parts in out["assets"].items():
+        if not name.startswith("citizen_"):
+            continue
+        for part in parts:
+            part["size"] = [v * factor for v in part["size"]]
+            c = part["cframe"]
+            part["cframe"] = [c[0] * factor, c[1] * factor, c[2] * factor] + c[3:]
+    return out
+
+
+def cmd_scale(args):
+    out = scale_citizens(json.loads(Path(args.json).read_text()), args.factor)
+    Path(args.out).write_text(json.dumps(out))
+    print(f"wrote {args.out}: citizens x{args.factor}")
+
+
 def cmd_measure(args):
     data = json.loads(Path(args.json).read_text())
+    if args.scale != 1.0:
+        data = scale_citizens(data, args.scale)
     rows = []
     for view in args.views.split(","):
         cam = camera_for(data, args.kingdom, view)
@@ -260,7 +284,12 @@ def main(argv):
     m = sub.add_parser("measure")
     m.add_argument("--json", required=True)
     m.add_argument("--kingdom", default="crimson")
-    m.add_argument("--views", default="default,default1080,phone,far,far1080,farphone")
+    m.add_argument("--views", default="default1080,defaultphone,far1080,farphone")
+    m.add_argument("--scale", type=float, default=1.0, help="draw every citizen this much bigger about its feet (EntityController ScaleTo)")
+    sc = sub.add_parser("scale", help="write a copy of the dump with the citizens drawn --factor times bigger (to render the shipped look)")
+    sc.add_argument("--json", required=True)
+    sc.add_argument("--out", required=True)
+    sc.add_argument("--factor", type=float, default=1.25)
     c = sub.add_parser("crops")
     c.add_argument("--json", required=True)
     c.add_argument("--kingdom", default="crimson")
@@ -270,7 +299,7 @@ def main(argv):
     c.add_argument("--tile", type=int, default=56)
     c.add_argument("--scale", type=int, default=1)
     args = ap.parse_args(argv)
-    {"measure": cmd_measure, "crops": cmd_crops}[args.cmd](args)
+    {"measure": cmd_measure, "crops": cmd_crops, "scale": cmd_scale}[args.cmd](args)
 
 
 if __name__ == "__main__":

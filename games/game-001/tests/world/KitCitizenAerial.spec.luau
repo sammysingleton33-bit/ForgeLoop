@@ -12,6 +12,8 @@
 	3. The kingdom tint on the torso or the sleeves keeps dE >= 25 from the three main grounds in all four kingdoms (the colour that says
 	   "ours"; gold and emerald are the hard cases).
 	4. Parts per citizen: no readability change adds a part (the pass recoloured; counts are pinned per job).
+	6. Silhouette parts (pass 2): a citizen's head, hat, tool and the hauler's sack are drawn bigger (Character.HEAD_SCALE, HAT_SCALE,
+	   TOOL_SCALE(S), SACK_SCALE); sizes are pinned in studs below, and the pixel floors in 5 are the sizes measured with them.
 	5. Size on screen: at the approved start view (zoom 70, FOV 55, pitch 42.5), at zoom 220 (pitch 65) and on a 750 x 311 phone, the body
 	   (head, torso, legs) projects to at least the heights measured with tools/citizen_screen.py. A citizen smaller than that (a shrunk
 	   rig, a farther camera) fails here before a player sees it.
@@ -22,6 +24,7 @@
 local T = require("../../../../roblox/tests/harness/Test")
 local describe, it, expect = T.describe, T.it, T.expect
 
+local Character = require("@game/ReplicatedStorage/Game/Kit/Character")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local LightingPreset = require("@game/ReplicatedStorage/Game/World/Lighting")
 local StartView = require("./support/StartView")
@@ -173,6 +176,55 @@ local function shrunk(rig: Model, k: number): Model -- a mutant: the same rig dr
 	return m
 end
 
+-- ------------------------------------------------------------------ silhouette sizes (pass 2)
+
+local function horizontal(
+	p: BasePart
+): number -- the widest horizontal extent of a part's box (corners: a hat is a turned cylinder)
+	local lo, hi = math.huge, -math.huge
+	local h = p.Size / 2
+	for _, sx in { -1, 1 } do
+		for _, sy in { -1, 1 } do
+			for _, sz in { -1, 1 } do
+				local w = p.CFrame * Vector3.new(sx * h.X, sy * h.Y, sz * h.Z)
+				lo, hi = math.min(lo, w.X, w.Z), math.max(hi, w.X, w.Z)
+			end
+		end
+	end
+	return hi - lo
+end
+
+-- The studs the silhouette parts were before the pass, and the least each must now be (default look, rest pose).
+local OLD_HEAD = 1.6
+local MIN_HEAD = 2.0 -- 1.25 x
+local MIN_HAT = { farmer = 3.3, woodcutter = 1.85, miner = 2.35, builder = 2.2 } -- widths: was 3.1, 1.5, 1.9, 1.8
+local MIN_HANDLE = { farmer = 6.5, woodcutter = 4.8, miner = 6.7, builder = 3.3 } -- cylinder lengths: was 5.2, 3.9, 5.4, 3.0
+local MIN_SACK = 3.0 -- was 2.7
+
+-- the silhouette rules a rig set breaks (empty when the pass is in place)
+local function silhouetteFailures(): { string }
+	local out = {}
+	for _, job in JOBS do
+		local rig = Kit.character("citizen", job, CRIMSON, lookOf(1, 1, 1))
+		local head = child(rig, "Head")
+		if head.Size.X < MIN_HEAD then
+			table.insert(out, `{job} head {head.Size.X}`)
+		end
+		local hat = rig:FindFirstChild("Hair") :: BasePart?
+		if MIN_HAT[job] and hat and horizontal(hat) < MIN_HAT[job] then
+			table.insert(out, `{job} hat {string.format("%.2f", horizontal(hat))}`)
+		end
+		local tool = rig:FindFirstChild("Tool") :: BasePart?
+		if tool and MIN_HANDLE[job] and tool.Size.X < MIN_HANDLE[job] then
+			table.insert(out, `{job} handle {string.format("%.2f", tool.Size.X)}`)
+		end
+		if tool and job == "hauler" and tool.Size.X < MIN_SACK then
+			table.insert(out, `hauler sack {string.format("%.2f", tool.Size.X)}`)
+		end
+	end
+	return out
+end
+
 -- ------------------------------------------------------------------ specs
 
 describe("citizen aerial readability (ground contrast, hat hues, size on screen)", function()
@@ -296,27 +348,28 @@ describe("citizen aerial readability (ground contrast, hat hues, size on screen)
 	it(
 		"draws the body at least this tall: start view, zoom 220 and a 750 x 311 phone (tools/citizen_screen.py numbers)",
 		function()
-			-- Measured with this projection (default look, rest pose, body = head + torso + arms + legs, citizen at the focus): start
-			-- view 72.4 px at 1080p and 20.8 on the phone, zoom 220 16.4 and 4.7 (the same for every job: the body is the same height).
-			-- tools/citizen_screen.py measures the citizens as the dump stands them (farther ones are smaller): medians 65.9, 19.0, 19.2, 5.5.
-			-- The floors sit 7 % to 9 % under, so a pose or a hat does not trip them and a shrunk rig does.
+			-- Measured with this projection (default look, rest pose, body = head + torso + arms + legs, citizen at the focus), after the
+			-- silhouette pass 2 (head x1.3, neck lift 0.07): start view 80.9 px at 1080p and 23.3 on the phone, zoom 220 18.5 and 5.3 (the
+			-- same for every job: the body is the same height; before the pass 72.4, 20.8, 16.4, 4.7). tools/citizen_screen.py measures the
+			-- citizens as the dump stands them (farther ones are smaller; medians 62.8, 18.1, 20.0, 5.7). The floors sit 3 % under the
+			-- measure: an unscaled head (HEAD_SCALE 1) or a shrunk rig is under every one.
 			local floors = {
 				{
 					zoom = StartView.START.zoom,
 					fov = StartView.START.fov,
 					height = 1080,
-					min = 66,
+					min = 78.5,
 					label = "start view, desktop 1080p",
 				},
 				{
 					zoom = StartView.START.zoom,
 					fov = StartView.START.fov,
 					height = 311,
-					min = 19,
+					min = 22.6,
 					label = "start view, phone",
 				},
-				{ zoom = 220, fov = StartView.START.fov, height = 1080, min = 15, label = "zoom 220, desktop 1080p" },
-				{ zoom = 220, fov = StartView.START.fov, height = 311, min = 4.3, label = "zoom 220, phone" },
+				{ zoom = 220, fov = StartView.START.fov, height = 1080, min = 17.9, label = "zoom 220, desktop 1080p" },
+				{ zoom = 220, fov = StartView.START.fov, height = 311, min = 5.1, label = "zoom 220, phone" },
 			}
 			for _, job in JOBS do
 				local rig = Kit.character("citizen", job, CRIMSON, lookOf(1, 1, 1))
@@ -339,4 +392,67 @@ describe("citizen aerial readability (ground contrast, hat hues, size on screen)
 			expect(trips).toBeGreaterThanOrEqual(3)
 		end
 	)
+
+	it(
+		"draws the head, hat, tool handle and the hauler's sack bigger (silhouette pass 2), at the same part count",
+		function()
+			expect(silhouetteFailures()).toEqual({})
+			expect(Character.HEAD_SCALE).toBeGreaterThanOrEqual(1.25)
+			expect(Character.TOOL_SCALE).toBeGreaterThanOrEqual(1.25)
+			-- the head still sits on the shoulders (it touches the torso top, 3.9) and the part count is the one before the pass
+			for _, job in JOBS do
+				local rig = Kit.character("citizen", job, CRIMSON, lookOf(1, 1, 1))
+				local head, torso = child(rig, "Head"), child(rig, "Torso")
+				local headBottom = head.CFrame.Position.Y - head.Size.Y / 2
+				local torsoTop = torso.CFrame.Position.Y + torso.Size.Y / 2
+				expect(headBottom).toBeLessThanOrEqual(torsoTop + 0.01)
+				expect(headBottom).toBeGreaterThanOrEqual(torsoTop - 0.15)
+			end
+			expect(OLD_HEAD * Character.HEAD_SCALE).toBeGreaterThanOrEqual(MIN_HEAD)
+		end
+	)
+
+	it("trips on the old proportions (mutants: head, hat, tool and sack scales set back to 1)", function()
+		local headScale, toolScale, sackScale, toolScales, hatScale =
+			Character.HEAD_SCALE, Character.TOOL_SCALE, Character.SACK_SCALE, Character.TOOL_SCALES, Character.HAT_SCALE
+		local function with(patch: () -> (), check: () -> any): any
+			patch()
+			local ok, result = pcall(check)
+			Character.HEAD_SCALE, Character.TOOL_SCALE, Character.SACK_SCALE = headScale, toolScale, sackScale
+			Character.TOOL_SCALES, Character.HAT_SCALE = toolScales, hatScale
+			assert(ok, result)
+			return result
+		end
+		-- head and hats back to 1: the head and every hat rule trips
+		local headFails = with(function()
+			Character.HEAD_SCALE = 1
+			Character.HAT_SCALE = table.freeze({})
+		end, silhouetteFailures)
+		expect(#headFails).toBeGreaterThanOrEqual(5)
+		-- tools back to 1: every handle rule trips
+		local toolFails = with(function()
+			Character.TOOL_SCALE = 1
+			Character.TOOL_SCALES = table.freeze({})
+		end, silhouetteFailures)
+		expect(#toolFails).toBeGreaterThanOrEqual(4)
+		-- the sack back to 1: the sack rule trips
+		local sackFails = with(function()
+			Character.SACK_SCALE = 1
+		end, silhouetteFailures)
+		expect(#sackFails).toBeGreaterThanOrEqual(1)
+		-- and the body floors trip on an unscaled head (the 80.9 px at the start view was 72.4)
+		local idleFloor = with(function()
+			Character.HEAD_SCALE = 1
+		end, function()
+			return bodyPixels(
+				Kit.character("citizen", "idle", CRIMSON, lookOf(1, 1, 1)),
+				StartView.START.zoom,
+				StartView.START.fov,
+				1080
+			)
+		end)
+		expect(idleFloor).toBeLessThan(78.5)
+		-- restored: the pass is back in place
+		expect(silhouetteFailures()).toEqual({})
+	end)
 end)

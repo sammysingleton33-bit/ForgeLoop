@@ -60,3 +60,15 @@ phone scale only by hat and sleeve colour.
 ## Blind D-019 review (fresh reviewer, image-only; two contact sheets of start crimson, start azure, far crimson; key kept by FORGE-02: A = after, B = before)
 - **Verdict: no meaningful difference. Both sets NEEDS-WORK for "citizens readable"** (recognisability 2 of 5 at the default camera, 1 of 5 far). The reviewer picked about 4 to 6 people per view as specks 10 to 20 px tall, could not name any job (the red / blue clothing says the kingdom, not the work), and if forced preferred A (the after set) "marginally, low confidence": the castle-door figure is darker and higher-contrast, and there may be one more small figure at the top right. Its one change: "make citizens roughly twice as large at the default camera, and give each job a distinct high-contrast tunic or hat colour that differs from the kingdom colour."
 - So the colour pass is real (the hauler's sack and the builder's hat and sleeves read where they did not; 1:1 crops confirm) but **it does not solve "barely recognisable"**: at the pixel size a citizen has at the start frame (about 57 px desktop, 16.5 px phone, body), colour cannot carry a job. The lever is size (and the head / hat / tool silhouette), not palette. See the handoff's scale proposal.
+
+## Silhouette pass 2 (2026-10-22): bigger head, hat, tool and sack at the same part count
+After the blind verdict above ("no meaningful difference"), `Character.luau` draws a citizen's silhouette parts bigger: head x1.3 (1.6 -> 2.08, sits 0.07 higher), hats x1.3 (the farmer's straw
+disc x1.1 so neighbours 3.5 apart do not overlap), hand tools x1.3 about the butt (the mallet x1.15, leaning 24 degrees), the hauler's sack x1.15 (3.1 across); torso, arms, legs,
+joints, Pose and the part count are unchanged (idle 8, working 11). Measured with `citizen_screen.py` on the sim's 13 crimson citizens, body (head + torso + arms + legs):
+start 1080p 57.4 -> 62.8 px (x1.25 ScaleTo: 79.1), start phone 16.5 -> 18.1 px (x1.25: 22.8), far 1080p 19.3 -> 20.0 (25.0), far phone 5.6 -> 5.7 (7.2). The pass alone does not
+reach 75 / 22 (only the head grew: +9 % in body height); with the x1.25 FORGE-04 will add it does. Renders `img/vis1-citizens2-{before,after}-*.jpg` (and `after-x125-*`), crops
+`...-crops-start-1080-1to1.jpg` and `...-crops-start-phone-x3.jpg` (opened): at 1:1 on a 1080p desktop the heads and hats are visibly bigger and every job still reads (gold
+disc with red crown, ink beanie with red pompom, orange pot, white hard hat, yellow sack); the figures look chibi (a 2.1 head on a 1.9 to 2.3 torso). On the full 750 x 311 frame
+the figures are still specks (about 20 px, 26 px with x1.25): the keep-door hauler's sack and the gold farmer stack are the only ones you notice, so on the phone the change is small
+and a larger camera or scale is still the real lever. Defects: the three farmers stand in a column in depth and their discs read as one stacked tower at phone size; with x1.25 the
+farmer's disc (4.3) is wider than the 3.5-stud work slot spacing (handoff).
