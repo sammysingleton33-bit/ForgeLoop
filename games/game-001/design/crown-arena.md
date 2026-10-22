@@ -79,7 +79,7 @@ Every citizen has **loyalty 0–100** (starting 50). It rises with ruler visits 
 |---|---|---|---|---|---|
 | Blacksmith | Smithy | "Bring 40 stone to reinforce the forge" | **Reforge** — runs to the rail and hammers the ruler's armour | ruler's HP first drops below 50 % | damage reduction +6 % / **+10 %** for 6 s (the user's example) |
 | Healer | Infirmary | "Herbs from the forest edge" | **Field Remedy** | ruler's HP first drops below 35 % | regenerate 3 % / 5 % of max HP over 4 s (trim C, FL-0076) |
-| Captain | Barracks (the first veteran soldier) | "Drill the recruits with me" (ruler visits the yard) | **Called Warning** — shouts the opponent's heavy attack early | opponent's first two heavy attacks | heavy-attack telegraph shown 0.15 s / 0.25 s earlier |
+| Captain | Barracks (the first veteran soldier) | "Drill the recruits with me" (ruler visits the yard) | **Called Warning** — shouts the opponent's heavy attack early | opponent's first two heavy attacks (pledged) / three (empowered) | heavy-attack telegraph raised sooner (about 0.12 s on screen, the most a smooth pose allows; FORGE-00 2026-10-19, FL-0141) |
 | Provisioner (farmer or cook) | Granary or Kitchen | "Keep the granary above 100 food" | **Hearty Rations** | ruler's stamina first hits zero | stamina regeneration +6 % / +10 % for 8 s |
 | Elder or Priest | Chapel or Shrine | "Hold a feast" (food spend at the keep) | **Rallying Hymn** — the stand sings | crowd hype reaches full (after a parry or a combo) | cleanse one slow or stagger, and damage +3 % / +5 % for 5 s |
 | Merchant | Market | "Protect the trade road" | **Fine Wares** | before the duel | chosen weapon damage or armour damage reduction +2 % / +3 % for the whole duel (counts against the passive cap) |

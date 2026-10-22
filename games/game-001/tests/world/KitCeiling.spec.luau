@@ -24,7 +24,8 @@ local CEILING = 27000
 -- towers, every one at level 2) are at their highest level, lumber camps and quarries (one look at every level) and the stand-ins
 -- (mine, blacksmith, market, infirmary, granary, shrine: one look, clamped to level 1) cost the same at any level, but FARMS are
 -- built at level 2 while the game also builds them at level 3, which draws one more crop row: +3 parts each (3 per kingdom, 12 in
--- all: +36, 26,362 of 27,000 against the 26,326 this spec prints, so the ceiling holds either way).
+-- all: +36, 26,438 of 27,000 against the 26,402 this spec prints (main with FL-0136 phase 3's 76 node-marker parts; the printed line
+-- is the number), so the ceiling holds either way).
 local TOP = { keep = 3, barracks = 4, wall = 3, gate = 3 }
 -- { type, count, stage? } per kingdom: the kingdom in the Buildings.luau budget note
 local KINGDOM = {
