@@ -1,0 +1,12 @@
+"""FL-FENCEGAP mutation rows (a crop field keeps 3 studs of free ground: the farm fences' collider, FORGE-00's note on #274).
+Run by ../mutations.py (`mutations.py FL-FENCEGAP`). One row: (task, file, old, new, spec filter, expected failing test).
+G is games/game-001/.
+"""
+LY = G + "src/shared/Kingdom/Layout.luau"
+SM = G + "src/shared/Sim/Simulation.luau"
+M = [
+ ("FL-FENCEGAP", LY, '\tarea.gap = FIELD_GAP\n', '', "sim/NoBuildAreas", "keeps 3 studs of free ground around a crop field"),
+ ("FL-FENCEGAP", LY, 'local FIELD_GAP = 3', 'local FIELD_GAP = 1', "sim/NoBuildAreas", "keeps 3 studs of free ground around a crop field"),
+ ("FL-FENCEGAP", SM, 'Footprint.overlaps(shape, area, area.gap or 0)', 'Footprint.overlaps(shape, area, 0)', "sim/NoBuildAreas", "keeps 3 studs of free ground around a crop field"),
+ ("FL-FENCEGAP", LY, 'local FIELD_GAP = 3', 'local FIELD_GAP = 2.6', "sim/NoBuildAreas", "the gap around a crop field is exactly 3 studs"),
+]

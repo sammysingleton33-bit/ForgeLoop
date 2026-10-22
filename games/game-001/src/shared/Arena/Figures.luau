@@ -107,8 +107,22 @@ local function fitOf(model: any, attachment: string): (any?, CFrame?)
 		return torso, CFrame.new(-size.X / 2, size.Y / 2, 0)
 	elseif attachment == "RightCollarAttachment" then
 		return torso, CFrame.new(size.X / 2, size.Y / 2, 0)
+	elseif attachment == "LeftGripAttachment" then
+		-- the shield on the left hand: the end of the arm, in the hand's grip frame (turned like the weapon's, see _fitWeapon)
+		local arm = partNamed(model, "LeftArm")
+		return arm, if arm then CFrame.new(0, -arm.Size.Y / 2, 0) * CFrame.Angles(-math.pi / 2, 0, 0) else nil
 	end
 	return nil, nil
+end
+
+-- A sword-and-shield champion carries the shield on the left hand (Kit.shield) and the sword alone in the right
+-- (Kit.weapon with { shield = false }). Returns the shield Accessory, or nil for any other weapon or a Kit without one.
+local function shieldFor(kit: any, weapon: string, color: Color3): any?
+	if weapon ~= "swordShield" or kit.shield == nil then
+		return nil
+	end
+	local ok, shield = pcall(kit.shield, color)
+	return if ok then shield else nil
 end
 
 local function weld(new: (string) -> any, part0: any, part1: any, c0: CFrame, c1: CFrame?)
@@ -206,7 +220,10 @@ function Figures:_fitWeapon(model: any, tool: any): boolean
 	-- the loadout weapon rides the Tool part (the arm if the rig has none), at the fist, at the Grip rest
 	local toolPart = stripOwnWeapon(model)
 	local carrier = toolPart or fist
-	local atFist = fist.CFrame * CFrame.new(0, -fist.Size.Y / 2, 0)
+	-- A hand's grip attachment carries the weapon's grip frame turned -90 degrees about X from the hanging arm's own frame
+	-- (Kit/Gear.luau: "holding it with the arm forward carries it upright"), so at rest the blade points forward, level,
+	-- and FORGE-04's wrist poses (Feedback/DuelPoses) lift it from there, as for a human's equipped Tool.
+	local atFist = fist.CFrame * CFrame.new(0, -fist.Size.Y / 2, 0) * CFrame.Angles(-math.pi / 2, 0, 0)
 	-- the Tool is modelled in grip space and `Grip` puts it right in a hand: the weld's C1, as an equipped Tool's RightGrip has it
 	local gripOk, grip = pcall(function()
 		return tool.Grip
@@ -253,7 +270,18 @@ function Figures:spawn(userId: number, spec: Spec): any?
 	else
 		self:_warn("Figures: the armour could not be built", { armour = spec.armour, error = tostring(accessories) })
 	end
-	local weaponOk, tool = pcall(kit.weapon, spec.weapon, spec.color)
+	-- the shield on the left arm; the sword goes alone in the right hand only when the shield is really there
+	local shield = shieldFor(kit, spec.weapon, spec.color)
+	local shielded = false
+	if shield ~= nil then
+		if self:_fitArmour(model, shield) then
+			table.insert(self._gear, shield)
+			shielded = true
+		else
+			shield:Destroy()
+		end
+	end
+	local weaponOk, tool = pcall(kit.weapon, spec.weapon, spec.color, if shielded then { shield = false } else nil)
 	if weaponOk and tool ~= nil then
 		if self:_fitWeapon(model, tool) then
 			table.insert(self._gear, tool)
@@ -288,7 +316,25 @@ function Figures:wear(character: any, spec: { color: Color3, weapon: string, arm
 	else
 		self:_warn("Figures: the armour could not be built", { armour = spec.armour, error = tostring(accessories) })
 	end
-	local weaponOk, tool = pcall(kit.weapon, spec.weapon, spec.color)
+	-- the shield on the left hand where the character has a grip attachment for it (an R6 rig may not: then the shield
+	-- stays on the Tool, never both)
+	local shielded = false
+	local hasGrip = false
+	pcall(function()
+		hasGrip = character:FindFirstChild("LeftGripAttachment", true) ~= nil
+	end)
+	local shield = if hasGrip then shieldFor(kit, spec.weapon, spec.color) else nil
+	if shield ~= nil then
+		shielded = pcall(function()
+			humanoid:AddAccessory(shield)
+		end)
+		if shielded then
+			table.insert(self._gear, shield)
+		else
+			shield:Destroy()
+		end
+	end
+	local weaponOk, tool = pcall(kit.weapon, spec.weapon, spec.color, if shielded then { shield = false } else nil)
 	if weaponOk and tool ~= nil then
 		local equipped = pcall(function()
 			humanoid:EquipTool(tool)
