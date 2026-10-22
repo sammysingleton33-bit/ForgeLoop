@@ -82,6 +82,7 @@ describe("Arena/DuelModel: attacks", function()
 		expect(#windups).toBe(1)
 		expect(windups[1].data.warned).toBe(0)
 		expect(windups[1].data.impactAt > windups[1].t).toBe(true)
+		expect(#kinds(events, "lightWindup")).toBe(0) -- a heavy does not also announce a light swing
 		local hit = kinds(events, "hit")[1]
 		expect(hit.data.heavy).toBe(true)
 		expect(hit.data.damage > DuelModel.WEAPONS.swordShield.light).toBe(true)

@@ -616,6 +616,8 @@ describe("DuelRunner: AI hands and the end", function()
 			local hits = ofKind(later, "hit")
 			expect(#hits).toBe(1)
 			expect(hits[1].data.blocked).toBe(true)
+			local windup = ofKind(later, "lightWindup")[1]
+			expect(math.abs(windup.t + windup.data.impactIn - hits[1].t) <= TICK + 1e-6).toBe(true) -- impactIn is the real lead
 		end
 	)
 
