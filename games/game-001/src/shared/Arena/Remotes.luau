@@ -15,7 +15,7 @@
 		Arena.Action(action: DuelAction)       the champion only, duel stage only; anything else is ignored quietly
 		                                       (burst 8, 12 a second; the duel runner rate-limits again per champion)
 	Server -> client
-		Arena.State(ArenaState)                to everyone on every change (stage, endsAt, champions, winner)
+		Arena.State(ArenaState)                to everyone on every change (stage, endsAt, vote (vote stage), champions, coronation, winner)
 		Arena.Events({ { t, kind, side, data? } })   batched duel events (shares only; see Arena/DuelRunner)
 	Implemented by ArenaService.
 ]]

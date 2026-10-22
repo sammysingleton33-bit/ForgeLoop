@@ -10,4 +10,7 @@ M = [
  ("FL-0142S", AF, 'if self._votes[candidate] ~= nil then\n\t\t\t\t\ttable.insert(voted, candidate)', 'if false then\n\t\t\t\t\ttable.insert(voted, candidate)', "sim/ArenaFlow", "shows the vote stage"),
  ("FL-0142S", AF, 'view[side] = { kingdom = kingdom, candidates = table.clone(candidates), voted = voted }', 'view[side] = { kingdom = kingdom, candidates = voted, voted = voted }', "sim/ArenaFlow", "shows the vote stage"),
  ("FL-0142S", AF, '\t\tvote = self:_voteView(),\n', '', "sim/ArenaFlow", "shows the vote stage"),
+ ("FL-0142S", AF, 'if self._votes[userId] == nil then\n\t\t\t\tself._rev += 1', 'if true then\n\t\t\t\tself._rev += 1', "sim/ArenaFlow", "a repeat of the same vote or loadout changes nothing"),
+ ("FL-0142S", AF, 'if self._votes[userId] == nil then\n\t\t\t\tself._rev += 1', 'if false then\n\t\t\t\tself._rev += 1', "sim/ArenaFlow", "a repeat of the same vote or loadout changes nothing"),
+ ("FL-0142S", AF, '\t\tself._votes[userId] = nil\n\t\tif changed then', '\t\tself._votes[userId] = nil\n\t\tfor voter, candidate in self._votes do\n\t\t\tif candidate == userId then\n\t\t\t\tself._votes[voter] = nil\n\t\t\tend\n\t\tend\n\t\tif changed then', "sim/ArenaFlow", "does not show, after a leaver, who had voted for them"),
 ]
