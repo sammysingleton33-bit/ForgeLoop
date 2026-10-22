@@ -694,8 +694,9 @@ end
 -- ---------------------------------------------------------------- the village centre (FORGE-02 visual pass 1b)
 
 -- The pieces of the composed start yard (WorldPlan.YARD): a market cross for the court's centre, market stalls with a striped canopy
--- in a kingdom colour, low hedge segments. Part-built, no scripts; their ids are not in the imported-mesh data, so Kit.prop always
--- builds them (the world reads the same with or without the kit). Seen from 50 studs up (0.07 studs a pixel): bold shapes only.
+-- in a kingdom colour, low hedge segments. Part-built props, no scripts, never from the imported-mesh kit: their ids are not in the
+-- imported-mesh data (Kit/EnvMeshData), so Kit.envMeshReady is false for them and Kit.prop builds the part-built model with or without
+-- the kit (YardCompose.spec fails if one of them is ever added to that data). Seen from 50 studs up (0.07 studs a pixel): bold shapes only.
 
 -- Market cross: three steps, a plinth, a shaft with a cross arm, a pennant in the kingdom colour and a gold finial. 7 parts (8 with the
 -- Root); 7.8 across at the foot, 9.2 tall. The steps are pale (ivory on the grey court), the pennant hangs on the side the yard looks

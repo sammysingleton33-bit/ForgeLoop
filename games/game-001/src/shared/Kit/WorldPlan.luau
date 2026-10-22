@@ -1996,7 +1996,8 @@ function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placeme
 		table.insert(out, p)
 	end
 
-	-- dressing for fully dressed kingdoms (VS-1: one dressed plot, the others blocked out)
+	-- dressing for the dressed kingdoms (`dressed`; WorldService dresses all four since FORGE-00's decision of 2026-10-22, VS-1 dressed
+	-- crimson alone and left the others blocked out)
 	local function place(id: string, x: number, z: number, feature: string, yaw: number?)
 		local y = WorldPlan.groundHeight(layout, x, z)
 		local cf = CFrame.new(x, y, z) * CFrame.Angles(0, yaw or rng.range(0, 2 * math.pi), 0)

@@ -25,10 +25,12 @@
 	WorldService props and region markers. The caps are ceilings, not targets: every model at its cap would
 	sum to ≈ 23.6k, so new detail goes where it reads (roofs, doors, banners), never into hidden faces.
 	With the FL-0128 war kit the all-built worst case (every kingdom at its top levels, wall L3 x 12 and the gate at
-	L3) measures 26,402 of the D-047 ceiling 27,000: WorldService 6,945 (with the 76 node-marker parts of FL-0136 phase 3) +
-	four kingdoms 19,121 (Emberhold 4,693, Frostmere 4,807, Thornwood 4,896, Sunspire 4,725) + three neutral towers 336
-	(tests/world/KitCeiling.spec.luau prints the line; it is the number).
-	If a later change goes over, cap the wall segments per kingdom in config before thinning the art.
+	L3) measures 26,526 of the D-047 ceiling 27,000: WorldService 7,069 (all four kingdoms dressed, the arena's 349 parts and the 76
+	node-marker parts of FL-0136 phase 3 included) + four kingdoms 19,121 (Emberhold 4,693, Frostmere 4,807, Thornwood 4,896,
+	Sunspire 4,725) + three neutral towers 336 (tests/world/KitCeiling.spec.luau prints the line; it is the number).
+	The 12 wall segments and the one gate it counts are the config caps (config/Buildings.luau, wall.maxCount 12 and gate.maxCount 1,
+	since #301), so the worst case cannot be exceeded by building more walls. If a later change goes over, lower those caps in config
+	before thinning the art.
 
 		type        cap   measured (min–max over levels, variants, the 4 + 2 FORGE-01 kingdom colours, neutral)
 		keep        300   182–292  (L1 182–236, L2 204–260, L3 234–292; Kit.spec: L1–L2 ≤ 260, L3 ≤ 300)

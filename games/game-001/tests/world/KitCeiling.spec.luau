@@ -4,8 +4,11 @@
 	plus every kingdom fully built at its top levels (wall level 3 x 12, the gate at level 3, every other type at its
 	highest level except farms (built at level 2: see TOP), two building sites) plus the three neutral towers (watchtowers at
 	level 2). Fails above 27k and prints the breakdown, so the war
-	kit's wall and gate levels cannot push the world past the ceiling; if it ever does, cap the wall segments per kingdom in
-	config (FORGE-00) before thinning the art.
+	kit's wall and gate levels cannot push the world past the ceiling. The 12 wall segments and the one gate counted here are the
+	config caps (config/Buildings.luau wall.maxCount 12, gate.maxCount 1, since #301: PlaceLine.spec pins the wall limit), so more
+	walls cannot be built; if the total ever goes over, lower those caps in config (FORGE-00) before thinning the art. It prints
+	26,526 of 27,000 now: WorldService 7,069 (all four kingdoms dressed, the arena and the node markers included) + kingdoms 19,121
+	+ towers 336.
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")
@@ -24,8 +27,8 @@ local CEILING = 27000
 -- towers, every one at level 2) are at their highest level, lumber camps and quarries (one look at every level) and the stand-ins
 -- (mine, blacksmith, market, infirmary, granary, shrine: one look, clamped to level 1) cost the same at any level, but FARMS are
 -- built at level 2 while the game also builds them at level 3, which draws one more crop row: +3 parts each (3 per kingdom, 12 in
--- all: +36, 26,438 of 27,000 against the 26,402 this spec prints (main with FL-0136 phase 3's 76 node-marker parts; the printed line
--- is the number), so the ceiling holds either way).
+-- all: +36, 26,562 of 27,000 against the 26,526 this spec prints (all four kingdoms dressed; the printed line is the number), so the
+-- ceiling holds either way).
 local TOP = { keep = 3, barracks = 4, wall = 3, gate = 3 }
 -- { type, count, stage? } per kingdom: the kingdom in the Buildings.luau budget note
 local KINGDOM = {

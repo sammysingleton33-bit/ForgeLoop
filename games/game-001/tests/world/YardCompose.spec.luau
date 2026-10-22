@@ -1049,7 +1049,11 @@ describe("The composed start yard (FORGE-02 visual pass 1b)", function()
 		end
 	end)
 
-	it("never builds the new ids from the imported-mesh kit: they are part-built whatever the asset source", function()
+	-- The yard's new props (the cross, the stalls and the hedges) are part-built props that are NOT in the imported-mesh data
+	-- (Kit/EnvMeshData): Kit.envMeshReady is false for them, so Kit.prop builds the part-built model whatever the asset source, and this
+	-- fails if one of these ids is ever added to that data. (The yard's cart, haystack and well are older props; none of them is in the
+	-- data today, which this spec does not pin.)
+	it("never builds the new ids from the imported-mesh kit: part-built props, not in its data", function()
 		for _, id in
 			{
 				"prop_cross_red_01",
