@@ -280,7 +280,7 @@ describe("Kit.character (≤ Kit.CHARACTER_MAX_PARTS (9) parts, D-026 as amended
 		end
 	end)
 
-	it("is about 5.5 studs tall (Roblox character scale)", function()
+	it("is about 5.5 studs tall (Roblox character scale), 5.97 with the silhouette pass's bigger head", function()
 		local rig = Kit.character("citizen", "farmer", KINGDOM_COLORS[1])
 		local top, bottom = -math.huge, math.huge
 		for _, p in parts(rig) do
@@ -289,7 +289,7 @@ describe("Kit.character (≤ Kit.CHARACTER_MAX_PARTS (9) parts, D-026 as amended
 				bottom = math.min(bottom, p.CFrame.Position.Y - p.Size.Y / 2)
 			end
 		end
-		expect(top - bottom).toBeNear(5.5, 0.2)
+		expect(top - bottom).toBeNear(5.97, 0.2) -- 5.5 before the silhouette pass 2: the head is drawn Kit.CHARACTER_HEAD_SCALE x bigger and sits 0.07 higher
 	end)
 end)
 
