@@ -125,6 +125,31 @@ describe("ArenaFlow: champions", function()
 		expect(flow:state().vote.a.candidates).toEqual({ 1, 2, 3 })
 	end)
 
+	it("does not show, after a leaver, who had voted for them", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1, 2, 3, 4 }, azure = { 9 } }), 0)
+		flow:vote(1, 4)
+		flow:vote(2, 4)
+		flow:vote(3, 1)
+		local before = flow:state().vote.a.voted
+		expect(before).toEqual({ 1, 2, 3 })
+		flow:forfeit(4, 1) -- the candidate leaves
+		local after = flow:state().vote.a
+		expect(after.candidates).toEqual({ 1, 2, 3 })
+		expect(after.voted).toEqual({ 1, 2, 3 }) -- 1 and 2 have still cast a ballot: nobody learns whom they chose
+	end)
+
+	it("counts a ballot cast for a leaver as spent, not as a vote for anyone else", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1, 2, 3, 4 }, azure = { 9 } }, { [2] = 5 }), 0)
+		flow:vote(1, 4)
+		flow:vote(2, 4)
+		flow:vote(3, 3)
+		flow:forfeit(4, 1)
+		flow:vote(2, 2) -- a changed mind is still accepted
+		flow:step(ArenaConfig.voteSeconds)
+		-- 3 has one vote and 2 has one vote: the tie goes to leadership (user 2 has 5)
+		expect(flow:state().a.userId).toBe(2)
+	end)
+
 	it("lists only the sides that vote, and nothing once the vote has closed", function()
 		local flow = ArenaFlow.new(setup({ crimson = { 1, 2 }, azure = { 9 } }), 0)
 		local vote = flow:state().vote
@@ -153,7 +178,9 @@ describe("ArenaFlow: champions", function()
 		expect(voting:rev()).toBe(rev + 1)
 		expect((voting:vote(1, 1))).toBe(true) -- still accepted
 		expect(voting:rev()).toBe(rev + 1)
-		voting:vote(1, 2)
+		voting:vote(1, 2) -- a changed vote changes nobody's standing in `voted`: nothing new to broadcast
+		expect(voting:rev()).toBe(rev + 1)
+		voting:vote(2, 2) -- another ruler's first ballot is news
 		expect(voting:rev()).toBe(rev + 2)
 		local flow = ArenaFlow.new(setup({ crimson = { 1 }, azure = { 2 } }), 0)
 		local before = flow:rev()
