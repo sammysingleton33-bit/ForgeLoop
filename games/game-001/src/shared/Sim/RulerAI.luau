@@ -553,7 +553,7 @@ function RulerAI.think(sim: any, kingdom: any): string?
 	end
 
 	-- the palisade's gate comes first: it costs stone, which the building decisions below would spend as it arrives
-	if aggression >= FORTIFY_AGGRESSION and sim:keepLevel(kingdom) >= 2 and not hasSite(sim, kingdom, "gate") then
+	if aggression >= FORTIFY_AGGRESSION and sim:keepLevel(kingdom) >= 2 then
 		local issued = makeGate(sim, kingdom)
 		if issued and issued ~= "wait" then
 			return issued
