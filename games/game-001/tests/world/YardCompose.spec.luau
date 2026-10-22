@@ -12,7 +12,9 @@
 	What this pins, in every kingdom (the composition is written once in the keep's frame and the four yards are rotated copies):
 	  * the part budget (<= 70 parts a dressed kingdom: D-047) and what each new prop costs; only dressed kingdoms get a yard;
 	  * NO Layout.nav edge passes within 2 studs of any piece's footprint (the footprint is the rectangle of the live Kit.prop bounds), and
-	    nothing stands in the door's sightline: |x| < 4 from the keep door down the court;
+	    nothing stands in the door's sightline: |x| < 4 from the keep door down the court. The nav rule is held for the yard AND for ALL
+	    the kingdom dressing as the world places it (WorldPlan.props at full and at the shipped density: the yard, the hand-placed goods,
+	    haystack and cart, the gate banners); the one exemption is the gate banners, which flank their gate on purpose (see GATE_REACH);
 	  * every piece stands on legal ground by the footprint it draws (not by a circle): off the lanes, the roads (the avenue's court-covered
 	    stretch apart), the slots, the buildings and the fields, clear of the focal pair's ring, overlapping no other piece, no tree, bush,
 	    rock or flower stands on it, and every axial piece is inside the start camera's picture;
@@ -21,7 +23,9 @@
 	  * it is deterministic, identical in every kingdom's own frame (the canopy and pennant colour apart), and WorldPlan.clear and the trim
 	    leave it exactly where it is (its feature is "yard").
 	Each measure has a MUTANT that must trip it: a prop dropped on the avenue, a hedge on a diagonal, a stall in the ring, a prop across
-	the door's sightline, a cross on a lane, a hedge on a slot, a lopsided pair, a stall turned away, an overfull yard.
+	the door's sightline, a cross on a lane, a hedge on a slot, a lopsided pair, a stall turned away, an overfull yard; for the widened
+	nav rule also the dressing cart back where WorldPlan once planned it (clear() nudged it onto a nav edge), a banner away from a gate and
+	a non-banner standing in a banner's place.
 ]]
 
 local T = require("../../../../roblox/tests/harness/Test")
@@ -52,6 +56,14 @@ local OVERLAP_GAP = 0.5 -- between two pieces
 local RING_GAP = Y.ring -- between a focal piece and any other piece
 local DOOR_HALF = 4 -- the keep door's sightline: studs either side of the avenue's axis, from the door down the court
 local TOL = 1e-6
+-- The gate banners (prop_banner_<colour>_01|02) are the ONE piece of kingdom dressing exempt from the nav rule (NAV_GAP): WorldPlan.plan
+-- puts four of them at the keep-frame points (+-9, -96) and (+-9, -128), a pair either side of the gate node (0, -110), to flank the
+-- gate on purpose (crimson's outer left one stands 1.2 studs from the nav edge that leaves the gate for the valley). WorldPlan.clear
+-- leaves them exactly where the plan puts them. A piece is exempt only if BOTH hold: its assetId is a banner's AND it stands within
+-- GATE_REACH studs of its own kingdom's gate node (the farthest banner is 20.1 studs from it), so a banner anywhere else, and a prop
+-- of any other kind in a banner's place, is still held to NAV_GAP.
+local GATE_REACH = 21
+local GATE_AT = Vector3.new(0, 0, -110) -- the gate node, in the keep's frame (Layout: n.gate)
 
 local function isYardId(id: string): boolean
 	return string.find(id, "^prop_cross_") ~= nil
@@ -209,6 +221,18 @@ local function yardOf(list: { any }, kingdom: string): { Piece }
 	return out
 end
 
+-- ALL the kingdom dressing of a placement list for a kingdom: feature "dressing" (the gate banners, the hand-placed goods, haystack and
+-- cart) and "yard", every one a Kit prop or farm piece (the natural kinds are other features), in the plan's order
+local function dressingOf(list: { any }, kingdom: string): { Piece }
+	local out = {}
+	for _, p in list do
+		if (p.feature == "dressing" or p.feature == "yard") and nearestKeep(p.cframe) == kingdom then
+			table.insert(out, pieceOf(kingdom, p))
+		end
+	end
+	return out
+end
+
 local function footprint(piece: Piece): { Vector2 }
 	local m = measure(piece.assetId)
 	return rectPoly(piece.cframe, m.lox, m.loz, m.hix, m.hiz)
@@ -319,6 +343,41 @@ local function navProblems(kingdom: string, pieces: { Piece }): { string }
 		end
 	end
 	return bad
+end
+
+-- the kingdom's gate node: the nav node at the keep-frame point GATE_AT (found in Layout.nav, not assumed)
+local function gateNode(kingdom: string): Vector3
+	local at = Layout.plots[kingdom].anchors.keep:PointToWorldSpace(GATE_AT)
+	local best, bestD = Vector3.zero, math.huge
+	for _, node in Layout.nav.nodes do
+		local d = (Vector3.new(node.X, 0, node.Z) - Vector3.new(at.X, 0, at.Z)).Magnitude
+		if d < bestD then
+			best, bestD = node, d
+		end
+	end
+	assert(bestD < 0.5, `{kingdom}: no nav node at the gate point`)
+	return best
+end
+
+-- the exemption: a gate banner (by assetId) standing within GATE_REACH of its kingdom's gate node (the keep-frame distance)
+local function isGateBanner(kingdom: string, piece: Piece): boolean
+	if string.find(piece.assetId, "^prop_banner_%a+_0[12]$") == nil then
+		return false
+	end
+	local gate = gateNode(kingdom)
+	local at = piece.cframe.Position
+	return (Vector3.new(at.X, 0, at.Z) - Vector3.new(gate.X, 0, gate.Z)).Magnitude <= GATE_REACH
+end
+
+-- no nav edge within NAV_GAP of ANY kingdom dressing but the gate banners
+local function dressingNavProblems(kingdom: string, pieces: { Piece }): { string }
+	local held = {}
+	for _, piece in pieces do
+		if not isGateBanner(kingdom, piece) then
+			table.insert(held, piece)
+		end
+	end
+	return navProblems(kingdom, held)
 end
 
 -- legal ground by the footprint: lanes, roads, slots, buildings, fields
@@ -586,6 +645,97 @@ describe("The composed start yard (FORGE-02 visual pass 1b)", function()
 			expect(#navProblems("crimson", with("crimson", pieces, hay, 40, -62))).toBeGreaterThan(0) -- on the cross street
 			-- the same pieces where the yard puts them: nothing
 			expect(#navProblems("crimson", pieces)).toBe(0)
+		end
+	)
+
+	it(
+		"keeps every Layout.nav edge at least 2 studs from the footprint of ALL the kingdom dressing the world places, the gate banners apart",
+		function()
+			local lists = { full = WorldPlan.props(Layout, ALL, FULL), shipped = WorldPlan.props(Layout, ALL) }
+			local needed = 0
+			for name, list in lists do
+				for _, k in KINGDOMS do
+					local pieces = dressingOf(list, k)
+					expect(#pieces).toBe(18) -- 4 gate banners, the 4 hand-placed (2 goods, a haystack, the cart) and the yard's 10
+					local banners = {}
+					for _, piece in pieces do
+						if isGateBanner(k, piece) then
+							table.insert(banners, piece)
+						end
+					end
+					expect(#banners).toBe(4) -- only the four banners are exempt: the rest is held to NAV_GAP
+					needed += #navProblems(k, banners)
+					local bad = dressingNavProblems(k, pieces)
+					if #bad > 0 then
+						error(`{name} density: {table.concat(bad, "; ")}`)
+					end
+				end
+			end
+			-- the guard that the exemption means something: without it the rule would fail (a banner does stand within NAV_GAP of the
+			-- edge that leaves its gate)
+			expect(needed).toBeGreaterThan(0)
+		end
+	)
+
+	it(
+		"MUTANT: the dressing cart back where it was nudged onto a nav edge, a banner away from a gate and a non-banner in a banner's place are caught",
+		function()
+			local list = WorldPlan.props(Layout, ALL, FULL)
+			local keep = Layout.plots.crimson.anchors.keep
+			local pieces = dressingOf(list, "crimson")
+			expect(#dressingNavProblems("crimson", pieces)).toBe(0) -- as placed: nothing
+			local cart, banner, outer = 0, 0, 0
+			for i, piece in pieces do
+				if piece.assetId == "prop_cart_02" and piece.x < 0 then
+					cart = i -- the hand-placed cart (the yard's stands at x = +38)
+				elseif string.find(piece.assetId, "^prop_banner_") then
+					banner = if banner == 0 then i else banner
+					if #navProblems("crimson", { piece }) > 0 then
+						outer = i -- the banner that stands within NAV_GAP of the gate's outgoing edge
+					end
+				end
+			end
+			expect(cart).toBeGreaterThan(0)
+			expect(outer).toBeGreaterThan(0)
+			expect(pieces[cart].x).toBeNear(-50, 0.01) -- WorldPlan.plan: keep frame (-50, 10), where clear() leaves it
+			expect(pieces[cart].z).toBeNear(10, 0.01)
+			-- the cart where the clearance once left it (it was planned at (-76, 2), nudged to about (-63, 1): 0.06 to 1.51 studs off nav edge 4)
+			expect(#dressingNavProblems("crimson", with("crimson", pieces, cart, -63, 1))).toBeGreaterThan(0)
+			-- the same, by the real route: a plan with the cart at (-76, 2), cleared by WorldPlan.clear
+			local old = keep:PointToWorldSpace(Vector3.new(-76, 0, 2))
+			local replanned = {}
+			for _, p in WorldPlan.plan(Layout, ALL) do
+				local q = p
+				if
+					p.feature == "dressing"
+					and p.assetId == "prop_cart_02"
+					and nearestKeep(p.cframe) == "crimson"
+					and keep:PointToObjectSpace(p.cframe.Position).X < 0
+				then
+					q = {
+						assetId = p.assetId,
+						feature = p.feature,
+						cframe = CFrame.new(old) * (p.cframe - p.cframe.Position),
+					}
+				end
+				table.insert(replanned, q)
+			end
+			expect(#dressingNavProblems("crimson", dressingOf(WorldPlan.clear(Layout, replanned), "crimson"))).toBeGreaterThan(
+				0
+			)
+			-- a banner away from a gate (here on the avenue, 65 studs from the gate node) is not exempt ...
+			expect(isGateBanner("crimson", pieces[banner])).toBe(true)
+			expect(isGateBanner("crimson", with("crimson", pieces, banner, 0, -45)[banner])).toBe(false)
+			expect(#dressingNavProblems("crimson", with("crimson", pieces, banner, 0, -45))).toBeGreaterThan(0)
+			-- ... and a banner is exempt at ITS OWN gate only: another kingdom's banner here is held to the rule
+			local other = pieceOf("azure", { assetId = pieces[outer].assetId, cframe = pieces[outer].cframe })
+			expect(isGateBanner("azure", other)).toBe(false)
+			-- a prop of another kind where the banner stands (within reach of the gate, but not a banner) is not exempt either
+			local swapped = table.clone(pieces)
+			swapped[outer] = table.clone(pieces[outer])
+			swapped[outer].assetId = "prop_goods_01"
+			expect(isGateBanner("crimson", swapped[outer])).toBe(false)
+			expect(#dressingNavProblems("crimson", swapped)).toBeGreaterThan(0)
 		end
 	)
 
