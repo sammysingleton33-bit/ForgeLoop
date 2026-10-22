@@ -320,10 +320,12 @@ describe("FeedbackDuelController: the champions move with the duel (FL-0141)", f
 		expect(t.anim.poses.a.name).toBe("block")
 		-- a reset: the old character leaves, a new one comes
 		local second = avatar()
+		Kit.shield(Color3.fromRGB(190, 40, 50)).Parent = second -- the new body wears a shield: looked at with it
 		first.Parent = nil
 		characters[ME] = second
 		frames(t, 1 / 60) -- found again at once
 		expect(t.anim:rig("a").model).toBe(second)
+		expect(t.anim.poses.a.style).toBe("shield")
 		-- a model whose joints have not streamed in yet: no rig, one info line, looked up again later
 		local empty = roblox.Instance.new("Model")
 		empty.Parent = roblox.Instance.new("Folder")
@@ -343,6 +345,55 @@ describe("FeedbackDuelController: the champions move with the duel (FL-0141)", f
 		expect(t.anim.poses.a.name).toBeNil()
 		expect(t.anim.poses.a.active).toBe(true)
 	end)
+
+	it(
+		"a champion who wears Kit.shield on the left hand fights in the shield style: found with the rig, or later",
+		function()
+			local me, ai = avatar(), aiFigure("b")
+			Kit.shield(Color3.fromRGB(190, 40, 50)).Parent = me -- worn before the duel (AddAccessory)
+			Kit.weapon("swordShield", Color3.fromRGB(40, 90, 200)).Parent = ai -- b's shield rides the weapon
+			local t = boot({ characters = { [ME] = me }, champions = { ai } })
+			t.duel:setState({ stage = "duel", a = duellist(ME), b = duellist(0, true) })
+			t.duel:onEvents({
+				{
+					kind = "snapshot",
+					side = "a",
+					data = {
+						a = { state = "idle", weapon = "swordShield" },
+						b = { state = "idle", weapon = "swordShield" },
+					},
+				},
+			})
+			frames(t, 1 / 60)
+			expect(t.anim.poses.a.style).toBe("shield") -- with the rig, the same frame
+			expect(t.anim.poses.b.style).toBe("slash")
+			-- b is handed a shield for its left hand later: found within RESOLVE_SEC, the arm comes up
+			local shield = Kit.shield(Color3.fromRGB(40, 90, 200))
+			shield.Parent = ai
+			frames(t, AnimDef.RESOLVE_SEC + 0.2)
+			expect(t.anim.poses.b.style).toBe("shield")
+			local arm = DuelPoses.SHIELD_ARM.ready
+			local up = angleOf(CFrame.Angles(math.rad(arm[1]), 0, math.rad(arm[3])))
+			expect(math.abs(angleOf(joint(ai, "LeftArm").Transform) - up) < 0.5).toBe(true)
+			-- ... and loses it: back to the slash's left arm
+			shield.Parent = nil
+			frames(t, AnimDef.RESOLVE_SEC + 0.2)
+			expect(t.anim.poses.b.style).toBe("slash")
+			local down = angleOf(CFrame.Angles(math.rad(65), 0, math.rad(-10)))
+			expect(math.abs(angleOf(joint(ai, "LeftArm").Transform) - down) < 0.5).toBe(true)
+			expect(t.anim.poses.a.style).toBe("shield")
+			-- looked for every RESOLVE_SEC, not every frame
+			local leftShield, looks = DuelRig.leftShield, 0
+			DuelRig.leftShield = function(model)
+				looks += 1
+				return leftShield(model)
+			end
+			frames(t, 1)
+			DuelRig.leftShield = leftShield
+			expect(looks <= 2 * (1 / AnimDef.RESOLVE_SEC + 1)).toBe(true)
+			expect(looks >= 2).toBe(true)
+		end
+	)
 
 	it("reduced motion (SettingsController) keeps the stagger but not its wobble", function()
 		local t = boot({ characters = { [ME] = avatar() }, reduced = true })

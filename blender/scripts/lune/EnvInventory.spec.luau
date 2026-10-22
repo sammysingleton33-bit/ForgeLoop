@@ -175,8 +175,10 @@ describe("FL-0136 inventory of placed nature and crops", function()
 			clear[k] = v
 		end
 		-- the pinned figures of WorldService.spec (density 1.0, crimson dressed; the arena's parts are counted apart): 8,271 + 76 resource-marker parts (FL-0136 phase 3)
-		expect(full.props).toBe(615)
-		expect(full.parts - full.arenaParts).toBe(8347)
+		-- (the nature pass of visual upgrade 1 trimmed it: 615 -> 464 props and 8,347 -> 6,841 parts, the pins of WorldService.spec)
+		-- (the start yard of visual upgrade 1b dresses all four kingdoms: 464 -> 519 props, 6,841 -> 7,281 parts at 1.0; WorldService.spec's crimson-only pin stays 6,841)
+		expect(full.props).toBe(519)
+		expect(full.parts - full.arenaParts).toBe(7281)
 		-- the scene data: the shipped world's placements, the resource nodes, and two plots' starting buildings (part-built)
 		local placements = {}
 		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.density(Layout)) do

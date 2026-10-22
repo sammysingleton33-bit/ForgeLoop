@@ -20,6 +20,18 @@ and GeographicLatitude (a sun path at the equinox), sun colour from ColorShift_T
 OutdoorAmbient, the haze from Atmosphere, and the ColorCorrection grade applied after the render. It is a PREVIEW approximation
 (the sun's compass direction, Atmosphere's falloff, Future shadows, bloom and Terrain shading are not Roblox's own): it tells you
 which way a change moves the picture, not how Studio draws it.
+  --camera SPEC    a free camera, view name `custom_<kingdom>` (kingdoms crimson azure emerald gold), for framing studies (FL-0147).
+                   SPEC is `key=value` pairs separated by `;`:
+                     zoom=70       studs from the focus (the pitch follows the zoom linearly unless pitch= is given)
+                     fov=55        vertical field of view, degrees
+                     pitch=42.5    degrees below the horizon
+                     ahead=40      studs ahead of the seated ruler's root, along the throne's facing, where the focus lies (the real start: 40)
+                     focus=X,Y,Z   a world point instead; or focus=anchor:NAME (keep, storehouse, farm, lumbercamp, quarry, ...) for a
+                                   building anchor of the plot; ahead is then ignored
+                     yaw=throne    the direction the camera looks: `throne` (the throne's facing, the real start), `throne+180` (back across
+                                   the yard toward the keep), `throne-90`, or a world yaw in degrees (0 looks toward -Z, 90 toward -X)
+                     w=1600;h=900  the picture size
+                   e.g. --views custom_crimson --camera "zoom=70;fov=55;ahead=70": the camera numbers are printed so a study can be redone.
   --tag NAME       suffix of the output files (before / after pairs): world_default_crimson_<tag>.jpg
   --out-dir DIR    where the JPEGs go (default blender/previews)
 """
@@ -185,6 +197,57 @@ def ruler_view(data, kingdom, zoom, ahead=40.0):
     return loc, focus
 
 
+def parse_camera(spec):
+    cam = {"zoom": 70.0, "fov": 55.0, "ahead": 40.0, "yaw": "throne", "focus": None, "pitch": None, "w": 1600, "h": 900}
+    for item in spec.split(";"):
+        item = item.strip()
+        if not item:
+            continue
+        key, _, val = item.partition("=")
+        key, val = key.strip(), val.strip()
+        if key in ("zoom", "fov", "ahead", "pitch"):
+            cam[key] = float(val)
+        elif key in ("w", "h"):
+            cam[key] = int(val)
+        elif key in ("yaw", "focus"):
+            cam[key] = val
+        else:
+            raise SystemExit(f"--camera: unknown key {key!r} (zoom fov pitch ahead focus yaw w h)")
+    return cam
+
+
+def custom_view(data, kingdom, cam):
+    """A free camera at a kingdom: returns (location, focus, fov, None, (w, h)) and prints the numbers used."""
+    plot = data["plots"][kingdom]
+    th = plot["throne"]
+    look = (-th[5], -th[8], -th[11])
+    flat = math.hypot(look[0], look[2]) or 1.0
+    tx, tz = look[0] / flat, look[2] / flat
+    focus_spec = cam["focus"]
+    if focus_spec and focus_spec.startswith("anchor:"):
+        a = plot["anchors"][focus_spec.split(":", 1)[1]]
+        focus = (a[0], a[1], a[2])
+    elif focus_spec:
+        focus = tuple(float(v) for v in focus_spec.split(","))
+    else:
+        focus = (th[0] + tx * cam["ahead"], th[1], th[2] + tz * cam["ahead"])
+    yaw_spec = cam["yaw"]
+    if yaw_spec.startswith("throne"):
+        turn = float(yaw_spec[len("throne"):] or 0)
+        c, sn = math.cos(math.radians(turn)), math.sin(math.radians(turn))
+        fx, fz = tx * c - tz * sn, tx * sn + tz * c
+    else:
+        y = math.radians(float(yaw_spec))
+        fx, fz = -math.sin(y), -math.cos(y)
+    pitch_deg = cam["pitch"] if cam["pitch"] is not None else ruler_pitch(cam["zoom"])
+    pitch = math.radians(pitch_deg)
+    loc = (focus[0] - fx * cam["zoom"] * math.cos(pitch), focus[1] + cam["zoom"] * math.sin(pitch),
+           focus[2] - fz * cam["zoom"] * math.cos(pitch))
+    print(f"[world] custom_{kingdom}: focus ({focus[0]:.1f}, {focus[1]:.1f}, {focus[2]:.1f}), camera ({loc[0]:.1f}, {loc[1]:.1f}, "
+          f"{loc[2]:.1f}), looking ({fx:.3f}, {fz:.3f}), zoom {cam['zoom']}, pitch {pitch_deg:.1f}, fov {cam['fov']}", flush=True)
+    return loc, focus, cam["fov"], None, (cam["w"], cam["h"])
+
+
 def default_views(data):
     out = {}
     for k in KINGDOMS:
@@ -256,13 +319,14 @@ def main(argv):
     ap.add_argument("--tag", default="")
     ap.add_argument("--out-dir", default="")
     ap.add_argument("--samples", type=int, default=0)
+    ap.add_argument("--camera", default="")
     args = ap.parse_args(argv)
     data = json.loads(Path(args.json).read_text())
     # the terrain colours come from the dumped world/Lighting preset (terrainColors), so a palette change shows; the table above is the fallback
     for name, rgb in data.get("lighting", {}).get("terrainColors", {}).items():
         TERRAIN_RGB[name] = tuple(rgb)
     names = [v for v in args.views.split(",") if v]
-    preset = lighting_params(data["lighting"]) if any(n.split("_")[0] in CAMERAS for n in names) and "lighting" in data else None
+    preset = lighting_params(data["lighting"]) if any(n.split("_")[0] in CAMERAS or n.startswith("custom_") for n in names) and "lighting" in data else None
 
     rig.reset_scene()
     kitparts.reset_cache()
@@ -288,7 +352,13 @@ def main(argv):
     col = sc.collection
     n_objs = 0
     for p in data["placements"]:
-        objs = kitparts.build_model(data["assets"][p["assetId"]], col, transform=cf_matrix(p["cframe"]))
+        m = cf_matrix(p["cframe"])
+        s = p.get("scale")
+        if s and s != 1:
+            # a placement's size against the asset's own, about the model origin (WorldService scales every part's size and its
+            # offset from the pivot, rotations stay): the 4x4 scale goes before the placement's own frame
+            m = m @ Matrix.Diagonal((s, s, s, 1))
+        objs = kitparts.build_model(data["assets"][p["assetId"]], col, transform=m)
         n_objs += len(objs)
     for m in bpy.data.materials:
         if m.node_tree and (m.name.startswith("kit_") or m.name in ("M_terrain", "M_water")):
@@ -304,8 +374,14 @@ def main(argv):
     jpg_dir = Path(args.out_dir) if args.out_dir else HERE / "previews"
     suffix = f"_{args.tag}" if args.tag else ""
     all_views = {**views(data), **default_views(data)}
+    cam_spec = parse_camera(args.camera) if args.camera else None
     for name in names:
-        view = all_views[name]
+        if name.startswith("custom_"):
+            if cam_spec is None:
+                raise SystemExit("custom_<kingdom> views need --camera")
+            view = custom_view(data, name.split("_", 1)[1], cam_spec)
+        else:
+            view = all_views[name]
         loc, tgt, fov, ortho = view[:4]
         cam.location = Vector(to_blender(*loc))
         if ortho:
