@@ -29,7 +29,9 @@
 	triggerNames: the perk names a `triggerFired` caption shows, by TriggerId (design §4 table; G12.1).
 	intro: the intro's camera pass over the stands (CrowdStageController, design §7 "Intro"): each stand
 	  shot at `standZoom` studs for `standSec`, then the ring at `ringZoom` for `ringSec`; the pass
-	  shrinks to fit a shorter intro (ArenaState.endsAt), never below `minShotSec` a shot.
+	  shrinks to fit a shorter intro (ArenaState.endsAt), never below `minShotSec` a shot. The zooms
+	  are for the overview's 55° field of view (55 and 80 at 70°, scaled by tan 35° / tan 27.5°, so
+	  each shot frames what it did).
 ]]
 
 return table.freeze({
@@ -84,7 +86,7 @@ return table.freeze({
 		empty = table.freeze({ sound = nil, caption = "(The stand empties)" }),
 		calledOff = table.freeze({ sound = nil, caption = "(The duel was called off)" }),
 	}),
-	intro = table.freeze({ standZoom = 55, ringZoom = 80, standSec = 4, ringSec = 4, minShotSec = 1 }),
+	intro = table.freeze({ standZoom = 74, ringZoom = 108, standSec = 4, ringSec = 4, minShotSec = 1 }),
 	triggerNames = table.freeze({
 		reforge = "Reforge",
 		fieldRemedy = "Field Remedy",

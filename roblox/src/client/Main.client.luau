@@ -4,7 +4,8 @@
 	Waits for the initial replication (require-by-string does not wait for instances), builds the
 	live Env, logs the build stamp and the game id, then loads every controller definition in
 	StarterPlayerScripts.Forge.Controllers and, in game projects (D-022), StarterPlayerScripts.Game.Controllers
-	— one dependency graph across both trees (Contracts/Loader, interfaces §3). In Studio only, it
+	— one dependency graph across both trees (Contracts/Loader, interfaces §3), each controller started
+	on its own so one failure cannot take the others down (Loader.bootClient). In Studio only, it
 	then opens the debug panel (Debug/DebugPanel, FL-0068; F8).
 	Add a controller by adding a module to a Controllers folder — never edit this file for it.
 ]]
@@ -36,10 +37,24 @@ for _, tree in { script.Parent, script.Parent.Parent:FindFirstChild("Game") } do
 	end
 end
 
-local registry = Loader.boot(env, folders)
-env.log("info", "ForgeLoop client controllers started", {
-	count = #registry.order,
-	order = if #registry.order > 0 then table.concat(registry.order, " > ") else "(none)",
+-- Each controller starts on its own (interfaces §3, FORGE-00 2026-10-19): one that fails is logged by name and
+-- skipped with its dependents, and the rest, the kingdom HUD among them, still come up.
+local registry = Loader.bootClient(env, folders)
+local failed = {}
+for name in registry.failed do
+	table.insert(failed, name)
+end
+table.sort(failed)
+local started = {}
+for _, name in registry.order do
+	if registry.failed[name] == nil then
+		table.insert(started, name)
+	end
+end
+env.log(if #failed > 0 then "error" else "info", "ForgeLoop client controllers started", {
+	count = #started,
+	failed = if #failed > 0 then table.concat(failed, ",") else nil,
+	order = if #started > 0 then table.concat(started, " > ") else "(none)",
 	trees = table.concat(trees, ","),
 })
 DebugPanel.start(env)

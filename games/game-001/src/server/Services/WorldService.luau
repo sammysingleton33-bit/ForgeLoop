@@ -15,7 +15,7 @@
 	  4. places the Crown Arena (Kit.arena at Layout.arena, FL-0072, G12.6): once, neutral, tagged CrownArena with its attachments
 	     as Kit builds them; ArenaService dresses it with Kit.arenaDress when the two kingdoms are known;
 	  5. places props and forests from WorldPlan.props (deterministic; plus WorldPlan.meshDressing for the imported FL-0136 meshes: cabbage
-	     variants, field fences, rim cliffs, none of it without the kit), PROPS_PER_FRAME per frame, cleared off the
+	     variants and field fences, none of it without the kit; the rim cliffs of the first round were dropped), PROPS_PER_FRAME per frame, cleared off the
 	     plots' fields, buildings, slots and roads and thinned by the dressing density knob (world/Layout
 	     features.density, D-047; 1.0 = the untrimmed valley);
 	  6. fires `ready` and logs the build time in ms.
@@ -380,7 +380,7 @@ function WorldService:_build()
 
 	-- props and forests, deterministic, at most partsPerFrame parts per frame
 	local placements = WorldPlan.props(layout, self.dressed, self.density)
-	-- FL-0136: cabbage variants, field fences and rim cliffs, only for imported meshes the Kit would really build (none without the kit)
+	-- FL-0136: cabbage variants and field fences (no cliffs: dropped), only for imported meshes the Kit would really build (none without the kit)
 	placements = WorldPlan.meshDressing(layout, placements, Kit.envMeshReady)
 	for _, placement in placements do
 		local model = Kit.prop(placement.assetId)
