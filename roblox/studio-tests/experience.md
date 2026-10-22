@@ -751,12 +751,27 @@ Steps
 6. On a phone (Device emulator, a phone, landscape) at the arena camera: every action reads. Note any that does not.
 7. Performance: open the Microprofiler during a fast exchange. There must be no spike when actions arrive: the work is a few joints per champion per frame.
 8. After the crowning and Results, both bodies are back to normal: nothing frozen, no one left kneeling.
+9. **The shield on the left hand** (FL-0141 follow-up 3). A champion who wears `Kit.shield` on the left hand fights in the shield style: the left arm keeps the shield facing the opponent.
+   - In Play Solo, in the command bar (server): `local Kit = require(game.ReplicatedStorage.Game.Kit.Kit) game.Players:GetPlayers()[1].Character.Humanoid:AddAccessory(Kit.shield())`. The shield must sit on your left hand (R15: `LeftGripAttachment`); write where it went. Then, in the client command bar, set `""`, then `"swordShield"`.
+   - Within half a second of putting it on, your stance changes: the left arm comes up and the shield faces forward.
+   - Through the whole preview the shield faces where your character faces, about upright:
+     - in the stance;
+     - in the guard (raised, across the chest);
+     - in both swings (the sword cuts beneath it);
+     - in the parry and the dodges.
 
-Pass: steps 1–3 hold; 4–8 when a duel runs (4 with the AI body once FL-0140 lands). Copy every red line from Output.
+     It never turns sideways or face-down, and the blade never passes through it. A flinch, the stagger and the KO may drop it.
+   - Screenshot **E21-4** (the guard, from the front) and **E21-5** (the light swing's cut).
+   - On R15 the elbow and the hand keep your avatar's own animation, so the shield's angle may differ from the renders by that much. Write how far, if it shows.
+   - Remove the shield (delete the `KitShield` accessory from your character). Within half a second the stance is the plain sword stance again.
+   - In a real duel, the AI's left-hand shield needs FORGE-01 to put `Kit.shield` on the AI figure's left fist and give it `Kit.weapon("swordShield", color, { shield = false })`. Write whether the AI carried it there, and whether it stays facing you.
+
+Pass: steps 1–3 hold; 4–8 when a duel runs (4 with the AI body once FL-0140 lands); 9 with a worn shield. Copy every red line from Output.
 
 History:
 - 2026-10-19 FORGE-04: written (FL-0141; G12.4 Arena.Events, G12.6).
 - 2026-10-19 FORGE-04: FL-0141 follow-up 2 (FORGE-00's CONTRACTS v0.4-g11n notes). Steps 2 and 3 set `""` before each rerun. Step 4: the empty-stamina heavy now shows the out-of-breath sag, and a Called Warning check. Step 5: a crowning late join poses nobody.
+- 2026-10-22 FORGE-04: FL-0141 follow-up 3. Step 9: the shield style with `Kit.shield` on the left hand.
 
 ## E22 — The default aerial framing (D-059, FL-0145, game-001)
 

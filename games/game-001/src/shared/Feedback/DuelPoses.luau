@@ -36,9 +36,13 @@
 	jolt 1 > the held guard or winded 0. A new animation replaces the current one when its priority is at least as
 	high or the current one has finished. Every change crossfades over XFADE seconds.
 
-	Weapon styles (snapshot side.weapon): swordShield and mace "slash" (one-handed, shield on the left
-	arm), greatsword "twoHand", spear "thrust". light, heavy, the held guard and the ready stance differ by
-	style; an unknown weapon reads as "slash".
+	Weapon styles (snapshot side.weapon): swordShield and mace "slash" (one-handed), greatsword "twoHand",
+	spear "thrust"; an unknown weapon reads as "slash". A one-handed champion who wears Kit.shield on the
+	left hand (FeedbackDuelController asks DuelRig.leftShield; track:setShield) is "shield": the slash with
+	the shield arm kept up (SHIELD_ARM), so the shield faces the opponent through the guard and the swings.
+	The mace's empty off hand, and a sword whose shield rides the weapon (Kit.weapon's default form: no
+	LeftGripAttachment), stay "slash". light, heavy, the held guard and the ready stance differ by style;
+	the shield style also changes the parry's and the dodge's shield arm.
 
 	Joints (Sim/Pose frame: X right, Y up, Z back; the rig faces -Z):
 		Root   the whole body at the hips: lift (Y), sidestep (X), step back (Z) and lean
@@ -64,6 +68,8 @@
 		    motion = false freezes the periodic parts (reduced motion: no wobble, no pump, no breathing)
 		DuelPoses.keys(name, style?, windup?, dir?, warned?) -> { { t, pose } }?   the keyframes (specs, renders)
 		DuelPoses.pose(numbers, out?) -> { [joint]: CFrame }        numbers → CFrames
+		DuelPoses.styleFor(weapon?, leftShield?) -> string        the style (above)
+		track:setShield(on)                             the champion wears Kit.shield on the left hand (or not)
 		DuelPoses.JOINTS, LIMITS, STYLE, PRIORITY, FULL, LENGTH, XFADE, LIGHT_WINDUP, HEAVY_WINDUP
 ]]
 
@@ -321,6 +327,32 @@ local HEAVY = {
 	},
 }
 
+-- The shield style (FL-0141 follow-up 3): the slash poses with the shield arm kept up. Kit.shield sits on
+-- the left hand's grip (the AI figure's weld, an avatar's LeftGripAttachment) and faces down the arm, so
+-- the arm's direction is the shield's facing. Each LeftArm below keeps it facing the opponent (within 10°,
+-- measured on the Kit figure with the body's twist and lean), about level, clear of the blade and the body
+-- (spec). The slash's own left arm let it hang 30–50° face-down, and swung it sideways in the strikes.
+local SHIELD_ARM = table.freeze({
+	ready = { 85, 0, -5 },
+	block = { 100, 0, -15 }, -- higher and further across the chest than the stance
+	lightWindup = { 90, 0, -30 },
+	lightStrike = { 105, 0, 40 }, -- the chest turns left with the cut: the arm comes across to keep facing
+	heavyWindup = { 65, 0, -10 }, -- the chest leans back: the arm needs less
+	heavyStrike = { 120, 0, 15 }, -- the chest leans forward: the arm needs more
+	parryIn = { 95, 0, 40 },
+	parryOut = { 90, 0, -10 },
+	dodge = { 100, 0, 5 },
+})
+DuelPoses.SHIELD_ARM = SHIELD_ARM
+
+local function shieldUp(pose: Numbers, arm: { number }): Numbers
+	return with(pose :: any, { LeftArm = arm })
+end
+READY.shield = shieldUp(READY.slash, SHIELD_ARM.ready)
+BLOCK.shield = shieldUp(BLOCK.slash, SHIELD_ARM.block)
+LIGHT.shield = { shieldUp(LIGHT.slash[1], SHIELD_ARM.lightWindup), shieldUp(LIGHT.slash[2], SHIELD_ARM.lightStrike) }
+HEAVY.shield = { shieldUp(HEAVY.slash[1], SHIELD_ARM.heavyWindup), shieldUp(HEAVY.slash[2], SHIELD_ARM.heavyStrike) }
+
 -- the deflect: a sweep across, then a flick outwards
 local PARRY_IN = with(LEGS_READY, {
 	Waist = { -10, 30, 0 },
@@ -336,6 +368,8 @@ local PARRY_OUT = with(LEGS_READY, {
 	Tool = { -30, 0, 0 },
 	LeftArm = { 55, 0, -25 },
 })
+
+local SHIELD_PARRY = { shieldUp(PARRY_IN, SHIELD_ARM.parryIn), shieldUp(PARRY_OUT, SHIELD_ARM.parryOut) }
 
 -- a ducking sidestep; dir -1 = to the left, 1 = to the right
 local function dodgePose(dir: number): Numbers
@@ -430,7 +464,13 @@ local WINDED = with(LEGS_READY, {
 })
 
 local function styleOf(style: string?): string
-	return if style == "twoHand" or style == "thrust" then style else "slash"
+	return if style == "twoHand" or style == "thrust" or style == "shield" then style else "slash"
+end
+
+-- The style a champion fights in: its weapon's, or "shield" when a one-handed champion wears Kit.shield.
+function DuelPoses.styleFor(weapon: string?, leftShield: boolean?): string
+	local style = DuelPoses.STYLE[weapon or ""] or "slash"
+	return if leftShield == true and style == "slash" then "shield" else style
 end
 
 local function heavyWindup(windup: number?): number
@@ -481,17 +521,21 @@ function DuelPoses.keys(name: string, style: string?, windup: number?, dir: numb
 		jolt.Root = { 4, 0, 0, 0, 0, 0.25 }
 		return { { t = 0, pose = block }, { t = 0.06, pose = p(jolt) }, { t = DuelPoses.LENGTH.guardHit, pose = block } }
 	elseif name == "parry" then
+		local into, out = PARRY_IN, PARRY_OUT
+		if s == "shield" then
+			into, out = SHIELD_PARRY[1], SHIELD_PARRY[2]
+		end
 		return {
 			{ t = 0, pose = ready },
-			{ t = 0.08, pose = PARRY_IN },
-			{ t = 0.2, pose = PARRY_OUT },
+			{ t = 0.08, pose = into },
+			{ t = 0.2, pose = out },
 			{ t = DuelPoses.LENGTH.parry, pose = ready },
 		}
 	elseif name == "dodge" then
 		local side = if dir == 1 then 1 else -1
 		return {
 			{ t = 0, pose = ready },
-			{ t = 0.12, pose = dodgePose(side) },
+			{ t = 0.12, pose = if s == "shield" then shieldUp(dodgePose(side), SHIELD_ARM.dodge) else dodgePose(side) },
 			{ t = DuelPoses.LENGTH.dodge, pose = ready },
 		}
 	elseif name == "flinch" or name == "flinchHeavy" then
@@ -630,6 +674,7 @@ local function newTrack()
 		_body = 0,
 		_stopAt = nil :: number?,
 		weapon = nil :: string?, -- the snapshot's weapon, armour and stamina share (the press echo's checks)
+		leftShield = false, -- wears Kit.shield on the left hand (setShield): the one-handed style is "shield"
 		armour = nil :: string?,
 		stamina = nil :: number?,
 		_holding = false, -- the local champion holds the guard (a predicted block until the release)
@@ -642,6 +687,16 @@ function Track:reset()
 	self._anim, self._lastStrike, self._dodges, self._source, self._stopAt = nil, -math.huge, 0, nil, nil
 	self._weight, self._body, self._fromWeight, self._fromBody, self._fromAt = 0, 0, 0, 0, -math.huge
 	self.weapon, self.armour, self.stamina, self._holding, self._releasedAt = nil, nil, nil, false, nil
+end
+
+-- The champion wears Kit.shield on the left hand (or not): a one-handed style becomes "shield" (or back).
+-- A body's gear, not the duel's state: reset keeps it; the controller sets it whenever it finds the rig.
+function Track:setShield(on: boolean)
+	local wears = on == true
+	if wears ~= self.leftShield then
+		self.leftShield = wears
+		self.style = DuelPoses.styleFor(self.weapon, wears)
+	end
 end
 
 -- The guard is up: held by the local champion, or the server's state says block (except just after our
@@ -945,7 +1000,7 @@ function Duel:onEvent(event: any, now: number)
 			if type(view) == "table" then
 				local t = self[s]
 				if type(view.weapon) == "string" then
-					t.style = DuelPoses.STYLE[view.weapon] or "slash"
+					t.style = DuelPoses.styleFor(view.weapon, t.leftShield)
 					t.weapon = view.weapon
 				end
 				if type(view.armour) == "string" then
