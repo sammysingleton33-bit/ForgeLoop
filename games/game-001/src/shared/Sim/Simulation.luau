@@ -1305,7 +1305,7 @@ function Simulation:_geometry(
 		end
 	end
 	for _, area in self.noBuild do
-		if Footprint.overlaps(shape, area, 0) then
+		if Footprint.overlaps(shape, area, area.gap or 0) then
 			return false, "blocked"
 		end
 	end

@@ -347,6 +347,27 @@
         "prompts/**"
       ],
       "description": "Codex owns intelligence/ and prompts/. This is an ordinary ownership row (see rules), listed here so the hand-over from FORGE-00 is visible; the checker verifies the rows exist."
+    },
+    {
+      "id": "forge04-citizens-alive",
+      "kind": "add-only",
+      "who": "forge-04",
+      "paths": [
+        "games/game-001/src/shared/Sim/Pose.luau",
+        "games/game-001/src/shared/Sim/CitizenActions.luau",
+        "games/game-001/src/client/Controllers/EntityController.luau",
+        "games/game-001/tests/sim/Pose.spec.luau",
+        "games/game-001/tests/sim/PoseClearance.spec.luau",
+        "games/game-001/tests/sim/EntityController.spec.luau",
+        "games/game-001/tests/sim/CitizenActions.spec.luau",
+        "games/game-001/src/shared/Sim/Replication.luau",
+        "games/game-001/tests/sim/Replication.spec.luau"
+      ],
+      "changes": [
+        "A",
+        "M"
+      ],
+      "description": "One-PR exception (FORGE-05, 2026-10-22 14:23; FORGE-00 asked 14:21, FORGE-01 as path owner agreed 14:23): FORGE-04's D-059 citizens-alive PR (work slots, bigger swings, carried goods) may edit Sim/Pose, Sim/CitizenActions, the carry-attach in EntityController and those files' specs. FORGE-01 reviews it as owner with FORGE-07; conditions: no change to who works or how much is made (production-rate comparison), seeded work-slot spread, the 100-citizen budget spec green. Remove this entry (and its id in tools/tests/test_check_ownership.py) once that PR is merged. Extended 14:32 (FORGE-01): Sim/Replication.luau (the frame() hold-override for a Work-phase worker facing its target, sim-side fields only, no new snapshot/wire field) and Replication.spec (a case pinning it)."
     }
   ]
 }
