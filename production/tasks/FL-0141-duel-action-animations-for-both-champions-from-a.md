@@ -7,12 +7,13 @@ status: REVIEW
 priority: P0
 game: game-001
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-22
 depends_on: []
 evidence:
   - check.sh OVERALL PASS on b017b7f6 (game-001 2749/0, framework 573/0); DuelPoses 22/22, FeedbackDuel 7/7, DuelInput 18/18; mutations FL-0141 73/73, FL-0075 39/39; pose renders of the real Kit rig checked (headless)
   - after #269 merged (aed52998, gate 8p): check.sh OVERALL PASS on d212ef6d (main 7b992a11; game-001 2794/0, framework 573/0); DuelPoses 22/22, FeedbackDuel 7/7, DuelInput 20/20 (#266's two #259 L1 tests included); FORGE-07's #269 L1-L3 pinned, 7 new FL-0141 rows 7/7 CAUGHT; FL-0075 42/42 on aed52998 (FORGE-07's count). Headless; E21 not run in Studio
   - follow-up 2 (FORGE-00's g11n notes, FORGE-07's #278 lows): check.sh OVERALL PASS on b5306147 (main ac3fa4da; game-001 2844/0, framework 573/0); DuelPoses 25/25, FeedbackDuel 8/8, experience/ 402/0, Boot 6/6; FL-0141 101/101 CAUGHT (22 new); Called Warning raise floored at 0.18 s (worst joint turn 23.1 deg per 60 Hz frame, measured headless). Headless; E21 not run in Studio
+  - follow-up 3 (the shield style, Kit.shield #279 on the left hand): check.sh OVERALL PASS on 70fc6905 (main 4da14263; game-001 2914/0, framework 587/0); DuelPoses 29/29, FeedbackDuel 9/9; FL-0141 130/130 CAUGHT (28 new, 1 moved); every 60 Hz frame of the guard and swings on the AI figure keeps the shield within 10 deg of facing the opponent, tilt within 15 deg, clear of the blade and the body; before/after renders opened (design/pacing/duel). Headless; E21 step 9 not run in Studio
 ---
 
 # Duel action animations for both champions from Arena.Events
@@ -44,3 +45,4 @@ Players see the duel. Each champion swings, blocks, parries, dodges, staggers on
 - 2026-10-19 forge-04: BUILDING → REVIEW. PR open on forge/04-experience-duel-anim: procedural duel poses for both champions from DuelController.events (snapshot state, heavyWindup, hit, parry, stagger, ended), Kit / R15 (Motor6D or AnimationConstraint) / R6 rigs, laid over the Animator in PreSimulation; the local champion's own presses play at once (FORGE-00's ruling), confirmed by the server or stopped after 0.5 s. AI figure by the ArenaChampion tag (FL-0140). Studio E21 written; nothing seen in Studio.
 - 2026-10-19 forge-04: REVIEW (unchanged). Evidence brought up to date for the merged head (FORGE-00's #269 CONTRACTS note 5), with FORGE-07's #269 lows pinned in the follow-up PR on forge/04-experience-duel-lows. Added by hand: set-status refuses REVIEW -> REVIEW.
 - 2026-10-22 forge-04: REVIEW (unchanged). FL-0141 follow-up 2 on forge/04-experience-duel-followup: heavyWindup.warned raises the heavy's telegraph sooner (floor 0.18 s, FORGE-00's option (a)), a stamina-refused press plays the winded sag, a pair first seen in the crowning is not posed, a spec ties STARTS_FROM to DuelModel.step, FORGE-07's #278 L1 and L2. Added by hand: set-status refuses REVIEW -> REVIEW.
+- 2026-10-22 forge-04: REVIEW (unchanged). FL-0141 follow-up 3 on forge/04-experience-duel-gear: a champion who wears Kit.shield on the left hand (FORGE-01's #299 wiring) fights in the "shield" style, the shield kept facing the opponent through the guard and the swings; the mace and a shield on the weapon stay "slash"; E21 step 9. Added by hand: set-status refuses REVIEW -> REVIEW.
