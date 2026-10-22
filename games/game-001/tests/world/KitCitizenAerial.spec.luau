@@ -198,10 +198,13 @@ end
 local OLD_HEAD = 1.6
 local MIN_HEAD = 2.0 -- 1.25 x
 local MIN_HAT = { farmer = 2.7, woodcutter = 1.85, miner = 2.35, builder = 2.2 } -- widths: was 3.1, 1.5, 1.9, 1.8 (the farmer's disc: 2.79, x0.9, see MAX_FARMER_HAT)
--- The farmer's straw disc is the widest thing on a citizen. Farm work slots are 3.5 studs apart (EntityController scales the rig by RIG_SCALE 1.5, so 4.95
--- apart in the world): the disc at that scale must clear its neighbour by 0.3 (x1.1 gave 3.41 -> 5.1 across, brims touching at rest and in the bend).
-local RIG_SCALE, SLOT_GAP, NEIGHBOUR_CLEARANCE = 1.5, 3.5 * 1.5, 0.3
-local MAX_FARMER_HAT = (SLOT_GAP - NEIGHBOUR_CLEARANCE) / RIG_SCALE
+-- The farmer's straw disc is the widest thing on a citizen. On a farm (footprint 10) neighbouring work slots are 2 x 10 x sin(0.25) = 4.95 studs
+-- apart in the world (CitizenActions.SLOT_SPACING, FORGE-01 / FORGE-04) and EntityController scales the rig by RIG_SCALE 1.5: the disc at that scale
+-- must clear its neighbour at rest by 0.3 (x1.1 gave 3.41 -> 5.1 across, brims touching). Copies of those two numbers: once #316 is on main this
+-- reads them (CitizenActions.SLOT_SPACING, EntityController.RIG_SCALE). The bend (two neighbours bent in phase, about 4.0 studs apart at the heads,
+-- FORGE-04's unmeasured estimate) would still touch a 4.19 brim by about 0.2; they are usually out of phase.
+local RIG_SCALE, SLOT_SPACING, NEIGHBOUR_CLEARANCE = 1.5, 4.95, 0.3
+local MAX_FARMER_HAT = (SLOT_SPACING - NEIGHBOUR_CLEARANCE) / RIG_SCALE -- 3.1
 local MIN_HANDLE = { farmer = 6.5, woodcutter = 4.8, miner = 6.7, builder = 3.3 } -- cylinder lengths: was 5.2, 3.9, 5.4, 3.0
 local MIN_SACK = 3.0 -- was 2.7
 
