@@ -570,6 +570,8 @@ local function buildSupport(sim: any, kingdom: any, aggression: number, day: num
 	return nil
 end
 
+RulerAI.buildSupport = buildSupport -- think() calls it; the specs call it directly, free of the rules that come before it
+
 function RulerAI.think(sim: any, kingdom: any): string?
 	if not kingdom.alive then
 		return nil

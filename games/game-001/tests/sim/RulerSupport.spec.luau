@@ -114,51 +114,82 @@ describe("Sim/RulerAI: support buildings (FL-0149)", function()
 		expect(kindsStanding(sim2, k2).infirmary).toBe(nil)
 	end)
 
+	-- the builder alone (RulerAI.buildSupport), free of the rules that come before it in think(): day 5, aggression 0
+	local function try(sim: any, k: any, aggression: number?, day: number?): string?
+		return RulerAI.buildSupport(sim, k, aggression or 0, day or sim:day())
+	end
+
 	it("builds the first it can pay: a dear one does not hold up a cheap one", function()
 		local sim, k = world({ "blacksmith", "provisioner" })
 		-- stone for the granary (20) but not for the blacksmith (60)
 		assert(sim:spend(k.id, { stone = sim:balance(k.id, "stone") - 30 }, "spec:poor", "test"))
-		run(sim, k, 6)
-		local built = kindsStanding(sim, k)
-		expect(built.granary).toBe(1)
-		expect(built.blacksmith).toBe(nil)
+		expect(try(sim, k)).toBe("PlaceBuilding:granary")
+		local rich, rk = world({ "blacksmith", "provisioner" })
+		expect(try(rich, rk)).toBe("PlaceBuilding:blacksmith") -- with the stone, the order decides
 	end)
 
-	it("waits for day 3 and a level-2 keep, and for the storehouse, the lumber camp and the quarry", function()
-		local early, ek = world({ "blacksmith" })
-		early.time = 1 * early.catalog.tuning.dayLength
-		run(early, ek, 6)
-		expect(kindsStanding(early, ek).blacksmith).toBe(nil)
-		local low, lk = world({ "blacksmith" })
-		low.buildings[lk.keepId].level = 1
-		low:_recompute(lk)
-		run(low, lk, 6)
-		expect(kindsStanding(low, lk).blacksmith).toBe(nil)
-		local bare, bk = world({ "blacksmith" })
-		for _, bid in table.clone(bk.buildingIds) do
-			if bare.buildings[bid].kind == "quarry" then
-				bare:_removeBuilding(bare.buildings[bid])
-			end
-		end
-		run(bare, bk, 6)
-		expect(kindsStanding(bare, bk).blacksmith).toBe(nil)
-	end)
-
-	it("keeps wood in hand: below the price plus the margin it waits", function()
+	it("waits for day 3", function()
 		local sim, k = world({ "blacksmith" })
-		assert(sim:spend(k.id, { wood = sim:balance(k.id, "wood") - 120 }, "spec:poor", "test")) -- the price is 80 wood
-		run(sim, k, 6)
-		expect(kindsStanding(sim, k).blacksmith).toBe(nil)
+		expect(try(sim, k, 0, 2)).toBe(nil)
+		expect(try(sim, k, 0, 3)).toBe("PlaceBuilding:blacksmith")
 	end)
 
-	it("leaves the stone to the palisade's gate while it waits for one", function()
-		local sim, k = world({ "blacksmith" }, 1)
-		for i = 1, 6 do -- six finished wall pieces and no gate: the governor wants the gate first
-			local b = sim:_createBuilding(k, "wall", 200 + i * 40, 200)
-			sim:_completeInstantly(b)
+	it("waits for a level-2 keep", function()
+		local low, lk = world({ "blacksmith" })
+		local keep = low.buildings[lk.keepId]
+		keep.level = 1
+		keep.pendingLevel = nil
+		low:_recompute(lk)
+		expect(try(low, lk)).toBe(nil)
+		keep.level = 2
+		low:_recompute(lk)
+		expect(try(low, lk)).toBe("PlaceBuilding:blacksmith")
+	end)
+
+	it("waits for the storehouse, the lumber camp and the quarry", function()
+		for _, missing in { "storehouse", "lumbercamp", "quarry" } do
+			local sim, k = world({ "blacksmith" })
+			for _, bid in table.clone(k.buildingIds) do
+				if sim.buildings[bid].kind == missing then
+					sim:_removeBuilding(sim.buildings[bid])
+				end
+			end
+			sim:_recompute(k)
+			expect(try(sim, k)).toBe(nil) -- {missing} is gone
+			sim:_completeInstantly(sim:_createBuilding(k, missing, 300, 300))
+			sim:_recompute(k)
+			expect(try(sim, k)).toBe("PlaceBuilding:blacksmith")
 		end
-		sim:_recompute(k)
-		run(sim, k, 3)
-		expect(kindsStanding(sim, k).blacksmith).toBe(nil)
+	end)
+
+	it("keeps wood in hand: the price (80) plus the margin (60) or it waits", function()
+		local sim, k = world({ "blacksmith" })
+		assert(sim:spend(k.id, { wood = sim:balance(k.id, "wood") - 139 }, "spec:poor", "test"))
+		expect(try(sim, k)).toBe(nil) -- 139 wood: one short
+		deposits += 1
+		sim.treasury:deposit(k.id, "wood", 1, `spec:support:{deposits}`, "test")
+		expect(try(sim, k)).toBe("PlaceBuilding:blacksmith") -- 140
+	end)
+
+	it("leaves the stone to the palisade's gate while it waits for one, but only a bold governor's palisade", function()
+		local function withWalls(n: number, aggression: number, gate: boolean?)
+			local sim, k = world({ "blacksmith" }, aggression)
+			for i = 1, n do
+				sim:_completeInstantly(sim:_createBuilding(k, "wall", 200 + i * 40, 200))
+			end
+			if gate then
+				sim:_completeInstantly(sim:_createBuilding(k, "gate", 200, 260))
+			end
+			sim:_recompute(k)
+			return sim, k
+		end
+		local bold, bk = withWalls(6, 1) -- six finished pieces, no gate: the gate comes first
+		expect(try(bold, bk, 1)).toBe(nil)
+		local five, fk = withWalls(5, 1) -- not yet six
+		expect(try(five, fk, 1)).toBe("PlaceBuilding:blacksmith")
+		local gated, gk = withWalls(6, 1, true) -- the gate stands
+		expect(try(gated, gk, 1)).toBe("PlaceBuilding:blacksmith")
+		local meek, mk = withWalls(6, 0.2) -- below the fortify bar: no palisade to finish
+		expect(try(meek, mk, 0.2)).toBe("PlaceBuilding:blacksmith")
 	end)
 end)
