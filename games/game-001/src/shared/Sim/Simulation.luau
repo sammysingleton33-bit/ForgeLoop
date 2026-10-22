@@ -1549,6 +1549,94 @@ function Simulation:placeBuilding(
 	return building, nil
 end
 
+-- Build.PlaceLine (FL-0126 part 2, CONTRACTS G13.5/G13.9): a straight wall of Kit segments from (fx, fz) to (tx, tz). Both ends
+-- snap to tuning.lineGrid; the length is split into round(length / segment) pieces (at least one), laid end to end along the
+-- line and each facing it. All or nothing: every segment passes the Place rules and the kingdom affords them all, or nothing is
+-- built or charged. Returns the segments' building ids in order from the first end, else (nil, reason).
+function Simulation:placeLine(
+	kingdom: any,
+	kind: string,
+	fx: number,
+	fz: number,
+	tx: number,
+	tz: number,
+	by: number?
+): ({ number }?, string?)
+	local def = self.catalog.buildings[kind]
+	if def == nil then
+		return nil, "unknown_building"
+	end
+	if kind ~= "wall" or def.placeSize == nil then
+		return nil, "not_a_line_piece" -- gates are put in a wall with Build.PlaceGate, not drawn
+	end
+	if not kingdom.alive then
+		return nil, "kingdom_eliminated"
+	end
+	local tuning = self.catalog.tuning
+	local grid = tuning.lineGrid
+	local function snap(v: number): number
+		return math.floor(v / grid + 0.5) * grid
+	end
+	fx, fz, tx, tz = snap(fx), snap(fz), snap(tx), snap(tz)
+	local dx, dz = tx - fx, tz - fz
+	local length = math.sqrt(dx * dx + dz * dz)
+	local segment = def.placeSize.X
+	local count = math.max(1, math.floor(length / segment + 0.5))
+	if length < grid then
+		return nil, "too_short"
+	end
+	if count > tuning.maxLineSegments then
+		return nil, "too_long"
+	end
+	if def.requiresKeepLevel and self:keepLevel(kingdom) < def.requiresKeepLevel then
+		return nil, "requires_keep_level"
+	end
+	if def.maxCount and self:countOf(kingdom, kind) + count > def.maxCount then
+		return nil, "limit_reached"
+	end
+	local ux, uz = dx / length, dz / length
+	local yaw = math.atan2(-uz, ux) -- Footprint.rect: the piece's long axis in the world is (cos yaw, -sin yaw)
+	local price = self.costs.building(kind, 1)
+	if price == nil then
+		return nil, "unknown_building"
+	end
+	local total = {}
+	for res, amount in price.cost do
+		total[res] = amount * count
+	end
+	-- every segment on its own against the world (neighbours of the same line join end to end, so they never overlap)
+	local spots = {}
+	for i = 1, count do
+		local at = (i - 0.5) * segment
+		local x, z = fx + ux * at, fz + uz * at
+		local fits, why = self:_geometry(kingdom, kind, x, z, yaw, nil)
+		if not fits then
+			return nil, why
+		end
+		table.insert(spots, { x = x, z = z })
+	end
+	if not self:canAfford(kingdom.id, total) then
+		return nil, "cannot_afford"
+	end
+	local placed = {}
+	for _, spot in spots do
+		local building, err = self:placeBuilding(kingdom, kind, spot.x, spot.z, by, yaw)
+		if building == nil then
+			-- a race the checks above cannot see: give everything back in full, as if the line was never drawn
+			for _, id in placed do
+				local b = self.buildings[id]
+				for res, amount in b.pendingCost or {} do
+					self:deposit(kingdom.id, res, amount, `refund:line:{id}:{res}`, "refund")
+				end
+				self:_removeBuilding(b)
+			end
+			return nil, err
+		end
+		table.insert(placed, building.id)
+	end
+	return placed, nil
+end
+
 function Simulation:_ownedBuilding(kingdom: any, buildingId: any): (any?, string?)
 	local b = self.buildings[buildingId]
 	if b == nil or b.destroyed then
