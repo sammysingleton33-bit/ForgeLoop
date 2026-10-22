@@ -76,11 +76,13 @@ farmer's disc (4.3) is wider than the 3.5-stud work slot spacing (handoff).
 ## Scale comparison for FORGE-00 (same crimson start frame, FL-0147 camera, sim citizens, silhouette pass 2; Blender preview, citizens scaled about their feet in the dump)
 `img/vis1-citizens-scale-desktop.jpg` (1:1 crops of the 1600 x 900 render around the keep door, the farm and the quarry), `img/vis1-citizens-scale-phone.jpg` (750 x 311 at 1:1), `img/vis1-citizens-scale-house.jpg` (the storehouse with two builders and a hauler). Body height (head + torso + arms + legs), crimson sim set:
 
-| scale | start 1080p | start phone | what I see |
-|---|---|---|---|
-| x1.0 (this PR alone) | 62.8 px | 18.1 px | specks; farmers' discs and the keep-door hauler's sack register |
-| x1.25 (FORGE-04's ScaleTo, approved) | 79.1 | 22.8 | both numeric targets met; figures read as people, jobs still mostly a guess except farmer (disc) and hauler (sack) |
-| x1.6 | 100.5 | 29.0 | clearly readable: hats, tools and sacks all register at the start frame; the hauler is about two thirds of the keep door's height; farmers' discs (5.5 studs wide) overlap their 3.5-stud work-slot neighbours in plan |
-| x2.0 | 125.6 | 36.2 | tips into toy giants: the hauler's head is level with the keep door's top, its sack as big as the door arch, a builder as tall as the storehouse's eaves |
+| scale | start 1080p body | start phone body | body top (studs) vs doors (house 7.6, keep 10.4: `Buildings.luau` doorAt) | what I see |
+|---|---|---|---|---|
+| x1.0 (this PR alone) | 62.8 px | 18.1 px | 5.97: 79 % of a house door | specks; farmers' discs and the keep-door hauler's sack register |
+| x1.25 (FORGE-04's ScaleTo, approved) | 79.1 | 22.8 | 7.46: a house door's height (98 %), 72 % of the keep's | both numeric targets met; figures read as people, jobs still mostly a guess except farmer (disc) and hauler (sack) |
+| x1.6 | 100.5 | 29.0 | 9.55: 126 % of a house door, 92 % of the keep's | clearly readable: hats, tools and sacks all register at the start frame; farmers' discs (5.5 studs wide) overlap their 3.5-stud work-slot neighbours in plan |
+| x2.0 | 125.6 | 36.2 | 11.9: 157 % of a house door, 114 % of the keep's | toy giants: a citizen taller than the keep's door, the hauler's sack as big as the door arch in the picture |
+
+By the geometry the line is already crossed at x1.25: a citizen's head top is level with a house door's top (and its hat and tool higher: figure top with the hoe or pick 7.9 to 8.6 at x1.0, 9.9 to 10.8 at x1.25). x1.6 is 1.26 house doors tall. Whether that reads as "readable" or "giant" is a taste call for FORGE-00 and the owner; the pictures are the evidence, the door heights are the measure. (In the storehouse picture the builders stand nearer the camera than the house, so the picture alone cannot compare their height with its door.)
 
 The numbers for x1.6 and x2.0 are the x1.0 measure times the factor (the measure is linear in the scale). Not Studio: ScaleTo scales about the model pivot, EntityController decides the feet (root height) and the bubbles.
