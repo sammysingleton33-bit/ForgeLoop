@@ -292,6 +292,19 @@ describe("Sim/CitizenActions: work slots (D-059)", function()
 				expect(dist(m[i].x, m[i].z, rock.x, rock.z)).toBeNear(ring, 1e-6)
 			end
 			expect(closest >= 2 * reach * math.sin(step / 2) - 1e-6).toBe(true) -- a slot's chord at the least
+			-- each ring starts on the kingdom's side, like the first: slot perRing stands straight out from slot 0
+			local first, outer = nil, nil
+			for _, c in m do
+				if c.slot == 0 then
+					first = c
+				elseif c.slot == perRing then
+					outer = c
+				end
+			end
+			assert(first ~= nil and outer ~= nil, "slots 0 and perRing")
+			local out = (reach + CitizenActions.SLOT_SPACING) / reach
+			expect(outer.x).toBeNear(rock.x + (first.x - rock.x) * out, 1e-6)
+			expect(outer.z).toBeNear(rock.z + (first.z - rock.z) * out, 1e-6)
 		end
 	)
 
