@@ -210,17 +210,17 @@ describe("Sim/CitizenActions: work slots (D-059)", function()
 		expect(math.min(d, 2 * math.pi - d) * reach).toBeNear(CitizenActions.SLOT_SPACING, 1e-6)
 	end)
 
-	it("spaces slots for the drawn citizen: 3.5 studs x the client's rig scale, 4+ studs at a tree", function()
+	it("spaces slots for the drawn citizen: 3.5 studs x the client's rig scale, 3 x it at a tree", function()
 		-- the client draws every rig RIG_SCALE x the Kit size (EntityController); the sim's spacing follows it
 		expect(CitizenActions.SLOT_SPACING).toBeNear(3.5 * EntityController.RIG_SCALE, 1e-9)
 		local sim, k = setup({ woodcutter = 2 })
 		local tree = sim:addNode("tree", -40, 10)
 		local w = citizens(sim, k, "woodcutter")
 		goWork(sim, w, "Gather", tree.id)
-		-- a tree's two woodcutters: the cap's chord, clear of a drawn citizen (about 3 studs wide at 1.25)
+		-- a tree's two woodcutters: the cap's chord, clear of a drawn citizen (2.4 studs wide x the scale, and room)
 		local apart = dist(w[1].x, w[1].z, w[2].x, w[2].z)
 		expect(apart).toBeNear(2 * (tree.footprint + 1) * math.sin(CitizenActions.SLOT_MAX_TURN / 2), 1e-6)
-		expect(apart >= 4 - 1e-6).toBe(true)
+		expect(apart >= 3 * EntityController.RIG_SCALE - 1e-6).toBe(true)
 	end)
 
 	it("a moved farm or site gives its workers a new slot at the new place (FL-0119; FORGE-01 L1)", function()
@@ -269,6 +269,29 @@ describe("Sim/CitizenActions: work slots (D-059)", function()
 		goWork(sim, { m[3] }, "Gather", rock.id)
 		expect(m[3].slot).toBe(0)
 	end)
+
+	it(
+		"never puts two workers on one spot: past a full circle the next ones stand on a ring further out (FORGE-07 L1)",
+		function()
+			local sim, k = setup({ miner = 14 })
+			local rock = sim:addNode("rock", 40, 0)
+			local m = citizens(sim, k, "miner")
+			goWork(sim, m, "Gather", rock.id)
+			local reach = rock.footprint + 1
+			local step = math.min(CitizenActions.SLOT_SPACING / reach, CitizenActions.SLOT_MAX_TURN)
+			local perRing = math.floor(2 * math.pi / step + 1e-9)
+			expect(perRing < #m).toBe(true) -- more workers than one circle holds
+			local closest = math.huge
+			for i = 1, #m do
+				for j = i + 1, #m do
+					closest = math.min(closest, dist(m[i].x, m[i].z, m[j].x, m[j].z))
+				end
+				local ring = reach + (m[i].slot // perRing) * CitizenActions.SLOT_SPACING
+				expect(dist(m[i].x, m[i].z, rock.x, rock.z)).toBeNear(ring, 1e-6)
+			end
+			expect(closest >= 2 * reach * math.sin(step / 2) - 1e-6).toBe(true) -- a slot's chord at the least
+		end
+	)
 
 	it("is deterministic: the same seed puts every citizen on the same spot", function()
 		local function positions(): { [number]: { number } }

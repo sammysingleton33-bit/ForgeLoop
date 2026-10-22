@@ -19,7 +19,8 @@
 	(Gather, Farm, Build) stand apart instead of on one spot. Each takes a slot on the reach circle it
 	stopped at before (the target's radius), on the kingdom's side of the target (towards its centre),
 	turned by 0, +1, -1, +2, -2, ... steps of SLOT_SPACING studs of arc (at most SLOT_MAX_TURN a step, on a
-	small tree or rock). The worker walks onto its slot (moveTo stops arriveRadius short; the last stretch is walked too). The slot index
+	small tree or rock); when the circle is full the next slots stand on a ring SLOT_SPACING further out.
+	The worker walks onto its slot (moveTo stops arriveRadius short; the last stretch is walked too). The slot index
 	is the lowest one free among the citizens on that target, scanned in sim.citizenOrder when the slot
 	is taken: deterministic, no randomness. It is kept while the target stays the same and where it was
 	(a gatherer comes back to its own spot; a moved farm or site gives a new slot, FL-0119), and freed on
@@ -81,9 +82,9 @@ function CitizenActions.moveTo(sim: any, c: any, x: number, z: number, radius: n
 end
 
 -- studs between neighbouring slots: 3.5 (a part-built citizen is 2.3-2.4 studs wide) x the client's rig scale
--- (EntityController.Def.RIG_SCALE, 1.25; FORGE-00 22 Oct), so drawn citizens never touch
-CitizenActions.SLOT_SPACING = 3.5 * 1.25
-CitizenActions.SLOT_MAX_TURN = math.rad(60) -- at most this turn a step, on a small target: a tree's two slots stay 4 studs apart
+-- (EntityController.Def.RIG_SCALE, 1.5; FORGE-00 22 Oct), so drawn citizens never touch
+CitizenActions.SLOT_SPACING = 3.5 * 1.5
+CitizenActions.SLOT_MAX_TURN = math.rad(70) -- at most this turn a step, on a small target: a tree's two slots 4.6 studs apart
 
 -- 0, 1, -1, 2, -2, ...: the slot's steps from the approach
 local function slotSteps(index: number): number
@@ -115,8 +116,11 @@ function CitizenActions.workSpot(sim: any, c: any, x: number, z: number, radius:
 		end
 		local side = if ax * ax + az * az > 1e-6 then math.atan2(az, ax) else 0
 		local step = math.min(CitizenActions.SLOT_SPACING / radius, CitizenActions.SLOT_MAX_TURN)
-		local angle = side + slotSteps(index) * step
-		c.slotX, c.slotZ = x + math.cos(angle) * radius, z + math.sin(angle) * radius
+		-- the slots that fit round the circle without meeting; the next ones stand on a ring SLOT_SPACING further out
+		local perRing = math.max(1, math.floor(2 * math.pi / step + 1e-9))
+		local ring = radius + (index // perRing) * CitizenActions.SLOT_SPACING
+		local angle = side + slotSteps(index % perRing) * step
+		c.slotX, c.slotZ = x + math.cos(angle) * ring, z + math.sin(angle) * ring
 		c.slot, c.slotTarget, c.slotAtX, c.slotAtZ = index, c.target, x, z
 		c.faceX, c.faceZ = x, z
 	end

@@ -1089,8 +1089,11 @@ describe("EntityController: the start citizens look alive (D-059)", function()
 					root.PivotOffset = root.PivotOffset.Rotation + root.PivotOffset.Position * factor
 				end
 				start(h)
-				expect(Def.RIG_SCALE).toBe(1.25)
+				expect(Def.RIG_SCALE).toBe(1.5)
 				expect(Def.PICK_HEIGHT).toBeNear(2.75 * Def.RIG_SCALE, 1e-9)
+				-- the carry pose's hands at the Kit size: 1.2 studs in front of the Torso, level, not turned
+				expect((Def.CARRY_OFFSET.Position - Vector3.new(0, 0, -1.2)).Magnitude).toBeLessThan(1e-9)
+				expect(Def.CARRY_OFFSET.LookVector.Z).toBeNear(-1, 1e-9)
 				for _, harness in { plain, h } do
 					play(harness, 0.5, { action = "carry", carrying = "wood" })
 				end
@@ -1143,6 +1146,16 @@ describe("EntityController: the start citizens look alive (D-059)", function()
 				events(h, { full(2, 10, 0) })
 				frame(h, 0.05)
 				expect(h.controller:getModel(2)).toBe(model)
+				-- destroyed with the controller: the cached load template goes too (FORGE-07 #316 L4)
+				local template = h.controller._loads.wood
+				assert(template, "a cached template")
+				h.controller:destroy()
+				expect(next(h.controller._loads)).toBeNil()
+				local holder = Instance.new("Folder") -- a live parent: only the template's own state decides
+				expect(pcall(function()
+					template.Parent = holder
+				end)).toBe(false) -- destroyed: its Parent is locked
+				holder:Destroy()
 				expect(#scaled).toBe(2)
 			end);
 			(Kit :: any).carried = carried

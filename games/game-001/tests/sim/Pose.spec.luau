@@ -220,6 +220,21 @@ describe("Sim/Pose", function()
 		end
 	end)
 
+	it("tips the pick and the hammer forward at the top of a blow, clear of a hat at FORGE-02's #317 sizes", function()
+		-- the signed turn of an rx joint: CFrame.Angles(a, 0, 0) looks along (0, sin a, -cos a)
+		local function rxAngle(cf: CFrame): number
+			return math.deg(math.atan2(cf.LookVector.Y, -cf.LookVector.Z))
+		end
+		local miner = Pose.sample("work", "miner", Pose.BLOW.mine[1], 0) -- the top of the raise
+		expect(angleOf(miner.RightArm)).toBeNear(140, 1e-3)
+		expect(rxAngle(miner.Tool)).toBeNear(-35, 1e-3)
+		local builder = Pose.sample("work", "builder", Pose.BLOW.hammer[1], 0)
+		expect(angleOf(builder.RightArm)).toBeNear(120, 1e-3)
+		expect(rxAngle(builder.Tool)).toBeNear(-15, 1e-3)
+		local farmer = Pose.sample("work", "farmer", Pose.BLOW.harvest[1], 0)
+		expect(angleOf(farmer.RightArm)).toBeNear(105, 1e-3) -- the hoe below the straw hat's brim
+	end)
+
 	it("carries with both arms forward, raises the arms to celebrate and lies down dead", function()
 		local carry = Pose.sample("carry", "hauler", 0, 8)
 		expect(angleOf(carry.LeftArm)).toBeGreaterThan(60)
@@ -230,8 +245,9 @@ describe("Sim/Pose", function()
 			local y = Pose.sample("carry", "hauler", phase, 12).Torso.Position.Y
 			low, high = math.min(low, y), math.max(high, y)
 		end
-		expect(high - low).toBeGreaterThan(0.15)
-		expect(Pose.sample("carry", "hauler", 0, 12).Torso.UpVector.Z).toBeGreaterThan(0.03) -- the top tips back
+		expect(high - low).toBeNear(0.18, 0.005)
+		-- the top tips back 4 degrees under the load
+		expect(Pose.sample("carry", "hauler", 0, 12).Torso.UpVector.Z).toBeNear(math.sin(math.rad(4)), 1e-3)
 		local cheer = Pose.sample("celebrate", "farmer", 0.4, 0)
 		expect(angleOf(cheer.LeftArm)).toBeGreaterThan(120)
 		expect(cheer.LeftArm.UpVector.Y).toBeLessThan(-0.5) -- the arm hangs from its top: up flips when raised

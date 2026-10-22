@@ -77,7 +77,7 @@
 		  changes and before the rig returns to the pool. Without Kit.carried nothing is held. A citizen
 		  that starts to work starts its blow from the beginning (phase 0: it stands and faces its work,
 		  then raises the tool), not from wherever its walk cycle was.
-		- D-059 rig scale (FORGE-00 15:50, FORGE-02's measure): every rig is drawn RIG_SCALE (1.25) times
+		- D-059 rig scale (FORGE-00 17:04, FORGE-02's measure): every rig is drawn RIG_SCALE (1.5) times
 		  the Kit size, scaled once when built (adapter.scaleModel, Model:ScaleTo, about the pivot at the
 		  feet) and pooled scaled; the rig keeps the factor it got (`scale`, 1 without scaleModel).
 		  Motor6D.Transform is not scaled by ScaleTo, so the pose's Torso lift is multiplied by the rig's
@@ -111,7 +111,7 @@ Def.LOD_ZOOM = 1.25
 Def.DEATH_DELAY = 2 -- seconds the dead pose stays before the rig is released
 Def.DEATH_BLEND = 0.4 -- seconds to fall into the dead pose
 Def.PICK_RADIUS = 60 -- pixels
-Def.RIG_SCALE = 1.25 -- D-059: rigs drawn 1.25x the Kit size (FORGE-00 15:50; FORGE-02's handoff: 57 -> 72 px tall at the start view)
+Def.RIG_SCALE = 1.5 -- D-059: rigs drawn 1.5x the Kit size (FORGE-00 17:04, from FORGE-02's 1.25 / 1.6 / 2.0 sheet)
 Def.PICK_HEIGHT = 2.75 * Def.RIG_SCALE -- studs above the pivot: the body centre the pick aims at
 Def.POOL_MAX = 64 -- spare rigs kept in all; past it the oldest spare is destroyed
 Def.FOLDER_NAME = "KingdomEntities"
@@ -815,6 +815,12 @@ function EntityController:destroy()
 		rig.model:Destroy()
 	end
 	table.clear(self._spares)
+	for _, template in self._loads do
+		if template then
+			template:Destroy() -- the cached Kit.carried templates (D-059; FORGE-07 #316 L4)
+		end
+	end
+	table.clear(self._loads)
 	if self.folder then
 		self.folder:Destroy()
 	end

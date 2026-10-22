@@ -189,7 +189,7 @@ local function work(out: Joints, style: string, p: number)
 		lean = 20 - 22 * h -- arches back with the pick overhead, then bends into the blow
 		out.RightArm = rx(30 + 110 * h)
 		out.LeftArm = rx(30 + 110 * h)
-		out.Tool = rx(10 - 40 * h) -- the pick's head tips forward at the top: clear of a lamp helmet (#317's sizes too)
+		out.Tool = rx(10 - 45 * h) -- the pick's head tips forward at the top: clear of a lamp helmet (#317 and its tool pass too)
 	elseif style == "hammer" then
 		local h = blow(p, BLOW.hammer[1], BLOW.hammer[2])
 		lean = 12

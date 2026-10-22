@@ -403,7 +403,7 @@ History:
 - 2026-10-13 FORGE-04: written (FL-0100 (1/2)), from the camera handoff's rows; released citizens, walk mode mid-conversation and zoom during a conversation added (FORGE-05's B14 review).
 - 2026-10-15 FORGE-04: operator probes E10a/E10b; E10a also measures against the ruler direction (FORGE-05).
 - 2026-10-19 FORGE-04: framing for the overview's new 55° field of view (D-059): 35 studs, offsets 5 and 7.5 (it was 30, 6 and 12 at 70°).
-- 2026-10-22 FORGE-04: the phone offset is 6.7 for the citizen drawn 1.25x (FL-0148): its head top just under the HUD stack (26 %), its head at 29 %.
+- 2026-10-22 FORGE-04: the phone offset is 3.8 for the citizen drawn 1.5x (FL-0148): its head top just under the HUD stack (26 %), its head at 30 %, its feet at 44 % (clear of a short stage at 47 %).
 
 ## E11 — Back key (FL-0053, game-001)
 
@@ -802,8 +802,8 @@ The owner's B22 review found the citizens at the start view "barely recognisable
 - A citizen carrying goods home carried nothing you could see.
 
 Now:
-- Each worker stands at its own spot around its work (about 4.4 studs apart on the edge where it used to stop; 4 at a tree), facing it.
-- Every citizen (and soldier) is drawn 1.25x the Kit size (`EntityController.RIG_SCALE`, D-059): only the look; the sim's positions are the same. The request bubble sits higher with it, and on a phone the conversation camera frames the taller citizen a little lower.
+- Each worker stands at its own spot around its work (about 5.25 studs apart on the edge where it used to stop; 4.6 at a tree), facing it.
+- Every citizen (and soldier) is drawn 1.5x the Kit size (`EntityController.RIG_SCALE`, D-059): only the look; the sim's positions are the same. The request bubble sits higher with it, and on a phone the conversation camera frames the taller citizen a little lower.
 - Each swing is a blow: the tool goes up slowly and comes down fast. Woodcutters and miners swing overhead, builders hammer from the shoulder, farmers raise the hoe and bend into the soil, and haulers bend down and lift.
 - A citizen carrying goods home holds the load in both hands: a basket of food, a bundle of logs, a stone block or a stack of gold bars (FORGE-02's `Kit.carried`, #312). The body bobs and leans back under the load.
 - A citizen that arrives at its work stands, faces it, then raises the tool for the first blow.
@@ -830,4 +830,4 @@ Pass: steps 1–5 hold; 6 with the number written. Copy every red line from Outp
 
 History:
 - 2026-10-22 FORGE-04: written (FL-0148, D-059).
-- 2026-10-22 FORGE-04: the rig drawn 1.25x (FORGE-00), slots 4.4 studs apart (4 at a tree); step 3 now runs with #312 on main; step 1 checks the size against the door and the stalls.
+- 2026-10-22 FORGE-04: the rig drawn 1.5x (FORGE-00), slots 5.25 studs apart (4.6 at a tree); step 3 now runs with #312 on main; step 1 checks the size against the door and the stalls.
