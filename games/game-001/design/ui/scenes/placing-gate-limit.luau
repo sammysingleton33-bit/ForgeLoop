@@ -3,7 +3,11 @@
 local GateDoubles = require("../../../tests/economy/doubles/GateDoubles")
 local scene = require("./_world")
 return function(ctx)
-	return scene(ctx, { remotes = GateDoubles.REMOTES, services = { GateDoubles.service } }, function(world, _, build)
+	return scene(ctx, {
+		remotes = GateDoubles.REMOTES,
+		services = { GateDoubles.service },
+		treasury = { food = 120, wood = 400, stone = 400 }, -- room for two gates: only the limit stops the second
+	}, function(world, _, build)
 		GateDoubles.wall(world, Vector3.new(80, 0, 120), 0)
 		GateDoubles.wall(world, Vector3.new(80, 0, 184), 0)
 		world:advance(0.1)

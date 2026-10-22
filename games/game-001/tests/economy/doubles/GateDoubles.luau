@@ -1,6 +1,7 @@
 --[[
-	GateDoubles — FORGE-01's Build.PlaceGate (FL-0126 part 2 slice 2, #306; handoff 2026-10-22-forge-01-to-all-place-line
-	"Slice 2") for FL-0129c slice 2's specs and scenes. Written from the handoff, not from UI/GatePick.
+	GateDoubles — FORGE-01's Build.PlaceGate (FL-0126 part 2 slice 2, #306; handoff
+	2026-10-22-forge-01-to-all-place-gate) for FL-0129c slice 2's specs and scenes. Written from the handoff, not from
+	UI/GatePick.
 
 		GateDoubles.REMOTES    { Build = { Build.PlaceGate(wallId: integer) } }
 		                       (pass as KingdomWorld.new({ remotes = GateDoubles.REMOTES, services = { GateDoubles.service } }))

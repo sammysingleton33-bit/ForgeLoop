@@ -503,14 +503,15 @@ Desktop window and the phone emulator, one client, the starting treasury (walls 
 
 ## U34 — Build: the gate from a wall piece (FL-0129c slice 2; FORGE-01's Build.PlaceGate, #306)
 Desktop window and the phone emulator, one client, a kingdom with a few wall pieces (draw a line with U33 first).
-1. Build → Military → Gate: the list row and the detail show the gate's price less half a wall piece's (40 wood,
-   20 stone with config today), and Place is on with 40 wood and 20 stone in the treasury. Place: the bar reads
+1. Build → Military → Gate: the list row and the detail show the gate's price less half a wall piece's (30 wood,
+   30 stone with config today: the gate 40 wood + 30 stone, a level-1 wall 20 wood), and Place is on with exactly
+   that in the treasury. Place: the bar reads
    "Gate: pick a wall piece", has no Turn button, "✕ Point at one of your wall pieces", and Make gate is off.
 2. Aim at one of your wall pieces, including one on a slant: the bar reads "Gate here" and "Half the wall's price
    comes back"; a gate ghost (thicker than the wall) stands exactly on that piece, turned as it is. Move along the
    line: the ghost jumps piece to piece. Move off the wall: the ghost goes and the bar says to point at a piece.
 3. Tap Make gate: a toast "Gate placed", build mode ends, the piece is replaced in place by a gate site facing the
-   same way, and the treasury drops by the net price (wood 40, stone 20: 30 spent, 10 back).
+   same way, and the treasury drops by the net price (30 wood, 30 stone: 40 wood spent, 10 back).
 4. Place a gate again and aim at another piece: "✕ Your kingdom has its gate already", Make gate off.
 5. A piece hard against a building or the territory edge (the gate needs 2 more studs each side): Make gate shows
    "✕ No room for a gate there" (or "A gate there leaves your land") with an error toast; nothing is charged and

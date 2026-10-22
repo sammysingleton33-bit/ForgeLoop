@@ -1,6 +1,6 @@
 --[[
 	GatePick — the gate in the build menu (FL-0129c slice 2; FORGE-01's Build.PlaceGate, FL-0126 part 2 slice 2, #306;
-	handoff 2026-10-22-forge-01-to-all-place-line "Slice 2"). Pure: which of my wall pieces the aim is on, and what
+	handoff 2026-10-22-forge-01-to-all-place-gate). Pure: which of my wall pieces the aim is on, and what
 	turning it into the gate costs.
 
 		GatePick.wallAt(rows, position, size?, margin?) -> row?

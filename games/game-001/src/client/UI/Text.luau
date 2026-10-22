@@ -88,7 +88,7 @@ local LINE_REASONS: { [string]: string } = {
 	limit_reached = "Over your wall limit",
 }
 
--- Build.PlaceGate (FORGE-01 #306; handoff 2026-10-22-forge-01-to-all-place-line "Slice 2"): one of my wall pieces
+-- Build.PlaceGate (FORGE-01 #306; handoff 2026-10-22-forge-01-to-all-place-gate): one of my wall pieces
 -- becomes the gate. Short enough for the phone bar; the rest read as in REASONS.
 local GATE_REASONS: { [string]: string } = {
 	not_found = "That wall piece is gone",

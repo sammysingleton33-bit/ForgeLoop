@@ -241,7 +241,7 @@ describe("Build menu: the gate (FL-0129c slice 2)", function()
 	end)
 
 	it("says what the client knows before Make gate: one gate per kingdom", function()
-		world = newWorld()
+		world = newWorld({ treasury = { wood = 400, stone = 400 } }) -- room for two: only the limit stops the second
 		GateDoubles.wall(world, Vector3.new(60, 0, 0), 0)
 		GateDoubles.wall(world, Vector3.new(60, 0, 64), 0)
 		world:advance(0.1)
