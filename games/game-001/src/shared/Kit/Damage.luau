@@ -17,7 +17,10 @@
 		  model was in before, so 0.97 then 0.3 is exactly a fresh model at 0.3, and Damage 0 (or under 0.25) is the model as built,
 		  part for part, bit for bit (repair).
 		- It never touches the attributes Burning, Hp, MaxHp or Damage, the model's highest part, or anything outside the model.
-		- It may be called whenever Damage changes, and need not be called when the model is moved or turned (see "Frame").
+		- It may be called whenever Damage changes, and need not be called when the model is moved or turned (see "Frame") ON THE SAME
+		  MACHINE: in the game WorldView.placeModel moves a building on the server while the damage parts are made by FeedbackController
+		  on each client, so a server move does not carry them and the client repairs (Damage 0 + applyDamage) and dresses again on a move
+		  (production/handoffs/2026-10-19-forge-02-war-kit-handoff-errata-2.md, item 3).
 		- Attribute written on the model: KitDamageState (1..4; absent at state 0). Every added part carries the attribute
 		  KitDamage = true and KitDamageKind = "breach" | "crack" | "chip" | "leaf" | "rubble" | "stump"; they are direct children of
 		  the model, anchored, never collide or are touched or queried.
