@@ -1934,15 +1934,19 @@ function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placeme
 					else assetId("prop_goods", i)
 				place(id, p.X, p.Z, "dressing") -- hand-placed clear of slots, nav and roads (spec)
 			end
-			-- the work areas of the start view (FORGE-02 visual pass 1): hay by the farm and its field lane, a cart and crates by the
-			-- storehouse and the quarry road. Keep-frame offsets near the lanes; the clearance moves each to the nearest legal spot
-			-- (never onto a lane, a slot, a building or a field), 4 + 4 + 12 + 8 + 8 = 36 parts a kingdom
+			-- the yard and the work areas of the start view (FORGE-02 visual pass 1; the start camera stands in the yard and looks back at
+			-- the keep, so its bottom 40 % is the avenue between the crossroads court and the keep door): crates and a cart either side of
+			-- the avenue, hay by the farm and its field lane, crates by the quarry road. Keep-frame offsets; the clearance moves each to
+			-- the nearest legal spot (never onto a road, a lane, a slot, a building or a field). 4 + 4 + 4 + 12 + 8 x 4 = 56 parts a kingdom
 			for _, extra in
 				{
 					{ "farm_haystack_02", Vector3.new(40, 0, -34) },
 					{ "farm_haystack_02", Vector3.new(38, 0, 42) },
-					{ "prop_cart_01", Vector3.new(-62, 0, -42) },
-					{ "prop_goods_03", Vector3.new(-34, 0, -40) },
+					{ "farm_haystack_02", Vector3.new(-44, 0, -50) },
+					{ "prop_cart_01", Vector3.new(-28, 0, -46) },
+					{ "prop_goods_03", Vector3.new(-16, 0, -52) },
+					{ "prop_goods_03", Vector3.new(26, 0, -52) },
+					{ "prop_goods_04", Vector3.new(-34, 0, -38) },
 					{ "prop_goods_04", Vector3.new(68, 0, 22) },
 				}
 			do
