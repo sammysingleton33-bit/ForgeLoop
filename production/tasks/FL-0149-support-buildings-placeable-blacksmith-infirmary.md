@@ -3,7 +3,7 @@ id: FL-0149
 title: "Support buildings placeable (blacksmith, infirmary, granary, shrine, market): key-citizen gate on, RulerAI builds them"
 track: build
 owner: forge-01
-status: READY
+status: BUILDING
 priority: P1
 game: game-001
 created: 2026-10-22
@@ -42,3 +42,4 @@ A ruler can build a Blacksmith, Infirmary, Granary, Shrine and Market (one of ea
 ## Log
 - 2026-10-22 FORGE-00: filed under D-060 after FORGE-02's measurement showed it fits the budget. Starts after FORGE-01's FL-0069 key-citizens slice (loyalty-only interim).
 - 2026-10-22 forge-00: SPECIFIED → READY. Filed under D-060; fits KitCeiling at 0 cost
+- 2026-10-22 forge-01: READY → BUILDING. Started on forge/01-support-buildings; approved numbers (FORGE-00 19:15Z); stacked on #315

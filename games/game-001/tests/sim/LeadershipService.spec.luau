@@ -677,6 +677,19 @@ describe("LeadershipService acts from the simulation", function()
 	end)
 end)
 
+-- Finished buildings of the given kinds in crimson (a support building brings its key citizen, D-060 / FL-0149).
+local SUPPORT_BUILDINGS = { "blacksmith", "infirmary", "granary", "shrine", "market", "barracks" }
+local function stand(w, kinds: { string }): { any }
+	local out = {}
+	for i, kind in kinds do
+		local b = w.sim:_createBuilding(w.k, kind, w.k.x + 40 + i * 30, w.k.z + 150)
+		w.sim:_completeInstantly(b)
+		assert(b.level >= 1, `{kind} finished`)
+		table.insert(out, b)
+	end
+	return out
+end
+
 describe("LeadershipService.keyCitizens", function()
 	local function keyed(w): { any }
 		local out = {}
@@ -690,6 +703,7 @@ describe("LeadershipService.keyCitizens", function()
 
 	it("lists the kingdom's living key citizens, one per role, with their live loyalty", function()
 		local w = boot()
+		stand(w, SUPPORT_BUILDINGS)
 		local expected = keyed(w)
 		expect(#expected > 0).toBe(true)
 		expected[1].loyalty = 83
@@ -709,6 +723,7 @@ describe("LeadershipService.keyCitizens", function()
 
 	it("leaves out a dead key citizen, another kingdom's and an unknown kingdom", function()
 		local w = boot()
+		stand(w, SUPPORT_BUILDINGS)
 		local before = #w.service:keyCitizens("crimson")
 		local victim = keyed(w)[1]
 		victim.alive = false
@@ -724,6 +739,7 @@ describe("LeadershipService.keyCitizens", function()
 
 	it("names only one key citizen per role, the first in the kingdom's citizen order", function()
 		local w = boot()
+		stand(w, SUPPORT_BUILDINGS)
 		local first = keyed(w)[1]
 		local twin
 		local after = false
@@ -749,6 +765,7 @@ describe("LeadershipService.keyCitizens", function()
 
 	it("falls back to neutral loyalty when a citizen has none", function()
 		local w = boot()
+		stand(w, SUPPORT_BUILDINGS)
 		local c = keyed(w)[1]
 		c.loyalty = nil
 		for _, k in w.service:keyCitizens("crimson") do
@@ -760,6 +777,7 @@ describe("LeadershipService.keyCitizens", function()
 
 	it("feeds SupportModel.offers: a perk from 80 loyalty, the stronger one from 95", function()
 		local w = boot()
+		stand(w, SUPPORT_BUILDINGS)
 		local c = keyed(w)[1]
 		c.loyalty = 79
 		local offers = SupportModel.offers(w.service:keyCitizens("crimson"), "loyal")
@@ -778,23 +796,48 @@ describe("LeadershipService.keyCitizens", function()
 		expect(perkOf(SupportModel.offers(w.service:keyCitizens("crimson"), "loyal")).power).toBe("empowered")
 	end)
 
-	it(
-		"names each role's building by its catalog id, and lists every role while the buildings cannot be placed yet",
-		function()
-			local w = boot()
-			expect(Support.roles.blacksmith.building).toBe("blacksmith")
-			for _, building in { "blacksmith", "market", "infirmary", "granary", "shrine", "barracks" } do
-				local found = false
-				for _, role in Support.roles do
-					found = found or role.building == building
-				end
-				expect(found).toBe(true)
-			end
-			-- interim (D-060, until FL-0149): no support building stands, and the key citizens are still listed
-			for _, b in w.sim.buildings do
-				expect(b.kind == "blacksmith" or b.kind == "infirmary" or b.kind == "shrine").toBe(false)
-			end
-			expect(#w.service:keyCitizens("crimson") > 0).toBe(true)
+	it("names each role's building by its catalog id, and every one of them is a placeable type", function()
+		local w = boot()
+		expect(Support.roles.blacksmith.building).toBe("blacksmith")
+		for _, def in Support.roles do
+			local building = w.sim.catalog.buildings[def.building]
+			expect(building ~= nil).toBe(true)
+			expect(building.placeable).toBe(true)
 		end
-	)
+	end)
+
+	it("offers a role only while a finished building of its type stands (D-060)", function()
+		local w = boot()
+		local function roles(): { [string]: boolean }
+			local out = {}
+			for _, k in w.service:keyCitizens("crimson") do
+				out[k.role] = true
+			end
+			return out
+		end
+		expect(next(roles())).toBe(nil) -- a fresh kingdom has none of the support buildings
+		local infirmary = stand(w, { "infirmary" })[1]
+		local now = roles()
+		expect(now.healer).toBe(true)
+		expect(now.blacksmith).toBe(nil)
+		infirmary.level = 0 -- back to a site: not finished
+		expect(roles().healer).toBe(nil)
+		infirmary.level = 1
+		infirmary.destroyed = true
+		expect(roles().healer).toBe(nil)
+		infirmary.destroyed = false
+		stand(w, { "blacksmith" })
+		expect(roles().blacksmith).toBe(true) -- each building brings its own supporter
+		expect(roles().healer).toBe(true)
+	end)
+
+	it("a kingdom's support buildings do not bring another kingdom's key citizens", function()
+		local w = boot()
+		stand(w, SUPPORT_BUILDINGS)
+		local count = 0
+		for _ in w.service:keyCitizens("azure") do
+			count += 1
+		end
+		expect(count).toBe(0) -- azure has none of the buildings: crimson's do not count for it
+	end)
 end)

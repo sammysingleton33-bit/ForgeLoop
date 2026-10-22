@@ -30,6 +30,11 @@ return {
 		"watchtower",
 		"wall",
 		"gate",
+		"blacksmith",
+		"market",
+		"infirmary",
+		"granary",
+		"shrine",
 	},
 	buildings = {
 		keep = {
@@ -181,6 +186,63 @@ return {
 				{ hp = 1200 },
 				{ hp = 2000 },
 				{ hp = 3000 },
+			},
+		},
+		-- the support buildings (FL-0149, D-060; CONTRACTS G13.5): one level each; a finished one brings its key citizen,
+		-- whose perk the Crown Arena can offer (config Support roles[r].building). Footprints are the Kit stand-ins' (PROVISIONAL).
+		blacksmith = { -- brings the Blacksmith: Reforge
+			id = "blacksmith",
+			name = "Blacksmith",
+			footprint = 7,
+			placeable = true,
+			dropoff = false,
+			maxCount = 1, -- one per kingdom (the D-047 part ceiling counts one of each)
+			levels = {
+				{ hp = 450 },
+			},
+		},
+		market = { -- brings the Merchant: Fine Wares
+			id = "market",
+			name = "Market",
+			footprint = 8,
+			placeable = true,
+			dropoff = false,
+			maxCount = 1, -- one per kingdom (the D-047 part ceiling counts one of each)
+			levels = {
+				{ hp = 400 },
+			},
+		},
+		infirmary = { -- brings the Healer: Field Remedy
+			id = "infirmary",
+			name = "Infirmary",
+			footprint = 7,
+			placeable = true,
+			dropoff = false,
+			maxCount = 1, -- one per kingdom (the D-047 part ceiling counts one of each)
+			levels = {
+				{ hp = 400 },
+			},
+		},
+		granary = { -- brings the Provisioner: Hearty Rations
+			id = "granary",
+			name = "Granary",
+			footprint = 5,
+			placeable = true,
+			dropoff = false,
+			maxCount = 1, -- one per kingdom (the D-047 part ceiling counts one of each)
+			levels = {
+				{ hp = 450 },
+			},
+		},
+		shrine = { -- brings the Elder: Rallying Hymn
+			id = "shrine",
+			name = "Shrine",
+			footprint = 5,
+			placeable = true,
+			dropoff = false,
+			maxCount = 1, -- one per kingdom (the D-047 part ceiling counts one of each)
+			levels = {
+				{ hp = 350 },
 			},
 		},
 	},
