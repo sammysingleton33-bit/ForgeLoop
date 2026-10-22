@@ -16,7 +16,7 @@ BLENDER = Path(__file__).resolve().parent.parent
 REPO = BLENDER.parent
 sys.path.insert(0, str(BLENDER))
 
-from lib import fbxtris, manifest  # noqa: E402
+from lib import envkit_standin, fbxtris, manifest  # noqa: E402
 
 FBX = REPO / "games/game-001/art/env_kit/env_kit.fbx"
 ENV = REPO / "games/game-001/art/env_kit/env.json"
@@ -235,8 +235,10 @@ def test_every_nature_and_crop_id_the_world_places_has_a_mesh(real):
     missing = [k for k in placed if k not in real[0]["props"]]
     assert missing == []
     # and nothing else: the Kit's spec fails on an id the world never places, so spares live in the other kit
-    extra = [k for k in real[0]["props"] if not st.get(k, {}).get("placed")]
+    extra = [k for k in real[0]["props"] if not st.get(k, {}).get("placed") and k not in envkit_standin.MESH_DRESSING]
     assert extra == []
+    # the mesh-only dressing (WorldPlan.meshDressing) is in the main kit and unplaced by the part-built world
+    assert all(k in real[0]["props"] and not st[k]["placed"] for k in envkit_standin.MESH_DRESSING)
     # the world's resource nodes are marked as nodes in the kit (K sets collision / selection from them)
     for k, v in st.items():
         if v["node"] and k in real[0]["props"]:
@@ -249,12 +251,15 @@ def test_the_world_ids_and_variant_ranges_are_complete():
     want = ([f"tree_oak_{i:02d}" for i in range(1, 9)] + [f"tree_pine_{i:02d}" for i in range(1, 7)] + [f"tree_birch_{i:02d}" for i in range(1, 7)]
             + [f"bush_{i:02d}" for i in range(1, 9)] + [f"plant_flowers_{i:02d}" for i in range(1, 7)]
             + [f"rock_boulder_{s}_{i:02d}" for s in "sml" for i in range(1, 4)] + [f"resource_stone_{i:02d}" for i in range(1, 4)]
-            + ["resource_ore_03", "resource_ore_04"] + ["farm_field_wheat_01", "farm_field_wheat_02", "farm_field_cabbage_03", "farm_haystack_01"])
+            + ["resource_ore_03", "resource_ore_04"] + ["farm_field_wheat_01", "farm_field_wheat_02", "farm_field_cabbage_03", "farm_haystack_01"]
+            + list(envkit_standin.MESH_DRESSING))  # fences 01-02 and cabbage 01-02: placed as imported meshes only (WorldPlan.meshDressing)
     assert sorted(doc) == sorted(want)
     if ENV_SPARES.exists():  # the rest is finished too, in the second kit
         spares = json.loads(ENV_SPARES.read_text())["props"]
         assert set(spares) & set(doc) == set()
-        assert {"rock_cliff_01", "resource_wood_01", "farm_field_wheat_03", "farm_field_wheat_04", "farm_field_wheat_05", "farm_field_cabbage_01", "farm_fence_01"} <= set(spares)
+        # on the bench: wood nodes, iron and crystal ore (not game resources), wheat 03 and the growth stages (the world places no growth)
+        # (FORGE-00 dropped the rim cliffs: rock_cliff_01/02 are on the bench too)
+        assert {"resource_wood_01", "resource_ore_01", "resource_ore_05", "farm_field_wheat_03", "farm_field_wheat_04", "farm_field_wheat_05", "rock_cliff_01", "rock_cliff_02"} <= set(spares)
 
 
 # ---- needs Blender
@@ -272,6 +277,26 @@ def test_the_generator_is_deterministic_and_matches_the_committed_hash():
     assert a == json.loads(ENV.read_text())["geometry_hash"], "the committed FBX is out of date: rebuild with build.py --generator env_kit"
     if ENV_SPARES.exists():
         assert envkit_build.canon_hash({k: reg[k] for k in spare}) == json.loads(ENV_SPARES.read_text())["geometry_hash"]
+
+
+def test_spares_are_never_marked_placed_in_the_registry_nor_in_the_data():
+    """wheat_04 / _05 (growth stages) map to wheat_01's stand-in, which is placed: the record used to say placed true for them, and a regen undid the data fix."""
+    pytest.importorskip("bpy")
+    from generators import env_kit
+    from lib import envkit_build, envkit_standin
+
+    ids = {"farm_field_wheat_01", "farm_field_wheat_04", "farm_field_wheat_05"}
+    reg = env_kit.registry(only=ids)
+    main, spare = env_kit.split_placed(reg)
+    assert "farm_field_wheat_01" in main and {"farm_field_wheat_04", "farm_field_wheat_05"} <= set(spare)
+    assert all(reg[k].placed for k in main) and not any(reg[k].placed for k in spare)
+    standins = envkit_standin.load()["standins"]
+    for pid in ("farm_field_wheat_04", "farm_field_wheat_05"):
+        assert envkit_build.prop_record(reg[pid], env_kit._standin_for(pid, standins))["placed"] is False
+    assert envkit_build.prop_record(reg["farm_field_wheat_01"], env_kit._standin_for("farm_field_wheat_01", standins))["placed"] is True
+    # the committed data agrees
+    assert all(not p["placed"] for p in json.loads(ENV_SPARES.read_text())["props"].values())
+    assert all(p["placed"] for p in json.loads(ENV.read_text())["props"].values())
 
 
 def test_a_floating_part_is_refused():

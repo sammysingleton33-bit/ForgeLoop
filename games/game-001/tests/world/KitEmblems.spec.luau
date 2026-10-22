@@ -39,7 +39,7 @@ local CASES: { { any } } = {
 	{ Color3.fromRGB(245, 205, 48), "sun" },
 	{ Color3.fromRGB(190, 190, 190), nil },
 }
-local MAX_LEVEL = { keep = 3, barracks = 4 }
+local MAX_LEVEL = { keep = 3, barracks = 4, wall = 3, gate = 3 } -- FL-0128: the sim has three wall and gate levels
 local FIELD_NAMES = { Banner = true, Flag = true, Pennant = true, Crest = true, EmblemPlaque = true, SignBoard = true }
 local MIN_DL = 0.25 -- CIE L* / 100 between an emblem's silhouette and its field
 

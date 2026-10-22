@@ -1,0 +1,22 @@
+{
+ "group": "dressing",
+ "letters": {
+  "A": "the part-built world as it is today",
+  "B": "the world with the imported meshes and the mesh-only dressing (cabbage variants, field fences, rim cliffs)"
+ },
+ "modes": {
+  "A": "before",
+  "B": "after"
+ },
+ "column_order": {
+  "farm": [
+   "A",
+   "B"
+  ],
+  "dressing_lineup": [
+   "B",
+   "A"
+  ]
+ },
+ "note": "Withheld from the image folder until the reply was saved. A and B are fixed over all sheets; column_order is the left-to-right order on that sheet."
+}

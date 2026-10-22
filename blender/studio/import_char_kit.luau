@@ -297,8 +297,9 @@ local function importCitizenKit(world, settings)
 					piece:RemoveTag(tag)
 				end
 				piece.Name = id
-				-- the physics shape: set here (the command bar has plugin rights); a game script cannot write it, so the Kit does not,
-				-- and the saved Forge.Assets piece carries it
+				-- the physics shape: set here (the command bar has plugin rights) in the open place; scripts cannot manipulate it at runtime, so
+				-- the Kit does not, and the API dump lists it as not saved: a saved place is expected (unverified) to show Default (the
+				-- pieces are CanCollide and CanQuery false, so nothing should depend on it)
 				if piece:IsA("MeshPart") then
 					piece.CollisionFidelity = Enum.CollisionFidelity.Box
 				end
@@ -313,6 +314,10 @@ local function importCitizenKit(world, settings)
 			end
 		elseif existing and existing:IsA("MeshPart") then
 			local checked = problems(existing, expected[id])
+			if not settings.dryRun then
+				-- an earlier run did not set the physics shape: the kept piece gets it now
+				existing.CollisionFidelity = Enum.CollisionFidelity.Box
+			end
 			report.kept += 1
 			if #checked > 0 then
 				complain(

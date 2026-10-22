@@ -465,6 +465,20 @@ describe("DuelRunner: a champion the world cannot find", function()
 	end)
 end)
 
+describe("DuelRunner: act clock", function()
+	it("refuses a clock that is not a finite number and keeps the champion's bucket sound", function()
+		local runner = newRunner(human(1), human(2))
+		runner:step(0)
+		for _, bad in { 0 / 0, math.huge, -math.huge, "1", nil } do
+			local ok, reason = runner:act(1, "light", bad :: any)
+			expect(ok).toBe(false)
+			expect(reason).toBe("bad_arguments")
+		end
+		expect((runner:act(1, "light", 1))).toBe(true)
+		expect((runner:act(1, "light", 1.01))).toBe(true) -- the bucket has a clock, not nil
+	end)
+end)
+
 describe("DuelRunner: blocks", function()
 	it("releases a block the client never ends", function()
 		local runner = newRunner(human(1), human(2))

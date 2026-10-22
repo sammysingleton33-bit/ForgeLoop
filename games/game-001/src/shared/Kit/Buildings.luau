@@ -11,7 +11,8 @@
 
 	Buildings.build(type, level, stage, kingdomColor, variant?) — variant (default 1, deterministic) picks
 	one of the house archetypes (roof style, storeys/jetty, chimney side, door side, props); variants 5–8
-	mirror 1–4. Other types ignore it.
+	mirror 1–4. Other types ignore it. The level is clamped to 1..Buildings.MAX_LEVEL[type] before anything is built, and the
+	clamped level is what the model stores (attribute KitLevel) and is named after, so no consumer sees a level past the end.
 
 	G13 (FL-0085): the keep seats a Seat "Throne" on a dais on its open front terrace (G13.6); keep L1–3,
 	barracks L1–4, house L1–2 and farm L1–2 grow height and roof count with level (G13.5); mine, blacksmith,
@@ -23,6 +24,11 @@
 	in progress) measures ≈ 4.1k parts → 4 kingdoms + 3 neutral towers ≈ 16.9k, leaving ≈ 8k for
 	WorldService props and region markers. The caps are ceilings, not targets: every model at its cap would
 	sum to ≈ 23.6k, so new detail goes where it reads (roofs, doors, banners), never into hidden faces.
+	With the FL-0128 war kit the all-built worst case (every kingdom at its top levels, wall L3 x 12 and the gate at
+	L3) measures 26,402 of the D-047 ceiling 27,000: WorldService 6,945 (with the 76 node-marker parts of FL-0136 phase 3) +
+	four kingdoms 19,121 (Emberhold 4,693, Frostmere 4,807, Thornwood 4,896, Sunspire 4,725) + three neutral towers 336
+	(tests/world/KitCeiling.spec.luau prints the line; it is the number).
+	If a later change goes over, cap the wall segments per kingdom in config before thinning the art.
 
 		type        cap   measured (min–max over levels, variants, the 4 + 2 FORGE-01 kingdom colours, neutral)
 		keep        300   182–292  (L1 182–236, L2 204–260, L3 234–292; Kit.spec: L1–L2 ≤ 260, L3 ≤ 300)
@@ -32,10 +38,11 @@
 		lumbercamp  130   46–59
 		quarry      130   51–64
 		barracks    260   119–248  (L1–L4)
-		watchtower  130   105–125
-		wall         60   35–42    (per 32-stud segment)
-		gate        150   92–113
-		mine/blacksmith/market/infirmary/granary/shrine   110/150/150/150/110/80   (27–110, G13.5 stand-ins)
+		watchtower  130   105–122  (L1 106–116, L2 105–122: the war-ready L2 of FL-0128)
+		wall         60   23–60    (per 32-stud segment; L1 23–30, L2 33–40, L3 46–60; per-level caps 30 / 45 / 60)
+		gate        150   70–132   (L1 70–77, L2 92–113, L3 111–132; per-level caps 90 / 120 / 150)
+		mine/blacksmith/market/infirmary/granary/shrine   110/150/150/150/110/80   (27–110, G13.5 stand-ins: mine 36–49,
+		            blacksmith 81–88, market 72–85, infirmary 103–110, granary 38–51, shrine 27–32)
 		stages      110   29–85    (any type, stage 1..3)
 	Emblems (D-039, colour-vision finding 3) cost crown 3 / star 5 / oak 5 / sun 4 parts per banner, flag, pennant
 	or shield (the keep's two aerial plaques: field + border + emblem, the sun with 9). They were paid for by
@@ -48,6 +55,7 @@
 ]]
 
 local Parts = require("./Parts")
+local Damage = require("./Damage")
 local C = Parts.C
 local shade = Parts.shade
 local hueStyle = Parts.hueStyle
@@ -1552,19 +1560,62 @@ BUILDERS.watchtower = function(ctx, level, color, style, fp)
 	local pl = 1.8
 	stonePlinth(ctx, w + 1.6, w + 1.6, pl, 0, 0, S, 3, 4)
 	block(ctx, "Shaft", Vector3.new(w, h - 0.03, w), CFrame.new(0, pl + h / 2 + 0.015, 0), S.base, M.Cobblestone)
-	quoins(ctx, w, w, pl, h - 1, S.light, if big then 6 else 5)
+	quoins(ctx, w, w, pl, h - 1, S.light, 5)
 	block(ctx, "StringCourse", Vector3.new(w + 0.6, 0.6, w + 0.6), CFrame.new(0, pl + h * 0.48, 0), S.light, M.Slate)
 	local gy = pl + h
 	block(ctx, "Gallery", Vector3.new(w + 2.4, 1.3, w + 2.4), CFrame.new(0, gy + 0.65, 0), S.light, M.Slate)
 	local tf = wallFrames(w, w, gy)
-	for _, side in { "front", "back", "left", "right" } do
-		for _, u in { -hw * 0.55, hw * 0.55 } do
-			bracket(ctx, tf[side] * CFrame.new(u, 0, 0), 1.2, 1.6, S.light, M.Slate)
+	if big then
+		-- L2 is war-ready (FL-0128): a timber war gallery (hoarding) slung under the gallery on all four faces
+		-- instead of the stone brackets, a tighter parapet with more merlons, slits for windows, braziers at the door
+		for _, sz in { -1, 1 } do
+			block(
+				ctx,
+				"WarGallery",
+				Vector3.new(w + 2.3, 2.6, 1.2),
+				CFrame.new(0, gy - 1.3, sz * (hw + 0.6)),
+				C.wood,
+				M.WoodPlanks
+			)
+			block(
+				ctx,
+				"WarGallery",
+				Vector3.new(1.2, 2.6, w),
+				CFrame.new(sz * (hw + 0.6), gy - 1.3, 0),
+				C.wood,
+				M.WoodPlanks
+			)
+		end
+	else
+		for _, side in { "front", "back", "left", "right" } do
+			for _, u in { -hw * 0.55, hw * 0.55 } do
+				bracket(ctx, tf[side] * CFrame.new(u, 0, 0), 1.2, 1.6, S.light, M.Slate)
+			end
 		end
 	end
 	-- the cap rises from inside the parapet (its eave over the merlons); emerald's hoarding replaces it
 	if style ~= "emerald" then
-		crenellate(ctx, w + 2.4, w + 2.4, gy + 1.3, S.light, 0, 0, { m = 1.9, h = 2.4, t = 0.9, gap = 1.4 })
+		crenellate(
+			ctx,
+			w + 2.4,
+			w + 2.4,
+			gy + 1.3,
+			S.light,
+			0,
+			0,
+			if big then { m = 1.5, h = 2.4, t = 0.9, gap = 1.0 } else { m = 1.9, h = 2.4, t = 0.9, gap = 1.4 }
+		)
+	end
+	if style ~= "emerald" then
+		-- the cap sits on a stone seat inside the parapet, so it stands on the platform even where the merlons are gone
+		block(
+			ctx,
+			"CapSeat",
+			Vector3.new(w + 0.4, 1.35, w + 0.4),
+			CFrame.new(0, gy + 1.25 + 0.675, 0),
+			S.base,
+			M.Cobblestone
+		)
 	end
 	towerCap(ctx, style, w + 0.4, if style == "emerald" then gy + 1.3 else gy + 2.6, color, 0, 0, 5.5)
 	doorAt(ctx, CFrame.new(0, pl, -hw), {
@@ -1578,22 +1629,136 @@ BUILDERS.watchtower = function(ctx, level, color, style, fp)
 	banner(ctx, 0, gy - 0.7, -hw - 0.05, 0, color, if big then 8 else 6.5, style, 3)
 	local sf = wallFrames(w, w, pl)
 	for _, side in { "left", "right", "back" } do
-		windowAt(
-			ctx,
-			sf[side] * CFrame.new(0, h * 0.62, 0),
-			{ arched = true, w = 2, h = 3.4, frame = S.light, frameMaterial = M.Slate, simple = true }
-		)
+		if big then
+			windowAt(ctx, sf[side] * CFrame.new(0, h * 0.62, 0), { slit = true, frame = S.light }) -- war: slits
+		else
+			windowAt(
+				ctx,
+				sf[side] * CFrame.new(0, h * 0.62, 0),
+				{ arched = true, w = 2, h = 3.4, frame = S.light, frameMaterial = M.Slate, simple = true }
+			)
+		end
 		windowAt(ctx, sf[side] * CFrame.new(0, 5.5, 0), { slit = true, frame = S.light })
 	end
 	windowAt(ctx, sf.front * CFrame.new(0, 10.4, 0), { slit = true, frame = S.light })
+	if big then
+		for _, sx in { -1, 1 } do
+			Pieces.brazier(ctx, Vector3.new(sx * 4.7, 0, -hw - 1.5), 0.85)
+		end
+	end
 	local ww = fp.X - 4
 	attach(ctx, "Door", Vector3.new(0, 0, -ww / 2 - 2.5))
 	workSpots(ctx, { Vector3.new(0, 0, -ww / 2 - 4) })
 end
 
--- ------------------------------------------------------------------ wall and gate (VS-2)
+-- ------------------------------------------------------------------ wall and gate (VS-2, FL-0128 war kit)
 
-BUILDERS.wall = function(ctx, _level, color, style, fp)
+-- Levels (the sim has three each, config/Buildings: wall hp 900 / 1600 / 2400, gate 1200 / 2000 / 3000), the
+-- footprint is 32 x 8 / 32 x 12 at every level:
+--   wall  L1 a timber palisade on an earth bank           L2 a crenellated stone curtain with a banner
+--         L3 its own outline: end piers, two stepped buttresses, two banners, a brazier on a plinth on the walkway
+--   gate  L1 a gatehouse with timber leaves, low towers   L2 + banners, crest, banded leaves, taller towers
+--         L3 + portcullis, braziers at the foot, the tallest towers
+-- Budgets (Buildings.PART_BUDGET_BY_LEVEL, enforced by tests/world): wall 30 / 45 / 60, gate 90 / 120 / 150.
+Buildings.GATE_OPEN_ANGLE = math.rad(65) -- how far an open gate leaf stands from the closed plane (about the hinge at the tower face)
+-- the passage floor: a MID tone that differs clearly in value from each kingdom's wall but is never near-black (it read as a black
+-- void at 170 studs): a mid sand on Emberhold's dark stone (luminance 0.57), a mid earth on the light stones (0.39) and a slightly
+-- darker mid earth on Thornwood's mid-value stone (0.34). The spec keeps it in 0.25 to 0.6 and 0.15 or more from the wall.
+local GATE_FLOOR_SAND = Color3.fromRGB(160, 144, 118)
+local GATE_FLOOR_EARTH = Color3.fromRGB(112, 98, 84)
+local GATE_FLOOR_EARTH_DARK = Color3.fromRGB(96, 84, 72)
+local function gateFloor(stone: Color3): Color3
+	local lum = 0.2126 * stone.R + 0.7152 * stone.G + 0.0722 * stone.B
+	return if lum > 0.6 then GATE_FLOOR_EARTH elseif lum > 0.45 then GATE_FLOOR_EARTH_DARK else GATE_FLOOR_SAND
+end
+Buildings.PART_BUDGET_BY_LEVEL = {
+	wall = { 30, 45, 60 },
+	gate = { 90, 120, 150 },
+}
+
+-- Gate leaves and portcullis move between a closed and an open pose with CFrames only (Kit.setGateOpen): each
+-- movable part carries both poses relative to the Root, so a model that was moved and turned still opens.
+local function movable(ctx: Ctx, part: BasePart, openCF: CFrame)
+	part:SetAttribute("KitGateClosedCF", ctx.root.CFrame:ToObjectSpace(part.CFrame))
+	part:SetAttribute("KitGateOpenCF", ctx.root.CFrame:ToObjectSpace(openCF))
+end
+
+-- `waiting`: parts of the gate that are off the model (a leaf Kit.applyDamage knocked out) are posed too, so a repaired gate
+-- comes back in the pose it is in now.
+function Buildings.setGateOpen(model: Model, open: boolean, waiting: { BasePart }?)
+	local root = model.PrimaryPart
+	if root == nil or model:GetAttribute("KitGateOpen") == nil then -- only a finished gate carries the attribute
+		return
+	end
+	local key = if open then "KitGateOpenCF" else "KitGateClosedCF"
+	local function pose(d: Instance)
+		if d:IsA("BasePart") then
+			local rel = d:GetAttribute(key)
+			if typeof(rel) == "CFrame" then
+				d.CFrame = root.CFrame * rel
+			end
+		end
+	end
+	for _, d in model:GetDescendants() do
+		pose(d)
+	end
+	for _, d in waiting or {} do
+		pose(d)
+	end
+	model:SetAttribute("KitGateOpen", open)
+end
+
+-- L1: a palisade of 13 sharpened-by-height logs against an earth bank, lashed with two rails, a plank walk behind
+-- and a banner on the front rail. The logs take the kingdom's wood (charred oak, pale pine, heavy oak, bleached).
+-- the L1 palisade is dark timber in every kingdom (KitNoSkin: the style does not re-skin it); the banner carries the kingdom
+local PALISADE_LOG = Color3.fromRGB(104, 70, 44)
+local PALISADE_LOG_DARK = Color3.fromRGB(78, 52, 34)
+local PALISADE_RAIL = Color3.fromRGB(58, 40, 28)
+local function palisade(ctx: Ctx, color: Color3, style: string, fp: Vector2)
+	local w = fp.X
+	block(ctx, "Footing", Vector3.new(w, 1.6, 5.2), CFrame.new(0, 0.8, 0.6), SOIL_DARK, M.Ground)
+	local n = 13
+	local step = (w - 1.2) / n
+	for i = 0, n - 1 do
+		local x = -w / 2 + 0.6 + step * (i + 0.5)
+		local hh = 13.4 + jit(i * 3.7 + 1, 1.8)
+		column(
+			ctx,
+			"Palisade",
+			step / 2 - 0.02,
+			hh,
+			Vector3.new(x, 1.0, jit(i * 5 + 2, 0.25)),
+			if i % 2 == 0 then PALISADE_LOG else PALISADE_LOG_DARK,
+			M.Wood
+		):SetAttribute("KitNoSkin", true)
+	end
+	for _, ry in { 4.6, 9.8 } do
+		block(ctx, "Rail", Vector3.new(w - 0.4, 0.7, 0.7), CFrame.new(0, ry, -1.55), PALISADE_RAIL, M.Wood):SetAttribute(
+			"KitNoSkin",
+			true
+		)
+	end
+	block(ctx, "Walkway", Vector3.new(w - 0.6, 0.6, 2.4), CFrame.new(0, 8.2, 2.5), C.woodLight, M.WoodPlanks)
+	for _, sx in { -1, 1 } do
+		block(
+			ctx,
+			"PalisadePost",
+			Vector3.new(1.3, 15.6, 1.3),
+			CFrame.new(sx * (w / 2 - 0.8), 8.8, 1.2),
+			PALISADE_RAIL,
+			M.Wood
+		):SetAttribute("KitNoSkin", true)
+	end
+	banner(ctx, 0, 12.6, -1.95, 0, color, 4.2, style, 2.4)
+end
+
+BUILDERS.wall = function(ctx, level, color, style, fp)
+	local lv = math.clamp(level, 1, 3)
+	attach(ctx, "Door", Vector3.new(0, 0, -fp.Y / 2 - 2))
+	if lv == 1 then
+		palisade(ctx, color, style, fp)
+		return
+	end
 	local S = stoneFor(style)
 	local w, d = fp.X, fp.Y - 2.8 -- batter, walkway and buttresses stay inside the 8-stud footprint
 	local h = 18
@@ -1611,30 +1776,56 @@ BUILDERS.wall = function(ctx, _level, color, style, fp)
 	block(ctx, "Curtain", Vector3.new(w, h, d), CFrame.new(0, 3 + h / 2, 0), S.base, M.Cobblestone)
 	block(ctx, "StringCourse", Vector3.new(w - 0.1, 0.6, d + 0.6), CFrame.new(0, 3 + h * 0.55, 0), S.light, M.Slate)
 	block(ctx, "Walkway", Vector3.new(w, 1, d + 1.6), CFrame.new(0, 3 + h + 0.5, 0), S.light, M.Slate)
-	for _, u in { -w * 0.3, 0, w * 0.3 } do
-		bracket(ctx, CFrame.new(u, 3 + h, -d / 2), 0.8, 1.3, S.light, M.Slate)
+	if lv == 2 then
+		for _, u in { -w * 0.3, 0, w * 0.3 } do
+			bracket(ctx, CFrame.new(u, 3 + h, -d / 2), 0.8, 1.3, S.light, M.Slate)
+		end
+		crenellate(ctx, w, d + 1.6, 3 + h + 1, S.light, 0, 0, { m = 2.6, h = 2.8, t = 1, gap = 1.8 })
+		windowAt(ctx, CFrame.new(-w * 0.15, 3 + h * 0.62, -d / 2), { slit = true, frame = S.light })
+		windowAt(ctx, CFrame.new(w * 0.15, 3 + h * 0.62, -d / 2), { slit = true, frame = S.light })
+		banner(ctx, 0, 3 + h - 1.2, -d / 2 - 0.05, 0, color, 7, style, 3)
+		return
 	end
-	crenellate(ctx, w, d + 1.6, 3 + h + 1, S.light, 0, 0, { m = 2.6, h = 2.8, t = 1, gap = 1.8 })
+	-- L3 (its own outline, taller at both ends and in the middle): two end piers carrying an arrow slit each and a cap,
+	-- two stepped buttresses against the front, each beside an end pier and reaching the walkway, two full-width banners between them, merlons only between
+	-- the end piers, and a big brazier on a stone pedestal in the middle (never in a gap of the crenellation)
+	local topY = 3 + h + 1 -- the walkway top
+	local pierH = topY + 4.5
 	for _, sx in { -1, 1 } do
-		wedge(
-			ctx,
-			"Buttress",
-			Vector3.new(2.4, 9, 1.35),
-			CFrame.new(sx * w * 0.3, 3 + 4.5, -d / 2 - 0.675),
-			S.base,
-			M.Cobblestone
-		)
+		local px = sx * (w / 2 - 2.05) -- 0.1 inside the wall's end, so no face is coplanar with the curtain's
+		block(ctx, "EndPier", Vector3.new(3.9, pierH, d + 2.4), CFrame.new(px, pierH / 2, 0), S.base, M.Cobblestone)
+		block(ctx, "PierCap", Vector3.new(4, 0.7, d + 2.8), CFrame.new(px, pierH + 0.35, 0), S.light, M.Slate)
+		windowAt(ctx, CFrame.new(px, 3 + h * 0.62, -(d + 2.4) / 2), { slit = true, frame = S.light })
 	end
-	banner(ctx, 0, 3 + h - 1.2, -d / 2 - 0.05, 0, color, 7, style, 3)
-	windowAt(ctx, CFrame.new(-w * 0.15, 3 + h * 0.62, -d / 2), { slit = true, frame = S.light })
-	windowAt(ctx, CFrame.new(w * 0.15, 3 + h * 0.62, -d / 2), { slit = true, frame = S.light })
-	attach(ctx, "Door", Vector3.new(0, 0, -fp.Y / 2 - 2))
+	for _, sx in { -1, 1 } do
+		-- a stepped stone buttress against the curtain beside each end pier: three courses, each narrower and shallower than
+		-- the one below, the top (pale) course tucked under the walkway's lip: a masonry pier, not an upright plank
+		local y = 0
+		for i, st in { { 4.0, 7.5, 2.0 }, { 3.4, 7.5, 1.5 }, { 2.8, 6.9, 0.7 } } do
+			block(
+				ctx,
+				"Buttress",
+				Vector3.new(st[1], st[2], st[3]),
+				CFrame.new(sx * 10.8, y + st[2] / 2, -d / 2 - st[3] / 2),
+				if i == 3 then S.light else S.base,
+				M.Cobblestone
+			)
+			y += st[2]
+		end
+	end
+	crenellate(ctx, w - 8.4, d + 1.6, topY, S.light, 0, 0, { m = 2.6, h = 2.8, t = 1, gap = 1.8 })
+	for _, sx in { -1, 1 } do
+		banner(ctx, sx * 5.8, topY - 2.2, -d / 2 - 0.05, 0, color, 6, style, 3.4)
+	end
+	block(ctx, "BrazierPlinth", Vector3.new(4.3, 2.8, 4.3), CFrame.new(0, topY + 1.4, 0), S.light, M.Slate)
+	Pieces.brazier(ctx, Vector3.new(0, topY + 2.8, 0), 1.3)
 end
 
-BUILDERS.gate = function(ctx, _level, color, style, fp)
+BUILDERS.gate = function(ctx, level, color, style, fp)
+	local lv = math.clamp(level, 1, 3)
 	local S = stoneFor(style)
 	local w, d = fp.X, fp.Y - 2.4 -- towers, plinth, corbels and caps stay inside the footprint
-	local h = 20
+	local h = ({ 18, 20, 22 })[lv]
 	local pass = 14
 	local pw = (w - pass) / 2 - 0.6
 	for _, sx in { -1, 1 } do
@@ -1642,13 +1833,26 @@ BUILDERS.gate = function(ctx, _level, color, style, fp)
 		stonePlinth(ctx, pw + 0.6, d + 0.6, 2.4, x, 0, S, 13 + sx, 6)
 		block(ctx, "GateTower", Vector3.new(pw, h + 4, d), CFrame.new(x, (h + 4) / 2, 0), S.base, M.Cobblestone)
 		block(ctx, "TowerCorbel", Vector3.new(pw + 1.2, 1.2, d + 1.2), CFrame.new(x, h + 4.4, 0), S.light, M.Slate)
-		crenellate(ctx, pw + 1.2, d + 1.2, h + 5, S.light, x, 0, { m = 2.2, h = 2.6, t = 1, gap = 1.6 })
+		crenellate(
+			ctx,
+			pw + 1.2,
+			d + 1.2,
+			h + 5,
+			S.light,
+			x,
+			0,
+			{ m = 2.2, h = 2.6, t = 1, gap = if lv == 1 then 2.8 else 1.6 }
+		)
 		towerCap(ctx, style, pw * 0.62, h + 5, color, x, 0)
-		banner(ctx, x, h + 2.6, -d / 2 - 0.05, 0, color, 8, style, 3.2)
+		if lv >= 2 then
+			banner(ctx, x, h + 2.6, -d / 2 - 0.05, 0, color, 8, style, 3.2)
+		end
 		windowAt(ctx, CFrame.new(x, 6, -d / 2), { slit = true, frame = S.light })
 	end
-	-- pointed arch: lintel above, spandrel wedges, voussoirs along the two chords
-	block(ctx, "Lintel", Vector3.new(pass, h - 15, d - 1), CFrame.new(0, 15 + (h - 15) / 2, 0), S.base, M.Cobblestone)
+	-- pointed arch: lintel above (up to the tower bodies' top, so the span is not a saddle between the towers), spandrel
+	-- wedges, voussoirs flush on the facade along the two chords
+	local lintelH = h + 4 - 15
+	block(ctx, "Lintel", Vector3.new(pass, lintelH, d - 1), CFrame.new(0, 15 + lintelH / 2, 0), S.base, M.Cobblestone)
 	local spring = 9
 	for _, sx in { -1, 1 } do
 		wedge(
@@ -1666,28 +1870,73 @@ BUILDERS.gate = function(ctx, _level, color, style, fp)
 			block(
 				ctx,
 				if i == 3 then "Keystone" else "Voussoir",
-				Vector3.new(2.3, 1.2, 1.2),
-				CFrame.new(px, py + 0.35, -d / 2 + 0.4) * CFrame.Angles(0, 0, -sx * math.atan2(15 - spring, pass / 2)),
+				Vector3.new(2.3, 1.2, 0.5),
+				CFrame.new(px, py + 0.35, -(d - 1) / 2 - 0.25)
+					* CFrame.Angles(0, 0, -sx * math.atan2(15 - spring, pass / 2)),
 				if i % 2 == 0 then S.light else S.base,
 				M.Slate
 			)
 		end
 	end
-	-- portcullis (raised), parapet over the passage, road
-	for i = 0, 5 do
-		block(
-			ctx,
-			"PortcullisBar",
-			Vector3.new(0.4, 4.6, 0.4),
-			CFrame.new(-5 + i * 2, 12.7, -d / 2 + 1.6),
-			C.iron,
-			M.Metal
-		)
+	-- the leaves: two timber doors hinged at the tower faces (closed across the arch; open they stand OPEN_ANGLE
+	-- degrees into the passage, so both show their face and the middle of the passage is clear), iron-banded from L2.
+	-- Kit.setGateOpen swings them, with the portcullis, by CFrame alone.
+	local zf = -d / 2 + 0.9
+	local leafW, leafH = pass / 2 - 0.15, 9.4
+	for _, sx in { -1, 1 } do
+		local hinge = Vector3.new(sx * pass / 2, 0, zf)
+		local function swung(cf: CFrame): CFrame
+			return CFrame.new(hinge) * CFrame.Angles(0, sx * Buildings.GATE_OPEN_ANGLE, 0) * CFrame.new(-hinge) * cf
+		end
+		local leafCF = CFrame.new(sx * (pass / 4 - 0.02), 0.2 + leafH / 2, zf)
+		local leaf = block(ctx, "GateLeaf", Vector3.new(leafW, leafH, 0.6), leafCF, C.woodLight, M.WoodPlanks)
+		movable(ctx, leaf, swung(leafCF))
+		if lv >= 2 then
+			for _, by in { 2.2, 7.4 } do
+				local bandCF = CFrame.new(sx * (pass / 4 - 0.02), by, zf - 0.34)
+				local band = block(ctx, "LeafBand", Vector3.new(leafW - 0.4, 0.45, 0.14), bandCF, C.iron, M.Metal)
+				movable(ctx, band, swung(bandCF))
+			end
+		end
 	end
-	block(ctx, "Portcullis", Vector3.new(12, 0.45, 0.45), CFrame.new(0, 11.2, -d / 2 + 1.6), C.iron, M.Metal)
-	crenellate(ctx, pass - 0.2, d, h, S.light, 0, 0, { m = 2.2, h = 2.4, t = 1, gap = 1.6, xOnly = true })
-	crest(ctx, CFrame.new(0, 17.4, -d / 2 + 0.3), 3, color, style)
-	block(ctx, "GateRoad", Vector3.new(pass, 0.2, fp.Y), CFrame.new(0, 0.1, 0), C.stoneDark, M.Cobblestone)
+	-- the fixed head of the door: a recessed stone panel fills the point of the arch above the leaves, so the closed gate shows
+	-- no sky through it; it stays when the leaves open. L3 has its portcullis in front of it: the bars hang 0.1 stud behind the
+	-- facade face and the panel stands just behind them, so the grille shows against stone, not grass.
+	block(
+		ctx,
+		"Tympanum",
+		Vector3.new(pass - 0.2, 15.1 - 9.6, 0.6),
+		CFrame.new(0, (15.1 + 9.6) / 2, if lv == 3 then -d / 2 + 1.35 else zf + 0.15),
+		shade(S.base, 0.82),
+		M.Cobblestone
+	)
+	if lv == 3 then
+		-- the portcullis is a grille in the point of the arch above the leaves: short bars that follow the arch, a cross
+		-- bar ties them; raised 7 studs it is hidden inside the lintel (the passage under the arch is clear when the gate is open; the
+		-- Tympanum behind the bars stays, as it does at every level)
+		local lift = CFrame.new(0, 7, 0)
+		local barBottom = 9.7 -- just above the leaves
+		for _, bx in { -4.0, -2.4, -0.8, 0.8, 2.4, 4.0 } do
+			local top = spring + (15 - spring) * (1 - math.abs(bx) / (pass / 2)) - 0.5
+			local len = top - barBottom
+			local barCF = CFrame.new(bx, barBottom + len / 2, -d / 2 + 0.8)
+			local bar = block(ctx, "PortcullisBar", Vector3.new(0.4, len, 0.4), barCF, C.iron, M.Metal)
+			movable(ctx, bar, lift * barCF)
+		end
+		local crossCF = CFrame.new(0, 11, -d / 2 + 0.8)
+		local cross = block(ctx, "Portcullis", Vector3.new(12, 0.45, 0.45), crossCF, C.iron, M.Metal)
+		movable(ctx, cross, lift * crossCF)
+		for _, sx in { -1, 1 } do
+			Pieces.brazier(ctx, Vector3.new(sx * (pass / 2 + 1.4), 0, -d / 2 - 0.9), 0.85)
+		end
+	end
+	if lv >= 2 then
+		crenellate(ctx, pass - 1.6, d, h + 5, S.light, 0, 0, { m = 2.2, h = 2.4, t = 1, gap = 1.6, xOnly = true })
+	end
+	crest(ctx, CFrame.new(0, h - 0.6, -d / 2 + 0.3), 3, color, style)
+	-- the floor contrasts with the wall (light on dark stone, dark on light stone): the passage reads when the leaves stand open
+	block(ctx, "GateRoad", Vector3.new(pass, 0.2, fp.Y), CFrame.new(0, 0.1, 0), gateFloor(S.base), M.Cobblestone)
+	ctx.model:SetAttribute("KitGateOpen", false)
 	attach(ctx, "Door", Vector3.new(0, 0, -fp.Y / 2 - 2))
 	attach(ctx, "Rally", Vector3.new(0, 0, fp.Y / 2 + 4))
 end
@@ -2316,15 +2565,46 @@ local function buildStage(ctx: Ctx, buildingType: string, level: number, stage: 
 	end
 end
 
+-- The highest level each type has a look for (or that the game builds it at). Kit.build clamps the level it is given to
+-- 1..this, builds that level and STORES it (the model attribute KitLevel and the model's name), so every consumer sees the level
+-- that was really built, never one past the end (Kit.applyDamage seeds its marks by KitLevel: a wall asked for at level 5 is a
+-- level 3 wall and damages like one). The VS-2 stand-ins have one look.
+Buildings.MAX_LEVEL = table.freeze({
+	keep = 3,
+	house = 2,
+	farm = 3,
+	storehouse = 2,
+	lumbercamp = 3,
+	quarry = 3,
+	barracks = 4,
+	watchtower = 2,
+	wall = 3,
+	gate = 3,
+	mine = 1,
+	blacksmith = 1,
+	market = 1,
+	infirmary = 1,
+	granary = 1,
+	shrine = 1,
+})
+
+local function clampLevel(buildingType: string, level: number): number
+	if type(level) ~= "number" or level ~= level then
+		return 1
+	end
+	return math.clamp(math.floor(level), 1, Buildings.MAX_LEVEL[buildingType] or 1)
+end
+
 function Buildings.build(
 	buildingType: string,
-	level: number,
+	askedLevel: number,
 	stage: number | string,
 	kingdomColor: Color3,
 	variant: number?
 ): Model
 	local builder = BUILDERS[buildingType]
 	assert(builder, `Kit.build: unknown building type {buildingType}`)
+	local level = clampLevel(buildingType, askedLevel)
 	local fp = Buildings.footprint(buildingType, level)
 	local stageName = if stage == "complete" then "complete" else tostring(stage)
 	local v = math.max(1, math.floor(variant or 1))
@@ -2343,6 +2623,8 @@ function Buildings.build(
 	end
 	-- stone, timber, wood, plaster and thatch take the kingdom's materials (the neutral palette is re-skinned)
 	KingdomStyle.paint(ctx.model, style)
+	-- the order of the parts as built: Kit.applyDamage chooses parts by walking it (Kit/Damage.luau)
+	Damage.register(ctx.model)
 	return ctx.model
 end
 

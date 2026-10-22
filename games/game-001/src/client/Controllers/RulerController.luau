@@ -271,16 +271,16 @@ function Controller:_ringSpeed(): number?
 		duel = self._registry:find("DuelController")
 		self._duel = duel
 	end
-	if duel == nil or type(duel.isChampion) ~= "function" then
+	if duel == nil then
 		return nil
 	end
-	local ok, champion = pcall(duel.isChampion, duel)
+	local ok, champion = pcall(duel.isChampion, duel) -- a missing or broken isChampion reads as no duel
 	if not ok or champion ~= true then
 		return nil
 	end
 	local ring = if type(self._arena) == "table" then self._arena.ring else nil
 	local speed = if type(ring) == "table" then ring.walkSpeed else nil
-	if type(speed) == "number" and speed == speed and speed > 0 and speed ~= math.huge then
+	if type(speed) == "number" and speed > 0 and speed ~= math.huge then -- NaN > 0 is false
 		return speed
 	end
 	return self._config.walkSpeed -- no ring config: still no sprint for a champion

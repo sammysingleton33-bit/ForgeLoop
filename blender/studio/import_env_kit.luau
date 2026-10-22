@@ -248,8 +248,9 @@ local function importEnvKit(world, settings)
 		mesh.Massless = true
 		mesh.CastShadow = true
 		mesh.Transparency = 0
-		-- the physics shape of the Body: set here (the command bar has plugin rights); a game script cannot write it, so the
-		-- Kit does not, and the saved Forge.Assets Model carries it
+		-- the physics shape of the Body: set here (the command bar has plugin rights) in the open place; scripts cannot manipulate it at
+		-- runtime, so the Kit does not, and the API dump lists it as not saved: a saved place is expected (unverified) to show Default;
+		-- the Body is CanQuery true, so raycasts hit whichever shape it has (see Kit/EnvMesh)
 		mesh.CollisionFidelity = Enum.CollisionFidelity.Hull
 		mesh.Parent = model
 		model.PrimaryPart = rootPart
@@ -316,6 +317,10 @@ local function importEnvKit(world, settings)
 			end
 		elseif existing and wrappedMesh(existing) then
 			local checked = problems(wrappedMesh(existing), def, id)
+			if not settings.dryRun then
+				-- an earlier run did not set the physics shape: the kept Body gets it now
+				wrappedMesh(existing).CollisionFidelity = Enum.CollisionFidelity.Hull
+			end
 			report.kept += 1
 			if #checked > 0 then
 				complain(

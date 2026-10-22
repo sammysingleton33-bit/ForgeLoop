@@ -361,7 +361,7 @@ Rules under test (headless: `games/game-001/tests/experience/RulerCamera.spec.lu
 | Rule | Value |
 |---|---|
 | Glide | about 0.6 s in and back; reduced motion cuts; durations clamped (≤ 3 s) |
-| Framing | 30 studs from the citizen, citizen above the centre (6 studs; 12 on a phone: head at 28–30 % from the top, just under the HUD) |
+| Framing | 35 studs from the citizen at the overview's 55° field of view, citizen above the centre (5 studs; 7.5 on a phone: head at about 28–31 % from the top, just under the HUD). Until the D-059 framing change it was 30 studs at 70° (6 and 12 studs) |
 | Facing | in front of the citizen's face: the line from the citizen to your ruler, which the server turns them along (v0.4-g9e) |
 | Following | none once the citizen is released; without a ruler character, one turn within 1.5 s and 2 studs at most |
 | Restore | the saved overview focus, rotation and zoom |
@@ -402,6 +402,7 @@ Pass: steps 1–9 hold. Record a short video of steps 1, 2 and 7 (FL-0100's Stud
 History:
 - 2026-10-13 FORGE-04: written (FL-0100 (1/2)), from the camera handoff's rows; released citizens, walk mode mid-conversation and zoom during a conversation added (FORGE-05's B14 review).
 - 2026-10-15 FORGE-04: operator probes E10a/E10b; E10a also measures against the ruler direction (FORGE-05).
+- 2026-10-19 FORGE-04: framing for the overview's new 55° field of view (D-059): 35 studs, offsets 5 and 7.5 (it was 30, 6 and 12 at 70°).
 
 ## E11 — Back key (FL-0053, game-001)
 
@@ -548,13 +549,22 @@ Steps
 4. (Needs FL-0125.) Watch a building being destroyed: dust cloud and debris. When a whole kingdom falls, at most six collapse at once, with one crash. Screenshot **E15-3**.
 5. Still in Play Solo: run `fx.announce raid`, then `fx.announce siege`. Two beacons: the map centre and 40 studs from it (the stand-in keep). G goes to the keep's. `fx.announce raidOver`: the centre beacon goes, the keep's stays, G still goes to the keep. `fx.announce siegeLifted`: no beacon left. (Needs FL-0125 for a real one: in an AI war, when an enemy first hits your keep, the beacon rises over your keep.) Screenshot **E15-4**.
 6. (Needs FL-0125; two players, or let an AI conquer you.) When your keep falls: "Your keep has fallen", then the camera moves to a battle or a standing keep. Cycle with `.` and `,` (R1 / L1). At Results the camera is yours again.
+7. Building damage (FL-0143, FORGE-02's FL-0128 war kit). In a siege, or an AI war from the air, a damaged keep, wall, gate or house shows its damage as its HP falls:
+   - a quarter of its HP gone: a breach, a crack and chipped stone, and a bite out of the merlons or the roof;
+   - half gone: more of them, and rubble at the foot;
+   - three quarters gone: a corner collapses, and a gate keeps one broken leaf.
 
-Pass: steps 1 and 5 hold (2–4 and 6 when FL-0125 is on the build). Copy every red line from Output.
+   Repaired or rebuilt, it looks as built again. Without a siege, in Play Solo, test it from the command bar (client): pick a building model under `Workspace.ForgeKingdoms.<kingdom>.Buildings` and set its `Hp` attribute to a tenth of its `MaxHp`. Within half a second its `Damage` attribute and the marks follow. Note that WorldView may set `Hp` back on its next update. Screenshot **E15-5**, damaged and whole side by side from the aerial camera.
+
+   Do it again on a building that faces another way, and on one you have just moved (edit mode's Move, G13.9). The marks and the collapse sit on the building's own walls, the same as on an unturned one. Nothing is left on the ground where a moved building stood. This needs FORGE-02's `Kit/Damage` fix for turned and moved buildings (FORGE-00's g11l notes).
+
+Pass: steps 1, 5 and 7 hold (2–4 and 6 when FL-0125 is on the build). Copy every red line from Output.
 
 History:
 - 2026-10-18 FORGE-04: written (FL-0130 part 2).
 - 2026-10-18 FORGE-04: spectating never starts during Results or Lobby (FORGE-07's #189 M1); the two-keeps-in-one-batch limit noted (FORGE-07 on #183).
 - 2026-10-19 FORGE-04: the siege beacon on your keep, ahead of a raid (step 5; FORGE-00's FL-0130 close-out).
+- 2026-10-19 FORGE-04: building damage states (step 7; FL-0143). A turned and a moved building are checked too, and "a corner" replaces the kit's stale "front-right corner" (FORGE-00's g11l notes).
 
 ## E16 — Duel controls: keyboard and mouse, gamepad, touch (FL-0075, game-001)
 
@@ -683,16 +693,84 @@ The two stands fill with each duellist's kingdom (Stand A for side a), as many a
 Needs:
 - FORGE-02's CrownArena model in the world (FL-0072, `Workspace.World.Arena.CrownArena`, on `main`).
 - Steps 1–4: nothing else. They use E17's crowd preview (`ForgeCrowdPreview`), which runs the real path.
-- Step 5: FORGE-01's arena (FL-0071: `Arena.State`). Until FORGE-01 sends each duellist's `citizens` count in Arena.State, every stand counts as full (60 figures before its tier's fill). Write which you saw.
+- Step 5: a real duel. FL-0071 is on main and the arena is on (#254), so this needs only a match that reaches the arena. Each duellist's `citizens` count arrives with the arena state (#241). A stand whose count is missing counts as full (60 figures before its tier's fill). Write which you saw.
 
 Steps
 1. Play Solo. Fly the camera to the arena, east of the watchtower. Run `game.Players:GetPlayers()[1]:SetAttribute("ForgeCrowdPreview", "adoring,hostile")`. Within a second, Stand A (at the arena's -Z side) fills with 60 red figures, and Stand B with 30 blue ones (hostile: half the seats stay empty). The front rows fill first, from the middle out, so the camera side of each stand is the fullest. Every figure stands on a seat plank, faces the ring and is not inside a wall or another figure. Screenshot **E20-1** from the aerial camera, **E20-2** from the ground at a gate.
 2. During the preview: on "(The crowd roars)" the whole red stand bobs for about 1.5 s; on "(The stand turns its back)" the blue stand turns round for about 3 s, then faces the ring again. On a boo or a gasp the stand sinks a little (0.35 studs: note if the figures visibly sink into the planks; FORGE-07 #237 L3). After each reaction every figure is back on its seat (look for one floating or turned the wrong way).
 3. Run `""`: the preview stops and both stands empty (`Workspace.ForgeCrowdFigures` is gone). Run `"hostile,adoring"`: the stands refill the other way round.
 4. Performance: with both stands full (`"adoring,adoring"`), watch the frame rate for 30 s in the Microprofiler or the Stats overlay. Note any drop compared to an empty arena. The stands add at most 120 figures × 4 parts, built 24 figures a step over 5 steps (about a third of a second), so filling a stand should show no single long frame: note the worst frame time while the stands fill, and while they bob (FORGE-00's B22 note). Then Settings → Effects quality "Reduced" and run the preview again: each stand seats half as many. With Reduced motion on, the stands no longer bob on a roar or a cheer, but they still sink on a boo and turn their backs on turnBack. Repeat with the in-game toggle off and the platform's Reduce Motion on (Windows: Settings → Accessibility → Visual effects → Animation effects off; it reaches `GuiService.ReducedMotionEnabled`): the stands must not bob either (FORGE-07 #237 M2).
-5. (Needs FL-0071.) In a real duel the stands fill when the intro starts and empty at Results. If the arena is far from where you stand (streaming), the stands fill as soon as the arena streams in, not later (FORGE-07 #237 M1). Join (or reset your character and rejoin) while a duel is already running: the stands still fill, and you hear and read the crowd (the clients ask `Arena.GetState` on start).
+5. In a real duel the stands fill when the intro starts and empty at Results. If the arena is far from where you stand (streaming), the stands fill as soon as the arena streams in, not later (FORGE-07 #237 M1). Then a mid-duel join: a fresh client must join while the duel runs. Resetting a character is not enough, because it may not restart the client's controllers. Studio's Test buttons fix the number of clients before the start, so use one of these routes and write which one you used:
+   - `StudioTestService`. Its API reference says it can add a player to a running test session; the exact method was not checked here, so look it up on the reference page. Start Test → Clients and Servers with 2 players, let a duel start, then add a third player.
+   - A second Roblox account joining a private server after the duel has started. Only if the owner allows publishing a test place.
 
-Pass: steps 1–4 hold (5 when FL-0071 is on the build). Copy every red line from Output.
+   On the new client:
+   - the stands fill within about a second, one batch a step, with no long frame (Microprofiler);
+   - you hear and read the crowd;
+   - the arena music plays and the camera shows the ring (CrowdStage, FORGE-00's g11k note).
+   On that client, DuelController is the only one that asks `Arena.GetState`, once at start. The crowd and the stage read its answer, because the server pushes no `Arena.State` during the duel.
+
+Pass: steps 1–5 hold. Copy every red line from Output.
 
 History:
 - 2026-10-19 FORGE-04: written (FL-0074 part 2c; G12.6, FORGE-02's FL-0072 handoff).
+- 2026-10-19 FORGE-04: step 5 after FORGE-00's g11k notes: FL-0071 is met, DuelController is the only asker, the mid-duel join is a real rejoin, and it checks the stage's music and ring shot.
+
+## E21 — The champions move with their actions (FL-0141, game-001)
+
+Every client poses both duel champions from the duel's events: light and heavy swings, the held guard, parry, dodge, a flinch when hit, a stagger, and the end (the loser kneels, the winner raises the weapon). The poses are self-made, written to the joints in code (no animation assets). They are laid over your avatar's own animation, so your legs keep walking under an upper-body swing.
+
+Needs:
+- Steps 1–3: nothing. They use the Studio preview (`ForgeDuelPreview`) on your own character.
+- Step 4: a match that reaches the arena, with you as a champion against an AI. Your body animates now. The AI's body needs FORGE-01's FL-0140 (an AI figure tagged `ArenaChampion`); write whether it was there.
+- Step 5: two players (Test → Clients and Servers, 2 players, plus a third client to watch if you can).
+- A held weapon needs FL-0140 (`Kit.weapon`). Before it, judge the arms and the hand; with a Tool equipped, judge the weapon too.
+
+Steps
+1. Play Solo. In the command bar (client): `game.Players.LocalPlayer:SetAttribute("ForgeDuelPreview", "swordShield")`. Output prints one line: `FeedbackDuelController: champion a is a r15 rig, 8 Motor6D joints` (or r6, or AnimationConstraint joints). Copy it. Over about 11 seconds your character then plays, in order:
+   - a light swing;
+   - a heavy wind-up (both arms high for about 0.8 s), then a chop;
+   - a raised guard that jolts once;
+   - a parry: a sweep across, then a flick out;
+   - two dodges, left then right;
+   - a small flinch, then a big one;
+   - a stagger: a stumble back;
+   - a KO: down on both knees, slumped.
+
+   Watch it from the aerial camera, then close up. Each action must be visible and different from the others. The arms and the upper body move, and nothing bends inside out or sinks into the ground. Screenshot **E21-1** (the heavy wind-up), **E21-2** (the guard) and **E21-3** (the KO).
+2. Run the preview again and walk with WASD while it plays. Your legs keep walking under the swings, the guard and the parry. The legs are posed only in a dodge, a flinch, the stagger and the KO. Run it with `"greatsword"`, `"spear"` and `"mace"` too: the greatsword uses both arms, and with a spear the arm thrusts straight forward.
+3. Settings → Reduced motion on, then run the preview again. Every pose still plays, but the stagger does not wobble and the ready stance does not breathe. Then run `""`: within a fraction of a second your character is back on its own animation, with no arm or leg left bent.
+4. A real duel against an AI. From the arena camera and from the aerial view, each action of yours shows on your body:
+   - light, heavy, block (hold the key), parry and dodge;
+   - a flinch when the AI hits you;
+   - at the end, the loser kneels and the winner raises the weapon.
+
+   Your own presses show on your body at once, with no wait for the server. A press the server refuses stops within half a second: try a heavy with an empty stamina bar. The guard stays up exactly while you hold the key. The opponent's light, block and dodge show up to about 0.2 s plus ping late, because they come from the duel's state every 0.2 s; their heavies, hits, parries and staggers come with their own events. With FL-0140, the AI's body moves too.
+5. Two players: each client sees both champions animate, and so does a watching third client. Join a client mid-duel (the route in E20 step 5): its champions animate from the next action.
+6. On a phone (Device emulator, a phone, landscape) at the arena camera: every action reads. Note any that does not.
+7. Performance: open the Microprofiler during a fast exchange. There must be no spike when actions arrive: the work is a few joints per champion per frame.
+8. After the crowning and Results, both bodies are back to normal: nothing frozen, no one left kneeling.
+
+Pass: steps 1–3 hold; 4–8 when a duel runs (4 with the AI body once FL-0140 lands). Copy every red line from Output.
+
+History:
+- 2026-10-19 FORGE-04: written (FL-0141; G12.4 Arena.Events, G12.6).
+
+## E22 — The default aerial framing (D-059, FL-0145, game-001)
+
+The owner's B22 review found citizens barely recognisable from the start view. At zoom 120 and a 70° field of view, a citizen stood about 2 % of the screen's height: about 23 px at 1080p and 8 pt on a phone. The overview now starts at **zoom 70** with a **55° field of view** (pitch 42.5°), so a citizen stands about 6 %. The view is centred on the **yard 40 studs in front of your throne**, not the throne itself, so the village and its people fill the middle rather than the keep's roof. The zoom limits (40–220) and the player's own zoom are unchanged. Walk mode and the duel keep Roblox's 70°. The conversation shot and the arena intro shots were re-tuned so they frame what they did.
+
+Needs: nothing (Play Solo). FORGE-02's FL-0145 pass 1 changes the look at the same time; judge the framing (how big and readable things are), not the art.
+
+Steps
+1. Play Solo on a desktop window (about 1920×1080). At spawn the aerial view is centred on the yard in front of your keep, with the keep at the edge of the picture. Citizens are clearly people: you can tell head, body and what they carry. Screenshot **E22-1**, and compare it with your B22 screenshot from the same spot.
+2. Device emulator, a phone in landscape (for example 750×311, or the smallest phone you have). Repeat step 1. Citizens are small but readable, and tapping one is easy. Screenshot **E22-2**.
+3. Zoom all the way out with the wheel or a pinch: it still goes as far as before (220 studs), and the whole kingdom fits. Zoom all the way in: it still stops at 40.
+4. Press V for walk mode. The view looks like Roblox's normal third-person camera, with no narrow "tunnel" feel. Press V again: the aerial view comes back with no jump.
+5. On the phone, open a conversation with a citizen. The camera glides in, and the citizen's head sits just under the HUD with the portrait below (E10's framing row).
+6. If an arena runs (B22.1): the intro pass frames each stand and then the ring, as in E18 step 1, with nothing important cut off at the edges.
+
+Pass: steps 1–5 hold (6 when an arena runs). Write what you think of the closer start view: too close, right, or still too far.
+
+History:
+- 2026-10-19 FORGE-04: written (D-059; FORGE-00 approved the zoom 70 / 55° framing and the yard focus).

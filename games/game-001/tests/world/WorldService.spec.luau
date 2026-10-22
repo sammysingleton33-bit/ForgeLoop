@@ -407,7 +407,10 @@ describe("Dressing density knob (D-047)", function()
 			env.mock:advance(30)
 			expect(svc.stats.error).toBeNil()
 			expect(svc.stats.props).toBe(615)
-			expect(svc.stats.parts - svc.stats.arenaParts).toBe(8271) -- the dressing; the arena is counted apart (8309 on main with the outposts; the arena keep-out re-seats decor)
+			-- the dressing, the arena counted apart: 8,271 props and nodes as drawn before FL-0136 phase 3 (8,309 on main with the outposts; the arena keep-out
+			-- re-seats decor) + 76 = the resource markers, 2 parts on each of the 38 nodes (tests/world/KitNodeMarker.spec). The placements themselves
+			-- are unchanged (the fingerprints above); with the imported meshes the world also gets the mesh-only dressing (KitEnvDressing.spec).
+			expect(svc.stats.parts - svc.stats.arenaParts).toBe(8347)
 			-- the terrain too: every forest floor is today's disc (the stand's centre, 1.05 x its radius)
 			local forests = Layout.features.forests
 			local floorOps = 0

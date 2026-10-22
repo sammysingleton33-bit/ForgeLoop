@@ -134,6 +134,146 @@ describe("Contracts/Loader", function()
 		end)
 	end)
 
+	describe("isolate (the client; FORGE-00 2026-10-19, interfaces §3 migration note)", function()
+		local function errorLogs(env)
+			local out = {}
+			for _, entry in env.mock.logs do
+				if entry.level == "error" then
+					table.insert(out, entry.message)
+				end
+			end
+			return out
+		end
+
+		it("a new() that throws is logged by name and the others still construct and start", function()
+			local log = {}
+			local env = MockEnv.new()
+			local registry = Loader.load(env, {
+				def(log, "Aaa"),
+				{
+					name = "Bad",
+					new = function()
+						error("boom")
+					end,
+				},
+				def(log, "Ccc"),
+			}, { isolate = true })
+			expect(registry.order).toEqual({ "Aaa", "Ccc" })
+			expect(log).toEqual({ "new Aaa", "new Ccc", "start Aaa", "start Ccc" })
+			expect(registry.failed.Bad).toContain("Bad.new() failed")
+			expect(registry.failed.Bad).toContain("boom")
+			expect(#errorLogs(env)).toBe(1)
+			expect(errorLogs(env)[1]).toContain("Bad.new() failed")
+			expect(registry:find("Bad")).toBeNil()
+		end)
+
+		it("a dependent of a failed definition is skipped with its own error line, never built", function()
+			local log = {}
+			local env = MockEnv.new()
+			local registry = Loader.load(env, {
+				{
+					name = "Bad",
+					new = function()
+						return nil
+					end,
+				},
+				def(log, "Needs", { "Bad" }),
+				def(log, "Later", { "Needs" }),
+				def(log, "Free"),
+			}, { isolate = true })
+			expect(registry.order).toEqual({ "Free" })
+			expect(log).toEqual({ "new Free", "start Free" })
+			expect(registry.failed.Bad).toContain("returned nil")
+			expect(registry.failed.Needs).toBe("Loader: Needs skipped: dependency Bad failed")
+			expect(registry.failed.Later).toBe("Loader: Later skipped: dependency Needs failed")
+			expect(#errorLogs(env)).toBe(3)
+		end)
+
+		it("a start() that throws is logged and the later starts still run; its dependents are not started", function()
+			local log = {}
+			local env = MockEnv.new()
+			local registry = Loader.load(env, {
+				def(log, "Aaa", nil, {
+					onStart = function()
+						error("start boom")
+					end,
+				}),
+				def(log, "Bbb", { "Aaa" }),
+				def(log, "Ccc"),
+			}, { isolate = true })
+			expect(registry.order).toEqual({ "Aaa", "Bbb", "Ccc" }) -- all constructed
+			expect(log).toEqual({ "new Aaa", "new Bbb", "new Ccc", "start Aaa", "start Ccc" })
+			expect(registry.failed.Aaa).toContain("Aaa:start() failed")
+			expect(registry.failed.Bbb).toBe("Loader: Bbb skipped: dependency Aaa failed")
+			expect(registry.failed.Ccc).toBeNil()
+			expect(#errorLogs(env)).toBe(2)
+		end)
+
+		it("a new() that yields counts as a failure for that definition only", function()
+			local log = {}
+			local env = MockEnv.new()
+			local registry = Loader.load(env, {
+				{
+					name = "Sleepy",
+					new = function()
+						coroutine.yield()
+						return {}
+					end,
+				},
+				def(log, "Zzz"),
+			}, { isolate = true })
+			expect(registry.order).toEqual({ "Zzz" })
+			expect(registry.failed.Sleepy).toContain("yielded")
+		end)
+
+		it("without the option one failure still stops the boot (the server), and nothing is logged", function()
+			local env = MockEnv.new()
+			expect(function()
+				Loader.load(env, {
+					{
+						name = "Bad",
+						new = function()
+							error("boom")
+						end,
+					},
+				})
+			end).toThrow("Bad.new() failed")
+			expect(#errorLogs(env)).toBe(0)
+		end)
+
+		it("boot passes the option through", function()
+			local env = MockEnv.new()
+			local registry = Loader.boot(env, nil, nil, { isolate = true })
+			expect(registry.order).toEqual({})
+			expect(registry.failed).toEqual({})
+		end)
+
+		it(
+			"loadClient and bootClient isolate (CLIENT_OPTIONS), and a failed name is absent to find and an error to get",
+			function()
+				local log = {}
+				local env = MockEnv.new()
+				expect(Loader.CLIENT_OPTIONS).toEqual({ isolate = true })
+				local registry = Loader.loadClient(env, {
+					def(log, "Aaa", nil, {
+						onStart = function()
+							error("start boom")
+						end,
+					}),
+					def(log, "Zzz"),
+				})
+				expect(registry.order).toEqual({ "Aaa", "Zzz" })
+				expect(registry.failed.Aaa).toContain("Aaa:start() failed")
+				expect(registry:find("Aaa")).toBeNil()
+				expect(registry:find("Zzz")).toBeTruthy()
+				expect(function()
+					registry:get("Aaa")
+				end).toThrow("failed to boot")
+				expect(Loader.bootClient(env, nil).failed).toEqual({})
+			end
+		)
+	end)
+
 	describe("registry", function()
 		it("get() returns declared dependencies during new() and errors for missing services", function()
 			local seen
@@ -316,6 +456,40 @@ describe("Contracts/Loader", function()
 			})
 			expect(Loader.boot(MockEnv.new(), nil, req).order).toEqual({})
 		end)
+
+		it(
+			"bootClient isolates exactly as Main.client boots: one controller throwing in start() is logged, the rest start",
+			function()
+				-- FORGE-07 M1 on #283: this is the only case that boots through bootClient with something to fail; it fails
+				-- when bootClient stops forwarding CLIENT_OPTIONS (the boot would abort on A).
+				local log = {}
+				local env = MockEnv.new()
+				local registry = Loader.bootClient(env, folderWith({ "A", "B" }), function(module)
+					if module.Name == "A" then
+						return def(log, "A", nil, {
+							onStart = function()
+								error("A start boom")
+							end,
+						})
+					end
+					return def(log, module.Name)
+				end)
+				expect(registry.order).toEqual({ "A", "B" })
+				expect(log).toEqual({ "new A", "new B", "start A", "start B" })
+				expect(registry.failed.A).toContain("A:start() failed")
+				expect(registry:find("A")).toBeNil()
+				expect(registry:find("B")).toBeTruthy()
+				expect(function()
+					Loader.boot(MockEnv.new(), folderWith({ "A" }), function()
+						return def({}, "A", nil, {
+							onStart = function()
+								error("A start boom")
+							end,
+						})
+					end)
+				end).toThrow("A:start() failed") -- the server path: the same failure stops the boot
+			end
+		)
 
 		it("rejects a module whose definition name differs from the module name", function()
 			expect(function()

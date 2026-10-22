@@ -11,19 +11,24 @@
 	    and its MeshParts at the data's bbox_center (relative to that pivot). Anything else in the clone is deleted: scripts,
 	    SurfaceAppearance, Decals, Welds, nested Models and Folders (the MeshParts are lifted out first), non-mesh parts,
 	    attributes and tags. Nothing in an imported Model can run, load or carry state.
-	  * physics as the stand-ins: Root and MeshParts are Anchored, CanTouch false, Massless, MeshParts CanCollide false with
-	    a Hull collision shape (raycasts), Root invisible. What the part-built props block (trunks, rocks, bushes, low
-	    parts: WorldService.decorate lets only parts above COLLIDE_HEIGHT through) is an invisible solid Collider Part from the
-	    data (`collider`, else a family default: trees a trunk, rocks and haystacks their footprint, bushes a core, fences
-	    their length; flowers and crops block nothing), at most SOLID_HEIGHT (7, = WorldService.COLLIDE_HEIGHT) tall.
+	  * physics as the stand-ins: Root and MeshParts are Anchored, CanTouch false, Massless, MeshParts CanCollide false and CanQuery
+	    true (so selection and placement raycasts hit their shape; the shape is the Body's CollisionFidelity, which the Studio import
+	    sets to Hull in the open place and which a game script cannot manipulate; the API dump lists it as not saved, so a saved or
+	    built place is expected, unverified, to have Default, the precise shape: a cost in physics memory, not a behaviour), Root invisible. What
+	    the part-built props block (trunks, rocks, bushes, low parts: WorldService.decorate lets only parts above
+	    COLLIDE_HEIGHT through) is an invisible solid Collider Part from the
+	    data (`collider`, used as given, else a family default: trees a trunk, rocks and haystacks 80 % of each footprint axis,
+	    bushes 60 % of each axis, fences their length; flowers and crops block nothing); the defaults are at most SOLID_HEIGHT
+	    (7, = WorldService.COLLIDE_HEIGHT) tall, a data collider over 7 is only warned about by the converter.
 	  * SIZE SANITY: the MeshParts' bounding box in the pivot frame must match the data's size (per axis within
 	    max(0.1, 0.5 %)) and centre (0.25). A Model that does not (a wrong import scale or axes, a moved pivot, a mesh gone)
 	    is rejected: Kit.prop builds the stand-in instead, and the reason is logged ONCE per asset id (never an error).
-	Ids the data does not list pass through Kit.prop exactly as before (a Model in the folder is cloned as is).
+	Ids the data does not list pass through Kit.prop unchanged (a Model in the folder is cloned as is, nothing is checked).
 
 	API
 		EnvMesh.accept(assetId, clone) -> (Model?, string?)   -- the clone made ready, or nil + why (the caller builds the stand-in)
 		EnvMesh.has(assetId) -> boolean                       -- the data lists this id
+		EnvMesh.ready(assetId, source) -> boolean             -- Kit.prop would build the mesh for this id from `source` (silent; the mesh-only dressing asks)
 		EnvMesh.find(source, assetId) -> Instance?            -- source[assetId] or source.EnvKit[assetId]
 		EnvMesh.measure(model) -> (center: Vector3, size: Vector3)?   -- MeshPart bounds in the pivot frame
 		EnvMesh.status() -> { props, accepted, rejected: { [id]: why } }
@@ -45,8 +50,8 @@ EnvMesh.REL_TOLERANCE = 0.005
 EnvMesh.CENTER_TOLERANCE = 0.25
 EnvMesh.SOLID_HEIGHT = 7 -- WorldService.COLLIDE_HEIGHT: only parts below it block movement
 EnvMesh.FAMILIES = table.freeze({ "tree", "bush", "rock", "flower", "crop", "haystack", "fence" })
--- Triangles per prop (the contract's: trees 300-900, bushes/rocks/flowers 40-400; crops, haystacks and fences are FORGE-02's
--- proposal, the contract is silent). The specs and env_to_luau.py read these and nothing else (--print-budget).
+-- Triangles per prop (D-057 (19): trees 300-900, bushes/rocks/flowers 40-400; crops, haystacks and fences are FORGE-02's
+-- proposal, the decision is silent). The specs and env_to_luau.py read these and nothing else (--print-budget).
 EnvMesh.BUDGET = table.freeze({
 	tree = table.freeze({ min = 300, max = 900 }),
 	bush = table.freeze({ min = 40, max = 400 }),
@@ -194,7 +199,7 @@ end
 local function prepare(assetId: string, def: any, model: Model): (Model?, string?)
 	local root = model.PrimaryPart
 	if root == nil or root:IsA("MeshPart") or not root:IsA("BasePart") then
-		return nil, "its PrimaryPart is not an invisible Root Part"
+		return nil, "it has no PrimaryPart that is a plain Part (the Root)"
 	end
 	if not (isVec3(def.size) and isVec3(def.bbox_center)) then
 		return nil, "the data has no size or bbox_center"
@@ -287,8 +292,10 @@ local function prepare(assetId: string, def: any, model: Model): (Model?, string
 		mesh.Reflectance = 0
 		mesh.Material = Enum.Material.SmoothPlastic
 		mesh.Color = Color3.new(1, 1, 1) -- the colours are baked into the mesh (tint "fixed")
-		-- CollisionFidelity is not set here: a game script cannot write it (Plugin security). The Studio import sets Hull on every
-		-- Body (blender/studio/import_env_kit.luau) and the saved Forge.Assets Model carries it.
+		-- CollisionFidelity is not set here: scripts cannot manipulate it at runtime (API reference) and the API dump lists it as not
+		-- saved and not replicated. The Studio import sets Hull on every Body (blender/studio/import_env_kit.luau) in the open place; a saved
+		-- or built place is expected (unverified) to have Default. Nothing here sets or reads it, but the Body is CanQuery true, so selection
+		-- and placement raycasts hit whichever shape it has (Default = precise, a cost in physics memory; the owner reads it in Render Stats).
 	end
 	local box = colliderOf(def)
 	if box then
@@ -311,17 +318,52 @@ local function prepare(assetId: string, def: any, model: Model): (Model?, string
 	return model, nil
 end
 
-local function log(assetId: string, why: string)
+local function log(assetId: string, why: string, consequence: string?)
 	if logged[assetId] then
 		return
 	end
 	logged[assetId] = true
-	local message = `Kit.prop: the imported {assetId} is not used ({why}); building the stand-in`
+	local message = `Kit.prop: the imported {assetId} is not used ({why}); {consequence or "building the stand-in"}`
 	if logger then
 		logger(message)
 	elseif type(warn :: any) == "function" then
 		warn(message)
 	end
+end
+
+-- Would Kit.prop(assetId) build the imported mesh from `source` (a Model for the id that passes the checks against the data)?
+-- Used by the world's mesh-only dressing (WorldService: fences, cabbage variants) so a world without the imported kit stays exactly
+-- the part-built one. An id that is not imported (not in the data, or no Model of that name) is simply not ready: silent, nothing
+-- counted. An id that IS imported but does not pass the checks (a wrong size, no mesh, a template that cannot be cloned) is recorded in
+-- status().rejected and logged once, like Kit.prop does for a prop: otherwise a bad fence or cabbage would pass the import page's
+-- `rejected` check and the dressing would quietly not appear. `accepted` is never changed by asking.
+function EnvMesh.ready(assetId: string, source: Instance?): boolean
+	local def = propsOf(activeData())[assetId]
+	if type(def) ~= "table" then
+		return false
+	end
+	local found = EnvMesh.find(source, assetId)
+	if found == nil then
+		return false
+	end
+	local function reject(reason: string): boolean
+		rejected[assetId] = reason
+		log(assetId, reason, "its dressing is not placed")
+		return false
+	end
+	if not found:IsA("Model") then
+		return reject(`it is a {found.ClassName}, not a Model`)
+	end
+	local clone = found:Clone()
+	if clone == nil then -- the template is not Archivable: it clones to nil
+		return reject("the template cannot be cloned (Archivable is false)")
+	end
+	local ok, model, why = pcall(prepare, assetId, def, clone :: Model)
+	clone:Destroy()
+	if ok and model ~= nil then
+		return true
+	end
+	return reject(if ok then tostring(why) else `error: {tostring(model)}`)
 end
 
 function EnvMesh.accept(assetId: string, clone: Model?): (Model?, string?)

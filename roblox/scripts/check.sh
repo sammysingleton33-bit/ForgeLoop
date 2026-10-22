@@ -28,14 +28,16 @@ GAME_PROJECTS=("game-001:games/game-001/default.project.json:games/game-001/test
 LOG_DIR="$(mktemp -d)"
 trap 'rm -rf "$LOG_DIR"' EXIT
 LUAU_DIRS=(roblox/src roblox/tests roblox/scripts games)
-EXPECTED_STEPS=$((6 + 3 * ${#GAME_PROJECTS[@]})) # 6 framework steps + (specs, build, place check) per game
+EXPECTED_STEPS=$((7 + 3 * ${#GAME_PROJECTS[@]})) # 7 framework steps + (specs, build, place check) per game
 STEP_TIMEOUT=600 # seconds per Lune step (coreutils `timeout`, when installed): a hung spec cannot stall CI
 # spec folders that run as several Lune steps (run.luau --shard i/n), each under STEP_TIMEOUT:
 # "<game id>/<folder>:<n>". game-001's sim/ took 572 s alone locally on 2026-10-15 (limit 600); its 49 files
 # summed 584 s one by one on 2026-10-18 (ConversationService 138 s, ConsequenceService 113 s, MatchKingdomServices
 # 79 s), which the every-n-th split puts at 424 + 160 s with 2 shards and 253 + 109 + 221 s with 3. game-001's
-# world/ took 565 s of 600 on 2026-10-19 (gate 7: #217 arena venue, #226 citizen mesh kit), so it runs as 2 shards too.
-SHARDS=("game-001/sim:3" "game-001/world:2")
+# world/ took 565 s of 600 on 2026-10-19 (gate 7: #217 arena venue, #226 citizen mesh kit), so it runs as 2 shards too;
+# with FORGE-02's war kit (#260: KitWarKit, KitCeiling, KitDamage) world shard 1/2 took 678 s run alone, so 3 shards;
+# gate 8n (+#268) put world#2/3 at 496 s, past FORGE-00's 480 s split line (KitEmblems alone ~176 s), so 4.
+SHARDS=("game-001/sim:3" "game-001/world:4")
 # sub-folders that run as their own Lune step and are left out of their parent folder's step(s) (run.luau
 # --exclude): "<game id>/<folder>/<sub>". game-001's sim/long holds the real-length full-match spec (FL-0125).
 SPLITS=("game-001/sim/long")
@@ -143,6 +145,18 @@ if command -v stylua >/dev/null 2>&1; then
 	fi
 else
 	record "stylua" "FAIL" "stylua not found"
+fi
+
+# ---------------------------------------------------------------- plugin-only property writes
+# Game code may not write Plugin-security properties (MeshPart.CollisionFidelity, MeshId, ...): Roblox refuses
+# the write in a live game, a pcall hides it, and Lune lets it through, so no spec can see it (2026-10-19).
+if command -v lune >/dev/null 2>&1; then
+	run_step "plugin props" "$LOG_DIR/plugin-props.log" with_timeout lune run roblox/scripts/check_plugin_props.luau
+	code=$?
+	summary="$(grep -E '^plugin props:' "$LOG_DIR/plugin-props.log" | tail -1 | sed -E 's/^plugin props: ((PASS|FAIL) — )?//')"
+	if [[ $code == 0 ]]; then record "plugin props" "PASS" "$summary"; else record "plugin props" "FAIL" "$summary"; fi
+else
+	record "plugin props" "FAIL" "lune not found"
 fi
 
 # ---------------------------------------------------------------- Rojo build

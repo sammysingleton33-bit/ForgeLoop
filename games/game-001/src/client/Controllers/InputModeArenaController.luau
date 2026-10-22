@@ -49,6 +49,9 @@
 	API
 		controller.active: boolean                    -- arena mode is on (ours)
 		controller.changed: Signal<(active: boolean)>
+		controller.sent: Signal<(action: string)>    -- each action DuelController:act() sent (blockEnd too,
+		                                              -- retries included): FeedbackDuelController plays the
+		                                              -- local champion's press at once (FL-0141)
 		controller:onArenaState(state)                -- Arena.State
 		controller:onPhase(phase)                     -- Match.State
 		controller:press(action, down, source?) -> boolean   -- every key, pad and touch button calls it;
@@ -183,6 +186,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_small = false, -- the touch buttons' layout while they show
 		active = false,
 		changed = Signal.new(),
+		sent = Signal.new(),
 	}, Controller)
 end
 
@@ -280,6 +284,7 @@ function Controller:destroy()
 	end
 	table.clear(self._connections)
 	self.changed:disconnectAll()
+	self.sent:disconnectAll()
 end
 
 function Controller:_userId(): number?
@@ -378,6 +383,9 @@ function Controller:_send(action: string): (boolean, boolean)
 			{ error = tostring(result) }
 		)
 		return false, false
+	end
+	if result == true then
+		self.sent:fire(action)
 	end
 	return result == true, result ~= true
 end

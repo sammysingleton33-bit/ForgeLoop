@@ -231,17 +231,27 @@ describe("Env.live() against a fake game", function()
 		end).toThrow("server-only")
 	end)
 
-	it("log() formats fields, uses print for info and warn for warn/error, rejects unknown levels", function()
-		local loader, record = fakeWorld({ isServer = true, jobId = "j" })
-		local env = loader:requireFile(T.root .. ENV_FILE).live()
-		env.log("info", "hello", { b = 2, a = "x" })
-		env.log("error", "bad")
-		expect(record.printed).toEqual({ "[Forge] info hello a=x b=2" })
-		expect(record.warned).toEqual({ "[Forge] error bad" })
-		expect(function()
-			env.log("debug" :: any, "nope")
-		end).toThrow("unknown level")
-	end)
+	it(
+		"log() formats fields: print for info, warn for warn, a red line (task.spawn(error)) for error; rejects unknown levels",
+		function()
+			local loader, record = fakeWorld({ isServer = true, jobId = "j" })
+			local env = loader:requireFile(T.root .. ENV_FILE).live()
+			env.log("info", "hello", { b = 2, a = "x" })
+			env.log("warn", "careful")
+			-- the fake task.spawn runs its function at once, so the red line surfaces here as the thrown error
+			-- (FORGE-07 L3 on #283: errors printed yellow through warn before)
+			local spawnedBefore = record.spawned
+			expect(function()
+				env.log("error", "bad")
+			end).toThrow("[Forge] error bad")
+			expect(record.spawned).toBe(spawnedBefore + 1)
+			expect(record.printed).toEqual({ "[Forge] info hello a=x b=2" })
+			expect(record.warned).toEqual({ "[Forge] warn careful" })
+			expect(function()
+				env.log("debug" :: any, "nope")
+			end).toThrow("unknown level")
+		end
+	)
 
 	it("sharedModules(fileName) requires that module from every area folder, keyed by area", function()
 		local loader = fakeWorld({ isServer = true, jobId = "j" })

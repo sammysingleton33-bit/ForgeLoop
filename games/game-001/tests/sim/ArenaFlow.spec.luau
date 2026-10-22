@@ -108,6 +108,103 @@ describe("ArenaFlow: champions", function()
 		expect(flow:state().a.userId).toBe(3) -- two votes beat leadership 99
 	end)
 
+	it("shows the vote stage: who may be voted for and who has voted, never for whom", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 3, 1, 2 }, azure = { 9, 8 } }), 0)
+		local vote = flow:state().vote
+		assert(vote, "a vote view in the vote stage")
+		expect(vote.a).toEqual({ kingdom = "crimson", candidates = { 1, 2, 3 }, voted = {} })
+		expect(vote.b).toEqual({ kingdom = "azure", candidates = { 8, 9 }, voted = {} })
+		flow:vote(2, 3)
+		flow:vote(9, 9)
+		vote = flow:state().vote
+		assert(vote, "still voting")
+		expect(vote.a.voted).toEqual({ 2 }) -- who voted, not whom: 3 is not named anywhere
+		expect(vote.b.voted).toEqual({ 9 })
+		flow:vote(2, 1) -- changing a vote changes nobody's standing in `voted`
+		expect(flow:state().vote.a.voted).toEqual({ 2 })
+		expect(flow:state().vote.a.candidates).toEqual({ 1, 2, 3 })
+	end)
+
+	it("does not show, after a leaver, who had voted for them", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1, 2, 3, 4 }, azure = { 9 } }), 0)
+		flow:vote(1, 4)
+		flow:vote(2, 4)
+		flow:vote(3, 1)
+		local before = flow:state().vote.a.voted
+		expect(before).toEqual({ 1, 2, 3 })
+		flow:forfeit(4, 1) -- the candidate leaves
+		local after = flow:state().vote.a
+		expect(after.candidates).toEqual({ 1, 2, 3 })
+		expect(after.voted).toEqual({ 1, 2, 3 }) -- 1 and 2 have still cast a ballot: nobody learns whom they chose
+	end)
+
+	it("counts a ballot cast for a leaver as spent, not as a vote for anyone else", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1, 2, 3, 4 }, azure = { 9 } }, { [2] = 5 }), 0)
+		flow:vote(1, 4)
+		flow:vote(2, 4)
+		flow:vote(3, 3)
+		flow:forfeit(4, 1)
+		flow:vote(2, 2) -- a changed mind is still accepted
+		flow:step(ArenaConfig.voteSeconds)
+		-- 3 has one vote and 2 has one vote: the tie goes to leadership (user 2 has 5)
+		expect(flow:state().a.userId).toBe(2)
+	end)
+
+	it("lists only the sides that vote, and nothing once the vote has closed", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1, 2 }, azure = { 9 } }), 0)
+		local vote = flow:state().vote
+		assert(vote, "a vote view")
+		expect(vote.a).never.toBeNil()
+		expect(vote.b).toBeNil() -- one candidate: no vote there
+		flow:step(ArenaConfig.voteSeconds)
+		expect(flow:state().vote).toBeNil()
+		expect(ArenaFlow.new(setup({ crimson = { 1 }, azure = { 9 } }), 0):state().vote).toBeNil() -- no vote stage at all
+	end)
+
+	it("drops a ruler who leaves during the vote from the candidates and from who has voted", function()
+		local flow = ArenaFlow.new(setup({ crimson = { 1, 2, 3 }, azure = { 9 } }), 0)
+		flow:vote(2, 1)
+		flow:forfeit(2, 1)
+		local vote = flow:state().vote
+		assert(vote, "still voting")
+		expect(vote.a.candidates).toEqual({ 1, 3 })
+		expect(vote.a.voted).toEqual({})
+	end)
+
+	it("a repeat of the same vote or loadout changes nothing and bumps nothing", function()
+		local voting = ArenaFlow.new(setup({ crimson = { 1, 2 }, azure = { 9 } }), 0)
+		local rev = voting:rev()
+		voting:vote(1, 1)
+		expect(voting:rev()).toBe(rev + 1)
+		expect((voting:vote(1, 1))).toBe(true) -- still accepted
+		expect(voting:rev()).toBe(rev + 1)
+		voting:vote(1, 2) -- a changed vote changes nobody's standing in `voted`: nothing new to broadcast
+		expect(voting:rev()).toBe(rev + 1)
+		voting:vote(2, 2) -- another ruler's first ballot is news
+		expect(voting:rev()).toBe(rev + 2)
+		local flow = ArenaFlow.new(setup({ crimson = { 1 }, azure = { 2 } }), 0)
+		local before = flow:rev()
+		expect((flow:choose(1, "mace", "light", { "reforge", "fieldRemedy" }))).toBe(true)
+		expect(flow:rev()).toBe(before + 1)
+		expect((flow:choose(1, "mace", "light", { "reforge", "fieldRemedy" }))).toBe(true)
+		expect(flow:rev()).toBe(before + 1)
+		flow:choose(1, "mace", "light", { "fieldRemedy", "reforge" }) -- another order is another loadout
+		expect(flow:rev()).toBe(before + 2)
+		flow:choose(1, "spear", "light", { "fieldRemedy", "reforge" })
+		expect(flow:rev()).toBe(before + 3)
+		flow:choose(1, "spear", "heavy", { "fieldRemedy", "reforge" })
+		expect(flow:rev()).toBe(before + 4)
+		flow:choose(1, "spear", "heavy", { "fieldRemedy" })
+		expect(flow:rev()).toBe(before + 5)
+		-- the first choice counts even when it equals the defaults
+		local defaults = ArenaFlow.new(setup({ crimson = { 1 }, azure = { 2 } }), 0)
+		local start = defaults:rev()
+		local champion = defaults:champion("a")
+		defaults:choose(1, champion.weapon, champion.armour, table.clone(champion.triggers))
+		expect(defaults:rev()).toBe(start + 1)
+		expect(defaults:champion("a").chosen).toBe(true)
+	end)
+
 	it("closes the vote early once every ruler of a contested kingdom has voted", function()
 		local flow = ArenaFlow.new(setup({ crimson = { 1, 2 }, azure = { 9 } }), 0)
 		flow:vote(1, 1)

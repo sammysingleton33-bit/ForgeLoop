@@ -568,6 +568,154 @@ the lumber camp changes least (a lean-to roof, wood tones; the storehouse and th
 dark stone lowers the contrast of the dark windows and slits; Frostmere's frosted thatch reads close to white. Studio materials (Slate, ClayRoofTiles, Grass for
 moss) are unchecked.
 
+## FL-0128 — the war kit: walls, gates, war-ready tower, ram, soldier kinds, damage states (Operation Crownfall)
+Author: FORGE-02. Part-built (D-026), all kingdom-tinted through `KingdomStyle`. Renders are Blender Cycles approximations of
+the Lune part dumps (no Roblox material textures, no Future lighting). Close rows are shot front on (azimuth 0) with a narrow
+field of view and the four kingdoms on one line across the view, so every piece in a sheet has the same scale and nothing
+recedes in depth or is cropped; the 170-stud sheets use the game's camera (170 studs, 50 deg down, 70 deg field of view) at
+1:1 pixels. In the close rows the kingdoms run left to right Emberhold (crimson), Frostmere (azure), Thornwood (emerald),
+Sunspire (gold); in the damage rows Damage runs 0 / 0.3 / 0.6 / 0.9 left to right. Nothing here was seen in Studio.
+
+Images (`img/`): close, equal scale: `kit_fl0128_walls.jpg` (wall L1-3), `kit_fl0128_gates.jpg` (gate L1-3 closed and open),
+`kit_fl0128_tower_ram.jpg` (watchtower L1 and L2; the ram from the side, 3/4, thrust 1, front), `kit_fl0128_units.jpg` (soldier, knight,
+archer, front and 3/4), `kit_fl0128_damage.jpg` (wall, tower, gate, house, keep) and `kit_fl0128_damage_kingdoms.jpg` (wall and gate in
+pale Frostmere stone). At 170 studs: `kit_fl0128_damage_170.jpg` (wall, gate, tower, house, keep at 0 / 0.3 / 0.6 / 0.9),
+`kit_fl0128_towers_170.jpg` (plain L1 against war-ready L2), `kit_fl0128_walls_170.jpg` (wall L1 / L2 / L3), `kit_fl0128_gates_open_170.jpg`
+(gate L1 / L2 / L3 open), `kit_fl0128_units_170.jpg` (true scale, not enlarged: units and ram, rendered at 4K and shown 1:1 and as a
+1080p screen would show it) and `kit_fl0128_before_after_170.jpg` (what origin/main shows today, against this branch, for the walls,
+the gate, the towers and the keep, two kingdoms, same camera).
+
+Part counts (Kit.partCount, all four kingdoms): wall L1 / L2 / L3 26-30 / 36-40 / 52-60 (caps 30 / 45 / 60), gate 72-77 /
+102-113 / 120-131 (caps 90 / 120 / 150), watchtower L1 107-116 and L2 105-122 (cap 130), ram 37-42 (cap 45), soldier / knight /
+archer 11 with the crest (cap 11), damage at most 14 extra parts and none at Damage 0. All-built worst case (D-047): 26,322 of
+27,000 when this was written (WorldService 6,869 + four kingdoms 19,117 + three neutral towers 336); **26,402 on main now**: WorldService
+6,945 (+76 node-marker parts, FL-0136 phase 3) + four kingdoms 19,121 + three neutral towers 336; the line `tests/world/KitCeiling.spec.luau` prints is the number.
+
+What was built:
+- **Wall:** L1 timber palisade (the same dark timber in every kingdom), L2 crenellated stone curtain on a batter with a banner and
+  slits, L3 its own outline: end piers with slits a tier above the walkway, two stepped buttresses beside them, two wider banners, a
+  big brazier on a plinth that rests on the walkway. Footprint 32 x 8 as before.
+- **Gate:** two towers and a pointed arch whose span reaches the tower tops, arch stones flush on its face, a recessed tympanum over the
+  leaves (all three levels; at L3 it sits behind the portcullis bars), timber leaves (L1), banded leaves, tower banners and a crest (L2),
+  a portcullis and two braziers at the foot (L3), a MID-tone passage floor in every kingdom (sand or earth, never near-black). `Kit.setGateOpen` swings
+  the leaves 65 degrees into the passage (both visible, the middle clear) and raises the portcullis 7 studs into the lintel, by CFrame
+  only. Footprint 32 x 12 as before.
+- **Watchtower L2:** hoarding galleries under the parapet, arrow slits instead of arched windows, two braziers at the door.
+- **Ram:** the pale log with its iron wedge head is the silhouette, projecting 7 studs past a low open-sided pent roof in the kingdom
+  colour on four posts and four wheels; one `Motor6D "Log"`.
+- **Soldier kinds:** spear (1.3x the body's height, carried at the fist) with a hanging pennant / bulky knight, sword rising outward from the
+  fist, large kingdom-coloured shield with a flat light emblem, broad helm and a bigger crest / archer with a round head and a short curved
+  three-part bow with a string held below the chin.
+- **Damage:** a bite of merlons or roof tiles gone from 0.25, a gate leaf knocked out (and a broken leaf left standing at 0.75 and above),
+  broken stone on the front face (a shadowed recess in the wall's own stone, a hairline crack, pale stone chips round the rim: no black,
+  nothing overhanging), bigger rubble, from 0.75 the collapsed corner top (a tower cap falls whole or not at all) with a stump slab.
+  No translucent smoke.
+
+Specs (headless): `KitWarKit.spec` (levels, wall L3 outline and brazier seat, gate shape, gate poses incl. both open leaves in view and
+the raised portcullis, tower, ram shape, mutants), `KitUnitKinds.spec` (kinds, pose clearance, silhouettes, mutants), `KitDamage.spec`
+(states, real geometry loss, determinism, repair, Burning, recolour, mutants), `KitCeiling.spec`; `KitBuildings`, `KitEmblems`,
+`KitStyles`, `KitCharacter` extended for the new levels and kinds.
+
+D-019 history: round 1 (first author pass) was scored NEEDS-WORK by a fresh image-only reviewer for every family (walls 3/3/3, gates
+4/3/3, tower L2 4/3/3, ram 2/2/2, soldier kinds 3/3/3, damage 3/3/3: silhouette / variation / readability), with defects: a brazier in a
+merlon gap, a missing open leaf, portcullis bars hanging in the open gap, a floating A-frame over the gate door and a saddle span, a black
+shield disc, translucent smoke balls through roofs, jutting crack shards, a 2.5x spear beside the body and floating swords, a cannon-like
+plume, a ball on a box. This is the ONE fix round: all of the above were addressed (see the handoff and the list below); the
+coordinator runs the second fresh review. My own reading of the new sheets, not a score:
+- walls: L1 timber, L2 stone and L3 (piers, buttresses, brazier on top) separate by outline in the close rows and at 170 studs;
+- gates: open against closed reads at 170 studs (two brown leaves inside the arch, a light floor, the portcullis gone); closed L3 shows the grille;
+- ram: the pale log with a dark wedge head is the silhouette from the side, the 3/4 and the front, and at 170 studs; it still carries a
+  cannon-like reading from the side for a moment because the log is thick and its head is dark;
+- soldier kinds: knight against soldier is clear at close range (width, shield, helm, crest); at 170 studs the unit is about 25-40 pixels
+  tall and the knight's shield and width still show, the archer reads as a smaller brown figure, but the weapons do not;
+- damage: at 0.3 a wall, a gate (one leaf gone), a house (roof tiles) and a tower (the front merlons and soot) are visibly different from 0
+  at 170 studs; the keep at 0.3 is still almost identical to 0 (cracks on the donjon only);
+- weak: the sword is still a plain slab at the fist, soot streaks are plain rectangles, the ram head reads as a drill bit from some
+  angles, tower L2 against L1 at 170 studs is mostly the braziers and the gallery shadow, Thornwood's watchtower L2 has fewer parts
+  than its L1 (its hoarded roofs replace merlons).
+
+### FL-0128 defect-only round (after the second fresh review)
+Author: FORGE-02. Scope fixed by FORGE-00: defects only, no new features, no score chasing. Every image below was opened and judged by
+me; headless evidence only (Lune specs, Blender Cycles previews of Lune dumps), Studio unverified. New or changed sheets (`img/`):
+`kit_fl0128_walls.jpg`, `kit_fl0128_gates.jpg`, `kit_fl0128_units.jpg`, `kit_fl0128_damage.jpg`, `kit_fl0128_damage_kingdoms.jpg` (wall,
+gate in all four kingdoms, Frostmere tower), all close, front on, equal scale; `kit_fl0128_damage_170.jpg`, `kit_fl0128_walls_170.jpg`,
+`kit_fl0128_units_170.jpg`, and `kit_fl0128_gates_open_170.jpg` (now with the closed-against-open pair for all four kingdoms at 170 studs).
+Unchanged: `kit_fl0128_tower_ram.jpg`, `kit_fl0128_towers_170.jpg`, `kit_fl0128_before_after_170.jpg` (the tower caps look the same whole).
+
+| # | Defect | Result | What I saw |
+|---|---|---|---|
+| 1 | Gate L1/L2 closed shows grass through a triangular gap | fixed | a recessed stone tympanum fills the point of the arch in all four kingdoms; no sky (a spec samples the arch) |
+| 1 | Open gate tan-on-tan on Frostmere and Sunspire | fixed | dark earth floor on the three lighter stones, light sand on Emberhold; the closed-against-open pair reads at 170 studs in all four (the spec pins a value gap of 0.22 or more to the wall) |
+| 2 | Black rectangles and slash cracks on wall, tower, gate | fixed | lit dark browns in Slate (every channel above 40 / 255, a spec), pale chips of broken stone beside them; on pale Frostmere stone they are still strong dark patches |
+| 3 | Tower cone floats over the flattened platform | fixed | a stone seat under the cap; no ring or gap at 0.3 to 0.9 (a spec walks the tower axis for a gap) |
+| 3 | Gate: right roof changes shape or rotation | partly | no half or turned roof any more (a cap falls whole or not at all); at 0.3 and 0.6 the bite starts mid-span and alternates sides; at 0.75 and above the corner tower loses its merlon ring on purpose, so its roof base shows wider, seated and un-rotated |
+| 4 | Gate at 0.9 loses both leaves, reads open | fixed | one broken leaf (a short board at the hinge) stays at 0.75 and above, shut or open; small at 170 studs |
+| 5 | Sword crosses arm and torso, not in a hand | partly | rises from the fist outward and forward, clear of the torso; from the 3/4 view it still passes in front of the lower arm |
+| 5 | Spear floats beside the head; pennant a thin stick | fixed for the grip and the pennant | carried at the fist, butt off the ground, leaning; the pennant hangs under the head; the head still stands beside the helm |
+| 5 | Thornwood shield boss a glossy sphere | fixed | a flat slanted bar, the same metal as the other marks (a spec forbids round marks) |
+| 5 | Thornwood archer's bow crosses the face | fixed | a short bow held below the chin (a spec) |
+| 6 | Wall L3 buttresses read as pickets | fixed | two stepped buttresses beside the end piers, three courses each, each narrower and shallower than the one below |
+| 6 | L1 palisade grey on Frostmere | fixed | the same dark timber in all four (a spec compares the colours); the banner carries the kingdom |
+| - | Tall grey slab beside the damaged house | not mine | it is the house's own gable wall (`Gable`, base geometry on main), visible once the roof tiles are gone; left alone |
+
+Not chased (per FORGE-00): units at 170 studs, tower L2 against L1 at 170, keep damage at 0.3, the ram at 170. The all-built worst case
+grew from 26,217 to 26,322 (the tympanum, the tower seats and the wall L3 courses), under the 27,000 ceiling (not a 26,900 pin: see the errata handoff).
+
+### FL-0128 defects round B (after the "any visible defects?" review; branch `forge/02-blender-fl0128-defects`, stacked on the war branch)
+Author: FORGE-02. Scope fixed by FORGE-00: three items only (breach marks, gate L3 closed, open-gate floor). Every image below was opened
+and judged by me; headless evidence only (Lune specs, Blender Cycles previews of Lune dumps), Studio unverified. Re-rendered sheets
+(`img/`): `kit_fl0128_gates.jpg`, `kit_fl0128_damage.jpg`, `kit_fl0128_damage_kingdoms.jpg`, `kit_fl0128_damage_170.jpg`,
+`kit_fl0128_gates_open_170.jpg`, `kit_fl0128_before_after_170.jpg` (its gate is L1 closed; only the render was refreshed), equal scale, nothing cropped.
+
+| # | Defect | Result | What I saw |
+|---|---|---|---|
+| 1 | Breach marks read as stickers or holes | fixed at close range, subtle at 170 | no black and no nail-like stick: a recess in the wall's own stone at 0.64 of its value, a hairline crack at 0.8 of it, 2 to 5 stone chips at 1.25 of it round the rim; all on the front face, inside the wall block's face outline in x and y and standing proud of the face by about 0.015 to 0.46 studs (FORGE-00's measure; the spec pins x, y and the front face, not that depth), so no silhouette is overhung sideways or above (a spec). At 170 studs the marks are small, pale-edged notches, not dark patches; on Frostmere and Sunspire they are no longer strong dark patches. Caveat: the recess is still a flat rectangle with sharp corners, the chips are what break its outline |
+| 2 | Gate L3 closed shows grass between the portcullis bars | fixed | a dark stone panel (the tympanum, now at every level) sits just behind the bars (bars at z = -d/2 + 0.8, panel at -d/2 + 1.35, inside the lintel's depth, so the raised-bar rule holds); in all four kingdoms the grille reads dark on dark with the leaves below it, no grass. The closed-arch sampling spec now covers L3 |
+| 3 | Open-gate floor near-black (Frostmere, Thornwood, Sunspire) reads as a void at 170 | fixed | every kingdom gets a MID-tone floor: sand (160,144,118) on the darkest stone, earth (112,98,84) or dark earth (96,84,72) on the rest, luminance 0.34 to 0.57, at least 0.15 from the wall (a spec). The closed-against-open pair and the open row at 170 read as a floor under the arch in all four kingdoms; the passage still shades darker towards its back, as an interior does |
+
+Rule change in `KitDamage.spec`: marks no longer have to be "dark" (the old rule pinned lit dark browns). The rule is now: a breach mark
+stays within a band of the wall's own value (breach 0.5 to 0.9 of the supporting wall's luminance, crack 0.65 to 0.92, chip 1.05 to 1.6 or
+within 0.06 of it), luminance at least 0.1 and not Neon, lies inside a wall block's face outline (x and y) on the front face, standing proud of it by about 0.015 to 0.46 studs, and the shapes are thin boxes.
+Mutants killed (KitDamage): a translucent breach, a pure black breach, a dark-brown sticker at a third of the wall's value, black cracks, a
+Neon breach, a thick dark stick for a crack, no chips, chips as dark as the recess, a breach overhanging the wall's edge, a breach turned
+onto the side face. KitWarKit: no tympanum at the closed L1/L2 arch, no panel behind the L3 bars, a near-black, white or wall-valued floor.
+
+Numbers: parts per piece unchanged except the L3 gate, +1 for the tympanum (gate L1 72-77, L2 102-113, L3 121-132 against the 90 / 120 /
+150 caps; wall 26-30 / 36-40 / 52-60; watchtower L1 107-116, L2 105-122); the breach, crack and chip marks add 4 / 6 / 8 / 9 parts at state 1 to 4 (12 with rubble at state 4) within the 14
+extra-part budget. All-built worst case 26,326 of 27,000 then (it was 26,322; the four L3 tympana), 26,402 on main since FL-0136 phase 3 added 76 node-marker parts to WorldService (6,945); under the 27,000 ceiling.
+Not chased (per FORGE-00): shield and bow grip (FL-0135), keep damage, framing, units at 170, tower L2 against L1, the ram at 170.
+
+### FL-0128 damage frames (P1 before FL-0143 makes damage live; branch `forge/02-blender-damage-frames`, stacked on defects round B)
+Author: FORGE-02. FORGE-00's list: `Kit/Damage.luau` worked on world axes and absolute CFrames, all dormant until `Kit.applyDamage` is called
+on placed buildings (FL-0143). Headless evidence only (Lune specs, Blender Cycles previews of Lune dumps); Studio unverified. I opened every
+re-rendered sheet (`img/`): `kit_fl0128_damage.jpg`, `kit_fl0128_damage_kingdoms.jpg`, `kit_fl0128_damage_170.jpg` (same cameras and scale as
+before) and the new `kit_fl0128_damage_frames.jpg` (the L1 palisade at 0 / 0.3 / 0.6 / 0.9 / 0.97 in two kingdoms; a wall L2 and a gate L2 built
+turned 0 / 90 / 180 / 270 degrees).
+
+| # | Defect | Result | Evidence |
+|---|---|---|---|
+| a | world axes: a turned building was damaged on its back, the parts lost changed with its position | fixed | everything is chosen in the model's own frame (the pivot) and turned into world CFrames only when a part is made; spec "frames": every wall and gate level in the four kingdoms, every state, built turned 90 / 180 (and 270 for the footprint) at another height and place: part for part the damage of the model at the origin (tolerance 0.002, CFrames are 32-bit floats) |
+| b | removed parts stashed at absolute CFrames: a move left them behind | fixed | stored relative to the PrimaryPart, restored at its CFrame as it is then (untouched, bit for bit, when the model has not moved); gate leaves and bands return in the gate's current pose; spec: damaged, moved to a new place AND yaw, repaired = a pristine copy moved the same way, every part (world CFrames), none doubled, none parked; then damaged again at another state = a pristine moved copy damaged at that state |
+| c | rubble at world y = size / 2 - 0.2 | fixed | stands on the model's base plane (y = 0 of its frame); spec: a model at y 40 and y 3.5 has the rubble bottom at base - 0.2 |
+| d | L1 palisade: every mark on the -X post, soot overhanging it and above the top | fixed | no wall block exists there, so the marks are spread (a stride across the standing logs and the two posts) over at least two logs / posts at every state, each narrower than its support, wholly inside it and below its top (spec, four kingdoms, states 1..4); wood marks on wood |
+| - | `KitLevel` stored the level asked for (a wall asked for at level 5 stored 5, and the damage was seeded by it) | fixed | `Kit.build` clamps to `Kit.MAX_LEVEL[type]` and stores/names the clamped level; Kit.spec and KitDamage pin it, with mutants |
+| - | (FORGE-00 addition) re-dressing a turned model dropped rubble outside the keep's footprint | fixed | spec: keep L1..L3, wall, gate, watchtower, house re-dressed at seven states turned 90 / 180 / 270: every damage part inside the footprint in the Root's frame; rubble may reach 2 studs in front of it (the Kit's own entrance-step allowance: strictly inside would hide it in most buildings); the keep's stump is shrunk to fit |
+
+What changed for the eye, compared with the previous sheets (same cameras). I dumped every damaged variant (every type at every level, four
+kingdoms, four states: 592) with the old and the new code. 96 are the stand-ins' second level, which no longer exists (they are level 1: the
+same damage as their level 1, bit for bit). Of the other 496: 115 are identical, bit for bit; 331 differ only in where the rubble lies (it is
+now up to 2 studs in front of the footprint instead of up to 5.6: closer to the foot, partly against the wall); 50 differ otherwise: the 16 L1
+palisade variants (marks on logs and posts), 30 watchtower L1 / L2 and storehouse L1 variants where the bite or the marks pick another of two
+equally distant parts (those ties were decided by float noise of 1e-6 before and are decided by the part order now) and the 4 keep L1
+variants whose stump slab is shrunk to fit its footprint. On the re-rendered sheets the walls, gates, houses, towers and the keep read as
+before; the 0.3 / 0.6 / 0.9 marks, bites and collapsed corners are where they were except in those 50 variants (the sheets show two
+of them: the Frostmere watchtower L2's bite at 0.3 / 0.6 / 0.9 takes another of two equally distant merlons, the Emberhold one's chips at 0.6
+lie elsewhere on the face; the rest is unchanged).
+
+Not done here: the order the damage walks a model's parts in is now the part attribute `KitOrder`, written once by `Kit.build`; a model
+built by anything else, or a part re-formed by a recolour, is ordered by position (robust except at a rounding edge). The ceiling is
+unchanged by this fix (26,326 of 27,000 then, no part was added; 26,402 on main with the 76 node-marker parts of FL-0136 phase 3); farms are built at level 2 by the ceiling spec (level 3: +3 parts each, +36 in all: 26,438).
+
 ## FL-0072 — Crown Arena venue, crowd figures, armour and weapons (G12.6; FORGE-02; Blender previews, not Studio)
 
 **Built** (`Kit/Arena.luau`, `Kit/Crowd.luau`, `Kit/Gear.luau`, `Kit.luau` exports, `world/Layout.luau` `arena`, `WorldPlan` keep-out and trim protection, `WorldService` places the neutral `CrownArena`):
@@ -660,3 +808,13 @@ Reviewer verdict: NEEDS-WORK overall; the arena venue and the key citizens pass,
 **greatsword** variation 3 and readability 3; **mace** silhouette 3 and readability 3; the ground blend 3 / 3 / 3 (not a gating family).
 Other things the reviewer flagged, not argued away: the floor crown still reads as an envelope and the oak leaf as a cloud (the shared D-039 emblems), no hand visibly grips a weapon (the stand-in avatar has block arms), the armours form a visual ladder light < medium < heavy ("the opposite of a sidegrade"), the gate-front walls are blank planes, and no road leads to the arena.
 Where I read the images differently: the "cowboy hat" is the light cap's brim and feather (a leather cap with a plume is what the set is); "floating" weapons are the stand-in's raised forearm seen end-on. Fit on a real R15 or R6 avatar and every Roblox material are Studio-unverified.
+
+## FL-0072 follow-up — the shield on the left hand (`Kit.shield`, `Kit.weapon` opts; FORGE-02; Blender previews, not Studio)
+
+**What changed (additive, Kit.VERSION 0.6.1).** A Tool is one hand, so the sword-and-shield's round shield rode the *sword* hand, to its inside; but FORGE-04's duel poses (`Feedback/DuelPoses.luau`) raise the **left** arm to guard. `Kit.shield(kingdomColor?) -> Accessory` is now that shield: built like the armour pieces (a `Handle` holding an `Attachment` named `LeftGripAttachment`, the other parts welded to it, every part unanchored, massless, non-colliding, non-touching, non-queryable, no scripts), 4 parts (rim = Handle, kingdom-coloured face with `KitTint` 1, iron band, steel boss: the old Tool shield's parts, same sizes, same colours in the same places), attributes `KitPiece = "Shield"` and `KitShield = "shield"` (no `KitArmour`), `Kit.setKingdomColor` recolours it. It is modelled in the left hand's grip frame (the frame a hand has when the arm points forward: +Y up, -Z forward along the arm, +X right, the same frame the right hand's Tool grip uses): the disc faces forward, its back face a fist's depth ahead of the grip point, centre 0.3 to the outside (-X) and 0.25 low, so a raised left arm (the guard) carries a buckler in front of the fist that covers the forearm's front and outer side. `SHIELD_CF` in `Kit/Gear.luau` is the one constant to tune after a Studio look.
+`Kit.weapon(weapon, color, opts?)` gets an optional third argument. **`Kit.weapon("swordShield", color)` is unchanged** (the Tool still carries ShieldRim / ShieldFace / ShieldBand / ShieldBoss: 10 parts) so every existing caller keeps working; `{ shield = false }` builds the sword alone (6 parts; same Handle, Grip, `KitHands` 1, `KitReach` 4.72, geometry top 4.95). `KitShield = "shield"` is set on swordShield in both forms (it means "this weapon goes with a shield": the Tool's own by default, `Kit.shield(color)` when `shield = false`); greatsword, spear and mace ignore `opts` and carry no `KitShield`. Once nothing calls the old form, a later PR may drop the shield from `Kit.weapon`.
+**Part counts.** Sword alone 6 + shield 4 = 10, the old Tool's 10: moving the shield to the hand adds no parts. Gear is client / loadout only (nothing in `WorldService` builds it), so the all-built ceiling (`KitCeiling`) and the world part counts are unchanged.
+**Stand-in avatars.** `tests/world/support/AvatarStandIn.luau` carries `LeftGripAttachment` on both rigs. The right arm points forward with an identity grip attachment (the grip frame); the left arm hangs by default (the armour specs' silhouettes) with the attachment turned Rx(-90) as a real hand's would be; `Avatar.build(rigType, at, { guard = true })` raises the left arm forward like the right (the duel's guard pose), and the fit specs use that.
+**Caveats (read before trusting it).** (1) With the arm HANGING the grip frame is turned down with the arm, so the shield lies flat under the fist like a tray (and clips the thigh): equip it with the left arm raised (the duel's ready and guard poses do), or only for the duel. The `KitGear` spec "documents the hanging arm" pins that it hangs clear of the forearm, nothing more. (2) Whether R6's `Left Arm` carries `LeftGripAttachment`, and the exact frame of R15's `LeftHand` `LeftGripAttachment`, are **unverified in Studio** (the stand-ins follow the Roblox attachment reference; the grip-frame reading is the same assumption the weapons already make for the right hand). If R6 has none, `Humanoid:AddAccessory` cannot place it: parent the shield's parts another way or skip it on R6. (3) The stand-in has no hands: the shield stands 0.2 stud ahead of the arm's end and no fist or strap shows.
+**Evidence (headless, not Studio).** `KitGear` 38 tests (23 before; 15 new), 17 hand-made mutants all killed (opts ignored, KitShield missing on the default path and on `{ shield = false }`, shield on the right attachment, collidable / queryable / anchored / unwelded shield parts, more than 10 parts, mirrored to the right, sunk into the forearm, facing backward, no kingdom tint, KitShield on other weapons, shield missing from the default Tool, KitArmour on the shield, reach changed by opts); `KitCharacter`, `KitArena`, `ArenaLayout`, `Kit`, `KitCeiling`, `KitCrowdFigure`, `KitUnitKinds`, `KitNoPluginWrites`, the dumps and `WorldService` green.
+**Render** (`img/fl0072_shield_hand.jpg`, 138 KB, Blender Cycles from the Lune dump group `shield`, Roblox materials only approximated; I looked at it): the shield reads as carried on the left with the sword in the right hand in the front and both three-quarter views; the kingdom face and boss read at a glance. Defects I see: the disc (2.8 studs, as before) is larger than the torso is wide, so it hides the left forearm completely and part of the left pauldron, and from the front you cannot see what holds it; from the left side it is a thin disc standing 0.2 stud ahead of the arm's end (a real hand will fill that gap; unverified); from the sword side it sticks out like a sign on the arm's end; hanging, it is a flat tray under the fist (the caveat above). Next, if wanted: a smaller buckler (2.2 to 2.4) so the forearm and cop show, and a visible grip bar once the stand-in has hands. All of it is stand-in geometry; a real R15 left hand in Studio decides.

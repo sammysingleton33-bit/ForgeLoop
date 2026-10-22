@@ -36,7 +36,11 @@ FULL = 0.85  # a node covering this share of its ScreenGui is a container, not a
 MIN_OVERLAP = 4.0  # px in both directions
 CONTENT = {"TextLabel", "TextButton", "TextBox", "ImageLabel", "ImageButton", "ViewportFrame"}
 # (widget path suffix A, widget path suffix B): reason. Order-insensitive; matched with str.endswith.
-OVERLAP_OK = {}
+OVERLAP_OK = {
+    # FL-0142: on a phone the 10 s champion vote (no scrim, so the arena stays in view) covers the resource pills;
+    # nothing on the pills is needed while it is open (FORGE-07 L4 on #265)
+    ("Hud.Pills", "ArenaVote.Panel"),
+}
 
 FONTS = HERE.parent / "node_modules" / "@fontsource" / "montserrat" / "files"
 if not FONTS.is_dir():

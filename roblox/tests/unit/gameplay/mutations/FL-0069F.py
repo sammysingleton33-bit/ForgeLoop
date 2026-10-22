@@ -28,4 +28,5 @@ M = [
  ("FL-0069F", CP, 'if slottedPassive[name] then', 'if false then', "sim/ArenaCaps", "in either order"),
  ("FL-0069F", CP, 'slottedPassive[name] = true\n', '', "sim/ArenaCaps", "in either order"),
  ("FL-0069F", DM, 'if limit == nil then', 'if false then', "sim/DuelModel", "a malformed hpBelow condition never fires"),
+ ("FL-0069F", LS, 'local key = `{kingdom}|-|{act}`', 'local key = `-|{act}`', "sim/LeadershipService", "logging it once per kingdom and act"),
 ]

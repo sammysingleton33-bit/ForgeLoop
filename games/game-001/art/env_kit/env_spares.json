@@ -52,27 +52,17 @@
    ]
   },
   "crop": {
-   "props": 5,
+   "props": 3,
    "tris_min": 1020,
-   "tris_max": 1332,
-   "tris_total": 6004,
+   "tris_max": 1300,
+   "tris_total": 3340,
    "budget": [
     40,
     1500
    ]
-  },
-  "fence": {
-   "props": 2,
-   "tris_min": 72,
-   "tris_max": 84,
-   "tris_total": 156,
-   "budget": [
-    40,
-    600
-   ]
   }
  },
- "geometry_hash": "9bae7f81ca87c259",
+ "geometry_hash": "13e93a3b0a8fc6da",
  "standins": {
   "kit_version": "0.5.0",
   "source": "blender/lib/envkit_standins.json (from blender/scripts/lune/EnvInventory.spec.luau)"
@@ -501,7 +491,7 @@
    ],
    "node": false,
    "verts": 992,
-   "placed": true,
+   "placed": false,
    "base_y": 0.0,
    "radius_xz": 23.601,
    "reach_bbox": 23.601,
@@ -547,7 +537,7 @@
    ],
    "node": false,
    "verts": 836,
-   "placed": true,
+   "placed": false,
    "base_y": 0.0,
    "radius_xz": 23.601,
    "reach_bbox": 23.601,
@@ -571,172 +561,12 @@
     "along": "x"
    },
    "fit_note": "a growth stage: shorter than the ripe field by design (stage 1 furrows and shoots, stage 2 green wheat)"
-  },
-  "farm_field_cabbage_01": {
-   "family": "crop",
-   "bbox_center": [
-    0.0,
-    1.3989,
-    0.0
-   ],
-   "size": [
-    38.0,
-    2.7977,
-    28.0
-   ],
-   "tris": 1332,
-   "tint": "fixed",
-   "standin_size": [
-    38.0,
-    3.14,
-    28.0
-   ],
-   "node": false,
-   "verts": 872,
-   "placed": false,
-   "base_y": 0.0,
-   "radius_xz": 23.601,
-   "reach_bbox": 23.601,
-   "standin_reach": 29.04,
-   "standin_parts": 65,
-   "fit": {
-    "footprint": 38.0,
-    "standin_footprint": 38.0,
-    "footprint_ratio": 1.0,
-    "height": 2.8,
-    "standin_height": 3.14,
-    "height_ratio": 0.891
-   },
-   "count_world": {
-    "density_1": 0,
-    "shipped": 0
-   }
-  },
-  "farm_field_cabbage_02": {
-   "family": "crop",
-   "bbox_center": [
-    0.0,
-    1.4014,
-    0.0
-   ],
-   "size": [
-    38.0,
-    2.8029,
-    28.0
-   ],
-   "tris": 1332,
-   "tint": "fixed",
-   "standin_size": [
-    38.0,
-    3.15,
-    28.0
-   ],
-   "node": false,
-   "verts": 872,
-   "placed": false,
-   "base_y": 0.0,
-   "radius_xz": 23.601,
-   "reach_bbox": 23.601,
-   "standin_reach": 29.04,
-   "standin_parts": 65,
-   "fit": {
-    "footprint": 38.0,
-    "standin_footprint": 38.0,
-    "footprint_ratio": 1.0,
-    "height": 2.8,
-    "standin_height": 3.15,
-    "height_ratio": 0.89
-   },
-   "count_world": {
-    "density_1": 0,
-    "shipped": 0
-   }
-  },
-  "farm_fence_01": {
-   "family": "fence",
-   "bbox_center": [
-    0.0,
-    1.4,
-    0.0
-   ],
-   "size": [
-    16.5,
-    2.8,
-    0.5
-   ],
-   "tris": 72,
-   "tint": "fixed",
-   "standin_size": [
-    16.5,
-    2.8,
-    0.5
-   ],
-   "node": false,
-   "verts": 48,
-   "placed": false,
-   "base_y": 0.0,
-   "radius_xz": 8.254,
-   "reach_bbox": 8.254,
-   "standin_reach": 8.35,
-   "standin_parts": 7,
-   "fit": {
-    "footprint": 16.5,
-    "standin_footprint": 16.5,
-    "footprint_ratio": 1.0,
-    "height": 2.8,
-    "standin_height": 2.8,
-    "height_ratio": 1.0
-   },
-   "count_world": {
-    "density_1": 0,
-    "shipped": 0
-   }
-  },
-  "farm_fence_02": {
-   "family": "fence",
-   "bbox_center": [
-    0.0,
-    1.4,
-    0.0
-   ],
-   "size": [
-    16.5,
-    2.8,
-    0.5
-   ],
-   "tris": 84,
-   "tint": "fixed",
-   "standin_size": [
-    16.5,
-    2.8,
-    0.5
-   ],
-   "node": false,
-   "verts": 56,
-   "placed": false,
-   "base_y": 0.0,
-   "radius_xz": 8.254,
-   "reach_bbox": 8.254,
-   "standin_reach": 8.35,
-   "standin_parts": 8,
-   "fit": {
-    "footprint": 16.5,
-    "standin_footprint": 16.5,
-    "footprint_ratio": 1.0,
-    "height": 2.8,
-    "standin_height": 2.8,
-    "height_ratio": 1.0
-   },
-   "count_world": {
-    "density_1": 0,
-    "shipped": 0
-   }
   }
  },
- "fbx_bytes": 314780,
- "fbx_sha256": "edc11e19206029b094131a42ad4b9a94ddb03daa62fd47c15d4080bfd26c8738",
+ "fbx_bytes": 205532,
+ "fbx_sha256": "d97d66336e551b4ea3ade43e9c2b6dda4df242d6a8e533719bb13beecada6181",
  "roundtrip": {
-  "objects": 15,
+  "objects": 11,
   "mismatches": 0,
   "pass": true
  }

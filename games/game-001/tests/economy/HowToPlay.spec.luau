@@ -128,6 +128,14 @@ describe("HowToPlayModel (pure)", function()
 		expect(none[1].body).toContain("a few min")
 	end)
 
+	it("the arena card says how the co-rulers' vote works, its length from config Arena (FL-0142)", function()
+		local body = HowToPlayModel.cards()[5].body
+		expect(body).toContain(`co-rulers vote for theirs in {ArenaConfig.voteSeconds} seconds`)
+		expect(body).toContain("a tie goes to the higher leadership")
+		local quick = HowToPlayModel.cards({ arena = { voteSeconds = 6 } })
+		expect(quick[5].body).toContain("in 6 seconds")
+	end)
+
 	it("lengths round to the nearest minute", function()
 		local s = HowToPlayModel.phases({
 			pacing = { modes = { m = { Founding = 150, Expansion = 89, Conflict = 30, Endgame = 600 } } },

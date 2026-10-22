@@ -1,0 +1,67 @@
+{
+ "review": "D-019 fresh image-only reviewer, FL-0136 phase 3, author round 1: farm dressing (WorldPlan.meshDressing: field fences, cabbage variants, rim cliffs; ids farm_fence_01/02, farm_field_cabbage_01/02, rock_cliff_01/02)",
+ "date": "2026-10-19",
+ "branch": "forge/02-blender-fl0136-dressing (stacked on PR 247, forge/02-blender-fl0136-env at 8c26e2a8)",
+ "geometry_hash_env_kit_01": "4a676b85217c85f3",
+ "method": "one fresh Claude Code session (no memory of the author), sparse checkout of this image folder only, told to open the listed JPEGs and apply the rubric in review_prompt.md; blind: the sheets say SET A / SET B only, the column order flips on alternate sheets, the key (key.json) was withheld until the reply was saved",
+ "sets": {
+  "A": "the part-built world as it is today (stand-ins, no fences or cliffs, cabbage _03)",
+  "B": "the world with the imported meshes and the mesh-only dressing"
+ },
+ "prompt": "review_prompt.md (the template; __FOLDER__ and __IMAGES__ were filled with this folder and the image list below)",
+ "session": "session_01Ci3SpBQ1PJwn4xUSuQLbxx",
+ "images": [
+  "sheet_farm.jpg",
+  "sheet_dressing_lineup.jpg"
+ ],
+ "scores": {
+  "A": {
+   "silhouette": 2,
+   "variation": 2,
+   "readability": 3,
+   "proportions": 3,
+   "palette": 4,
+   "detail": 3,
+   "cohesion": 3,
+   "cost": 2
+  },
+  "B": {
+   "silhouette": 4,
+   "variation": 4,
+   "readability": 4,
+   "proportions": 3,
+   "palette": 4,
+   "detail": 4,
+   "cohesion": 4,
+   "cost": 5
+  }
+ },
+ "verdict": {
+  "A": "NEEDS-WORK",
+  "B": "PASS"
+ },
+ "best_overall": "B",
+ "ship": {
+  "A": false,
+  "B": true
+ },
+ "per_sheet_defects": {
+  "sheet_farm.jpg": [
+   "SET A: no fences at all, so field edges are undefined; wheat is flat tan planks that do not read as a crop; cabbage is a dot grid.",
+   "SET B: fences are thin and barely visible at the 170-stud aerial camera; wheat texture is busy and the bottom field reads like spikes or carrots; back fence segments are identical repeats; tree style differs between sets, which muddies the comparison."
+  ],
+  "sheet_dressing_lineup.jpg": [
+   "SET A: cliffs are grey boxes with a sphere on top and read as placeholders; the three cabbage plots are nearly identical green-sphere grids.",
+   "SET B: cliffs are small and pale against a 50-stud keep, so they read as boulders; cabbage variants differ only subtly in leaf colour; fences are tiny and every segment is identical."
+  ]
+ },
+ "fixes_for_the_weaker_set": [
+  "Add fences along the back and flank edges of the fields.",
+  "Replace the box cliffs with faceted rock shapes, and make the two shapes clearly different.",
+  "Make the wheat read as a crop with vertical stalks and a golden head, not flat planks.",
+  "Make the cabbage variants differ in more than colour, such as leaf size, row spacing or plot shape.",
+  "Use the mesh approach for fields, fences and cliffs, which cuts the part count from about 400 to 24 for the 12 fields."
+ ],
+ "notes": "SET B passes on my reading, with margin on the three gated criteria (silhouette, variation, readability at 4 each). Before shipping, I would thicken or raise the fences a little so they survive the aerial camera. I would vary fence segment length, post spacing or height so a run is not a stamped repeat. I would scale up the rim cliffs and give the cabbage variants a clearer difference. SET A fails the gate on silhouette, variation and readability, and its cost is the worst.",
+ "reply_verbatim": "Both sheets were opened and judged from the pictures alone. On the lineup sheet the panel order is swapped: SET B is on the left and SET A is on the right.\n\n**sheet_farm.jpg**\n- **SET A:** The wheat fields are flat tan stripes that look like planks or a pallet, not a crop. The cabbage field is a grid of dark green dots on brown. There are no fences, so nothing marks the field edges or the back of the farm.\n- **SET B:**\n  - The thin posts and rails are small. At the 170-stud aerial camera they are only a faint line, and the flank fences read as tick marks.\n  - The wheat field is a busy orange-brown texture that is a bit noisy at distance. The bottom field reads more like pointed spikes or carrots than wheat.\n  - The cabbage field is clearly different from the wheat. The fence segments along the back are identical repeats.\n  - The tree style also differs between sets (smooth blobs in A, faceted in B). That makes it hard to isolate the field and fence change, but B's trees still fit the low-poly kit.\n\n**sheet_dressing_lineup.jpg**\n- **SET A (right panels):**\n  - The cliffs are grey boxes with a green sphere on top. They look like placeholder blocks or tanks, not rock.\n  - The cabbage plots are three near-identical grids of green spheres. The variants differ only slightly in row spacing and shade.\n  - The fences are the same as in B, so the fence row is stamped repeats.\n- **SET B (left panels):**\n  - The two cliffs are faceted rock with different shapes, but they are small and pale next to the 50-stud keep. They look like boulders, not rim cliffs. At about 5 citizens' height they would be too weak to frame the valley.\n  - The cabbage variants differ mostly by leaf colour and brightness, and the difference is subtle.\n  - The fences are very small against the fields and the citizens, and all four fence segments in the row are identical.\n\n```json\n{\"scores\": {\"A\": {\"silhouette\": 2, \"variation\": 2, \"readability\": 3, \"proportions\": 3, \"palette\": 4, \"detail\": 3, \"cohesion\": 3, \"cost\": 2}, \"B\": {\"silhouette\": 4, \"variation\": 4, \"readability\": 4, \"proportions\": 3, \"palette\": 4, \"detail\": 4, \"cohesion\": 4, \"cost\": 5}},\n \"verdict\": {\"A\": \"NEEDS-WORK\", \"B\": \"PASS\"}, \"best_overall\": \"B\",\n \"per_sheet_defects\": {\"sheet_farm.jpg\": [\"SET A: no fences at all, so field edges are undefined; wheat is flat tan planks that do not read as a crop; cabbage is a dot grid.\", \"SET B: fences are thin and barely visible at the 170-stud aerial camera; wheat texture is busy and the bottom field reads like spikes or carrots; back fence segments are identical repeats; tree style differs between sets, which muddies the comparison.\"], \"sheet_dressing_lineup.jpg\": [\"SET A: cliffs are grey boxes with a sphere on top and read as placeholders; the three cabbage plots are nearly identical green-sphere grids.\", \"SET B: cliffs are small and pale against a 50-stud keep, so they read as boulders; cabbage variants differ only subtly in leaf colour; fences are tiny and every segment is identical.\"]},\n \"fixes_for_the_weaker_set\": [\"Add fences along the back and flank edges of the fields.\", \"Replace the box cliffs with faceted rock shapes, and make the two shapes clearly different.\", \"Make the wheat read as a crop with vertical stalks and a golden head, not flat planks.\", \"Make the cabbage variants differ in more than colour, such as leaf size, row spacing or plot shape.\", \"Use the mesh approach for fields, fences and cliffs, which cuts the part count from about 400 to 24 for the 12 fields.\"],\n \"ship\": {\"A\": false, \"B\": true}, \"notes\": \"SET B passes on my reading, with margin on the three gated criteria (silhouette, variation, readability at 4 each). Before shipping, I would thicken or raise the fences a little so they survive the aerial camera. I would vary fence segment length, post spacing or height so a run is not a stamped repeat. I would scale up the rim cliffs and give the cabbage variants a clearer difference. SET A fails the gate on silhouette, variation and readability, and its cost is the worst.\"}\n```"
+}

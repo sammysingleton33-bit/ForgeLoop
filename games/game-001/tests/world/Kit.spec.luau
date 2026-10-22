@@ -139,6 +139,71 @@ describe("Kit.footprint", function()
 	end)
 end)
 
+-- Kit.build clamps the level it is given and STORES the clamped level (the model attribute KitLevel, the model's name): a level the Kit
+-- has no look for is the highest it has (below 1, or not a number: 1). Kit.applyDamage seeds its marks by KitLevel, so a wall asked
+-- for at level 5 is a level 3 wall in every way a consumer can see.
+local TOP_LEVEL = {
+	keep = 3,
+	house = 2,
+	farm = 3,
+	storehouse = 2,
+	lumbercamp = 3,
+	quarry = 3,
+	barracks = 4,
+	watchtower = 2,
+	wall = 3,
+	gate = 3,
+	mine = 1,
+	blacksmith = 1,
+	market = 1,
+	infirmary = 1,
+	granary = 1,
+	shrine = 1,
+}
+
+local function levelViolations(): { string }
+	local out: { string } = {}
+	for _, bt in Kit.BUILDING_TYPES do
+		if Kit.MAX_LEVEL[bt] ~= TOP_LEVEL[bt] then
+			table.insert(out, `{bt}: Kit.MAX_LEVEL {Kit.MAX_LEVEL[bt]}, want {TOP_LEVEL[bt]}`)
+		end
+		for _, asked in { -3, 0, 0.5, 1, 2, 3, 4, 5, 99, 2.7, 0 / 0 } do
+			local want = if asked ~= asked then 1 else math.clamp(math.floor(asked), 1, TOP_LEVEL[bt])
+			local model = Kit.build(bt, asked, "complete", KINGDOM_COLORS[1])
+			if model:GetAttribute("KitLevel") ~= want then
+				table.insert(
+					out,
+					`{bt} asked for level {asked}: KitLevel {model:GetAttribute("KitLevel")}, want {want}`
+				)
+			end
+			if string.find(model.Name, `_L{want}_`, 1, true) == nil then
+				table.insert(out, `{bt} asked for level {asked}: named {model.Name}, want level {want}`)
+			end
+		end
+	end
+	return out
+end
+
+describe("Kit.build stores the level that was built (KitLevel)", function()
+	it("clamps the stored level for every type", function()
+		local out = levelViolations()
+		if #out > 0 then
+			error(`{#out} violations, e.g. ` .. table.concat(out, "; ", 1, math.min(#out, 6)))
+		end
+	end)
+	it("catches a build that stores the level it was asked for (a wall asked for at level 5 stored 5)", function()
+		local build = Kit.build
+		Kit.build = function(bt, level, ...)
+			local model = build(bt, level, ...)
+			model:SetAttribute("KitLevel", level)
+			return model
+		end
+		local out = levelViolations()
+		Kit.build = build
+		expect(#out > 0).toBe(true)
+	end)
+end)
+
 describe("Kit.setKingdomColor", function()
 	it("recolours tinted parts in place and leaves the rest", function()
 		local model = Kit.build("watchtower", 1, "complete", Kit.NEUTRAL_COLOR)
