@@ -97,7 +97,10 @@ local function violations(items: { any }): { string }
 	for _, item in items do
 		-- the gate banners flank the road by design and are left exactly where the generator puts them
 		local banner = item.feature == "dressing" and string.sub(item.assetId, 1, 11) == "prop_banner"
-		if item.feature ~= "bridge" and item.feature ~= "crops" and not banner then
+		-- the composed start yard (feature "yard", WorldPlan.yard) is left where it is by the clearance: YardCompose.spec holds each piece to
+		-- the lanes, roads, slots, buildings and fields by the footprint it draws, and to the nav edges
+		local yard = item.feature == "yard"
+		if item.feature ~= "bridge" and item.feature ~= "crops" and not banner and not yard then
 			local r = liveRadius(item.assetId) * (item.scale or 1)
 			local natural = NATURAL[item.feature] == true
 			for _, rect in rects do
@@ -235,14 +238,17 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		expect((cleared[1].cframe.Position - tree.cframe.Position).Magnitude).toBeGreaterThan(0.5)
 		expect((cleared[1].cframe.Position - tree.cframe.Position).Magnitude).toBeLessThanOrEqual(12 + 1e-6)
 		expect(table.concat(violations(itemsOf(cleared)), "; ")).toBe("")
-		-- the yard well and the gate banners are meant to stand in the build zones: they stay
+		-- the start yard (the market cross, stalls and hedges, WorldPlan.yard) and the gate banners are meant to stand in the build zones: they stay
 		local ids = {}
 		for _, p in WorldPlan.props(Layout, { crimson = true }) do
-			if p.feature == "dressing" then
+			if p.feature == "dressing" or p.feature == "yard" then
 				ids[p.assetId] = true
 			end
 		end
 		expect(ids.prop_well_01).toBe(true)
+		expect(ids.prop_cross_red_01).toBe(true)
+		expect(ids.prop_stall_red_01).toBe(true)
+		expect(ids.prop_hedge_01).toBe(true)
 		expect(ids.prop_banner_red_01).toBe(true)
 	end)
 
@@ -296,7 +302,7 @@ describe("Plot clearance (user playtest, farm areas)", function()
 			end
 			expect(j).toBe(#cleared + 1)
 			expect(nudged).toBeGreaterThan(0)
-			-- every kingdom keeps all of its hand-placed dressing: 4 gate banners, the well, 2 goods, a haystack, a cart
+			-- every kingdom keeps all of its hand-placed dressing: 4 gate banners, 2 goods, a haystack, a cart and the start yard (10 pieces)
 			local function dressing(list: { any }): number
 				local n = 0
 				for _, p in list do
@@ -437,7 +443,7 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		local bad = {}
 		for _, p in WorldPlan.plan(Layout, ALL) do
 			local live, documented = liveRadius(p.assetId), WorldPlan.footprintRadius(p.assetId)
-			if (NATURAL[p.feature] or p.feature == "dressing") and live > documented then
+			if (NATURAL[p.feature] or p.feature == "dressing" or p.feature == "yard") and live > documented then
 				bad[p.assetId] = `{p.assetId}: live {string.format("%.2f", live)} > CLEAR.radius {documented}`
 			end
 		end

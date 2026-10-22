@@ -11,7 +11,8 @@
 	never Random) so Lune previews match Roblox. Ids follow blender/manifest.json:
 	tree_oak_NN, tree_pine_NN, tree_birch_NN, bush_NN, plant_flowers_NN, rock_boulder_{s,m,l}_NN,
 	rock_cliff_NN, resource_{stone,ore,wood}_NN, prop_banner_<colour>_NN, prop_well_NN, prop_cart_NN,
-	prop_goods_NN, farm_haystack_NN, farm_fence_NN, bridge_stone_NN; anything else is a crate.
+	prop_goods_NN, farm_haystack_NN, farm_fence_NN, bridge_stone_NN, and the start yard's prop_cross_<colour>_NN, prop_stall_<colour>_NN
+	(red, blue, green, yellow) and prop_hedge_NN (01 long, 02 short); anything else is a crate.
 ]]
 
 local KingdomsConfig = require("@game/ReplicatedStorage/Forge/Config/Kingdoms")
@@ -690,6 +691,60 @@ local function fence(ctx, variant: number)
 	end
 end
 
+-- ---------------------------------------------------------------- the village centre (FORGE-02 visual pass 1b)
+
+-- The pieces of the composed start yard (WorldPlan.YARD): a market cross for the court's centre, market stalls with a striped canopy
+-- in a kingdom colour, low hedge segments. Part-built, no scripts; their ids are not in the imported-mesh data, so Kit.prop always
+-- builds them (the world reads the same with or without the kit). Seen from 50 studs up (0.07 studs a pixel): bold shapes only.
+
+-- Market cross: three steps, a plinth, a shaft with a cross arm, a pennant in the kingdom colour and a gold finial. 7 parts (8 with the
+-- Root); 7.8 across at the foot, 9.2 tall. The steps are pale (ivory on the grey court), the pennant hangs on the side the yard looks
+-- from (-Z): it is the one splash of kingdom colour on the court's axis.
+local function marketCross(ctx, color: Color3)
+	block(ctx, "Step", Vector3.new(7.8, 0.7, 7.8), CFrame.new(0, 0.35, 0), C.stoneLight, Enum.Material.Cobblestone)
+	block(ctx, "Step", Vector3.new(5.4, 0.7, 5.4), CFrame.new(0, 1.05, 0), Pieces.IVORY, Enum.Material.Cobblestone)
+	block(ctx, "Plinth", Vector3.new(3.4, 1.0, 3.4), CFrame.new(0, 1.9, 0), Pieces.IVORY, Enum.Material.Slate)
+	column(ctx, "Shaft", 0.55, 5.6, Vector3.new(0, 2.4, 0), C.stoneLight, Enum.Material.Slate)
+	block(ctx, "Arm", Vector3.new(4.6, 0.8, 0.8), CFrame.new(0, 6.8, 0), C.stoneLight, Enum.Material.Slate)
+	block(ctx, "Pennant", Vector3.new(2.4, 3.4, 0.14), CFrame.new(0, 4.7, -0.7), color, Enum.Material.Fabric, 1)
+	ball(ctx, "Finial", 1.3, Vector3.new(0, 8.55, 0), C.gold, Enum.Material.Metal)
+end
+
+-- Market stall (front faces -Z): a counter with a crate, a back wall, two front posts and a canopy in the kingdom colour with two
+-- ivory stripes, sloping down to the front. 8 parts (9 with the Root); 7.8 wide, 5 deep, 5.1 tall. From above (the ruler's camera) it
+-- is a striped awning: the stripes keep an emerald canopy apart from the grass.
+local STALL_TILT = math.rad(-14)
+local function marketStall(ctx, color: Color3)
+	block(ctx, "Counter", Vector3.new(6.4, 2.2, 1.7), CFrame.new(0, 1.1, -1.0), C.wood, Enum.Material.WoodPlanks)
+	block(ctx, "Crate", Vector3.new(1.5, 1.5, 1.5), CFrame.new(-1.8, 2.95, -1.0), C.woodLight, Enum.Material.WoodPlanks)
+	block(ctx, "BackWall", Vector3.new(7.0, 5.0, 0.3), CFrame.new(0, 2.5, 1.6), C.woodDark, Enum.Material.WoodPlanks)
+	for _, sx in { -1, 1 } do
+		block(ctx, "Post", Vector3.new(0.45, 4.1, 0.45), CFrame.new(sx * 3.3, 2.05, -2.0), C.wood, Enum.Material.Wood)
+	end
+	local slope = CFrame.new(0, 4.7, -0.15) * CFrame.Angles(STALL_TILT, 0, 0)
+	block(ctx, "Canopy", Vector3.new(7.8, 0.3, 5.2), slope, color, Enum.Material.Fabric, 1)
+	for _, sx in { -1, 1 } do
+		local stripe = slope * CFrame.new(sx * 2.0, 0.02, 0)
+		block(ctx, "CanopyStripe", Vector3.new(1.7, 0.3, 5.22), stripe, Pieces.IVORY, Enum.Material.Fabric)
+	end
+end
+
+-- Hedge segment, `length` long on X: a row of leafy balls (the bushes' own material and greens), overlapping, a little different in size
+-- and tone so it reads as planted, not as a pipe. 4 balls for the long one, 2 for the short (5 and 3 parts with the Root); 3.4 to 4 across,
+-- up to 3.7 tall.
+local HEDGE_TONES = { C.leaf, C.leafLight, C.leaf, shade(C.leafDark, 1.12) }
+local HEDGE_SIZES = { 3.8, 4.2, 3.9, 3.5 }
+local function hedge(ctx, length: number)
+	local n = math.max(2, math.floor(length / 3 + 0.5))
+	local step = (length - 4) / (n - 1)
+	for i = 1, n do
+		local d = HEDGE_SIZES[(i - 1) % #HEDGE_SIZES + 1]
+		local tone = HEDGE_TONES[(i - 1) % #HEDGE_TONES + 1]
+		ball(ctx, "Hedge", d, Vector3.new(-length / 2 + 2 + (i - 1) * step, d / 2 - 0.3, 0), tone, Enum.Material.Grass)
+	end
+end
+Props.HEDGE_LENGTHS = table.freeze({ 12, 6.5 }) -- prop_hedge_01, prop_hedge_02
+
 local function bridge(ctx)
 	local w = 14 -- deck width; spans ~60 studs along local Z
 	block(ctx, "Deck", Vector3.new(w, 1.2, 24), CFrame.new(0, 3.2, 0), C.stoneLight, Enum.Material.Cobblestone)
@@ -827,6 +882,14 @@ local function standIn(assetId: string): Model
 		cart(ctx, variant)
 	elseif has("prop_goods") then
 		goods(ctx, rng)
+	elseif has("prop_cross_") then
+		local colour = string.match(assetId, "^prop_cross_(%a+)_")
+		marketCross(ctx, BANNER_COLORS[colour or "red"] or BANNER_COLORS.red)
+	elseif has("prop_stall_") then
+		local colour = string.match(assetId, "^prop_stall_(%a+)_")
+		marketStall(ctx, BANNER_COLORS[colour or "red"] or BANNER_COLORS.red)
+	elseif has("prop_hedge") then
+		hedge(ctx, Props.HEDGE_LENGTHS[variant] or Props.HEDGE_LENGTHS[1])
 	elseif has("farm_haystack") then
 		haystack(ctx)
 	elseif has("farm_field") then

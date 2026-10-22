@@ -13,6 +13,8 @@
 		                                                   -- (generateNature, below), already legal under clear()
 		WorldPlan.clear(layout, plan) -> { Placement }     -- drops dressing on the plots' reserved ground (CLEAR)
 		WorldPlan.reservedRects(layout), WorldPlan.rectDistance(rect, x, z), WorldPlan.footprintRadius(assetId)
+		WorldPlan.yard(layout, kingdom) -> { Placement }   -- the composed start yard of a dressed kingdom (market cross, stalls, hedges, trade); plan() adds it
+		WorldPlan.yardRows(colour) -> { { id, x, z, yaw, role } } -- the same in the keep's frame (colour: red blue green yellow); WorldPlan.YARD: its anchors
 		WorldPlan.trim(layout, plan, density?) -> { Placement }   -- the density pass props() ends with
 		WorldPlan.density(layout, override?) -> { forest, props } -- effective knob values, clamped to 0..1
 		WorldPlan.unseen(layout, x, z) -> number                  -- trim score (studs; 0 = never trimmed)
@@ -40,7 +42,7 @@
 	with each prop's footprint and canopy radius (CLEAR.radius). Blocked trees, bushes and flowers move to the
 	nearest legal spot within CLEAR.natureNudge studs instead of going; boulders against a trunk or bush go.
 	Hand-placed kingdom dressing that sits inside a building, slot or field moves too (CLEAR.nudge,
-	CLEAR.wallGap off walls); the gate banners are exempt and stay exactly where the plan puts them.
+	CLEAR.wallGap off walls); the gate banners are exempt and stay exactly where the plan puts them. The start yard (feature "yard", WorldPlan.yard) is not touched: it is held to stricter rules by YardCompose.spec.
 
 	Crown Arena (FL-0072, G12.6): layout.arena = { cframe, duelRadius, spawnA, spawnB, footprint } is reserved ground like a
 	plot: the generator keeps decor off its footprint (WorldPlan.arenaRect), the clearance moves or removes natural dressing within
@@ -450,6 +452,10 @@ WorldPlan.CLEAR = table.freeze({
 		prop_cart = 7.3,
 		prop_goods = 4.8,
 		farm_haystack = 4.4,
+		prop_cross = 5.7, -- the start yard (WorldPlan.YARD): live bounds + 0.1 (YardCompose.spec measures them)
+		prop_stall = 5.3,
+		prop_hedge_01 = 6.0, -- 12 long
+		prop_hedge_02 = 4.1, -- 6.5 long
 	}),
 	fallbackRadius = 15, -- an asset family missing from `radius`
 	nudge = 14, -- hand-placed dressing on reserved ground moves to the nearest legal spot within this many studs (8 until the village lanes: the crimson cart sits on one)
@@ -1873,6 +1879,86 @@ local function generateNature(layout: any): { Placement }
 	return out
 end
 
+-- ---------------------------------------------------------------- the start yard (visual pass 1b)
+
+local KINGDOM_BANNER = { crimson = "red", azure = "blue", emerald = "green", gold = "yellow" }
+
+-- The village centre the start camera looks across (FL-0147: the camera stands in the yard and looks back at the keep, so the bottom 40 %
+-- of the start picture is the market square and the lanes beside it). ONE composition in the keep's frame (x right, z back; the door is
+-- at z = -23, the cobbled court WorldGround.worn lays centred at z = -39, the cross street at z = -62), applied to every dressed kingdom.
+-- The nav graph (Layout.nav: citizens and units walk it) runs the avenue along x = 0 from the keep door through the court to the yard
+-- node (0, -62) and from there diagonally to the store (-46, -34) and the farm (58, -26): the yard keeps its pieces off those lines.
+--   axis     x = 0, the open avenue from the door through the court. Pieces on the sides are mirrored about it (the stalls, the hedges)
+--            or stand as a pair (the focal pair), so the yard is the same in every kingdom (rotated copies of crimson's;
+--            YardCompose.spec proves it)
+--   focus    a market cross (store side) and the well (farm side) flanking the door at the court's top corners
+--   stalls   two market stalls at the court's lower corners, canopy in the kingdom colour, turned up the court to the focal pair
+--   hedges   a hedge row along each nav diagonal, 4.5 studs off it on the court's side: the V that lines the approach to the store and
+--            the farm and leads the eye from the street into the court
+--   flanks   the farm's cart and a haystack in the open ground beside the farm diagonal (not mirrored)
+-- The pieces are feature "yard": WorldPlan.clear and the trim leave them exactly where they are, because YardCompose.spec holds them to
+-- stricter rules than the clearance's circles (by the footprint each draws): off the lanes, roads, slots, buildings and fields, off every
+-- nav edge by 2 studs, and out of the door's sightline and the focal pair's ring.
+WorldPlan.YARD = table.freeze({
+	court = Vector2.new(0, -39), -- the court's centre (WorldGround.worn)
+	door = Vector2.new(0, -23), -- the keep door
+	ring = 2.5, -- studs of open ground round a focal piece
+	focalAt = Vector2.new(8, -31), -- the well; the cross is its image at x = -8
+	stallAt = Vector2.new(8, -48.4), -- the right-hand stall; the other is its mirror image
+	apex = Vector2.new(0, -62), -- the yard node where the avenue and the two diagonals meet
+	vAngle = math.rad(31.5), -- the slope of the diagonals above the cross street (store 31.3 degrees, farm 31.8)
+	vOffset = 4.5, -- studs from a diagonal to the middle of its hedge row, on the court's side
+	hedgeAt = table.freeze({ 26.5, 36.6 }), -- along the row from the apex: the long hedge's middle, the short hedge's middle
+	cartAt = Vector2.new(38, -50.5), -- the farm's cart, parked along the diagonal
+	hayAt = Vector2.new(46, -44),
+})
+
+export type YardRow = { id: string, x: number, z: number, yaw: number, role: string }
+
+-- The yard in the keep's frame for a kingdom's banner colour (red, blue, green, yellow): { id, x, z, yaw, role }, yaw turned from the
+-- keep's own facing. Fixed order, no random numbers.
+function WorldPlan.yardRows(colour: string): { YardRow }
+	local Y = WorldPlan.YARD
+	local rows: { YardRow } = {}
+	local function add(id: string, x: number, z: number, yaw: number, role: string)
+		table.insert(rows, { id = id, x = x, z = z, yaw = yaw, role = role })
+	end
+	local function pair(id: string, x: number, z: number, yaw: number, role: string)
+		add(id, x, z, yaw, role) -- the right-hand piece ...
+		add(id, -x, z, -yaw, role) -- ... and its image in the avenue's axis
+	end
+	add(`prop_cross_{colour}_01`, -Y.focalAt.X, Y.focalAt.Y, 0, "focal")
+	add("prop_well_01", Y.focalAt.X, Y.focalAt.Y, 0, "focal")
+	pair(`prop_stall_{colour}_01`, Y.stallAt.X, Y.stallAt.Y, math.pi, "stall") -- facing up the court (+Z), at the focal piece above
+	-- the hedge rows: farm side first (along the farm diagonal, the row's X axis on it), then the store side mirrored
+	local slope = Vector2.new(math.cos(Y.vAngle), math.sin(Y.vAngle))
+	local side = Vector2.new(-slope.Y, slope.X) -- toward the court
+	for i, id in { "prop_hedge_01", "prop_hedge_02" } do
+		local t = Y.hedgeAt[i]
+		pair(id, side.X * Y.vOffset + slope.X * t, Y.apex.Y + side.Y * Y.vOffset + slope.Y * t, -Y.vAngle, "hedge")
+	end
+	add("prop_cart_02", Y.cartAt.X, Y.cartAt.Y, math.pi / 2 - Y.vAngle, "flank") -- handles toward the yard node
+	add("farm_haystack_02", Y.hayAt.X, Y.hayAt.Y, 0, "flank")
+	return rows
+end
+
+-- The yard's placements for one kingdom in the world: the rows turned with its keep.
+function WorldPlan.yard(layout: any, kingdom: string): { Placement }
+	local keep = layout.plots[kingdom].anchors.keep
+	local keepYaw = yawOf(keep)
+	local out: { Placement } = {}
+	for _, row in WorldPlan.yardRows(KINGDOM_BANNER[kingdom] or "red") do
+		local p = (keep * CFrame.new(row.x, 0, row.z)).Position
+		local y = WorldPlan.groundHeight(layout, p.X, p.Z)
+		table.insert(out, {
+			assetId = row.id,
+			cframe = CFrame.new(p.X, y, p.Z) * CFrame.Angles(0, keepYaw + row.yaw, 0),
+			feature = "yard",
+		})
+	end
+	return out
+end
+
 -- The valley's dressing as generated (bridges, crops, the clumped nature, kingdom dressing), before clear().
 function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placement }
 	local f = layout.features
@@ -1909,7 +1995,6 @@ function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placeme
 		local cf = CFrame.new(x, y, z) * CFrame.Angles(0, yaw or rng.range(0, 2 * math.pi), 0)
 		table.insert(out, { assetId = id, cframe = cf, feature = feature })
 	end
-	local KINGDOM_BANNER = { crimson = "red", azure = "blue", emerald = "green", gold = "yellow" }
 	for _, kingdom in KINGDOM_ORDER do
 		local plot = layout.plots[kingdom]
 		if dressed and dressed[kingdom] then
@@ -1922,36 +2007,19 @@ function WorldPlan.plan(layout: any, dressed: { [string]: boolean }?): { Placeme
 				local p = (keep * CFrame.new(off)).Position
 				place(string.format("prop_banner_%s_%02d", banner, 1 + (i % 2)), p.X, p.Z, "dressing", yaw)
 			end
-			local yard = (keep * CFrame.new(14, 0, -46)).Position
-			place("prop_well_01", yard.X, yard.Z, "dressing")
 			for i, off in
-				{ Vector3.new(-30, 0, -10), Vector3.new(-30, 0, 6), Vector3.new(30, 0, -14), Vector3.new(-76, 0, 2) }
+				{ Vector3.new(-30, 0, -10), Vector3.new(-30, 0, 6), Vector3.new(30, 0, -14), Vector3.new(-50, 0, 10) }
 			do
 				local p = (keep * CFrame.new(off)).Position
 				local id = if i == 3
 					then "farm_haystack_01"
 					elseif i == 4 then "prop_cart_02"
 					else assetId("prop_goods", i)
-				place(id, p.X, p.Z, "dressing") -- hand-placed clear of slots, nav and roads (spec)
+				place(id, p.X, p.Z, "dressing") -- hand-placed clear of slots, nav and roads (spec); the cart stands at (-50, 10), where clear() leaves it (the old (-76, 2) was nudged 13 studs onto a nav edge)
 			end
-			-- the yard and the work areas of the start view (FORGE-02 visual pass 1; the start camera stands in the yard and looks back at
-			-- the keep, so its bottom 40 % is the avenue between the crossroads court and the keep door): crates and a cart either side of
-			-- the avenue, hay by the farm and its field lane, crates by the quarry road. Keep-frame offsets; the clearance moves each to
-			-- the nearest legal spot (never onto a road, a lane, a slot, a building or a field). 4 + 4 + 4 + 12 + 8 x 4 = 56 parts a kingdom
-			for _, extra in
-				{
-					{ "farm_haystack_02", Vector3.new(40, 0, -34) },
-					{ "farm_haystack_02", Vector3.new(38, 0, 42) },
-					{ "farm_haystack_02", Vector3.new(-44, 0, -50) },
-					{ "prop_cart_01", Vector3.new(-28, 0, -46) },
-					{ "prop_goods_03", Vector3.new(-16, 0, -52) },
-					{ "prop_goods_03", Vector3.new(26, 0, -52) },
-					{ "prop_goods_04", Vector3.new(-34, 0, -38) },
-					{ "prop_goods_04", Vector3.new(68, 0, 22) },
-				}
-			do
-				local p = (keep * CFrame.new(extra[2])).Position
-				place(extra[1], p.X, p.Z, "dressing")
+			-- the start yard: the market square the start camera looks across (WorldPlan.yard)
+			for _, p in WorldPlan.yard(layout, kingdom) do
+				table.insert(out, p)
 			end
 		end
 	end
