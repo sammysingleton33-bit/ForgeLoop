@@ -159,6 +159,18 @@ else
 	record "plugin props" "FAIL" "lune not found"
 fi
 
+# ---------------------------------------------------------------- engine members a live client refuses
+# Writes to read-only / not-scriptable GUI properties, GetPropertyChangedSignal of a property no class has, Enum items
+# that do not exist: Lune lets them through, a real client errors (B22 HUD P0, 2026-10-22; roblox/scripts/UiMembers).
+if command -v lune >/dev/null 2>&1; then
+	run_step "ui members" "$LOG_DIR/ui-members.log" with_timeout lune run roblox/scripts/check_ui_members.luau
+	code=$?
+	summary="$(grep -E '^ui members:' "$LOG_DIR/ui-members.log" | tail -1 | sed -E 's/^ui members: ((PASS|FAIL) — )?//')"
+	if [[ $code == 0 ]]; then record "ui members" "PASS" "$summary"; else record "ui members" "FAIL" "$summary"; fi
+else
+	record "ui members" "FAIL" "lune not found"
+fi
+
 # ---------------------------------------------------------------- Rojo build
 rm -f "$PLACE" # never let a stale place pass the place check
 mkdir -p "$(dirname "$PLACE")"
