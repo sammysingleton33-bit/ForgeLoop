@@ -13,7 +13,9 @@
 		          facing: number? (degrees on screen, Placement.screenAngle; default 0),
 		          confirm: string? (the Place button's word; "Move here" when moving, FL-0120),
 		          okText: string? (the verdict line when the spot is good; default "✓ Good spot"),
-		          clickVerb: string? (the desktop hint's "Click places"; "moves" when moving, FL-0120) }
+		          clickVerb: string? (the desktop hint's "Click places"; "moves" when moving, FL-0120),
+		          noTurn: boolean? (no Turn button: a wall line faces along itself, FL-0129c),
+		          hint: string? (the desktop hint line in place of the default) }
 		ui = { onRotate, onCancel, onPlace }
 	bar:destroy()
 	The ghost moves cell by cell and every move re-renders: the bar keeps its instances and patches
@@ -66,6 +68,8 @@ local function key(model: any, metrics: any): string
 		name = model.name,
 		confirm = model.confirm,
 		clickVerb = model.clickVerb,
+		noTurn = model.noTurn == true,
+		hint = model.hint,
 		icon = model.icon,
 		category = model.category,
 		costs = costs,
@@ -78,7 +82,9 @@ function PlacementBar:_paint(model: any)
 	self.status.Text = text
 	self.status.TextColor3 = color
 	self.status:SetAttribute("status", model.status)
-	FacingDial.set(self.facing, model.facing or 0)
+	if self.facing then
+		FacingDial.set(self.facing, model.facing or 0)
+	end
 	self._ready = model.status == "ok" and not model.busy
 	local cta = if model.busy then "loading" elseif self._ready then "ready" else "disabled"
 	if cta ~= self._cta then
@@ -159,32 +165,39 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 	local rotateIcon = Icon.new("rotate", if phone then 18 else 20)
 	rotateIcon.LayoutOrder = 1
 	local facing = FacingDial.new(dialSize, 3)
-	local rotateWidth = if phone then 70 else 116
-	local rotate = Create("TextButton", {
-		Name = "Rotate",
-		Text = "",
-		AutoButtonColor = false,
-		BackgroundColor3 = Color3.new(1, 1, 1),
-		Size = UDim2.fromOffset(rotateWidth, button),
-		LayoutOrder = 1,
-		[Create.Event.Activated] = call("onRotate"),
-	}, {
-		Corner = Style.corner(10),
-		Stroke = Style.stroke(Theme.color("gold600"), 1.5),
-		Gradient = Style.gradient(Theme.color("ink600"), Theme.color("ink800")),
-		List = Style.list("x", 6, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center),
-		Icon = rotateIcon,
-		Label = if phone
-			then nil
-			else Style.text({
-				text = "Turn",
-				weight = Enum.FontWeight.Bold,
-				size = 14,
-				color = Theme.color("parchment100"),
-				extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), LayoutOrder = 2 },
-			}),
-		Facing = facing,
-	})
+	local turn = model.noTurn ~= true
+	local rotateWidth = if not turn then -8 elseif phone then 70 else 116 -- -8: no button, and no gap before Cancel
+	local rotate = if not turn
+		then nil
+		else Create("TextButton", {
+			Name = "Rotate",
+			Text = "",
+			AutoButtonColor = false,
+			BackgroundColor3 = Color3.new(1, 1, 1),
+			Size = UDim2.fromOffset(rotateWidth, button),
+			LayoutOrder = 1,
+			[Create.Event.Activated] = call("onRotate"),
+		}, {
+			Corner = Style.corner(10),
+			Stroke = Style.stroke(Theme.color("gold600"), 1.5),
+			Gradient = Style.gradient(Theme.color("ink600"), Theme.color("ink800")),
+			List = Style.list("x", 6, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Center),
+			Icon = rotateIcon,
+			Label = if phone
+				then nil
+				else Style.text({
+					text = "Turn",
+					weight = Enum.FontWeight.Bold,
+					size = 14,
+					color = Theme.color("parchment100"),
+					extra = { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromScale(0, 1), LayoutOrder = 2 },
+				}),
+			Facing = facing,
+		})
+	if not turn then
+		facing:Destroy()
+		facing = nil :: any
+	end
 	-- Phones: an X instead of the word, so the building name and its cost keep their room.
 	local cancelWidth = if phone then button else 88
 	local cancel = if phone
@@ -273,7 +286,8 @@ function PlacementBar:render(model: any, metrics: any, ui: { [string]: any })
 	})
 	if not phone then
 		Style.text({
-			text = `Move the mouse to aim · R turns (Shift+R back; pad R1/L1) · Click {model.clickVerb or "places"} · Q cancels`,
+			text = model.hint
+				or `Move the mouse to aim · R turns (Shift+R back; pad R1/L1) · Click {model.clickVerb or "places"} · Q cancels`,
 			weight = Enum.FontWeight.Bold,
 			size = 11,
 			color = Theme.color("parchment100"),

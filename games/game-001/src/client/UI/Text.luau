@@ -14,6 +14,7 @@
 ]]
 
 local Bundle = require("@game/ReplicatedStorage/Forge/Economy/Bundle")
+local BuildingsConfig = require("@game/ReplicatedStorage/Forge/Config/Buildings")
 local Format = require("@game/ReplicatedStorage/Forge/UI/Format")
 local Resources = require("@game/ReplicatedStorage/Forge/Config/Resources")
 
@@ -36,6 +37,10 @@ local REASONS: { [string]: string } = {
 	requires_keep_level = "Upgrade your keep first",
 	limit_reached = "You have the most of these already",
 	unknown_building = "That building can't be built",
+	-- Build.PlaceLine (FL-0126 part 2 slice 1; FORGE-01's handoff 2026-10-22): the wall line
+	not_a_line_piece = "Only walls can be drawn as a line",
+	too_short = "Move the far end out further",
+	too_long = `Too long: {(BuildingsConfig :: any).maxLineSegments or 12} pieces at most`,
 	-- Build.CanMove / Build.Move / Build.MoveToSlot (FL-0119, CONTRACTS G13.9 v0.4-g9j; a move reads them
 	-- through MOVE_REASONS below, these are for the Reasons line of Build/Remotes.luau)
 	not_movable = "The keep can't be moved",
@@ -74,6 +79,16 @@ local REASONS: { [string]: string } = {
 -- Build.PlaceSlot's own codes (FORGE-01 FL-0081, BuildingService.placeSlot; the Reasons line of
 -- Build/Remotes.luau) in the plot's words. Its other refusals come from the simulation's placement and
 -- read as in REASONS, except `blocked`: on a plot that means something stands in the footprint.
+-- A wall line is all or nothing (Build.PlaceLine): the reason is for one of its pieces, never says which.
+-- Short enough for the phone bar's status line (667 × 375).
+local LINE_REASONS: { [string]: string } = {
+	blocked = "No room for part of it",
+	out_of_territory = "Part of it leaves your kingdom",
+	out_of_bounds = "Part of it is off the map",
+	cannot_afford = "Not enough for the whole wall",
+	limit_reached = "Over your wall limit",
+}
+
 local SLOT_REASONS: { [string]: string } = {
 	unknown_slot = "This plot isn't yours",
 	slot_occupied = "This plot is already built on",
@@ -109,6 +124,9 @@ function Text.reason(reason: any, context: string?): string
 	end
 	if context == "move" and MOVE_REASONS[key] then
 		return MOVE_REASONS[key]
+	end
+	if context == "line" and LINE_REASONS[key] then
+		return LINE_REASONS[key]
 	end
 	if context == "moveSlot" then
 		return SLOT_REASONS[key] or MOVE_REASONS[key] or REASONS[key] or "That didn't work. Try again."

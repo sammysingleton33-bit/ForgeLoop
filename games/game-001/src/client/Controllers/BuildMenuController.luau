@@ -69,6 +69,7 @@ local PlacementInput = require("../UI/PlacementInput")
 local Slots = require("../UI/Slots")
 local Text = require("../UI/Text")
 local Turns = require("../UI/Turns")
+local WallLine = require("../UI/WallLine")
 
 local BuildMenuController = {}
 BuildMenuController.__index = BuildMenuController
@@ -78,6 +79,11 @@ local Def = { name = "BuildMenuController", dependencies = { "KingdomHudControll
 BuildMenuController.DRAG_HOLD_SEC = 0.45 -- above InputModeController's tapSec (0.4): a hold is never also a tap
 BuildMenuController.DRAG_SLOP = 8 -- px, InputModeController's tapPixels: more before the hold is a camera pan
 BuildMenuController.MOVE_COOLDOWN = 10 -- seconds, when config Buildings has no moveCooldown
+
+-- The wall line (FL-0129c; FORGE-01's Build.PlaceLine, FL-0126 part 2 slice 1): placing a wall while the remote is
+-- served picks two ends instead of one spot.
+BuildMenuController.LINE_TYPE = "wall"
+BuildMenuController.LINE = "Build.PlaceLine"
 
 -- Used when Kit has no footprint for a type (never for the G2 types; a guard, not a rule).
 BuildMenuController.FALLBACK_FOOTPRINT = Vector2.new(16, 16)
@@ -218,6 +224,9 @@ function BuildMenuController:_exclude(): { Instance }
 	if self.ghost then
 		table.insert(list, self.ghost.folder)
 	end
+	for _, g in if self.placing and self.placing.line then self.placing.line.ghosts else {} do
+		table.insert(list, g.folder)
+	end
 	local player = self._env.Players.LocalPlayer
 	if player and player.Character then
 		table.insert(list, player.Character)
@@ -281,6 +290,10 @@ function BuildMenuController:startPlacement(buildingType: string)
 		footprint = detail.footprint or BuildMenuController.FALLBACK_FOOTPRINT,
 		room = detail.room, -- largest level + gap: what the server keeps free (#62)
 	}
+	if buildingType == BuildMenuController.LINE_TYPE and self.hud:hasRemote(BuildMenuController.LINE) then
+		-- first the start (one piece, checked like any spot), then the far end: { from, plan, ghosts }
+		self.placing.line = { from = nil :: Vector3?, plan = nil :: any, ghosts = {} :: { any } }
+	end
 	self.ghost = Ghost.new(self._env)
 	if self.hud.state.menu == "build" then
 		self.hud:setMenu(nil)
@@ -299,6 +312,10 @@ function BuildMenuController:_refreshGhost()
 	if p == nil or p.position == nil or self.ghost == nil then
 		return
 	end
+	if p.line and p.line.from then
+		self:_refreshLineGhosts()
+		return
+	end
 	local slot = p.move and p.move.slot
 	if slot then
 		local turn = p.move.turn
@@ -315,6 +332,10 @@ end
 function BuildMenuController:aimAt(position: Vector3)
 	local p = self.placing
 	if p == nil or p.busy then
+		return
+	end
+	if p.line and p.line.from then
+		self:_aimLine(position)
 		return
 	end
 	if p.move then
@@ -358,6 +379,9 @@ function BuildMenuController:rotate(step: number?)
 	local p = self.placing
 	if p == nil or p.busy then
 		return
+	end
+	if p.line then
+		return -- a wall line faces along itself: no Turn
 	end
 	local back = step == -1
 	local slot = p.move and p.move.slot
@@ -660,6 +684,10 @@ function BuildMenuController:confirm()
 	if p == nil or p.busy or p.status ~= "ok" or p.position == nil then
 		return
 	end
+	if p.line then
+		self:_confirmLine()
+		return
+	end
 	local hud = self.hud
 	local move = p.move
 	local slot = move and move.slot
@@ -722,9 +750,124 @@ function BuildMenuController:_stop()
 		self.ghost:destroy()
 		self.ghost = nil
 	end
+	for _, g in if self.placing and self.placing.line then self.placing.line.ghosts else {} do
+		g:destroy()
+	end
 	self.placing = nil
 	self:_setMode("explore")
 	self.hud:setPlacing(false)
+end
+
+-- ------------------------------------------------------------------ the wall line (FL-0129c)
+
+-- The level-1 price of one piece, and of `count` pieces with what the treasury is short of.
+function BuildMenuController:_lineCosts(count: number): { any }
+	local detail = BuildModel.placeDetail(self.hud.store, BuildMenuController.LINE_TYPE)
+	local have = self.hud.store:balances()
+	local out = {}
+	for _, c in if detail then detail.costs else {} do
+		local amount = c.amount * count
+		table.insert(out, { currency = c.currency, amount = amount, short = (have[c.currency] or 0) < amount })
+	end
+	return out
+end
+
+-- The far end moved: the pieces from the start to it (UI/WallLine, the server's rule), and what the client can tell
+-- before Build wall: the length limits and the price of the whole line. Each piece's ground is the server's call.
+function BuildMenuController:_aimLine(position: Vector3)
+	local p = self.placing
+	local line = p.line
+	local plan = WallLine.plan(line.from, Placement.snap(position))
+	local key = `line|{plan.to.X}|{plan.to.Z}`
+	if key == p.key then
+		return
+	end
+	p.key = key
+	p.position = plan.to
+	line.plan = plan
+	p.status, p.reason = "ok", nil
+	if plan.reason then
+		p.status, p.reason = "bad", Text.reason(plan.reason, "line")
+	else
+		for _, c in self:_lineCosts(plan.count) do
+			if c.short then
+				p.status, p.reason = "bad", Text.reason("cannot_afford", "line")
+			end
+		end
+	end
+	self._checker:cancel()
+	self:_refreshGhost()
+	self.hud:render()
+end
+
+function BuildMenuController:_refreshLineGhosts()
+	local p = self.placing
+	local line = p.line
+	local plan = line.plan
+	local pieces = if plan then plan.pieces else {}
+	if #pieces == 0 then
+		-- too short (or not aimed yet): the start alone, at the piece's size
+		self.ghost:show(p.footprint, Placement.cframe(line.from, 0), nil)
+		self.ghost:tint(p.status)
+	else
+		self.ghost:show(p.footprint, pieces[1].cframe, nil)
+		self.ghost:tint(p.status)
+	end
+	while #line.ghosts < #pieces - 1 do -- the first piece is self.ghost
+		table.insert(line.ghosts, Ghost.new(self._env))
+	end
+	for i, g in line.ghosts do
+		local piece = pieces[i + 1]
+		if piece then
+			g:show(p.footprint, piece.cframe, nil)
+			g:tint(p.status)
+		else
+			g:hide()
+		end
+	end
+end
+
+function BuildMenuController:_confirmLine()
+	local p = self.placing
+	local line = p.line
+	if line.from == nil then
+		-- the start is set where the checked ghost stands; the far end starts there too (too short until it moves)
+		line.from = p.position
+		p.key = nil
+		self:_aimLine(p.position)
+		return
+	end
+	local plan = line.plan
+	if plan == nil or plan.reason then
+		return
+	end
+	local hud = self.hud
+	p.busy = true
+	hud:render()
+	self._env.spawn(function()
+		local called, result, reason = pcall(function()
+			return hud.remotes:invoke(BuildMenuController.LINE, BuildMenuController.LINE_TYPE, plan.from, plan.to)
+		end)
+		if self.placing ~= p then
+			return -- cancelled while waiting
+		end
+		p.busy = false
+		if called and type(result) == "table" and #result > 0 then
+			local n = #result
+			hud:notify({
+				kind = "success",
+				title = if n == 1 then "Wall placed" else `Wall of {n} pieces placed`,
+				body = "Builders are on their way",
+			})
+			self:_stop()
+		else
+			local text = Text.reason(if called then reason else nil, "line")
+			p.status, p.reason = "bad", text
+			self:_refreshGhost()
+			hud:notify({ kind = "error", title = "Couldn't build the wall", body = text })
+			hud:render()
+		end
+	end)
 end
 
 -- ------------------------------------------------------------------ rendering
@@ -769,12 +912,33 @@ function BuildMenuController:render(metrics: any)
 		end
 		local slot = p.move and p.move.slot
 		local yaw = if slot then Turns.yaw(slot.frame.yaw, p.move.turn) else p.rot * math.pi / 2
+		local line = p.line
+		local count = if line and line.plan and line.plan.reason == nil then line.plan.count else 1
+		if line and line.from then
+			costs = self:_lineCosts(count)
+		end
+		local lineName = if line == nil
+			then nil
+			elseif line.from == nil then "Wall line: the start"
+			elseif count == 1 then "Wall line · 1 piece"
+			else `Wall line · {count} pieces`
 		self.bar:render(
 			{
-				name = if p.move then `Move {p.name}` else p.name,
-				confirm = if p.move then "Move here" else nil,
+				name = lineName or (if p.move then `Move {p.name}` else p.name),
+				confirm = if line
+					then (if line.from then "Build wall" else "Set start")
+					elseif p.move then "Move here"
+					else nil,
 				clickVerb = if p.move then "moves" else nil,
-				okText = if slot then `✓ {Turns.label(p.move.turn)}` else nil, -- the plot outline shows the snap
+				noTurn = line ~= nil,
+				hint = if line == nil
+					then nil
+					elseif line.from then "Move the mouse to the far end · Click builds the wall · Q cancels"
+					else "Move the mouse to one end · Click sets it · Q cancels",
+				okText = if line
+					then (if line.from then "✓ Builds in one go: all pieces or none" else "✓ Start here")
+					elseif slot then `✓ {Turns.label(p.move.turn)}`
+					else nil, -- the plot outline shows the snap
 				icon = if info then info.icon else "build",
 				category = if info then info.category else "economy",
 				costs = costs,

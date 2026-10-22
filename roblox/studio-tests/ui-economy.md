@@ -476,5 +476,24 @@ kingdom (Studio "Start" with 2 players, both seated rulers of the same kingdom),
    line says "Sending your vote…"); the buttons are not rebuilt by the countdown (FORGE-07 M1 on #265).
 6. How to play → card 5 says co-rulers vote in 10 seconds and a tie goes to the higher leadership.
 
+## U33 — Build: the wall line (FL-0129c; FORGE-01's Build.PlaceLine, #301)
+Desktop window and the phone emulator, one client, the starting treasury (walls cost the level-1 price per piece).
+1. Build → Military → Wall → Place: the bar reads "Wall line: the start", has no Turn button, and its button says
+   "Set start". Aim at open ground inside your kingdom: "✓ Start here". Tap Set start.
+2. Move the aim away along the ground: one ghost per 32-stud piece appears from the start toward the cursor, all
+   facing along the line; the bar reads "Wall line · N pieces" with the total price, and "Build wall".
+3. With the aim on the start: "✕ Move the far end out further" and Build wall is off. Drag past 12 pieces:
+   "✕ Too long: 12 pieces at most". Aim at more pieces than the treasury pays for: the price turns red and
+   "✕ Not enough for the whole wall".
+4. Aim at two pieces on clear ground, tap Build wall: a toast "Wall of 2 pieces placed", build mode ends, and two
+   wall construction sites appear where the ghosts stood, joined end to end. The treasury drops by twice the price.
+5. Draw a line through an existing building or out of your territory and tap Build wall: nothing is built or
+   charged, the line stays open with "✕ No room for part of it" (or "Part of it leaves your kingdom") and an error
+   toast. Move the far end and build again.
+6. Cancel (X, or Q on desktop) at any step: every ghost goes and build mode ends. Placing a farm or a house still
+   uses the one-spot placement with Turn.
+7. Phone emulator (667 × 375): the bar and its status line fit (no "…" in the status); the pieces are visible from
+   the aerial camera.
+
 ## Report
 Per test: pass/fail, BuildInfo sha, device/emulator, screenshots for U5/U6 and U12, any Output errors.
