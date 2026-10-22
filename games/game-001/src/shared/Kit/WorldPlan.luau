@@ -2040,7 +2040,7 @@ end
 --   * cabbage variants: a cabbage field takes farm_field_cabbage_01..03 by its kingdom (it was always _03);
 --   * fences (farm_fence_NN) along the outside of each plot's crop fields: the back and flank sides, never the side that faces the
 --     keep or a neighbouring field, and a segment is dropped (never nudged) when it would touch a slot, a building, a build zone,
---     a road, the river or the arena.
+--     a road, a worn lane, the river or the arena.
 -- (Rock cliffs on the mountain rim were placed in the first round of phase 3 and dropped by FORGE-00; rock_cliff_01/02 are on the bench.)
 WorldPlan.MESH_DRESSING = table.freeze({
 	cabbageIds = table.freeze({ "farm_field_cabbage_01", "farm_field_cabbage_02", "farm_field_cabbage_03" }),
@@ -2062,6 +2062,13 @@ local function fenceSegmentLegal(layout: any, rects: { any }, x: number, z: numb
 	end
 	for _, road in f.roads do
 		if distToPolyline(x, z, road.points) < road.width / 2 + hw + 1 then
+			return false
+		end
+	end
+	-- the plots' worn lanes (features.paths; the ground only, drawn by WorldGround): a fence stands beside them, never across them, with
+	-- the same clearance as a road
+	for _, lane in f.paths do
+		if distToPolyline(x, z, lane.points) < lane.width / 2 + hw + 1 then
 			return false
 		end
 	end

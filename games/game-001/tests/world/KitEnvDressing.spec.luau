@@ -125,8 +125,8 @@ local function shapes(): { { name: string, kind: string, shape: any } }
 	return out
 end
 
--- why a fence placement is not legal ("" = legal): off every slot, zone, building and the arena (the fields it hugs excepted), clear of the roads
--- and the river, inside the bounds
+-- why a fence placement is not legal ("" = legal): off every slot, zone, building and the arena (the fields it hugs excepted), clear of the roads,
+-- the plots' worn lanes (features.paths) and the river, inside the bounds
 local function fenceViolations(p: any): string
 	local pos = p.cframe.Position
 	local fence = Footprint.rect(Vector2.new(D.fenceLength, 2 * D.fenceHalfWidth), pos.X, pos.Z, yawOf(p.cframe))
@@ -145,6 +145,11 @@ local function fenceViolations(p: any): string
 		for _, road in f.roads do
 			if WorldPlan.distToPolyline(x, z, road.points) < road.width / 2 + D.fenceHalfWidth then
 				return `a fence at ({math.floor(x)}, {math.floor(z)}) is on a road`
+			end
+		end
+		for _, lane in f.paths do
+			if WorldPlan.distToPolyline(x, z, lane.points) < lane.width / 2 + D.fenceHalfWidth then
+				return `a fence at ({math.floor(x)}, {math.floor(z)}) is on the {lane.kingdom} {lane.name} lane`
 			end
 		end
 		if x < f.bounds.min.X or x > f.bounds.max.X or z < f.bounds.min.Y or z > f.bounds.max.Y then
@@ -276,17 +281,18 @@ describe("the dressing with the kit", function()
 		expect(seen.farm_field_wheat_01 and seen.farm_field_wheat_02 and not seen.farm_field_wheat_03).toBe(true) -- today's wheat, the growth stages stay on the bench
 	end)
 
-	it("adds the 48 fences the proposal measured at the shipped density and at 1.0, and never a cliff", function()
+	-- 48 until the fence rule also kept off the plots' worn lanes: the proposal's segment on each plot's fields lane (4 in all) is dropped
+	it("adds the 44 fences at the shipped density and at 1.0, and never a cliff", function()
 		local base, out = dressed(nil)
 		local f = byFeature(out)
-		expect(f.fence).toBe(48)
+		expect(f.fence).toBe(44)
 		expect(f.cliff).toBeNil() -- FORGE-00 dropped the rim cliffs: rock_cliff_01/02 are on the bench
-		expect(#out - #base).toBe(48)
+		expect(#out - #base).toBe(44)
 		local base1, out1 = dressed(WorldPlan.FULL_DENSITY)
 		local f1 = byFeature(out1)
-		expect(f1.fence).toBe(48)
+		expect(f1.fence).toBe(44)
 		expect(f1.cliff).toBeNil()
-		expect(#out1 - #base1).toBe(48)
+		expect(#out1 - #base1).toBe(44)
 		-- only fences are added (both ids in use), nothing of the base is moved or dropped, and no id of the bench is placed
 		local want = { farm_fence_01 = true, farm_fence_02 = true }
 		for i = #base + 1, #out do
@@ -302,7 +308,7 @@ describe("the dressing with the kit", function()
 		end
 	end)
 
-	it("fences the same 12 segments on every plot (the plots stay rotated copies of each other)", function()
+	it("fences the same 11 segments on every plot (the plots stay rotated copies of each other)", function()
 		local _, out = dressed(nil)
 		local perPlot = { 0, 0, 0, 0 }
 		for _, p in out do
@@ -319,7 +325,7 @@ describe("the dressing with the kit", function()
 			end
 		end
 		for i = 1, 4 do
-			expect(perPlot[i]).toBe(12)
+			expect(perPlot[i]).toBe(11) -- 12 until the segment across the plot's fields lane was dropped
 		end
 	end)
 
@@ -338,7 +344,7 @@ describe("the dressing with the kit", function()
 					expect(gap).toBeLessThan(D.fenceOffset + 1.2) -- a fence is a field's own dressing, not a wall somewhere else
 				end
 			end
-			expect(n).toBe(48)
+			expect(n).toBe(44)
 		end)
 	end
 
@@ -435,8 +441,8 @@ describe("a world built with the kit", function()
 				expect(Kit.partCount(model)).toBe(2) -- Root, Body
 			end
 		end
-		expect(fences).toBe(48)
-		expect(parts).toBe(144) -- 48 x 3
+		expect(fences).toBe(44)
+		expect(parts).toBe(132) -- 44 x 3 (144 with the 4 segments that stood across the fields lanes)
 		expect(parts).toBeLessThan(150)
 		expect(cabbages.farm_field_cabbage_01).toBe(2)
 		expect(cabbages.farm_field_cabbage_02).toBe(1)
@@ -487,6 +493,22 @@ describe("the checks catch each way of breaking the rule (mutants)", function()
 		expect(fenceViolations(moved(p, road.X, road.Y))).never.toBe("")
 		local river = Layout.features.river.points[3]
 		expect(fenceViolations(moved(p, river.X, river.Y))).never.toBe("")
+	end)
+
+	it("flags a fence on a worn lane (the 4 segments the lane rule dropped stood across the fields lanes)", function()
+		local p = firstFence()
+		for _, lane in Layout.features.paths do
+			if lane.name == "fields" then
+				local a, b = lane.points[1], lane.points[2]
+				expect(fenceViolations(moved(p, (a.X + b.X) / 2, (a.Y + b.Y) / 2))).never.toBe("")
+				-- ... and a lane's half width + the fence's half thickness + 1 and a half beside it is open ground
+				local run = (b - a).Unit
+				local reach = lane.width / 2 + D.fenceHalfWidth + 1.5
+				local x, z = (a.X + b.X) / 2 - run.Y * reach, (a.Y + b.Y) / 2 + run.X * reach
+				expect(WorldPlan.distToPolyline(x, z, lane.points) >= lane.width / 2 + D.fenceHalfWidth + 1).toBe(true)
+				break
+			end
+		end
 	end)
 
 	it("flags a fence on a building or in a build zone", function()
