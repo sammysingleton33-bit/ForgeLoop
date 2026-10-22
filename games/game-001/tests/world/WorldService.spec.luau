@@ -388,39 +388,41 @@ describe("Dressing density knob (D-047)", function()
 		function()
 			-- re-pin only when the world itself changes on purpose: the generated plan, then the cleared plan
 			local plan = WorldPlan.plan(Layout, { crimson = true })
-			expect(#plan).toBe(618)
-			expect(fingerprint(plan)).toBe(1224127508) -- main d78d9cb's props, before the plot clearance and the trim; re-pinned for FL-0127 (three outposts: decor keeps radius + 14 off each, and the four road spurs; 618 placements before and after) together with FL-0072 (the Crown Arena's footprint is reserved ground: the generator keeps decor 4 studs off it, which re-seated 37 of 618 placements: 20 lone trees, 5 bushes, 12 rocks, as the PRNG stream shifts after the first rejected spot; forests, crops and plot dressing are unchanged) and before that for FL-0124: the plan keeps decor 9 studs off every world node, so moving the 28 nodes re-seated 12 of 645 placements (all flowers; no tree, bush or rock changed; farthest 51 studs from a moved node)
+			expect(#plan).toBe(464)
+			expect(fingerprint(plan)).toBe(1728038995) -- re-pinned for FORGE-02 visual pass 1 (nature in clumps: WorldPlan.generateNature grows stands, tree lines, groves, rock groups, bush clumps and flower drifts in place of the even scatter; 618 placements -> 464: stands keep 0.7 of their Layout counts, lone trees, bushes and rocks are fewer and grouped; placements carry scale and tint, which this fingerprint leaves out: NatureClumps.spec pins those). Before that: main d78d9cb's props, re-pinned for FL-0127 (three outposts), FL-0072 (the arena's footprint) and FL-0124 (decor keeps 9 studs off every world node)
 			local cleared = WorldPlan.clear(Layout, plan)
 			local one = WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY)
-			expect(#one).toBe(615)
-			expect(fingerprint(one)).toBe(1319973902)
+			expect(#one).toBe(464)
+			expect(fingerprint(one)).toBe(1072361024)
 			expect(#cleared).toBe(#one)
 			for i, p in one do
 				expect(samePlacement(p, cleared[i])).toBe(true) -- density 1.0 adds nothing to the clearance
 			end
 			local all = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY)
-			expect(#all).toBe(642)
-			expect(fingerprint(all)).toBe(1544930042)
+			expect(#all).toBe(515)
+			expect(fingerprint(all)).toBe(1246505086)
 			local env, svc = boot()
 			svc.density = WorldPlan.FULL_DENSITY
 			svc:start()
 			env.mock:advance(30)
 			expect(svc.stats.error).toBeNil()
-			expect(svc.stats.props).toBe(615)
+			expect(svc.stats.props).toBe(464)
 			-- the dressing, the arena counted apart: 8,271 props and nodes as drawn before FL-0136 phase 3 (8,309 on main with the outposts; the arena keep-out
 			-- re-seats decor) + 76 = the resource markers, 2 parts on each of the 38 nodes (tests/world/KitNodeMarker.spec). The placements themselves
 			-- are unchanged (the fingerprints above); with the imported meshes the world also gets the mesh-only dressing (KitEnvDressing.spec).
-			expect(svc.stats.parts - svc.stats.arenaParts).toBe(8347)
-			-- the terrain too: every forest floor is today's disc (the stand's centre, 1.05 x its radius)
+			expect(svc.stats.parts - svc.stats.arenaParts).toBe(6841) -- 8,347 before the nature pass: the untrimmed valley is 1,506 parts lighter (fewer, better-placed trees, 8 more yard props a kingdom)
+			-- the terrain too: one floor disc per stand, fitted to its trees (WorldPlan.forestFloors): never beyond the old full disc
+			-- (the stand's centre, 1.05 x its radius) and within 0.2 of the radius of the stand's centre
 			local forests = Layout.features.forests
 			local floorOps = 0
 			for _, call in svc.terrain.calls do
 				if string.sub(call.method, 1, 4) == "Fill" and call.op.feature == "forest_floor" then
 					floorOps += 1
 					local forest = forests[floorOps]
-					expect(call.op.radius).toBeNear(forest.radius * 1.05, 1e-6)
-					expect(call.op.cframe.Position.X).toBeNear(forest.center.X, 1e-6)
-					expect(call.op.cframe.Position.Z).toBeNear(forest.center.Y, 1e-6)
+					expect(call.op.radius).toBeLessThanOrEqual(forest.radius * 1.05 + 1e-6)
+					expect(
+						(Vector2.new(call.op.cframe.Position.X, call.op.cframe.Position.Z) - forest.center).Magnitude
+					).toBeLessThanOrEqual(forest.radius * 0.2)
 				end
 			end
 			expect(floorOps).toBe(#forests)
@@ -539,54 +541,50 @@ describe("Dressing density knob (D-047)", function()
 					end
 				end
 			end
-			if lostN >= 3 then
+			if lostN >= 2 then -- (stands hold 0.7 of the Layout's counts now, so the trim takes 2 or 3 from a thinned one)
 				checked += 1
 				expect(lostSum / lostN).toBeGreaterThan(keptSum / keptN) -- what goes was further out than what stays
 			end
 		end
-		expect(checked).toBeGreaterThanOrEqual(4)
+		expect(checked).toBeGreaterThanOrEqual(3) -- (4 before the nature pass: stands hold 0.7 of the Layout's counts now, so the knob's cut is spent on the 3 least-seen)
 	end)
 
-	it("sizes each thinned stand's ground disc to the trees that stay (forest floors)", function()
-		local floors, today = WorldPlan.forestFloors(Layout), WorldPlan.forestFloors(Layout, WorldPlan.FULL_DENSITY)
-		local trees, full = {}, {}
-		for _, p in WorldPlan.props(Layout, { crimson = true }) do
-			if p.feature == "forest" then
-				table.insert(trees, Vector2.new(p.cframe.Position.X, p.cframe.Position.Z))
-			end
-		end
-		for _, p in WorldPlan.props(Layout, { crimson = true }, WorldPlan.FULL_DENSITY) do
-			if p.feature == "forest" then
-				table.insert(full, Vector2.new(p.cframe.Position.X, p.cframe.Position.Z))
-			end
-		end
-		local shrunk = 0
-		for s, forest in Layout.features.forests do
-			expect(today[s].r).toBeNear(forest.radius * 1.05, 1e-6) -- density 1.0 is today's disc
-			local centre = Vector2.new(floors[s].x, floors[s].z)
-			local inside, far, before = 0, 0, 0
-			for _, t in trees do
-				if (t - forest.center).Magnitude <= forest.radius then
-					inside += 1
-					far = math.max(far, (t - centre).Magnitude)
+	it("fits each stand's ground disc to the trees that stay (forest floors)", function()
+		local floors, full = WorldPlan.forestFloors(Layout), WorldPlan.forestFloors(Layout, WorldPlan.FULL_DENSITY)
+		local trees = {}
+		for _, density in { "shipped", "full" } do
+			trees[density] = {}
+			for _, p in
+				WorldPlan.props(Layout, { crimson = true }, if density == "full" then WorldPlan.FULL_DENSITY else nil)
+			do
+				if p.feature == "forest" then
+					table.insert(trees[density], Vector2.new(p.cframe.Position.X, p.cframe.Position.Z))
 				end
 			end
-			for _, t in full do
-				before += if (t - forest.center).Magnitude <= forest.radius then 1 else 0
-			end
-			expect(floors[s].r).toBeLessThanOrEqual(today[s].r + 1e-6)
-			expect((centre - forest.center).Magnitude).toBeLessThanOrEqual(forest.radius * 0.2) -- the disc stays centred
-			expect(far).toBeLessThanOrEqual(floors[s].r) -- every tree that stays stands on the disc
-			if inside < before then
-				shrunk += 1
-				-- it ends 5 % of the stand radius beyond its outermost tree, not further, and is smaller than today's
-				expect(floors[s].r - far).toBeNear(forest.radius * 0.05, 0.5)
-				expect(floors[s].r).toBeLessThan(today[s].r)
-			else
-				expect(floors[s].r).toBeNear(today[s].r, 1e-6)
+		end
+		local fitted = 0
+		for _, set in { { floors, trees.shipped }, { full, trees.full } } do
+			for s, forest in Layout.features.forests do
+				local floor, list = set[1][s], set[2]
+				local centre = Vector2.new(floor.x, floor.z)
+				local inside, far = 0, 0
+				for _, t in list do
+					if (t - forest.center).Magnitude <= forest.radius then
+						inside += 1
+						far = math.max(far, (t - centre).Magnitude)
+					end
+				end
+				expect(inside).toBeGreaterThan(0)
+				expect(floor.r).toBeLessThanOrEqual(forest.radius * 1.05 + 1e-6) -- never beyond the old full disc
+				expect((centre - forest.center).Magnitude).toBeLessThanOrEqual(forest.radius * 0.2) -- the disc stays centred
+				expect(far).toBeLessThanOrEqual(floor.r) -- every tree that stays stands on the disc
+				expect(floor.r - far).toBeLessThanOrEqual(9.5) -- and it ends no more than the canopy pad (9 studs) beyond the outermost
+				if floor.r < forest.radius * 0.9 then
+					fitted += 1
+				end
 			end
 		end
-		expect(shrunk).toBeGreaterThanOrEqual(4)
+		expect(fitted).toBeGreaterThanOrEqual(16) -- the generator grows compact stands: both densities fit most of the 10 well inside the old disc
 	end)
 
 	it("fills the terrain with the thinned floors (WorldService)", function()

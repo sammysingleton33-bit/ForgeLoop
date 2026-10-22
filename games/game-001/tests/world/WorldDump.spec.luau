@@ -5,7 +5,7 @@
 	blender/scripts/render_world.py can render a top-down view and oblique views (D-019 review).
 
 	The surface materials are read from WorldPlan.terrainOps themselves (the last op that covers a point decides, as in the game), so
-	a new terrain feature shows in the preview without a second copy of its rules. The dump also carries the world/Lighting preset
+	a new terrain feature shows in the preview without a second copy of its rules. Placements carry `scale` (nature size variation) and tinted foliage is dumped as its own asset ("<id>@t<n>"). The dump also carries the world/Lighting preset
 	(`lighting`) for the preview's sun, haze and colour grade, and citizens at work around the plots (FORGE_WORLD_CITIZENS=12, the default, is the start of a kingdom
 	(config/Kingdoms.luau: farmer 3, woodcutter 3, miner 2, builder 2, hauler 2); 40 is a mid-game kingdom; 0 leaves them out) so the views at the default gameplay camera show how readable they are. FORGE_WORLD_STEP=<studs> sets the heightfield grid
 	(6 by default; 3 for the camera views).
@@ -223,10 +223,22 @@ local function dump()
 		then WorldPlan.plan(Layout, { crimson = true })
 		else WorldPlan.props(Layout, { crimson = true })
 	for _, p in planned do
-		if not assets[p.assetId] then
-			assets[p.assetId] = partsOf(Kit.prop(p.assetId))
+		-- a tinted placement (foliage colour shift, WorldPlan.tintModel) is its own asset, "<id>@t<steps>", so the preview shows it
+		local id = p.assetId
+		local tint = p.tint or 0
+		if tint ~= 0 then
+			id = `{id}@t{math.floor(tint * 2 + 0.5)}`
 		end
-		table.insert(placements, { assetId = p.assetId, cframe = cf12(p.cframe), feature = p.feature })
+		if not assets[id] then
+			local model = Kit.prop(p.assetId)
+			WorldPlan.tintModel(model, tint)
+			assets[id] = partsOf(model)
+		end
+		-- `scale`: the placement's size against the asset's own, about its origin (the preview scales the model the same way)
+		table.insert(
+			placements,
+			{ assetId = id, cframe = cf12(p.cframe), feature = p.feature, scale = if p.scale then r3(p.scale) else nil }
+		)
 	end
 	for _, node in Layout.resourceNodes do
 		if not assets[node.assetId] then
@@ -310,10 +322,15 @@ local function dump()
 		plots = (function()
 			local out = {}
 			for k, plot in Layout.plots do
+				local anchors = {}
+				for name, cf in plot.anchors do
+					anchors[name] = cf12(cf)
+				end
 				out[k] = {
 					keep = cf12(plot.anchors.keep),
 					spawn = cf12(plot.spawn),
 					throne = cf12(StartView.root(Kit, Layout, k)),
+					anchors = anchors,
 				}
 			end
 			return out

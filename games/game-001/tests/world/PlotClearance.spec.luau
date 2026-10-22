@@ -90,7 +90,7 @@ local function liveRadius(assetId: string): number
 	return r
 end
 
--- items: { { assetId, x, z, feature } }; returns one line per dressing item that stands too close
+-- items: { { assetId, x, z, feature, scale? } }; returns one line per dressing item that stands too close (its live radius times its scale)
 local function violations(items: { any }): { string }
 	local rects = reserved()
 	local bad = {}
@@ -98,7 +98,7 @@ local function violations(items: { any }): { string }
 		-- the gate banners flank the road by design and are left exactly where the generator puts them
 		local banner = item.feature == "dressing" and string.sub(item.assetId, 1, 11) == "prop_banner"
 		if item.feature ~= "bridge" and item.feature ~= "crops" and not banner then
-			local r = liveRadius(item.assetId)
+			local r = liveRadius(item.assetId) * (item.scale or 1)
 			local natural = NATURAL[item.feature] == true
 			for _, rect in rects do
 				-- kingdom dressing (banners, well, cart, goods) is hand-placed in the yard: item may stand close to
@@ -121,6 +121,16 @@ local function violations(items: { any }): { string }
 					)
 				end
 			end
+			-- the plots' village lanes (features.paths: ground only, not no-build roads) are kept clear like a road
+			for i, lane in Layout.features.paths or {} do
+				local gap = if natural then MARGIN else 0
+				if WorldPlan.distToPolyline(item.x, item.z, lane.points) < lane.width / 2 + r + gap then
+					table.insert(
+						bad,
+						`{item.assetId} ({item.feature}) at ({math.floor(item.x)}, {math.floor(item.z)}) near lane {i}`
+					)
+				end
+			end
 		end
 	end
 	return bad
@@ -129,10 +139,13 @@ end
 local function itemsOf(placements: { any }): { any }
 	local out = {}
 	for _, p in placements do
-		table.insert(
-			out,
-			{ assetId = p.assetId, x = p.cframe.Position.X, z = p.cframe.Position.Z, feature = p.feature }
-		)
+		table.insert(out, {
+			assetId = p.assetId,
+			x = p.cframe.Position.X,
+			z = p.cframe.Position.Z,
+			feature = p.feature,
+			scale = p.scale,
+		})
 	end
 	return out
 end
@@ -236,8 +249,28 @@ describe("Plot clearance (user playtest, farm areas)", function()
 	it(
 		"removes natural dressing only when it has nowhere legal to go: hand-placed dressing is moved, never deleted",
 		function()
+			-- the generator's own nature is already legal (NatureClumps.spec), so blocked decor is injected: a tree on a field (nowhere
+			-- legal within reach: removed), a bush and a flower tuft a hair inside the margin of a field's edge (moved clear) and a
+			-- boulder against a field (removed)
 			local plan = WorldPlan.plan(Layout, ALL)
-			local cleared = WorldPlan.props(Layout, ALL, WorldPlan.FULL_DENSITY) -- clearance only, no trim
+			local field = Layout.features.fields[1]
+			local fcf = CFrame.new(field.center.X, 0, field.center.Y) * CFrame.Angles(0, field.yaw or 0, 0)
+			local function onField(x: number, z: number, id: string, feature: string, scale: number?): any
+				local at = fcf:PointToWorldSpace(Vector3.new(x, 0, z))
+				return { assetId = id, cframe = CFrame.new(at), feature = feature, scale = scale }
+			end
+			local hx, hz = field.size.X / 2, field.size.Y / 2
+			for _, extra in
+				{
+					onField(0, 0, "tree_oak_03", "forest"),
+					onField(hx + 4 + 5.2 - 1, 0, "bush_02", "bush"),
+					onField(0, -hz - 4 - 3.4 + 1, "plant_flowers_02", "flowers", 1.2),
+					onField(0, hz + 2, "rock_boulder_m_02", "rocks"),
+				}
+			do
+				table.insert(plan, extra)
+			end
+			local cleared = WorldPlan.clear(Layout, plan) -- clearance only, no trim
 			expect(#cleared).toBeLessThan(#plan)
 			local j, nudged, farthest = 1, 0, 0
 			for _, p in plan do
@@ -427,7 +460,13 @@ describe("Plot clearance (user playtest, farm areas)", function()
 		local items = {}
 		for _, model in svc:getRoot().Props:GetChildren() do
 			local pos = model.PrimaryPart.CFrame.Position
-			table.insert(items, { assetId = model.Name, x = pos.X, z = pos.Z, feature = model:GetAttribute("Feature") })
+			table.insert(items, {
+				assetId = model.Name,
+				x = pos.X,
+				z = pos.Z,
+				feature = model:GetAttribute("Feature"),
+				scale = model:GetAttribute("Scale"), -- WorldService scales the built prop: the clearance reckoned with it
+			})
 		end
 		expect(#items).toBe(svc.stats.props)
 		expect(#items).toBeGreaterThan(100)

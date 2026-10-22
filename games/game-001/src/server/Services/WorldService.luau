@@ -14,7 +14,8 @@
 	     (Kit.slotMarker; its Root part is tagged BuildSlot + SlotId, Size, Kingdom; G13.5);
 	  4. places the Crown Arena (Kit.arena at Layout.arena, FL-0072, G12.6): once, neutral, tagged CrownArena with its attachments
 	     as Kit builds them; ArenaService dresses it with Kit.arenaDress when the two kingdoms are known;
-	  5. places props and forests from WorldPlan.props (deterministic; plus WorldPlan.meshDressing for the imported FL-0136 meshes: cabbage
+	  5. places props and forests from WorldPlan.props (deterministic; each placement may carry a `scale` (the model is scaled about its
+	     pivot, parts unchanged) and a foliage `tint`; plus WorldPlan.meshDressing for the imported FL-0136 meshes: cabbage
 	     variants and field fences, none of it without the kit; the rim cliffs of the first round were dropped), PROPS_PER_FRAME per frame, cleared off the
 	     plots' fields, buildings, slots and roads and thinned by the dressing density knob (world/Layout
 	     features.density, D-047; 1.0 = the untrimmed valley);
@@ -150,13 +151,27 @@ local function setProps(instance: any, props: { [string]: any })
 end
 
 -- Move a whole model so its pivot (PrimaryPart CFrame * PivotOffset) lands on `cf` (no PivotTo, so the
--- same code runs in Lune).
-local function placeModel(model: any, cf: CFrame)
+-- same code runs in Lune). With a `scale` other than 1 the model is also scaled about its pivot: every part's Size and its offset from
+-- the pivot grow by it, rotations stay, and so does the part count (Model:ScaleTo is not in Lune, and these props are anchored parts
+-- with no joints, so the same arithmetic is exact here and in Roblox). A nil scale changes nothing.
+local function placeModel(model: any, cf: CFrame, scale: number?)
 	local primary = model.PrimaryPart
 	if not primary then
 		return
 	end
 	local pivot = primary.CFrame * primary.PivotOffset
+	if scale and scale ~= 1 then
+		for _, d in model:GetDescendants() do
+			if d:IsA("BasePart") then
+				local rel = pivot:ToObjectSpace(d.CFrame)
+				d.Size = d.Size * scale
+				d.CFrame = cf * (CFrame.new(rel.Position * scale) * (rel - rel.Position))
+			end
+		end
+		local offset = primary.PivotOffset
+		primary.PivotOffset = CFrame.new(offset.Position * scale) * (offset - offset.Position)
+		return
+	end
 	local delta = cf * pivot:Inverse()
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") then
@@ -384,8 +399,14 @@ function WorldService:_build()
 	placements = WorldPlan.meshDressing(layout, placements, Kit.envMeshReady)
 	for _, placement in placements do
 		local model = Kit.prop(placement.assetId)
-		placeModel(model, placement.cframe)
+		if placement.tint then
+			WorldPlan.tintModel(model, placement.tint) -- foliage colour only: no part added or removed
+		end
+		placeModel(model, placement.cframe, placement.scale)
 		model:SetAttribute("Feature", placement.feature)
+		if placement.scale and placement.scale ~= 1 then
+			model:SetAttribute("Scale", placement.scale) -- the spec reads the size the clearance reckoned with
+		end
 		decorate(model, placement.cframe.Position.Y, placement.feature == "bridge") -- bridges stay solid
 		model.Parent = propsFolder
 		count(model)
