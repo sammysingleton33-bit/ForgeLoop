@@ -81,9 +81,10 @@ function CitizenActions.moveTo(sim: any, c: any, x: number, z: number, radius: n
 	return false
 end
 
--- studs between neighbouring slots: 3.5 (a part-built citizen is 2.3-2.4 studs wide) x the client's rig scale
--- (EntityController.Def.RIG_SCALE, 1.5; FORGE-00 22 Oct), so drawn citizens never touch
-CitizenActions.SLOT_SPACING = 3.5 * 1.5
+-- studs between neighbouring slots: a drawn citizen is 2.4 studs wide x the client's rig scale (EntityController.Def
+-- .RIG_SCALE, 1.5; FORGE-00 22 Oct) = 3.6, so 5 leaves 1.4 between neighbours. Not 3.5 x 1.5: at 5.25 FORGE-01's
+-- "two builders finish it sooner" test sees the second builder still gathering when the build ends (timing, D-059)
+CitizenActions.SLOT_SPACING = 5.0
 CitizenActions.SLOT_MAX_TURN = math.rad(70) -- at most this turn a step, on a small target: a tree's two slots 4.6 studs apart
 
 -- 0, 1, -1, 2, -2, ...: the slot's steps from the approach

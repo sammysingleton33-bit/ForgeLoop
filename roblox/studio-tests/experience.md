@@ -802,7 +802,7 @@ The owner's B22 review found the citizens at the start view "barely recognisable
 - A citizen carrying goods home carried nothing you could see.
 
 Now:
-- Each worker stands at its own spot around its work (about 5.25 studs apart on the edge where it used to stop; 4.6 at a tree), facing it.
+- Each worker stands at its own spot around its work (about 5 studs apart on the edge where it used to stop; 4.6 at a tree), facing it.
 - Every citizen (and soldier) is drawn 1.5x the Kit size (`EntityController.RIG_SCALE`, D-059): only the look; the sim's positions are the same. The request bubble sits higher with it, and on a phone the conversation camera frames the taller citizen a little lower.
 - Each swing is a blow: the tool goes up slowly and comes down fast. Woodcutters and miners swing overhead, builders hammer from the shoulder, farmers raise the hoe and bend into the soil, and haulers bend down and lift.
 - A citizen carrying goods home holds the load in both hands: a basket of food, a bundle of logs, a stone block or a stack of gold bars (FORGE-02's `Kit.carried`, #312). The body bobs and leans back under the load.
@@ -830,4 +830,4 @@ Pass: steps 1–5 hold; 6 with the number written. Copy every red line from Outp
 
 History:
 - 2026-10-22 FORGE-04: written (FL-0148, D-059).
-- 2026-10-22 FORGE-04: the rig drawn 1.5x (FORGE-00), slots 5.25 studs apart (4.6 at a tree); step 3 now runs with #312 on main; step 1 checks the size against the door and the stalls.
+- 2026-10-22 FORGE-04: the rig drawn 1.5x (FORGE-00), slots 5 studs apart (4.6 at a tree; 5.25 broke FORGE-01's two-builders timing test); step 3 now runs with #312 on main; step 1 checks the size against the door and the stalls.

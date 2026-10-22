@@ -40,8 +40,8 @@ M = [
  ("FL-0148", CA, 'local side = if ax * ax + az * az > 1e-6 then math.atan2(az, ax) else 0', 'local side = if ax * ax + az * az > 1e-6 then math.atan2(az, ax) else math.pi', SC, KEEP, "game"),
  ("FL-0148", CA, 'local step = math.min(CitizenActions.SLOT_SPACING / radius, CitizenActions.SLOT_MAX_TURN)', 'local step = CitizenActions.SLOT_SPACING / radius', SC, RADIUS, "game"),
  ("FL-0148", CA, 'local step = math.min(CitizenActions.SLOT_SPACING / radius, CitizenActions.SLOT_MAX_TURN)', 'local step = CitizenActions.SLOT_MAX_TURN', SC, MID, "game"),
- ("FL-0148", CA, 'CitizenActions.SLOT_SPACING = 3.5 * 1.5', 'CitizenActions.SLOT_SPACING = 2.5', SC, KEEP, "game"),
- ("FL-0148", CA, 'CitizenActions.SLOT_SPACING = 3.5 * 1.5', 'CitizenActions.SLOT_SPACING = 3.5', SC, DRAWN, "game"),
+ ("FL-0148", CA, 'CitizenActions.SLOT_SPACING = 5.0', 'CitizenActions.SLOT_SPACING = 2.5', SC, KEEP, "game"),
+ ("FL-0148", CA, 'CitizenActions.SLOT_SPACING = 5.0', 'CitizenActions.SLOT_SPACING = 3.5', SC, DRAWN, "game"),
  ("FL-0148", CA, 'CitizenActions.SLOT_MAX_TURN = math.rad(70)', 'CitizenActions.SLOT_MAX_TURN = math.rad(60)', SC, DRAWN, "game"),
  # FORGE-07 #316 L1: past a full circle, a ring further out (never two workers on one spot)
  ("FL-0148", CA, 'local ring = radius + (index // perRing) * CitizenActions.SLOT_SPACING', 'local ring = radius', SC, RINGS, "game"),

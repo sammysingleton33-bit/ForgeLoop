@@ -210,9 +210,11 @@ describe("Sim/CitizenActions: work slots (D-059)", function()
 		expect(math.min(d, 2 * math.pi - d) * reach).toBeNear(CitizenActions.SLOT_SPACING, 1e-6)
 	end)
 
-	it("spaces slots for the drawn citizen: 3.5 studs x the client's rig scale, 3 x it at a tree", function()
-		-- the client draws every rig RIG_SCALE x the Kit size (EntityController); the sim's spacing follows it
-		expect(CitizenActions.SLOT_SPACING).toBeNear(3.5 * EntityController.RIG_SCALE, 1e-9)
+	it("spaces slots for the drawn citizen: its width x the client's rig scale and a stud, 3 x it at a tree", function()
+		-- the client draws every rig RIG_SCALE x the Kit size (EntityController): 2.4 studs wide x the scale; the
+		-- sim's spacing leaves at least a stud between two of them
+		expect(CitizenActions.SLOT_SPACING >= 2.4 * EntityController.RIG_SCALE + 1 - 1e-9).toBe(true)
+		expect(CitizenActions.SLOT_SPACING).toBe(5)
 		local sim, k = setup({ woodcutter = 2 })
 		local tree = sim:addNode("tree", -40, 10)
 		local w = citizens(sim, k, "woodcutter")
