@@ -318,7 +318,12 @@ function ArenaService:_hold(userId: number, character: any)
 			humanoid.WalkSpeed = self.config.ring.walkSpeed
 		end)
 	end
-	self._held[userId] = { character = character, humanoid = humanoid, walkSpeed = original }
+	local last = nil
+	pcall(function()
+		local position = character:FindFirstChild("HumanoidRootPart").CFrame.Position
+		last = { x = position.X, z = position.Z, t = self:_now() }
+	end)
+	self._held[userId] = { character = character, humanoid = humanoid, walkSpeed = original, last = last }
 end
 
 -- Gives every champion's WalkSpeed back.
@@ -361,12 +366,43 @@ function ArenaService:_guard()
 			continue
 		end
 		local position = root.CFrame.Position
+		local now = self:_now()
+		local last = held.last
+		if last ~= nil then
+			-- pose sanity: no faster than the fixed WalkSpeed (with slack for jumps, knockback and lag) plus a small
+			-- allowance, over the real time since the last accepted pose; anything beyond is a teleport or a speed hack
+			local moved = math.sqrt((position.X - last.x) ^ 2 + (position.Z - last.z) ^ 2)
+			local allowed = self.config.ring.walkSpeed * self.config.ring.speedSlack * math.max(now - last.t, 0)
+				+ self.config.ring.teleportAllowance
+			if moved > allowed then
+				local other = flow:champion(if side == "a" then "b" else "a")
+				local target = if other then self:poseOf(other.userId) else nil
+				place(
+					champion.userId,
+					last.x,
+					last.z,
+					if target then target.x else ring.x,
+					if target then target.z else ring.z,
+					ring.height
+				)
+				self:_snap(champion.userId)
+				self._env.log("warn", "ArenaService: a champion moved too fast and was put back", {
+					userId = champion.userId,
+					moved = moved,
+					allowed = allowed,
+				})
+				held.last = { x = last.x, z = last.z, t = now }
+				continue
+			end
+		end
 		local dx, dz = position.X - ring.x, position.Z - ring.z
 		local distance = math.sqrt(dx * dx + dz * dz)
+		held.last = { x = position.X, z = position.Z, t = now }
 		if distance > limit then
 			local scale = ring.radius / distance
 			place(champion.userId, ring.x + dx * scale, ring.z + dz * scale, ring.x, ring.z, ring.height)
 			self:_snap(champion.userId)
+			held.last = { x = ring.x + dx * scale, z = ring.z + dz * scale, t = now }
 		end
 	end
 end
