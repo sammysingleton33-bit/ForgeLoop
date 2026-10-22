@@ -5,10 +5,11 @@
 	blender/scripts/render_world.py can render a top-down view and oblique views (D-019 review).
 
 	The surface materials are read from WorldPlan.terrainOps themselves (the last op that covers a point decides, as in the game), so
-	a new terrain feature shows in the preview without a second copy of its rules. The dump also carries the world/Lighting preset
+	a new terrain feature shows in the preview without a second copy of its rules. Placements carry `scale` (nature size variation) and tinted foliage is dumped as its own asset ("<id>@t<n>"). The dump also carries the world/Lighting preset
 	(`lighting`) for the preview's sun, haze and colour grade, and citizens at work around the plots (FORGE_WORLD_CITIZENS=sim, the default, is the sim's real start (30 s, seed 11: support/StartCitizens); 12 is the start of a kingdom as a ring set
 	(config/Kingdoms.luau: farmer 3, woodcutter 3, miner 2, builder 2, hauler 2); 40 is a mid-game kingdom; 0 leaves them out) so the views at the default gameplay camera show how readable they are. FORGE_WORLD_STEP=<studs> sets the heightfield grid
-	(6 by default; 3 for the camera views).
+	(6 by default; 3 for the camera views). FORGE_WORLD_DRESSED=all | crimson | crimson,azure | none picks the dressed kingdoms (default: what WorldService
+	dresses, all four since 2026-10-22; `crimson` is the world of VS-1, the before of that decision).
 
 	Always: asserts the dump is consistent. With FORGE_WORLD_DUMP=<path.json>: writes it.
 	  FORGE_WORLD_DUMP=/tmp/world.json lune run roblox/tests/harness/run.luau \
@@ -22,6 +23,8 @@ local fs = require("@lune/fs")
 local process = require("@lune/process")
 local serde = require("@lune/serde")
 
+local MockEnv = require("../../../../roblox/tests/mocks/MockEnv")
+local WorldServiceDef = require("@game/ServerScriptService/Game/Services/WorldService")
 local Kit = require("@game/ReplicatedStorage/Game/Kit/Kit")
 local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
@@ -36,6 +39,28 @@ local KINGDOM_COLORS = {
 	gold = Color3.fromRGB(235, 185, 16),
 }
 local STEP = tonumber(process.env.FORGE_WORLD_STEP or "") or 6
+
+-- Which kingdoms are dressed (the hand-placed dressing and the start yard): what WorldService dresses (its DRESSED), or
+-- FORGE_WORLD_DRESSED=all | crimson | crimson,azure,... to preview another set (the "before" of a world-level decision).
+local KINGDOM_IDS = { "crimson", "azure", "emerald", "gold" }
+local function dressedSet(): { [string]: boolean }
+	local spec = process.env.FORGE_WORLD_DRESSED
+	if spec == nil or spec == "" then
+		return WorldServiceDef.new(MockEnv.new({ seed = 1 }), nil).dressed
+	end
+	local out = {}
+	if spec == "all" then
+		for _, id in KINGDOM_IDS do
+			out[id] = true
+		end
+	elseif spec ~= "none" then
+		for id in string.gmatch(spec, "[^,]+") do
+			assert(table.find(KINGDOM_IDS, id), `FORGE_WORLD_DRESSED: unknown kingdom {id}`)
+			out[id] = true
+		end
+	end
+	return out
+end
 
 local function r3(n: number): number
 	return math.floor(n * 1000 + 0.5) / 1000
@@ -239,14 +264,25 @@ local function dump()
 	end
 	local assets = {}
 	local placements = {}
-	local planned = if UNTRIMMED
-		then WorldPlan.plan(Layout, { crimson = true })
-		else WorldPlan.props(Layout, { crimson = true })
+	local dressed = dressedSet()
+	local planned = if UNTRIMMED then WorldPlan.plan(Layout, dressed) else WorldPlan.props(Layout, dressed)
 	for _, p in planned do
-		if not assets[p.assetId] then
-			assets[p.assetId] = partsOf(Kit.prop(p.assetId))
+		-- a tinted placement (foliage colour shift, WorldPlan.tintModel) is its own asset, "<id>@t<steps>", so the preview shows it
+		local id = p.assetId
+		local tint = p.tint or 0
+		if tint ~= 0 then
+			id = `{id}@t{math.floor(tint * 2 + 0.5)}`
 		end
-		table.insert(placements, { assetId = p.assetId, cframe = cf12(p.cframe), feature = p.feature })
+		if not assets[id] then
+			local model = Kit.prop(p.assetId)
+			WorldPlan.tintModel(model, tint)
+			assets[id] = partsOf(model)
+		end
+		-- `scale`: the placement's size against the asset's own, about its origin (the preview scales the model the same way)
+		table.insert(
+			placements,
+			{ assetId = id, cframe = cf12(p.cframe), feature = p.feature, scale = if p.scale then r3(p.scale) else nil }
+		)
 	end
 	for _, node in Layout.resourceNodes do
 		if not assets[node.assetId] then

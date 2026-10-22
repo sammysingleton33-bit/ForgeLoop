@@ -1637,6 +1637,74 @@ function Simulation:placeLine(
 	return placed, nil
 end
 
+-- Build.PlaceGate (FL-0126 part 2, slice 2, CONTRACTS G13.5): one of the kingdom's wall pieces becomes a gate, in place and
+-- facing the same way. The wall goes (a share of its level-1 price comes back, as when a site is cancelled) and the gate is a new
+-- site charged its level-1 price; the gate limit and the Place rules for the gate's own shape (the gate is thicker than the
+-- wall) apply, and a wall under attack or being upgraded is refused. A gate lets nobody through that a wall does not: the
+-- only buildings that stop a unit are an at-war enemy's (Sim/Military `moveUnit`), so the owner's units and citizens already pass
+-- every piece of their own wall and enemies meet a gate as a wall. Returns the gate, else (nil, reason).
+function Simulation:placeGate(kingdom: any, wallId: any, by: number?): (any?, string?)
+	if not kingdom.alive then
+		return nil, "kingdom_eliminated"
+	end
+	local wall, err = self:_ownedBuilding(kingdom, wallId)
+	if wall == nil then
+		return nil, err
+	end
+	if wall.kind ~= "wall" then
+		return nil, "not_a_wall"
+	end
+	local def = self.catalog.buildings.gate
+	if def == nil or not def.placeable then
+		return nil, "unknown_building"
+	end
+	if def.maxCount and self:countOf(kingdom, "gate") >= def.maxCount then
+		return nil, "limit_reached"
+	end
+	if wall.level > 0 and wall.pendingLevel ~= nil then
+		return nil, "busy" -- being upgraded
+	end
+	local fits, why = self:_geometry(kingdom, "gate", wall.x, wall.z, wall.yaw, wall.id)
+	if not fits then
+		return nil, why
+	end
+	if self:_underAttack(wall, self:shapeOf("gate", wall.x, wall.z, wall.yaw)) then
+		return nil, "under_attack"
+	end
+	local price = self.costs.building("gate", 1)
+	local back = self.costs.building("wall", 1)
+	if price == nil or back == nil then
+		return nil, "unknown_building"
+	end
+	local refund = {}
+	for res, amount in back.cost do
+		refund[res] = math.floor(amount * self.catalog.tuning.cancelRefund)
+	end
+	for res, amount in price.cost do
+		if self:balance(kingdom.id, res) + (refund[res] or 0) < amount then
+			return nil, "cannot_afford"
+		end
+	end
+	for res, amount in refund do
+		self:deposit(kingdom.id, res, amount, `refund:gate:{wall.id}:{res}`, "refund")
+	end
+	local nextId = self._nextBuilding + 1
+	if not self:spend(kingdom.id, price.cost, `build:{nextId}:1`, "building:gate") then
+		return nil, "cannot_afford" -- unreachable after the check above; nothing was taken from the wall yet
+	end
+	self:_releaseAll(wall.builders)
+	self:_removeBuilding(wall)
+	local gate = self:_createBuilding(kingdom, "gate", wall.x, wall.z, wall.yaw)
+	assert(gate.id == nextId, "building id changed between spend and create")
+	gate.pendingCost = table.clone(price.cost)
+	gate.placedBy = by
+	self:emit(
+		"BuildingPlaced",
+		{ kingdomId = kingdom.id, buildingId = gate.id, kind = "gate", x = gate.x, z = gate.z, by = by }
+	)
+	return gate, nil
+end
+
 function Simulation:_ownedBuilding(kingdom: any, buildingId: any): (any?, string?)
 	local b = self.buildings[buildingId]
 	if b == nil or b.destroyed then

@@ -28,7 +28,7 @@
 	API
 		EnvMesh.accept(assetId, clone) -> (Model?, string?)   -- the clone made ready, or nil + why (the caller builds the stand-in)
 		EnvMesh.has(assetId) -> boolean                       -- the data lists this id
-		EnvMesh.ready(assetId, source) -> boolean             -- Kit.prop would build the mesh for this id from `source` (silent; the mesh-only dressing asks)
+		EnvMesh.ready(assetId, source) -> boolean             -- Kit.prop would build the mesh for this id from `source` (the mesh-only dressing asks; silent for an id that is not imported, but an imported mesh that fails the checks is recorded in status().rejected and logged once)
 		EnvMesh.find(source, assetId) -> Instance?            -- source[assetId] or source.EnvKit[assetId]
 		EnvMesh.measure(model) -> (center: Vector3, size: Vector3)?   -- MeshPart bounds in the pivot frame
 		EnvMesh.status() -> { props, accepted, rejected: { [id]: why } }

@@ -24,6 +24,10 @@
 		  FL-0140 figure; until then an AI side has no body and nothing is posed).
 		- Each rig is scanned once when its model appears (a respawn makes a new one); without a rig, the
 		  side is looked up again every Def.RESOLVE_SEC.
+		- What the champion holds sets its pose style (FL-0141 follow-up 3): a one-handed champion who
+		  wears Kit.shield on the left hand (DuelRig.leftShield) fights in DuelPoses' "shield" style, the
+		  shield kept facing the opponent. Checked when the rig is found, then every Def.RESOLVE_SEC (the
+		  gear may come after the body); a shield on the weapon (no LeftGripAttachment) stays "slash".
 	Cost: an event only changes a track's state (no instance work), so a burst of events costs nothing
 	per event; each frame samples two tracks and writes at most 11 joints each.
 	Frame: RunService.PreSimulation (else Stepped), after the Animator's pass, so the pose is laid over
@@ -124,7 +128,7 @@ function Def.create(env: any, registry: any, opts: { [string]: any }?)
 		_running = false,
 		_sawDuel = false, -- this pair's duel stage was seen here (not only its crowning)
 		_stoppedAt = nil :: number?,
-		_sides = { a = {}, b = {} } :: { [string]: any }, -- { model, rig, lookedAt }
+		_sides = { a = {}, b = {} } :: { [string]: any }, -- { model, rig, lookedAt, shieldAt }
 		_out = { a = { weight = 0, body = 0 }, b = { weight = 0, body = 0 } } :: { [string]: any },
 		_preview = nil :: any,
 		poses = DuelPoses.newDuel(),
@@ -342,6 +346,7 @@ end
 function Controller:_rigFor(side: string, now: number): any
 	local entry = self._sides[side]
 	if entry.rig ~= nil and alive(entry.model) then
+		self:_wornShield(side, entry, now)
 		return entry.rig
 	end
 	if entry.rig == nil and entry.lookedAt ~= nil and now - entry.lookedAt < Def.RESOLVE_SEC then
@@ -361,9 +366,20 @@ function Controller:_rigFor(side: string, now: number): any
 		else
 			-- one line per model found: what Studio E21 step 1 copies (which rig, which joints)
 			self._env.log("info", `{Def.name}: champion {side} is a {rig.kind} rig, {rig.count} {rig.class} joints`)
+			entry.shieldAt = nil
+			self:_wornShield(side, entry, now)
 		end
 	end
 	return entry.rig
+end
+
+-- The side's left-hand shield sets its style: checked when the rig is found, then every RESOLVE_SEC.
+function Controller:_wornShield(side: string, entry: any, now: number)
+	if entry.shieldAt ~= nil and now - entry.shieldAt < Def.RESOLVE_SEC then
+		return
+	end
+	entry.shieldAt = now
+	self.poses[side]:setShield(DuelRig.leftShield(entry.model))
 end
 
 function Controller:_releaseAll()

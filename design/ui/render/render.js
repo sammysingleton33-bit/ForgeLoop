@@ -2,7 +2,7 @@
 /*
 	render.js — screenshot Luau UI snapshots (from snapshot.luau) with a Roblox-layout emulation.
 
-		node design/ui/render/render.js [snapshot.json ...] [--guides] [--debug] [--backdrop=world|plain] [--dpr=2] [--shots=<dir>]
+		node design/ui/render/render.js [snapshot.json ...] [--guides] [--debug] [--backdrop=world|plain|none] [--dpr=2] [--shots=<dir>]
 
 	Default input: every design/ui/render/out/*.json snapshot. For each it writes
 	  design/ui/screenshots/luau/<scene>-<device>.png    the screenshot (viewport = device size; 1x, or --dpr)
@@ -109,6 +109,7 @@ function loadAssets() {
 
 const CSS = `
 html, body { margin: 0; padding: 0; background: #000; }
+html.clear, html.clear body { background: transparent; }
 #vp { position: relative; overflow: hidden; }
 .lyr { position: absolute; }
 .g { position: absolute; box-sizing: border-box; transform-origin: 0 0; isolation: isolate; }
@@ -133,7 +134,7 @@ function pageHtml(snap, opts, assets) {
 	const json = JSON.stringify(snap).replace(/</g, "\\u003c");
 	const options = JSON.stringify({ guides: opts.guides, debug: opts.debug, backdrop: opts.backdrop, assets }).replace(/</g, "\\u003c");
 	return `<!doctype html>
-<html><head><meta charset="utf-8"><title>${snap.scene} @ ${snap.device.name}</title>
+<html${opts.backdrop === "none" ? ' class="clear"' : ""}><head><meta charset="utf-8"><title>${snap.scene} @ ${snap.device.name}</title>
 <style>
 ${fontFaces()}
 ${CSS}
@@ -175,7 +176,7 @@ async function main() {
 			await page.waitForFunction(() => window.__done === true, null, { timeout: 60000 });
 			const result = await page.evaluate(() => ({ error: window.__error, warnings: window.__warnings || [], layout: window.__layout || [] }));
 			const png = path.join(opts.shots, `${base}.png`);
-			await page.screenshot({ path: png });
+			await page.screenshot({ path: png, omitBackground: opts.backdrop === "none" });
 			await page.close();
 			fs.writeFileSync(path.join(OUT_DIR, `${base}.layout.json`), JSON.stringify(result.layout, null, "\t"));
 			const snapErrors = Array.isArray(snap.errors) ? snap.errors : [];

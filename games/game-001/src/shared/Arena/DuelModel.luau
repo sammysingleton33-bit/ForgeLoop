@@ -18,9 +18,11 @@
 	DuelInput = { action: DuelAction?, inRange: boolean, facing: boolean }. An action is read only when the duellist can
 	act (idle), so a held key does nothing extra; anything unknown is ignored.
 	DuelEvent = { t, kind, side, data? }, kinds:
-		hit        side = the hitter; data { damage (hp), heavy, targetHp, targetHpShare }
+		hit        side = the hitter; data { damage (hp), heavy, blocked (the target was guarding), targetHp, targetHpShare }
 		miss, dodged (side = the dodger), parry (side = the parrier), stagger, staminaOut
 		heavyWindup  side = the attacker; data { impactAt, warned }
+		lightWindup  side = the attacker; data { impactAt }   (a light swing starts; FL-0141's animations need it at once)
+		dodgeStart   side = the dodger; no data              (the dodge begins, not only when a swing meets it)
 		triggerFired side = who it helps; data { source }
 		hype       side = whose crowd meter filled
 		ended      side = the winner ("a" | "b" | "draw"); data { winner, loser?, reason = "ko" | "timeCap" | "hardCap" |
@@ -231,6 +233,8 @@ local function applyInput(state: any, side: any, input: DuelInput?, events: { Du
 				side.id,
 				{ impactAt = state.t + side.timer - (state.stepDt or 0), warned = warned }
 			)
+		else
+			emit(state, events, "lightWindup", side.id, { impactAt = state.t + side.timer - (state.stepDt or 0) })
 		end
 	elseif action == "block" then
 		if side.state == "idle" then
@@ -252,6 +256,7 @@ local function applyInput(state: any, side: any, input: DuelInput?, events: { Du
 			spend(state, side, cost, events)
 			side.state = "dodge"
 			side.timer = cfg.dodgeTime
+			emit(state, events, "dodgeStart", side.id)
 		end
 	end
 end
@@ -285,7 +290,8 @@ local function resolveAttack(state: any, attacker: any, defender: any, events: {
 	if state.suddenDeath then
 		damage *= cfg.suddenDeathDamage
 	end
-	if defender.state == "block" then
+	local blocked = defender.state == "block"
+	if blocked then
 		damage *= state.weapons[defender.weapon].blockFactor
 		spend(state, defender, cfg.blockHitCost * weapon.guardDamage, events)
 		if defender.stamina <= 0 then
@@ -298,6 +304,7 @@ local function resolveAttack(state: any, attacker: any, defender: any, events: {
 	emit(state, events, "hit", attacker.id, {
 		damage = damage,
 		heavy = heavy,
+		blocked = blocked,
 		targetHp = math.max(0, defender.hp),
 		targetHpShare = math.max(0, defender.hp) / cfg.maxHp,
 	})
