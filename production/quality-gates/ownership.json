@@ -347,6 +347,20 @@
         "prompts/**"
       ],
       "description": "Codex owns intelligence/ and prompts/. This is an ordinary ownership row (see rules), listed here so the hand-over from FORGE-00 is visible; the checker verifies the rows exist."
+    },
+    {
+      "id": "forge03-ui-members-291",
+      "kind": "add-only",
+      "who": "forge-03",
+      "paths": [
+        "roblox/scripts/UiMembers.luau",
+        "roblox/scripts/check_ui_members.luau",
+        "roblox/tests/unit/contracts/UiMembers.spec.luau"
+      ],
+      "changes": [
+        "A"
+      ],
+      "description": "One-PR exception (FORGE-05, 2026-10-22, for #291 at FORGE-00's request): FORGE-03 adds the ui-members scanner, its runner and its spec under FORGE-05's paths; FORGE-05 adopts and maintains them after the merge. Covers adding these three files only; the check.sh step is FORGE-05's own change. Remove this entry once #291 is merged."
     }
   ]
 }
