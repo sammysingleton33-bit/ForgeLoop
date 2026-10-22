@@ -217,6 +217,23 @@ end
 -- The gate: the finished piece nearest the middle of the arc turns into it, once the palisade has begun to stand. Called at
 -- the top of think (before the economy spends the stone it costs) and again by fortify. Returns the command issued, or
 -- "wait" while the palisade holds its other pieces for the gate, or nil when there is nothing to do.
+-- What Simulation:placeGate asks for before it does the geometry: the gate's price, with the converted wall's refund counted.
+-- Checked first so a kingdom short of stone does not run the placement checks of four pieces at every think.
+local function canPayGate(sim: any, kingdom: any): boolean
+	local price = sim.costs.building("gate", 1)
+	local back = sim.costs.building("wall", 1)
+	if price == nil or back == nil then
+		return false
+	end
+	for res, amount in price.cost do
+		local refund = math.floor((back.cost[res] or 0) * sim.catalog.tuning.cancelRefund)
+		if sim:balance(kingdom.id, res) + refund < amount then
+			return false
+		end
+	end
+	return true
+end
+
 local function makeGate(sim: any, kingdom: any): string?
 	local keep = sim.buildings[kingdom.keepId]
 	if keep == nil then
@@ -251,9 +268,11 @@ local function makeGate(sim: any, kingdom: any): string?
 	table.sort(candidates, function(l, r)
 		return offCentre(l) < offCentre(r)
 	end)
-	for i = 1, math.min(#candidates, GATE_TRIES) do
-		if Commands.executeFor(sim, kingdom, nil, "PlaceGate", candidates[i].id) then
-			return "PlaceGate"
+	if canPayGate(sim, kingdom) then
+		for i = 1, math.min(#candidates, GATE_TRIES) do
+			if Commands.executeFor(sim, kingdom, nil, "PlaceGate", candidates[i].id) then
+				return "PlaceGate"
+			end
 		end
 	end
 	-- The gate costs stone, which a governor spends on towers and upgrades. The palisade holds its other pieces for
