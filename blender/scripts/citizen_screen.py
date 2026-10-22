@@ -17,7 +17,7 @@ default look, at rest) and answers two questions with numbers, not impressions.
   python3 blender/scripts/citizen_screen.py crops   --json world.json --kingdom crimson --view default --image render.png --out sheet.jpg
   python3 blender/scripts/citizen_screen.py contrast --json world.json --kingdom crimson --view default --image render.png
 
-Views: see VIEWS (default = zoom 70 / FOV 55, far = zoom 220, legacy = zoom 120 / FOV 70; each at the 1600 x 900 render, 1080p, phone).
+Views: see VIEWS (default = the start view from the dump's `start`, far = zoom 220, legacy = zoom 120 / FOV 70; each at the 1600 x 900 render, 1080, phone).
 The pixel sizes scale with the render height: a 900 px render is 0.83 of 1080p.
 """
 
@@ -33,20 +33,15 @@ import numpy as np
 HERE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HERE))
 
-# name -> (zoom, vertical FOV, width, height). render_world.py CAMERAS: default = the start view approved by FORGE-00 on
-# 2026-10-19 (zoom 70, FOV 55, pitch 42.5), far = fully zoomed out (zoom 220, FOV 55, pitch 65), legacy = the B22 build's camera
-# (zoom 120, FOV 70, pitch 50). The 1600 x 900 sizes are the renders; 1080 is the desktop 1080p the player sees; phone is 750 x 311.
-VIEWS = {
-    "default": (70.0, 55.0, 1600, 900),
-    "default1080": (70.0, 55.0, 1920, 1080),
-    "phone": (70.0, 55.0, 750, 311),
-    "far": (220.0, 55.0, 1600, 900),
-    "far1080": (220.0, 55.0, 1920, 1080),
-    "farphone": (220.0, 55.0, 750, 311),
-    "legacy": (120.0, 70.0, 1600, 900),
-    "legacy1080": (120.0, 70.0, 1920, 1080),
-    "legacyphone": (120.0, 70.0, 750, 311),
-}
+# View name -> (camera, width, height). Cameras: "default" = the START view (the dump's `start` = {zoom, fov, pitch, ahead, turn}: the
+# focus lies `ahead` studs in front of the seated ruler's root along the throne's facing and the camera looks along that facing turned
+# by `turn` degrees: 180 = back across the yard at the keep), "far" = the same focus fully zoomed out (zoom 220, pitch 65), "legacy" =
+# the B22 build's camera (zoom 120, FOV 70, pitch 50, focus on the throne, no turn). 1600 x 900 = the renders, 1080 = desktop 1080p,
+# phone = 750 x 311.
+CAMERAS = ("default", "far", "legacy")
+SIZES = {"": (1600, 900), "1080": (1920, 1080), "phone": (750, 311)}
+VIEWS = {f"{c}{sfx}": (c, w, h) for c in CAMERAS for sfx, (w, h) in SIZES.items()}
+START_DEFAULT = {"zoom": 70.0, "fov": 55.0, "ahead": 20.0, "turn": 180.0}  # FL-0147: until the dump carries `start`
 
 
 def pitch_for(zoom):
@@ -55,11 +50,31 @@ def pitch_for(zoom):
     return 38.0 + 27.0 * (z - 40.0) / 180.0
 
 
+def camera_params(data, camera):
+    """(zoom, fov, ahead, turn_deg) of a named camera for this dump."""
+    st = {**START_DEFAULT, **(data.get("start") or {})}
+    if camera == "default":
+        return st["zoom"], st["fov"], st["ahead"], st["turn"]
+    if camera == "far":
+        return 220.0, st["fov"], st["ahead"], st["turn"]
+    return 120.0, 70.0, 0.0, 0.0  # legacy
+
+
+def flat_dir(throne, turn_deg):
+    """The camera's flat look direction: the throne's facing (a CFrame's look vector is minus its third column) turned by turn_deg."""
+    lx, lz = -throne[5], -throne[11]
+    n = math.hypot(lx, lz) or 1.0
+    lx, lz = lx / n, lz / n
+    t = math.radians(turn_deg)
+    return lx * math.cos(t) - lz * math.sin(t), lx * math.sin(t) + lz * math.cos(t)
+
+
 class Camera:
-    def __init__(self, focus, zoom, res, fov, yaw_deg=0.0):
+    def __init__(self, focus, zoom, res, fov, flat):
+        """focus (x, y, z); `flat` = the camera's flat look direction (fx, fz); it stands `zoom` studs away at pitch_for(zoom)."""
         pitch = math.radians(pitch_for(zoom))
-        yaw = math.radians(yaw_deg)
-        fwd_g = np.array([-math.sin(yaw), -math.cos(yaw)])
+        self.zoom, self.fov = zoom, fov
+        fwd_g = np.array(flat, float)
         self.loc = np.array([focus[0] - fwd_g[0] * zoom * math.cos(pitch), focus[1] + zoom * math.sin(pitch),
                              focus[2] - fwd_g[1] * zoom * math.cos(pitch)])
         f = np.array(focus, float) - self.loc
@@ -150,9 +165,16 @@ def citizens(data, kingdom):
     return out
 
 
-def camera_for(data, kingdom, view):
-    zoom, fov, w, h = VIEWS[view]
-    return Camera(data["plots"][kingdom]["spawn"][:3], zoom, (w, h), fov)
+def camera_for(data, kingdom, view, focus=None):
+    """The camera of `view` for a kingdom: focus = `ahead` studs in front of the seated ruler's root (the dump's `throne`) unless a
+    focus is given (the crop tool centres the same camera on each citizen)."""
+    camera, w, h = VIEWS[view]
+    zoom, fov, ahead, turn = camera_params(data, camera)
+    th = data["plots"][kingdom]["throne"]
+    fl = flat_dir(th, 0.0)  # the throne's facing: the focus lies along it
+    if focus is None:
+        focus = (th[0] + fl[0] * ahead, th[1], th[2] + fl[1] * ahead)
+    return Camera(focus, zoom, (w, h), fov, flat_dir(th, turn))
 
 
 def cmd_measure(args):
@@ -166,8 +188,8 @@ def cmd_measure(args):
             (_, by0, _, by1), _ = citizen_box(cam, data["assets"][p["assetId"]], p, body_only=True)
             per_job.setdefault(job, []).append((y1 - y0, x1 - x0, by1 - by0))
         allh = [h for v in per_job.values() for h, _, _ in v]
-        print(f"\n== {view}: {cam.w} x {cam.h}, zoom {VIEWS[view][0]:.0f}, FOV {VIEWS[view][1]:.0f}, pitch {cam.pitch:.1f}, "
-              f"{cam.studs_per_px(VIEWS[view][0]):.3f} studs/px at the focus, {len(allh)} citizens ({args.kingdom})")
+        print(f"\n== {view}: {cam.w} x {cam.h}, zoom {cam.zoom:.0f}, FOV {cam.fov:.0f}, pitch {cam.pitch:.1f}, "
+              f"{cam.studs_per_px(cam.zoom):.3f} studs/px at the focus, {len(allh)} citizens ({args.kingdom})")
         for job, v in sorted(per_job.items()):
             hs, ws, bs = [a for a, _, _ in v], [b for _, b, _ in v], [c for _, _, c in v]
             print(f"   {job:<11} n={len(v):>2}  figure h px min {min(hs):5.1f} med {statistics.median(hs):5.1f} max {max(hs):5.1f}"

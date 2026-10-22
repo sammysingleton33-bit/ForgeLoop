@@ -10,8 +10,9 @@ the figure (Cycles border render), at the resolution of the chosen device. The t
   nice -n 5 ~/forge-bpy/bin/python blender/scripts/citizen_crops.py --json world.json --kingdom crimson \
       --runs default@1920x1080,default@750x311,far@1920x1080,far@750x311 --tag after --out-dir DIR [--scale 1] [--tile 128]
 
-  --runs  <view>@<W>x<H>, comma separated; the scene is built once. Views: default (zoom 70, FOV 55, pitch 42.5: the start view),
-          far (zoom 220, FOV 55, pitch 65), legacy (zoom 120, FOV 70, pitch 50). Sizes: 1920x1080 (desktop 1080p), 750x311 (phone)
+  --runs  <view>@<W>x<H>, comma separated; the scene is built once. Views: default (the start view: zoom 70, FOV 55, pitch 42.5, camera
+          turned back across the yard at the keep, as the dump's `start` says), far (zoom 220, FOV 55, pitch 65), legacy (the B22 camera).
+          Sizes: 1920x1080 (desktop 1080p), 750x311 (phone)
 
 Writes DIR/citizens_<view>_<WxH>_<kingdom>_<tag>.jpg (<= 250 KB) per run. The citizen is centred on the
 body (2.75 studs up), so its crop is not the default frame's own perspective at that spot; the scale is the one at the screen centre.
@@ -30,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bpy  # noqa: E402
 from mathutils import Vector  # noqa: E402
 
+import citizen_screen as cs  # noqa: E402
 import render_world as rw  # noqa: E402
 from lib import contact, kitparts, rig  # noqa: E402
 
@@ -73,8 +75,8 @@ def sheet_for(sc, cam, data, preset, view, W, H, args, rows_out):
     from PIL import Image, ImageDraw, ImageFont
 
     sc.render.resolution_x, sc.render.resolution_y = W, H
-    zoom, fov = rw.CAMERAS[view]
-    pitch = math.radians(rw.ruler_pitch(zoom))
+    cam0 = cs.camera_for(data, args.kingdom, view)
+    zoom, fov = cam0.zoom, cam0.fov
     cam.data.angle_y = math.radians(fov)
     tile = args.tile
     grab = tile + 32  # rendered window; the denoiser smears its edge, the sheet keeps the middle `tile`
@@ -91,8 +93,8 @@ def sheet_for(sc, cam, data, preset, view, W, H, args, rows_out):
             continue
         c = p["cframe"]
         fx, fy, fz = c[0], c[1] + 2.75, c[2]  # the body's centre
-        loc = (fx, fy + zoom * math.sin(pitch), fz + zoom * math.cos(pitch))  # yaw 0: the camera stands at +Z, looking toward -Z
-        cam.location = Vector(rw.to_blender(*loc))
+        cam3 = cs.camera_for(data, args.kingdom, view, focus=(fx, fy, fz))  # the start camera's orientation, centred on the citizen
+        cam.location = Vector(rw.to_blender(*cam3.loc))
         rig.aim(cam, Vector(rw.to_blender(fx, fy, fz)))
         path = tmp / f"crop_{view}_{W}_{i:02d}.png"
         rig.render(sc, path)
@@ -120,7 +122,7 @@ def compose(tiles, args, view, W, H, zoom, fov, k):
     except TypeError:
         font = big = ImageFont.load_default()
     d.text((pad, 6), f"{args.kingdom} citizens ({args.tag or 'render'}), {view} camera, zoom {zoom:.0f} FOV {fov:.0f} pitch "
-                     f"{rw.ruler_pitch(zoom):.1f}, drawn for {W} x {H}, tiles {tile} px "
+                     f"{cs.pitch_for(zoom):.1f}, drawn for {W} x {H}, tiles {tile} px "
                      + ("at 1:1" if k == 1 else f"shown x{k} (nearest)"), fill=(245, 236, 210), font=big)
     for n, (job, im) in enumerate(tiles):
         if k > 1:

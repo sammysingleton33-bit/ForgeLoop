@@ -6,8 +6,8 @@
 
 	The surface materials are read from WorldPlan.terrainOps themselves (the last op that covers a point decides, as in the game), so
 	a new terrain feature shows in the preview without a second copy of its rules. The dump also carries the world/Lighting preset
-	(`lighting`) for the preview's sun, haze and colour grade, and citizens at work around the plots (FORGE_WORLD_CITIZENS=12, the default, is the start of a kingdom
-	(config/Kingdoms.luau: farmer 3, woodcutter 3, miner 2, builder 2, hauler 2); 40 is a mid-game kingdom; 0 leaves them out) so the views at the default gameplay camera show how readable they are (each stands on open ground, in sight of the start camera: see `clearGround`). FORGE_WORLD_STEP=<studs> sets the heightfield grid
+	(`lighting`) for the preview's sun, haze and colour grade, and citizens at work around the plots (FORGE_WORLD_CITIZENS=sim, the default, is the sim's real start (30 s, seed 11: support/StartCitizens); 12 is the start of a kingdom as a ring set
+	(config/Kingdoms.luau: farmer 3, woodcutter 3, miner 2, builder 2, hauler 2); 40 is a mid-game kingdom; 0 leaves them out) so the views at the default gameplay camera show how readable they are. FORGE_WORLD_STEP=<studs> sets the heightfield grid
 	(6 by default; 3 for the camera views).
 
 	Always: asserts the dump is consistent. With FORGE_WORLD_DUMP=<path.json>: writes it.
@@ -27,6 +27,7 @@ local WorldPlan = require("@game/ReplicatedStorage/Game/Kit/WorldPlan")
 local Layout = require("@game/ReplicatedStorage/Game/World/Layout")
 local StartView = require("./support/StartView")
 local LightingPreset = require("@game/ReplicatedStorage/Game/World/Lighting")
+local StartCitizens = require("./support/StartCitizens")
 
 local KINGDOM_COLORS = {
 	crimson = Color3.fromRGB(190, 40, 50),
@@ -180,131 +181,27 @@ local CITIZEN_SETS = {
 	},
 }
 
--- Where citizens may stand: the ground clear of every building, tree, rock, resource node and prop already placed. The ring
--- positions below used to land citizens inside the keep's towers, under roofs and in the quarry rocks (11 of the 23 crimson ones
--- in the first default-camera views), where no reader can judge them; a blocked spot now steps round the ring and outwards until
--- it is clear, so the views show citizens as they stand at work in the game (EntityController puts them on the navigation graph,
--- never inside a building). Flat parts (paths, plinths under 0.35 studs), flowers, crops and slot markers do not block.
-local BLOCKING = {
-	forest = true,
-	lone_tree = true,
-	rocks = true,
-	bush = true,
-	resource = true,
-	building = true,
-	slot_building = true,
-	dressing = true,
-	objective = true,
-	arena = true,
-	bridge = true,
-}
-local CITIZEN_RADIUS = 1.2 -- a citizen's footprint with its tool, studs
--- A part's footprint on the ground: a disc (balls, upright cylinders), an oriented rectangle (upright boxes and wedges, so a
--- yawed wall is not a fat circle) or, for tilted parts (roofs, spires' faces), the box of its eight corners.
-type Obstacle = {
-	kind: string, -- "disc" | "rect" | "box"
-	x: number,
-	z: number,
-	r: number,
-	cf: CFrame?,
-	hx: number,
-	hz: number,
-	minX: number,
-	maxX: number,
-	minZ: number,
-	maxZ: number,
-	top: number, -- the part's highest corner (world Y)
-}
-
-local function obstacles(assets: any, placements: any): { Obstacle }
-	local out: { Obstacle } = {}
-	for _, p in placements do
-		if BLOCKING[p.feature] then
-			local cf = CFrame.new(table.unpack(p.cframe))
-			for _, part in assets[p.assetId] do
-				if part.size[2] >= 0.35 then
-					local w = cf * CFrame.new(table.unpack(part.cframe))
-					local sx, sy, sz = part.size[1], part.size[2], part.size[3]
-					local o: Obstacle = {
-						kind = "box",
-						x = w.X,
-						z = w.Z,
-						r = 0,
-						cf = nil,
-						hx = sx / 2,
-						hz = sz / 2,
-						minX = math.huge,
-						maxX = -math.huge,
-						minZ = math.huge,
-						maxZ = -math.huge,
-						top = -math.huge,
-					}
-					for _, ix in { -1, 1 } do
-						for _, iy in { -1, 1 } do
-							for _, iz in { -1, 1 } do
-								local c = w * Vector3.new(ix * sx / 2, iy * sy / 2, iz * sz / 2)
-								o.minX, o.maxX = math.min(o.minX, c.X), math.max(o.maxX, c.X)
-								o.minZ, o.maxZ = math.min(o.minZ, c.Z), math.max(o.maxZ, c.Z)
-								o.top = math.max(o.top, c.Y)
-							end
-						end
-					end
-					if part.shape == "Ball" then
-						o.kind, o.r = "disc", math.max(sx, sy, sz) / 2
-					elseif part.shape == "Cylinder" and math.abs(w.RightVector.Y) > 0.9 then
-						o.kind, o.r = "disc", math.max(sy, sz) / 2
-					elseif math.abs(w.UpVector.Y) > 0.9 and part.shape ~= "Cylinder" then
-						o.kind, o.cf = "rect", w
-					end
-					table.insert(out, o)
-				end
+-- The real start: FORGE-04's sim, seed 11, 30 s after the start (support/StartCitizens): every row is a citizen on its work slot or
+-- walking the navigation graph, at the sim's own position and yaw (farmers stand in the farm's fields, woodcutters at the trees, ...
+-- so no clearance search is wanted: a part-footprint test puts 9 of 52 rows "inside" the farms, which is where farmers work). Poses
+-- stay the rest pose (the job's tool in the fist); "carry" rows (gold's hauler only) are drawn as "walk" until Kit.carried lands.
+local function citizensFromSim(kingdom: string, color: Color3, assets: any, placements: any)
+	for _, row in StartCitizens.rows() do
+		if row[1] == kingdom then
+			local job: string = row[2]
+			local id = `citizen_{job}_{kingdom}`
+			if not assets[id] then
+				assets[id] = partsOf(Kit.character("citizen", job, color))
 			end
+			local x, z = row[3], row[4]
+			local cf = CFrame.new(x, WorldPlan.groundHeight(Layout, x, z), z) * CFrame.Angles(0, row[5], 0)
+			table.insert(placements, { assetId = id, cframe = cf12(cf), feature = "citizen" })
 		end
 	end
-	return out
-end
-
--- The start camera looks toward -Z from 42.5 degrees up (zoom 70): a citizen is seen over whatever lies on its +Z side only if the
--- sight line from the camera to its head clears it. `ground` is the terrain height at the spot.
-local SIGHT_SLOPE = math.tan(math.rad(42.5))
-local HEAD_HEIGHT = 5.5
-
-local function seen(list: { Obstacle }, x: number, z: number, ground: number): boolean
-	local head = ground + HEAD_HEIGHT
-	for _, o in list do
-		if o.top > head + 0.3 then
-			local reach = (o.top - head) / SIGHT_SLOPE -- how far toward the camera this part still hides the head
-			if o.maxX > x - 0.8 and o.minX < x + 0.8 and o.maxZ > z + 0.3 and o.minZ < z + reach then
-				return false
-			end
-		end
-	end
-	return true
-end
-
-local function clearGround(list: { Obstacle }, x: number, z: number): boolean
-	local R = CITIZEN_RADIUS
-	for _, o in list do
-		if o.kind == "disc" then
-			local dx, dz = x - o.x, z - o.z
-			if dx * dx + dz * dz < (o.r + R) ^ 2 then
-				return false
-			end
-		elseif o.kind == "rect" then
-			local l = (o.cf :: CFrame):PointToObjectSpace(Vector3.new(x, (o.cf :: CFrame).Y, z))
-			if math.abs(l.X) < o.hx + R and math.abs(l.Z) < o.hz + R then
-				return false
-			end
-		elseif x > o.minX - R and x < o.maxX + R and z > o.minZ - R and z < o.maxZ + R then
-			return false
-		end
-	end
-	return seen(list, x, z, WorldPlan.groundHeight(Layout, x, z))
 end
 
 local function citizensAround(set: string, kingdom: string, color: Color3, assets: any, placements: any)
 	local plot = Layout.plots[kingdom]
-	local blocks = obstacles(assets, placements)
 	local n = 0
 	for _, job in CITIZEN_SETS[set] do
 		local anchor = plot.anchors[job[2]]
@@ -318,30 +215,9 @@ local function citizensAround(set: string, kingdom: string, color: Color3, asset
 				local angle = (n * 2.39996) % (2 * math.pi) -- the golden angle: spread, never lined up
 				local reach = job[4] * (0.55 + 0.45 * ((n * 7) % 5) / 4)
 				local p = anchor.Position + Vector3.new(math.cos(angle) * reach, 0, math.sin(angle) * reach)
-				for _ = 1, 60 do -- step round and outwards until the spot is clear and in sight
-					if clearGround(blocks, p.X, p.Z) then
-						break
-					end
-					angle += 2.39996
-					reach *= 1.02
-					p = anchor.Position + Vector3.new(math.cos(angle) * reach, 0, math.sin(angle) * reach)
-				end
 				local y = WorldPlan.groundHeight(Layout, p.X, p.Z)
 				local cf = CFrame.new(p.X, y, p.Z) * CFrame.Angles(0, (n * 1.7) % (2 * math.pi), 0)
 				table.insert(placements, { assetId = id, cframe = cf12(cf), feature = "citizen" })
-				table.insert(blocks, {
-					kind = "disc",
-					x = p.X,
-					z = p.Z,
-					r = 0.6,
-					hx = 0,
-					hz = 0,
-					minX = 0,
-					maxX = 0,
-					minZ = 0,
-					maxZ = 0,
-					top = 0,
-				}) -- citizens keep clear of each other too
 			end
 		end
 	end
@@ -392,6 +268,16 @@ local function dump()
 			)
 		end
 	end
+	local citizenSet = process.env.FORGE_WORLD_CITIZENS or "sim"
+	if citizenSet == "sim" then
+		for kingdom, color in KINGDOM_COLORS do
+			citizensFromSim(kingdom, color, assets, placements)
+		end
+	elseif CITIZEN_SETS[citizenSet] then
+		for kingdom, color in KINGDOM_COLORS do
+			citizensAround(citizenSet, kingdom, color, assets, placements)
+		end
+	end
 	-- build slot markers (WorldService, G13.5) and, on crimson, a few slots built up to preview a grown town
 	local SAMPLE = { [1] = { "house", 1 }, [2] = { "house", 2 }, [3] = { "house", 1 }, [5] = { "barracks", 2 } }
 	for kingdom, color in KINGDOM_COLORS do
@@ -440,13 +326,6 @@ local function dump()
 			feature = "arena",
 		})
 	end
-	-- citizens last, so that every building, slot building, objective and the arena is there to keep clear of
-	local citizenSet = process.env.FORGE_WORLD_CITIZENS or "12"
-	if CITIZEN_SETS[citizenSet] then
-		for kingdom, color in KINGDOM_COLORS do
-			citizensAround(citizenSet, kingdom, color, assets, placements)
-		end
-	end
 	return {
 		heightfield = { x0 = x0, z0 = z0, step = STEP, nx = nx, nz = nz, heights = heights, materials = materials },
 		waterY = -1.4,
@@ -488,36 +367,21 @@ describe("World preview dump", function()
 			print(`world dump: {#d.placements} placements, {nAssets} assets, {hf.nx}x{hf.nz} heightfield -> {out}`)
 		end
 	end)
-	it(
-		"stands every citizen on open ground, in sight of the start camera (never inside a building or behind one)",
-		function()
-			local d = dump()
-			if process.env.FORGE_WORLD_CITIZENS == "0" then
-				return
-			end
-			local others, citizens = {}, {}
-			for _, p in d.placements do
-				table.insert(if p.feature == "citizen" then citizens else others, p)
-			end
-			local blocks = obstacles(d.assets, others)
-			expect(#citizens).toBeGreaterThan(0)
-			local blocked = 0
-			for _, c in citizens do
-				if not clearGround(blocks, c.cframe[1], c.cframe[3]) then
-					blocked += 1
-				end
-			end
-			expect(blocked).toBe(0)
-			-- the checker sees a citizen inside a keep (mutant): a spot in the middle of any building part is not clear
-			local building
-			for _, p in others do
-				if p.feature == "building" then
-					building = p
-					break
-				end
-			end
-			expect(building).never.toBeNil()
-			expect(clearGround(blocks, building.cframe[1], building.cframe[3])).toBe(false)
+	it("stands the sim's citizens (13 per kingdom, the five citizen jobs) at its own positions", function()
+		local d = dump()
+		if process.env.FORGE_WORLD_CITIZENS ~= nil and process.env.FORGE_WORLD_CITIZENS ~= "sim" then
+			return
 		end
-	)
+		local perKingdom, jobs = {}, { farmer = true, woodcutter = true, miner = true, builder = true, hauler = true }
+		for _, p in d.placements do
+			if p.feature == "citizen" then
+				local job, kingdom = string.match(p.assetId, "^citizen_(%a+)_(%a+)$")
+				expect(jobs[job]).toBe(true)
+				perKingdom[kingdom] = (perKingdom[kingdom] or 0) + 1
+			end
+		end
+		for _, kingdom in { "crimson", "azure", "emerald", "gold" } do
+			expect(perKingdom[kingdom]).toBe(13)
+		end
+	end)
 end)
